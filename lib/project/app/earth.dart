@@ -3,8 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cube/flutter_cube.dart';
-import 'package:three_dart/three3d/lights/light.dart';
-import 'package:three_dart/three3d/lights/point_light.dart';
 
 class EarthPlanet extends StatefulWidget {
   EarthPlanet({Key? key, this.title}) : super(key: key);
@@ -20,9 +18,7 @@ class _EarthPlanetState extends State<EarthPlanet>
   late Scene _scene;
   Object? _earth;
   late Object _stars;
-  late PointLight _light;
   late AnimationController _controller;
-  final double _maxScroll = 3000.0;
 
   void generateSphereObject(
     Object parent,
@@ -50,8 +46,7 @@ class _EarthPlanetState extends State<EarthPlanet>
     _scene.camera.position.z = 16;
 
     // model from https://free3d.com/3d-model/planet-earth-99065.html
-    // _earth = Object(name: 'earth', scale: Vector3(10.0, 10.0, 10.0), backfaceCulling: true, fileName: 'assets/earth/earth.obj')
-    _scene.light.position.setFrom(Vector3(10, 10, 10));
+    // _earth = Object(name: 'earth', scale: Vector3(10.0, 10.0, 10.0), backfaceCulling: true, fileName: 'assets/earth/earth.obj');
 
     // create by code
     _earth = Object(name: 'earth');
@@ -112,34 +107,9 @@ class _EarthPlanetState extends State<EarthPlanet>
         onPointerSignal: (pointerSignal) {
           if (pointerSignal is PointerScrollEvent) {
             // Adjust camera z position based on scroll delta
-            // _scene.camera.position.z += pointerSignal.scrollDelta.dy * 0.05;
-            //_scene.update(); // Important: update the scene after changing a property
-
-            if (_earth == null) return;
-
-            // Calculate scroll progress from 0.0 to 1.0
-            final scrollProgress = (pointerSignal.scrollDelta.dy).clamp(
-              0.0,
-              1.0,
-            );
-
-            // Animate planet scale: grows from 1x to 6x
-            final newScale = 1.0 + scrollProgress * 5.0;
-            _earth!.scale.setValues(newScale, newScale, newScale);
-
-            // Animate planet rotation on Y-axis
-            _earth!.rotation.y =
-                scrollProgress * 360 * 1.5; // flutter_cube uses degrees
-
-            /* // Animate light (sun) position in an arc
-              final sunAngle = (scrollProgress * 2.2 * math.pi) - (math.pi / 1.5);
-              _light.position.x = math.cos(sunAngle) * 12;
-              _light.position.y = math.sin(sunAngle) * 6;
-              _light.position.z = math.sin(sunAngle) * 12;*/
-
-            _earth!.updateTransform();
-            //_light.updateTransform();
-            _scene.update();
+            _scene.camera.position.z += pointerSignal.scrollDelta.dy * 0.05;
+            _scene
+                .update(); // Important: update the scene after changing a property
           }
         },
         child: Cube(onSceneCreated: _onSceneCreated),
