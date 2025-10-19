@@ -2,6 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/space_bloc.dart';
 
+import 'dart:async';
+import 'dart:developer';
+import 'dart:typed_data';
+import 'dart:math' as math;
+
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gl/flutter_gl.dart';
+import 'package:three_dart/three_dart.dart' as three;
+
+// Import your SpaceBloc and its events/states here
+// import 'space_bloc.dart';
+
 class SpaceScene extends StatelessWidget {
   const SpaceScene({super.key});
 
@@ -33,28 +47,36 @@ class _Space extends StatelessWidget {
       builder: (context, state) {
         switch (state) {
           case SpaceInitial():
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           case SpaceLoaded():
             var bloc = BlocProvider.of<SpaceBloc>(context);
-            /*ui.platformViewRegistry.registerViewFactory(
-              bloc.flutterGlPlugin.textureId!.toString(),
-                  (int viewId) => bloc.flutterGlPlugin.element,
-            );*/
-            return Stack(
-              children: [
-                Container(
-                  width: bloc.screenSize.width,
-                  height: bloc.screenSize.height,
-                  color: Colors.black,
-                  child: Builder(
-                    builder: (BuildContext context) {
-                      return HtmlElementView(
-                        viewType: bloc.three3dRender.textureId!.toString(),
-                      );
-                    },
+            // This Listener captures mouse wheel scroll and touch drag events
+            // to control the camera animation.
+            return Listener(
+              onPointerSignal: (event) {
+                if (event is PointerScrollEvent) {
+                  bloc.add(Scroll(event.scrollDelta.dy));
+                }
+              },
+              onPointerMove: (event) {
+                bloc.add(Scroll(event.delta.dy));
+              },
+              child: Stack(
+                children: [
+                  Container(
+                    width: bloc.screenSize.width,
+                    height: bloc.screenSize.height,
+                    color: Colors.black,
+                    child: Builder(
+                      builder: (BuildContext context) {
+                        return HtmlElementView(
+                          viewType: bloc.three3dRender.textureId!.toString(),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
         }
       },
