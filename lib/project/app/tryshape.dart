@@ -201,39 +201,6 @@ class _MyAppState extends State<WebGlGeometryShapes> {
     texture.wrapS = texture.wrapT = three.RepeatWrapping;
     texture.repeat.set(0.008, 0.008);
 
-    // California
-
-    var californiaPts = [];
-
-    californiaPts.add(three.Vector2(610, 320));
-    californiaPts.add(three.Vector2(450, 300));
-    californiaPts.add(three.Vector2(392, 392));
-    californiaPts.add(three.Vector2(266, 438));
-    californiaPts.add(three.Vector2(190, 570));
-    californiaPts.add(three.Vector2(190, 600));
-    californiaPts.add(three.Vector2(160, 620));
-    californiaPts.add(three.Vector2(160, 650));
-    californiaPts.add(three.Vector2(180, 640));
-    californiaPts.add(three.Vector2(165, 680));
-    californiaPts.add(three.Vector2(150, 670));
-    californiaPts.add(three.Vector2(90, 737));
-    californiaPts.add(three.Vector2(80, 795));
-    californiaPts.add(three.Vector2(50, 835));
-    californiaPts.add(three.Vector2(64, 870));
-    californiaPts.add(three.Vector2(60, 945));
-    californiaPts.add(three.Vector2(300, 945));
-    californiaPts.add(three.Vector2(300, 743));
-    californiaPts.add(three.Vector2(600, 473));
-    californiaPts.add(three.Vector2(626, 425));
-    californiaPts.add(three.Vector2(600, 370));
-    californiaPts.add(three.Vector2(610, 320));
-
-    for (var i = 0; i < californiaPts.length; i++) {
-      californiaPts[i].multiplyScalar(0.25);
-    }
-
-    var californiaShape = three.Shape(californiaPts);
-
     // Triangle
 
     var triangleShape =
@@ -252,43 +219,6 @@ class _MyAppState extends State<WebGlGeometryShapes> {
         .bezierCurveTo(x + 80, y + 35, x + 80, y, x + 50, y)
         .bezierCurveTo(x + 35, y, x + 25, y + 25, x + 25, y + 25);
 
-    // Square
-
-    double sqLength = 80;
-
-    var squareShape = three.Shape(null)
-        .moveTo(0.0, 0.0)
-        .lineTo(0.0, sqLength)
-        .lineTo(sqLength, sqLength)
-        .lineTo(sqLength, 0.0)
-        .lineTo(0.0, 0.0);
-
-    // Rounded rectangle
-
-    var roundedRectShape = three.Shape(null);
-
-    roundedRect(ctx, num x, num y, num width, num height, num radius) {
-      ctx.moveTo(x, y + radius);
-      ctx.lineTo(x, y + height - radius);
-      ctx.quadraticCurveTo(x, y + height, x + radius, y + height);
-      ctx.lineTo(x + width - radius, y + height);
-      ctx.quadraticCurveTo(x + width, y + height, x + width, y + height - radius);
-      ctx.lineTo(x + width, y + radius);
-      ctx.quadraticCurveTo(x + width, y, x + width - radius, y);
-      ctx.lineTo(x + radius, y);
-      ctx.quadraticCurveTo(x, y, x, y + radius);
-    }
-
-    roundedRect(roundedRectShape, 0, 0, 50, 50, 20);
-
-    // Track
-
-    var trackShape = three.Shape(null)
-        .moveTo(40.0, 40.0)
-        .lineTo(40.0, 160.0)
-        .absarc(60.0, 160.0, 20.0, three.Math.pi, 0.0, true)
-        .lineTo(80, 40)
-        .absarc(60, 40, 20, 2 * three.Math.pi, three.Math.pi, true);
 
     // Circle
 
@@ -300,52 +230,10 @@ class _MyAppState extends State<WebGlGeometryShapes> {
         .quadraticCurveTo(-circleRadius, -circleRadius, -circleRadius, 0)
         .quadraticCurveTo(-circleRadius, circleRadius, 0, circleRadius);
 
-    // Fish
 
-    var fishShape = three.Shape(null)
-        .moveTo(x, y)
-        .quadraticCurveTo(x + 50, y - 80, x + 90, y - 10)
-        .quadraticCurveTo(x + 100, y - 10, x + 115, y - 40)
-        .quadraticCurveTo(x + 115, y, x + 115, y + 40)
-        .quadraticCurveTo(x + 100, y + 10, x + 90, y + 10)
-        .quadraticCurveTo(x + 50, y + 80, x, y);
 
-    // Arc circle
 
-    var arcShape = three.Shape(null).moveTo(50, 10).absarc(10, 10, 40, 0, three.Math.pi * 2, false);
 
-    var holePath = three.Path(null).moveTo(20, 10).absarc(10, 10, 10, 0, three.Math.pi * 2, true);
-
-    arcShape.holes.add(holePath);
-
-    // Smiley
-
-    var smileyShape = three.Shape(null).moveTo(80, 40).absarc(40, 40, 40, 0, three.Math.pi * 2, false);
-
-    var smileyEye1Path = three.Path(null).moveTo(35, 20).absellipse(25, 20, 10, 10, 0, three.Math.pi * 2, true, null);
-
-    var smileyEye2Path = three.Path(null).moveTo(65, 20).absarc(55, 20, 10, 0, three.Math.pi * 2, true);
-
-    var smileyMouthPath = three.Path(null)
-        .moveTo(20, 40)
-        .quadraticCurveTo(40, 60, 60, 40)
-        .bezierCurveTo(70, 45, 70, 50, 60, 60)
-        .quadraticCurveTo(40, 80, 20, 60)
-        .quadraticCurveTo(5, 50, 20, 40);
-
-    smileyShape.holes.add(smileyEye1Path);
-    smileyShape.holes.add(smileyEye2Path);
-    smileyShape.holes.add(smileyMouthPath);
-
-    // Spline shape
-
-    List<three.Vector2> splinepts = [];
-    splinepts.add(three.Vector2(70, 20));
-    splinepts.add(three.Vector2(80, 90));
-    splinepts.add(three.Vector2(-30, 70));
-    splinepts.add(three.Vector2(0, 0));
-
-    var splineShape = three.Shape(null).moveTo(0, 0).splineThru(splinepts);
 
     var extrudeSettings = {
       "depth": 8,
@@ -356,25 +244,10 @@ class _MyAppState extends State<WebGlGeometryShapes> {
       "bevelThickness": 1
     };
 
+
     // addShape( shape, color, x, y, z, rx, ry,rz, s );
 
-    addShape(californiaShape, extrudeSettings, 0xf08000, -300, -100, 0, 0, 0, 0, 1);
-    addShape(triangleShape, extrudeSettings, 0x8080f0, -180, 0, 0, 0, 0, 0, 1);
-    addShape(roundedRectShape, extrudeSettings, 0x008000, -150, 150, 0, 0, 0, 0, 1);
-    addShape(trackShape, extrudeSettings, 0x008080, 200, -100, 0, 0, 0, 0, 1);
-    addShape(squareShape, extrudeSettings, 0x0040f0, 150, 100, 0, 0, 0, 0, 1);
-    addShape(heartShape, extrudeSettings, 0xf00000, 60, 100, 0, 0, 0, three.Math.pi, 1);
-    addShape(circleShape, extrudeSettings, 0x00f000, 120, 250, 0, 0, 0, 0, 1);
-    addShape(fishShape, extrudeSettings, 0x404040, -60, 200, 0, 0, 0, 0, 1);
-    addShape(smileyShape, extrudeSettings, 0xf000f0, -200, 250, 0, 0, 0, three.Math.pi, 1);
-    addShape(arcShape, extrudeSettings, 0x804000, 150, 0, 0, 0, 0, 0, 1);
-    addShape(splineShape, extrudeSettings, 0x808080, -50, -100, 0, 0, 0, 0, 1);
-
-    addLineShape(arcShape.holes[0], 0x804000, 150, 0, 0, 0, 0, 0, 1);
-
-    for (var i = 0; i < smileyShape.holes.length; i += 1) {
-      addLineShape(smileyShape.holes[i], 0xf000f0, -200, 250, 0, 0, 0, three.Math.pi, 1);
-    }
+   addShape(circleShape, extrudeSettings, 0x00f000, 120, 250, 0, 0, 0, 0, 1);
 
     //
 
@@ -384,6 +257,20 @@ class _MyAppState extends State<WebGlGeometryShapes> {
   addShape(shape, extrudeSettings, color, double x, double y, double z, double rx, double ry, double rz, double s) {
     // flat shape with texture
     // note: default UVs generated by THREE.ShapeGeometry are simply the x- and y-coordinates of the vertices
+
+    three.TextureLoader(three.LoadingManager()).load(
+      'assets/planet.jpg', // Your asset path
+          (texture) {
+        //log('Planet texture loaded successfully.');
+        final geometry = three.SphereGeometry(64, 32, 32);
+        final material = three.MeshStandardMaterial({
+          'map': texture,
+          'roughness': 0.4,
+        });
+        var earth = three.Mesh(geometry, material);
+        scene.add(earth);
+      },
+    );
 
     var geometry = three.ShapeGeometry(shape);
 

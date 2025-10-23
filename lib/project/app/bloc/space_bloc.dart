@@ -101,7 +101,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     directionalLight.position.set(2, 2, 8);
     scene.add(directionalLight);
 
-    final sunGeometry = three.SphereGeometry(0.5, 32, 32);
+    final sunGeometry = three.SphereGeometry(2, 32, 32);
     final sunMaterial = three.MeshBasicMaterial({'color': 0xffffff});
     sun = three.Mesh(sunGeometry, sunMaterial);
     sun.position.copy(directionalLight.position);
@@ -150,11 +150,11 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
         'tDiffuse': {'value': three.Texture()},
         'tOcclusion': {'value': godraysRenderTarget.texture},
         'lightPosition': {'value': three.Vector2(0.5, 0.5)},
-        'exposure': {'value': 0.55},
-        'decay': {'value': 0.9},
-        'density': {'value': 0.96},
-        'weight': {'value': 0.6},
-        'clampMax': {'value': 1.0},
+        'exposure': {'value': 0.1},
+        'decay': {'value': 0.05},
+        'density': {'value': 0.1},
+        'weight': {'value': 0.1},
+        'clampMax': {'value': 0.0},
       },
       'vertexShader': _passThroughVertexShader,
       'fragmentShader': _godRaysCombineFragmentShader,

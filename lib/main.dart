@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/bloc/space.dart';
 import 'package:flutter_home_page/project/app/earth.dart';
+import 'package:flutter_home_page/project/app/earth_1.dart';
+import 'package:flutter_home_page/project/app/three_example.dart';
+import 'package:flutter_home_page/project/app/tryshape.dart';
 
 
 void main() {
@@ -14,7 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Planet Scroll Animation',
       theme: ThemeData.dark(),
-      home: EarthPlanet(),
+      home: SpaceScene(),
       debugShowCheckedModeBanner: false,
     );
   }

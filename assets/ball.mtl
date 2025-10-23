@@ -1,0 +1,10 @@
+# Material for the textured "ball" (diffuse + emissive map)
+newmtl BallMat
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ns 10.0
+Ke 1.0 1.0 1.0
+map_Kd diffuse.png
+map_Ke emissive.png
+illum 2

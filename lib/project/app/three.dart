@@ -1,8 +1,11 @@
-//import 'dart:ui' as ui;
+/*
+import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' hide Material;
-import 'package:flutter_cube/flutter_cube.dart';
+import 'package:three_dart/three3d/core/object_3d.dart';
+import 'package:three_dart/three3d/objects/mesh.dart';
+import 'package:three_dart/three3d/scenes/scene.dart' as three;
 
 class EarthPlanet extends StatefulWidget {
   EarthPlanet({Key? key, this.title}) : super(key: key);
@@ -15,23 +18,21 @@ class EarthPlanet extends StatefulWidget {
 
 class _EarthPlanetState extends State<EarthPlanet>
     with SingleTickerProviderStateMixin {
-  late Scene _scene;
-  Object? _earth;
-  late Object _stars;
-  //late Object _sun;
-  late Object ball;
-  late Object halo;
+  late three.Scene _scene;
+  Object3D? _earth;
+  late Object3D _stars;
+  late Object3D _sun;
   late AnimationController _controller;
 
   void generateSphereObject(
-    Object parent,
-    String name,
-    double radius,
-    int widthSegments,
-    int heightSegments,
-    bool backfaceCulling,
-    String texturePath,
-  ) async {
+      Object parent,
+      String name,
+      double radius,
+      int widthSegments,
+      int heightSegments,
+      bool backfaceCulling,
+      String texturePath,
+      ) async {
     final Mesh mesh = await generateSphereMesh(
       radius: radius,
       latSegments: heightSegments,
@@ -45,14 +46,14 @@ class _EarthPlanetState extends State<EarthPlanet>
   }
 
   void createColoredSphereObject(
-    Object parent,
-    String name,
-    double radius,
-    int widthSegments,
-    int heightSegments,
-    bool backfaceCulling,
-    Color color,
-  ) async {
+      Object parent,
+      String name,
+      double radius,
+      int widthSegments,
+      int heightSegments,
+      bool backfaceCulling,
+      Color color,
+      ) async {
     final Mesh mesh = await generateSphereMesh(
       radius: radius,
       latSegments: heightSegments,
@@ -108,72 +109,40 @@ class _EarthPlanetState extends State<EarthPlanet>
     );
     _scene.world.add(_stars);
 
-    // _sun = Object(
-    //   fileName: 'assets/models/ball.obj',
-    //   // position in front of camera
-    //   position: Vector3(0, 100, 150),
-    //   rotation: Vector3(0, 0, 0),
-    //   scale: Vector3(1.2, 1.2, 1.2),
-    // );
-    // scene.world.add(_sun);
-
-    ball = Object(
-      fileName: 'assets/ball.mtl',
-      // position in front of camera
+    _sun = Object(
+      name: 'sun',
+      backfaceCulling: false,
       position: Vector3(0, 100, 150),
-      rotation: Vector3(0, 0, 0),
-      scale: Vector3(100, 100, 100),
     );
-    scene.world.add(ball);
-
-    // // Add the halo quad. We'll place it slightly behind the ball (z positive behind)
-    // // and scale it larger. We'll rely on additive blend to make it glow.
-    // halo = Object(
-    //   fileName: 'assets/halo.obj',
-    //   position: Vector3(0, 100, 152), // small offset so depth-test still occludes correctly
-    //   rotation: Vector3(0, 0, 0),
-    //   scale: Vector3(120, 120, 120),
-    // );
-    // scene.world.add(halo);
-    //
-    // // Use additive blending for the entire scene to emphasize glow.
-    // // flutter_cube exposes a blendMode on the Scene (uses Flutter's BlendMode)
-    // scene.blendMode = BlendMode.plus;
-
-    // _sun = Object(
-    //   name: 'sun',
-    //   backfaceCulling: false,
-    //   position: Vector3(0, 100, 150),
-    // );
-    // // Using the new createColoredSphereObject
-    // generateSphereObject(
-    //   _sun,
-    //   'surface',
-    //   48,
-    //   40,
-    //   40,
-    //   false,
-    //   'assets/sun.jpg',
-    // ); // NEW: Using a bright yellow color
-    // _scene.world.add(_sun);
+    // Using the new createColoredSphereObject
+    generateSphereObject(
+      _sun,
+      'surface',
+      48,
+      40,
+      40,
+      false,
+      'assets/sun.jpg',
+    ); // NEW: Using a bright yellow color
+    _scene.world.add(_sun);
   }
 
   @override
   void initState() {
     super.initState();
     _controller =
-        AnimationController(
-            duration: Duration(milliseconds: 120000),
-            vsync: this,
-          )
-          ..addListener(() {
-            if (_earth != null) {
-              _earth!.rotation.y = _controller.value * 360;
-              _earth!.updateTransform();
-              _scene.update();
-            }
-          })
-          ..repeat();
+    AnimationController(
+      duration: Duration(milliseconds: 120000),
+      vsync: this,
+    )
+      ..addListener(() {
+        if (_earth != null) {
+          _earth!.rotation.y = _controller.value * 360;
+          _earth!.updateTransform();
+          _scene.update();
+        }
+      })
+      ..repeat();
   }
 
   @override
@@ -247,12 +216,12 @@ Future<Mesh> generateSphereMesh({
   }
 
   if (texturePath != null) {
-    //ui.Image? texture = await loadImageFromAsset(texturePath);
+    ui.Image? texture = await loadImageFromAsset(texturePath);
     return Mesh(
       vertices: vertices,
       indices: indices,
       texcoords: texcoords,
-      //texture: texture,
+      texture: texture,
       texturePath: texturePath,
     );
   }
@@ -276,6 +245,6 @@ Future<Mesh> generateSphereMesh({
     material: material,
     colors: colors,
   );
-
   return mesh;
 }
+*/
