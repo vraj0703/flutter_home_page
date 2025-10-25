@@ -1,20 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/space_bloc.dart';
-
-import 'dart:async';
-import 'dart:developer';
-import 'dart:typed_data';
-import 'dart:math' as math;
-
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gl/flutter_gl.dart';
-import 'package:three_dart/three_dart.dart' as three;
-
-// Import your SpaceBloc and its events/states here
-// import 'space_bloc.dart';
 
 class SpaceScene extends StatelessWidget {
   const SpaceScene({super.key});

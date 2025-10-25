@@ -97,18 +97,18 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     ambientLight = three.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    directionalLight = three.DirectionalLight(0xffffff, 2.0);
-    directionalLight.position.set(2, 2, 8);
+    directionalLight = three.DirectionalLight(0xffffff, 1.5);
+    directionalLight.position.set(0, 100, 150);
     scene.add(directionalLight);
 
-    final sunGeometry = three.SphereGeometry(2, 32, 32);
+    final sunGeometry = three.SphereGeometry(16, 80, 80);
     final sunMaterial = three.MeshBasicMaterial({'color': 0xffffff});
     sun = three.Mesh(sunGeometry, sunMaterial);
     sun.position.copy(directionalLight.position);
     scene.add(sun);
 
     final planetTexture = await loader.loadAsync("assets/planet.jpg");
-    final planetGeometry = three.SphereGeometry(1.3, 32, 32);
+    final planetGeometry = three.SphereGeometry(1.3, 64, 64);
     final planetMaterial = three.MeshStandardMaterial({'map': planetTexture, 'roughness': 0.4});
     planet = three.Mesh(planetGeometry, planetMaterial);
     scene.add(planet);
@@ -126,10 +126,17 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   void _initPostProcessing() {
     final size = renderer!.getSize(three.Vector2(0,0));
     final dpr = renderer!.getPixelRatio();
+    final depthTextureInstance = three.DepthTexture(
+        (size.width * dpr * 0.5).toInt(),
+        (size.height * dpr * 0.5).toInt(),
+        null, null, null, null, null, null, null, null
+    );
     final renderTargetOptions = WebGLRenderTargetOptions({
       'minFilter': three.LinearFilter,
       'magFilter': three.LinearFilter,
-      'format': three.RGBAFormat
+      'format': three.RGBAFormat,
+      'depthBuffer': true,
+      'depthTexture': depthTextureInstance, // <--- Here it's used
     });
 
     godraysRenderTarget = three.WebGLRenderTarget(
@@ -150,11 +157,11 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
         'tDiffuse': {'value': three.Texture()},
         'tOcclusion': {'value': godraysRenderTarget.texture},
         'lightPosition': {'value': three.Vector2(0.5, 0.5)},
-        'exposure': {'value': 0.1},
+        'exposure': {'value': 1},
         'decay': {'value': 0.05},
-        'density': {'value': 0.1},
-        'weight': {'value': 0.1},
-        'clampMax': {'value': 0.0},
+        'density': {'value': 1},
+        'weight': {'value': 1.0}, // this is one
+        'clampMax': {'value': 0.0}, // this is zero
       },
       'vertexShader': _passThroughVertexShader,
       'fragmentShader': _godRaysCombineFragmentShader,
@@ -268,13 +275,13 @@ const String _godRaysCombineFragmentShader = """
   uniform float weight;
   uniform float clampMax;
   
-  const int SAMPLES = 60;
+  const int SAMPLES = 1000;
 
   void main() {
     vec2 texCoord = vUv;
     vec2 deltaTexCoord = texCoord - lightPosition;
     deltaTexCoord *= 1.0 / float(SAMPLES) * density;
-    float illuminationDecay = 1.0;
+    float illuminationDecay = 10.0;
     vec4 godrayColor = vec4(0.0);
 
     // Loop from the current pixel towards the light source, sampling the occlusion map
