@@ -10,6 +10,8 @@ import 'package:three_dart/three3d/renderers/web_gl_render_target.dart';
 import 'package:three_dart/three_dart.dart' as three;
 import 'package:three_dart_jsm/three_dart_jsm.dart' as three_jsm;
 
+import 'bloom_pass.dart';
+
 part 'space_event.dart';
 
 part 'space_state.dart';
@@ -37,6 +39,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   // Post-processing
   late three_jsm.EffectComposer composer;
   late three_jsm.ShaderPass godraysCombinePass;
+
+  //late UnrealBloomPass1 bloomPass;
   late three.WebGLRenderTarget godraysRenderTarget;
 
   final three.Clock _clock = three.Clock();
@@ -55,7 +59,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   FutureOr<void> _initialize(Initialize event, Emitter<SpaceState> emit) async {
     width = screenSize.width;
     height = screenSize.height;
-    dpr = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+    dpr =
+        WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
 
     three3dRender = FlutterGlPlugin();
     Map<String, dynamic> options = {
@@ -89,27 +94,51 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     var loader = three.TextureLoader(null);
 
     final backgroundTexture = await loader.loadAsync("assets/stars.jpg");
-    final backgroundGeometry = three.SphereGeometry(200, 64, 32);
-    final backgroundMaterial = three.MeshBasicMaterial({'map': backgroundTexture, 'side': three.BackSide});
+    final backgroundGeometry = three.SphereGeometry(
+      200,
+      1024,
+      512,
+      0,
+      (three.Math.pi * 2),
+      0,
+      three.Math.pi,
+    );
+    final backgroundMaterial = three.MeshBasicMaterial({
+      'map': backgroundTexture,
+      'side': three.BackSide,
+    });
     backgroundSphere = three.Mesh(backgroundGeometry, backgroundMaterial);
+    //backgroundSphere.rotation.set(-three.Math.pi, -three.Math.pi, -three.Math.pi);
+    //backgroundSphere.position.set(0, 0, 0);
+   // backgroundSphere.scale.set(.5, .5);
     scene.add(backgroundSphere);
 
-    ambientLight = three.AmbientLight(0xffffff, 0.5);
+    ambientLight = three.AmbientLight(0xffffff, 0.2);
     scene.add(ambientLight);
 
-    directionalLight = three.DirectionalLight(0xffffff, 1.5);
+    directionalLight = three.DirectionalLight(0xffffff, 1.0);
     directionalLight.position.set(0, 100, 150);
     scene.add(directionalLight);
 
     final sunGeometry = three.SphereGeometry(16, 80, 80);
-    final sunMaterial = three.MeshBasicMaterial({'color': 0xffffff});
-    sun = three.Mesh(sunGeometry, sunMaterial);
+    final glowingMaterial = three.MeshStandardMaterial({
+      'color': 0xffffff,
+      'emissive': 0xffffff,
+      // Emissive color also > 1
+      'toneMapped': false,
+      // Important: disable tone mapping for this material
+    });
+    glowingMaterial.emissiveIntensity = 2;
+    sun = three.Mesh(sunGeometry, glowingMaterial);
     sun.position.copy(directionalLight.position);
     scene.add(sun);
 
     final planetTexture = await loader.loadAsync("assets/planet.jpg");
     final planetGeometry = three.SphereGeometry(1.3, 64, 64);
-    final planetMaterial = three.MeshStandardMaterial({'map': planetTexture, 'roughness': 0.4});
+    final planetMaterial = three.MeshStandardMaterial({
+      'map': planetTexture,
+      'roughness': 0.9,
+    });
     planet = three.Mesh(planetGeometry, planetMaterial);
     scene.add(planet);
 
@@ -124,25 +153,40 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   }
 
   void _initPostProcessing() {
-    final size = renderer!.getSize(three.Vector2(0,0));
+    final size = renderer!.getSize(three.Vector2(0, 0));
     final dpr = renderer!.getPixelRatio();
+    final int targetWidth = (size.width * dpr * 0.5).toInt();
+    final int targetHeight = (size.height * dpr * 0.5).toInt();
+
+    final three.Vector2 composerSize = three.Vector2(
+      size.width * dpr,
+      size.height * dpr,
+    );
+
     final depthTextureInstance = three.DepthTexture(
-        (size.width * dpr * 0.5).toInt(),
-        (size.height * dpr * 0.5).toInt(),
-        null, null, null, null, null, null, null, null
+      targetWidth,
+      targetHeight,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
     );
     final renderTargetOptions = WebGLRenderTargetOptions({
       'minFilter': three.LinearFilter,
       'magFilter': three.LinearFilter,
       'format': three.RGBAFormat,
       'depthBuffer': true,
-      'depthTexture': depthTextureInstance, // <--- Here it's used
+      'depthTexture': depthTextureInstance,
     });
 
     godraysRenderTarget = three.WebGLRenderTarget(
-        (size.width * dpr * 0.5).toInt(),
-        (size.height * dpr * 0.5).toInt(),
-        renderTargetOptions
+      targetWidth,
+      targetHeight,
+      renderTargetOptions,
     );
 
     composer = three_jsm.EffectComposer(renderer!, godraysRenderTarget);
@@ -151,15 +195,23 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     final renderPass = three_jsm.RenderPass(scene, camera, null, null, null);
     composer.addPass(renderPass);
 
+    var bloomPass = UnrealBloomPass1(
+      composerSize, // Full screen resolution
+      1, // strength: adjusted for visible glow
+      0.5, // radius: softer, wider halo
+      0.9, // threshold: only objects with high brightness (the sun) will bloom
+    );
+    composer.addPass(bloomPass);
+
     // Pass 2: The custom God Rays shader pass.
     final godraysCombineMaterial = three.ShaderMaterial({
       'uniforms': {
         'tDiffuse': {'value': three.Texture()},
         'tOcclusion': {'value': godraysRenderTarget.texture},
         'lightPosition': {'value': three.Vector2(0.5, 0.5)},
-        'exposure': {'value': 1},
-        'decay': {'value': 0.05},
-        'density': {'value': 1},
+        'exposure': {'value': 0.1},
+        'decay': {'value': 0.98},
+        'density': {'value': .95},
         'weight': {'value': 1.0}, // this is one
         'clampMax': {'value': 0.0}, // this is zero
       },
@@ -168,7 +220,10 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     });
 
     // CORRECTED: Use the standard ShaderPass constructor.
-    godraysCombinePass = three_jsm.ShaderPass(godraysCombineMaterial, "tDiffuse");
+    godraysCombinePass = three_jsm.ShaderPass(
+      godraysCombineMaterial,
+      "tDiffuse",
+    );
     godraysCombinePass.renderToScreen = true;
     composer.addPass(godraysCombinePass);
   }
@@ -179,7 +234,6 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     renderer!.render(scene, camera);
     gl.flush();
   }
-
 
   void _animate() {
     if (disposed) return;
@@ -210,19 +264,22 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     // Update the sun's screen-space position for the God Rays shader.
     final sunPosition = three.Vector3().copy(sun.position);
     sunPosition.project(camera);
-    godraysCombinePass.material.uniforms['lightPosition']['value'].x = (sunPosition.x + 1) / 2;
-    godraysCombinePass.material.uniforms['lightPosition']['value'].y = (sunPosition.y + 1) / 2;
+    godraysCombinePass.material.uniforms['lightPosition']['value'].x =
+        (sunPosition.x + 1) / 2;
+    godraysCombinePass.material.uniforms['lightPosition']['value'].y =
+        (sunPosition.y + 1) / 2;
 
     // Step 1: Manually render the occluder scene to its texture.
     renderer!.setRenderTarget(godraysRenderTarget);
+    renderer!.setClearColor(three.Color(0x000000), 1.0);
     renderer!.render(godraysScene, camera);
     renderer!.setRenderTarget(null);
 
     // Step 2: Render the full post-processing chain.
     composer.render(delta);
 
-    Future.delayed(const Duration(milliseconds: 16),   _animate);
     _render();
+    Future.delayed(const Duration(milliseconds: 16), _animate);
   }
 
   @override
@@ -232,7 +289,10 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   }
 
   void dispose() {
-    log('[3D Debug] dispose: Disposing controllers and plugin.', name: 'SpaceBloc');
+    log(
+      '[3D Debug] dispose: Disposing controllers and plugin.',
+      name: 'SpaceBloc',
+    );
     disposed = true;
     renderer?.dispose();
     godraysRenderTarget.dispose();
