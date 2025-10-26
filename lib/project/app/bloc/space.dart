@@ -4,29 +4,29 @@ import 'package:flutter_home_page/project/app/bloc/space_bloc.dart';
 import 'package:flutter/gestures.dart';
 
 class SpaceScene extends StatelessWidget {
-  const SpaceScene({super.key});
+  final Widget child;
+
+  const SpaceScene({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        var size = MediaQuery.sizeOf(context);
-        return BlocProvider<SpaceBloc>(
-          create: (context) {
-            var bloc = SpaceBloc(size);
-            bloc.add(Initialize());
-            return bloc;
-          },
-          lazy: false,
-          child: _Space(),
-        );
+    var size = MediaQuery.sizeOf(context);
+    return BlocProvider<SpaceBloc>(
+      create: (context) {
+        var bloc = SpaceBloc(size);
+        bloc.add(Initialize());
+        return bloc;
       },
+      lazy: false,
+      child: _Space(child: child),
     );
   }
 }
 
 class _Space extends StatelessWidget {
-  const _Space({super.key});
+  final Widget child;
+
+  const _Space({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +62,7 @@ class _Space extends StatelessWidget {
                       },
                     ),
                   ),
+                  child,
                 ],
               ),
             );

@@ -54,6 +54,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     on<Initialize>(_initialize);
     on<Load>(_load);
     on<Scroll>(_onScroll);
+    on<Rotate>(_rotate);
   }
 
   FutureOr<void> _initialize(Initialize event, Emitter<SpaceState> emit) async {
@@ -95,28 +96,22 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
     final backgroundTexture = await loader.loadAsync("assets/stars.jpg");
     final backgroundGeometry = three.SphereGeometry(
-      200,
+      500,
       1024,
       512,
-      0,
-      (three.Math.pi * 2),
-      0,
-      three.Math.pi,
     );
     final backgroundMaterial = three.MeshBasicMaterial({
       'map': backgroundTexture,
       'side': three.BackSide,
     });
     backgroundSphere = three.Mesh(backgroundGeometry, backgroundMaterial);
-    //backgroundSphere.rotation.set(-three.Math.pi, -three.Math.pi, -three.Math.pi);
-    //backgroundSphere.position.set(0, 0, 0);
-   // backgroundSphere.scale.set(.5, .5);
+    backgroundSphere.quaternion.set(-0.2, -0.5, 0.9, 0.4);
     scene.add(backgroundSphere);
 
-    ambientLight = three.AmbientLight(0xffffff, 0.2);
+    ambientLight = three.AmbientLight(0xffffff, 0.02);
     scene.add(ambientLight);
 
-    directionalLight = three.DirectionalLight(0xffffff, 1.0);
+    directionalLight = three.DirectionalLight(0xffffff, 1.3);
     directionalLight.position.set(0, 100, 150);
     scene.add(directionalLight);
 
@@ -134,7 +129,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     scene.add(sun);
 
     final planetTexture = await loader.loadAsync("assets/planet.jpg");
-    final planetGeometry = three.SphereGeometry(1.3, 64, 64);
+    final planetGeometry = three.SphereGeometry(1.3, 256, 256);
     final planetMaterial = three.MeshStandardMaterial({
       'map': planetTexture,
       'roughness': 0.9,
@@ -197,7 +192,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
     var bloomPass = UnrealBloomPass1(
       composerSize, // Full screen resolution
-      1, // strength: adjusted for visible glow
+      1.5, // strength: adjusted for visible glow
       0.5, // radius: softer, wider halo
       0.9, // threshold: only objects with high brightness (the sun) will bloom
     );
@@ -213,7 +208,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
         'decay': {'value': 0.98},
         'density': {'value': .95},
         'weight': {'value': 1.0}, // this is one
-        'clampMax': {'value': 0.0}, // this is zero
+        'clampMax': {'value': 0.005}, // this is zero
       },
       'vertexShader': _passThroughVertexShader,
       'fragmentShader': _godRaysCombineFragmentShader,
@@ -312,10 +307,15 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     renderer!.setSize(width, height, false);
     renderer!.autoClear = false;
   }
+
+  FutureOr<void> _rotate(Rotate event, Emitter<SpaceState> emit) {
+    backgroundSphere.quaternion.set(event.x, event.y, event.z, event.w);
+    //backgroundSphere.rotation.set(event.x * three.Math.pi, event.y* three.Math.pi, event.z* three.Math.pi);
+    _render();
+  }
 }
 
 // --- GLSL Shaders ---
-
 const String _passThroughVertexShader = """
   varying vec2 vUv;
   void main() {
