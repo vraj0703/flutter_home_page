@@ -38,9 +38,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
   // Post-processing
   late three_jsm.EffectComposer composer;
-  late three_jsm.ShaderPass godraysCombinePass;
 
-  //late UnrealBloomPass1 bloomPass;
+  late UnrealBloomPass1 bloomPass;
   late three.WebGLRenderTarget godraysRenderTarget;
 
   final three.Clock _clock = three.Clock();
@@ -58,6 +57,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   }
 
   FutureOr<void> _initialize(Initialize event, Emitter<SpaceState> emit) async {
+    log('[3D Debug] _initialize', name: 'SpaceBloc');
     width = screenSize.width;
     height = screenSize.height;
     dpr =
@@ -84,6 +84,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   }
 
   FutureOr<void> _load(Load event, Emitter<SpaceState> emit) async {
+    log('[3D Debug] _load', name: 'SpaceBloc');
     _initRenderer();
     scene = three.Scene();
     godraysScene = three.Scene();
@@ -95,11 +96,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     var loader = three.TextureLoader(null);
 
     final backgroundTexture = await loader.loadAsync("assets/stars.jpg");
-    final backgroundGeometry = three.SphereGeometry(
-      500,
-      1024,
-      512,
-    );
+    final backgroundGeometry = three.SphereGeometry(500, 64, 32);
     final backgroundMaterial = three.MeshBasicMaterial({
       'map': backgroundTexture,
       'side': three.BackSide,
@@ -148,82 +145,64 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   }
 
   void _initPostProcessing() {
-    final size = renderer!.getSize(three.Vector2(0, 0));
-    final dpr = renderer!.getPixelRatio();
-    final int targetWidth = (size.width * dpr * 0.5).toInt();
-    final int targetHeight = (size.height * dpr * 0.5).toInt();
+    try {
+      print('[3D Debug] _initPostProcessing');
+      final size = renderer!.getSize(three.Vector2(0, 0));
+      final dpr = renderer!.getPixelRatio();
+      final int targetWidth = (size.width * dpr * 0.5).toInt();
+      final int targetHeight = (size.height * dpr * 0.5).toInt();
 
-    final three.Vector2 composerSize = three.Vector2(
-      size.width * dpr,
-      size.height * dpr,
-    );
+      final three.Vector2 composerSize = three.Vector2(
+        size.width * dpr,
+        size.height * dpr,
+      );
 
-    final depthTextureInstance = three.DepthTexture(
-      targetWidth,
-      targetHeight,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-    );
-    final renderTargetOptions = WebGLRenderTargetOptions({
-      'minFilter': three.LinearFilter,
-      'magFilter': three.LinearFilter,
-      'format': three.RGBAFormat,
-      'depthBuffer': true,
-      'depthTexture': depthTextureInstance,
-    });
+      final depthTextureInstance = three.DepthTexture(
+        targetWidth,
+        targetHeight,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      );
+      final renderTargetOptions = WebGLRenderTargetOptions({
+        'minFilter': three.LinearFilter,
+        'magFilter': three.LinearFilter,
+        'format': three.RGBAFormat,
+        'depthBuffer': true,
+        'depthTexture': depthTextureInstance,
+      });
 
-    godraysRenderTarget = three.WebGLRenderTarget(
-      targetWidth,
-      targetHeight,
-      renderTargetOptions,
-    );
+      godraysRenderTarget = three.WebGLRenderTarget(
+        targetWidth,
+        targetHeight,
+        renderTargetOptions,
+      );
 
-    composer = three_jsm.EffectComposer(renderer!, godraysRenderTarget);
+      composer = three_jsm.EffectComposer(renderer!, godraysRenderTarget);
 
-    // Pass 1: Render the main scene.
-    final renderPass = three_jsm.RenderPass(scene, camera, null, null, null);
-    composer.addPass(renderPass);
+      // Pass 1: Render the main scene.
+      final renderPass = three_jsm.RenderPass(scene, camera, null, null, null);
+      composer.addPass(renderPass);
 
-    var bloomPass = UnrealBloomPass1(
-      composerSize, // Full screen resolution
-      1.5, // strength: adjusted for visible glow
-      0.5, // radius: softer, wider halo
-      0.9, // threshold: only objects with high brightness (the sun) will bloom
-    );
-    composer.addPass(bloomPass);
-
-    // Pass 2: The custom God Rays shader pass.
-    final godraysCombineMaterial = three.ShaderMaterial({
-      'uniforms': {
-        'tDiffuse': {'value': three.Texture()},
-        'tOcclusion': {'value': godraysRenderTarget.texture},
-        'lightPosition': {'value': three.Vector2(0.5, 0.5)},
-        'exposure': {'value': 0.1},
-        'decay': {'value': 0.98},
-        'density': {'value': .95},
-        'weight': {'value': 1.0}, // this is one
-        'clampMax': {'value': 0.005}, // this is zero
-      },
-      'vertexShader': _passThroughVertexShader,
-      'fragmentShader': _godRaysCombineFragmentShader,
-    });
-
-    // CORRECTED: Use the standard ShaderPass constructor.
-    godraysCombinePass = three_jsm.ShaderPass(
-      godraysCombineMaterial,
-      "tDiffuse",
-    );
-    godraysCombinePass.renderToScreen = true;
-    composer.addPass(godraysCombinePass);
+      bloomPass = UnrealBloomPass1(
+        composerSize, // Full screen resolution
+        1.5, // strength: adjusted for visible glow
+        0.5, // radius: softer, wider halo
+        0.9, // threshold: only objects with high brightness (the sun) will bloom
+      );
+      composer.addPass(bloomPass);
+    } on Exception catch (e) {
+      print('[3D Debug] _initPostProcessing: $e');
+    }
   }
 
   void _render() {
+    print('[3D Debug] _render');
     final gl = three3dRender.gl;
 
     renderer!.render(scene, camera);
@@ -231,6 +210,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   }
 
   void _animate() {
+    print('[3D Debug] _animate');
     if (disposed) return;
 
     final delta = _clock.getDelta();
@@ -259,10 +239,10 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     // Update the sun's screen-space position for the God Rays shader.
     final sunPosition = three.Vector3().copy(sun.position);
     sunPosition.project(camera);
-    godraysCombinePass.material.uniforms['lightPosition']['value'].x =
+    /*bloomPass.material.uniforms['lightPosition']['value'].x =
         (sunPosition.x + 1) / 2;
-    godraysCombinePass.material.uniforms['lightPosition']['value'].y =
-        (sunPosition.y + 1) / 2;
+    bloomPass.material.uniforms['lightPosition']['value'].y =
+        (sunPosition.y + 1) / 2;*/
 
     // Step 1: Manually render the occluder scene to its texture.
     renderer!.setRenderTarget(godraysRenderTarget);
@@ -284,10 +264,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   }
 
   void dispose() {
-    log(
-      '[3D Debug] dispose: Disposing controllers and plugin.',
-      name: 'SpaceBloc',
-    );
+    print('[3D Debug] dispose: Disposing controllers and plugin.');
     disposed = true;
     renderer?.dispose();
     godraysRenderTarget.dispose();
@@ -295,6 +272,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   }
 
   void _initRenderer() {
+    print('[3D Debug] _initRenderer');
     Map<String, dynamic> options = {
       "width": width.toInt(),
       "height": height.toInt(),
@@ -314,52 +292,3 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     _render();
   }
 }
-
-// --- GLSL Shaders ---
-const String _passThroughVertexShader = """
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-""";
-
-const String _godRaysCombineFragmentShader = """
-  varying vec2 vUv;
-  uniform sampler2D tDiffuse;
-  uniform sampler2D tOcclusion;
-  uniform vec2 lightPosition;
-  uniform float exposure;
-  uniform float decay;
-  uniform float density;
-  uniform float weight;
-  uniform float clampMax;
-  
-  const int SAMPLES = 1000;
-
-  void main() {
-    vec2 texCoord = vUv;
-    vec2 deltaTexCoord = texCoord - lightPosition;
-    deltaTexCoord *= 1.0 / float(SAMPLES) * density;
-    float illuminationDecay = 10.0;
-    vec4 godrayColor = vec4(0.0);
-
-    // Loop from the current pixel towards the light source, sampling the occlusion map
-    for (int i = 0; i < SAMPLES; i++) {
-      texCoord -= deltaTexCoord;
-      vec4 sample1 = texture2D(tOcclusion, texCoord);
-      sample1 *= illuminationDecay * weight;
-      godrayColor += sample1;
-      illuminationDecay *= decay;
-    }
-    
-    // Clamp the final god rays color
-    vec4 finalGodrays = clamp(godrayColor * exposure, 0.0, clampMax);
-
-    // Get the original rendered scene color
-    vec4 sceneColor = texture2D(tDiffuse, vUv);
-
-    // Additively blend the god rays on top of the scene
-    gl_FragColor = sceneColor + finalGodrays;
-  }
-""";
