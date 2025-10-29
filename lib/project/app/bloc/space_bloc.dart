@@ -6,11 +6,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gl/flutter_gl.dart';
-import 'package:three_dart/three3d/renderers/web_gl_render_target.dart';
 import 'package:three_dart/three_dart.dart' as three;
 import 'package:three_dart_jsm/three_dart_jsm.dart' as three_jsm;
 
 import 'bloom_pass.dart';
+import 'effect_composer.dart';
 
 part 'space_event.dart';
 
@@ -37,10 +37,9 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   late three.DirectionalLight directionalLight;
 
   // Post-processing
-  late three_jsm.EffectComposer composer;
+  late EffectComposer1 composer;
 
   late UnrealBloomPass1 bloomPass;
-  late three.WebGLRenderTarget godraysRenderTarget;
 
   final three.Clock _clock = three.Clock();
   double _scrollTarget = 0.0;
@@ -112,7 +111,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     directionalLight.position.set(0, 100, 150);
     scene.add(directionalLight);
 
-    final sunGeometry = three.SphereGeometry(16, 80, 80);
+    final sunGeometry = three.SphereGeometry(12, 80, 80);
     final glowingMaterial = three.MeshStandardMaterial({
       'color': 0xffffff,
       'emissive': 0xffffff,
@@ -157,33 +156,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
         size.height * dpr,
       );
 
-      final depthTextureInstance = three.DepthTexture(
-        targetWidth,
-        targetHeight,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-      );
-      final renderTargetOptions = WebGLRenderTargetOptions({
-        'minFilter': three.LinearFilter,
-        'magFilter': three.LinearFilter,
-        'format': three.RGBAFormat,
-        'depthBuffer': true,
-        'depthTexture': depthTextureInstance,
-      });
-
-      godraysRenderTarget = three.WebGLRenderTarget(
-        targetWidth,
-        targetHeight,
-        renderTargetOptions,
-      );
-
-      composer = three_jsm.EffectComposer(renderer!, godraysRenderTarget);
+      composer = EffectComposer1(renderer!, null);
 
       // Pass 1: Render the main scene.
       final renderPass = three_jsm.RenderPass(scene, camera, null, null, null);
@@ -236,16 +209,9 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     camera.position.set(x, y, z);
     camera.lookAt(_origin);
 
-    // Update the sun's screen-space position for the God Rays shader.
     final sunPosition = three.Vector3().copy(sun.position);
     sunPosition.project(camera);
-    /*bloomPass.material.uniforms['lightPosition']['value'].x =
-        (sunPosition.x + 1) / 2;
-    bloomPass.material.uniforms['lightPosition']['value'].y =
-        (sunPosition.y + 1) / 2;*/
 
-    // Step 1: Manually render the occluder scene to its texture.
-    renderer!.setRenderTarget(godraysRenderTarget);
     renderer!.setClearColor(three.Color(0x000000), 1.0);
     renderer!.render(godraysScene, camera);
     renderer!.setRenderTarget(null);
@@ -267,7 +233,6 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     print('[3D Debug] dispose: Disposing controllers and plugin.');
     disposed = true;
     renderer?.dispose();
-    godraysRenderTarget.dispose();
     three3dRender.dispose();
   }
 
