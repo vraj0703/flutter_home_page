@@ -27,7 +27,7 @@ uniform float fDecay;
 uniform float fExposure;
 uniform float fClamp;
 
-const int NUM_SAMPLES = 50;
+const int NUM_SAMPLES = 120;
 
 void main() {
   vec2 delta = vSunPositionScreen - vUv;
@@ -58,9 +58,9 @@ final Map<String, dynamic> godRaysGenerateShader = {
     'vSunPositionScreen': {'value': three.Vector2(0.5, 0.5)},
     'fExposure': {'value': 0.1}, // Intensity
     'fDecay': {'value': 0.98},   // How fast rays decay
-    'fDensity': {'value': 0.95}, // Density of rays
-    'fWeight': {'value': 1.0},  // Weight of each sample
-    'fClamp': {'value': 0.005},
+    'fDensity': {'value': 0.01}, // Density of rays
+    'fWeight': {'value': 0.01},  // Weight of each sample
+    'fClamp': {'value': 0.2},
   },
   'vertexShader': _generateVertexShader,
   'fragmentShader': _generateFragmentShader,

@@ -11,6 +11,7 @@ import 'package:three_dart_jsm/three_dart_jsm.dart' as three_jsm;
 
 import 'bloom_pass.dart';
 import 'effect_composer.dart';
+import 'god_rays.dart';
 
 part 'space_event.dart';
 
@@ -31,15 +32,20 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
   late three.Camera camera;
   late three.Mesh planet;
+  late three.Mesh occluder;
   late three.Mesh backgroundSphere;
   late three.Mesh sun;
+  late three.Mesh sunOccluder;
   late three.AmbientLight ambientLight;
   late three.DirectionalLight directionalLight;
 
   // Post-processing
   late EffectComposer1 composer;
+  late EffectComposer1 godraysComposer;
 
   late UnrealBloomPass1 bloomPass;
+  late three_jsm.ShaderPass godRayGeneratePass;
+  late three_jsm.ShaderPass godRayCombinePass;
 
   final three.Clock _clock = three.Clock();
   double _scrollTarget = 0.0;
@@ -104,10 +110,10 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     backgroundSphere.quaternion.set(-0.2, -0.5, 0.9, 0.4);
     scene.add(backgroundSphere);
 
-    ambientLight = three.AmbientLight(0xffffff, 0.02);
+    ambientLight = three.AmbientLight(0xffffff, 0.05);
     scene.add(ambientLight);
 
-    directionalLight = three.DirectionalLight(0xffffff, 1.3);
+    directionalLight = three.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(0, 100, 150);
     scene.add(directionalLight);
 
@@ -128,14 +134,26 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     final planetGeometry = three.SphereGeometry(1.3, 256, 256);
     final planetMaterial = three.MeshStandardMaterial({
       'map': planetTexture,
-      'roughness': 0.9,
+      'roughness': 0.6,
+      'metalness': 0.4,
     });
     planet = three.Mesh(planetGeometry, planetMaterial);
     scene.add(planet);
 
+    // --- Occluders (For God Ray Scene) ---
+    // 1. Black Planet
     final occluderMaterial = three.MeshBasicMaterial({'color': 0x000000});
-    final occluder = three.Mesh(planetGeometry, occluderMaterial);
-    godraysScene.add(occluder);
+    occluder = three.Mesh(planetGeometry, occluderMaterial);
+    godraysScene.add(occluder); // <-- Add to godraysScene
+
+    // 2. White Sun
+    final sunOcclusionMaterial = three.MeshBasicMaterial({
+      'color': 0xffffff, // <-- White
+      'toneMapped': false,
+    });
+    sunOccluder = three.Mesh(sunGeometry, sunOcclusionMaterial); // <-- ADDED
+    sunOccluder.position.copy(sun.position); // <-- ADDED
+    godraysScene.add(sunOccluder);
 
     _initPostProcessing();
 
@@ -160,26 +178,53 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
       // Pass 1: Render the main scene.
       final renderPass = three_jsm.RenderPass(scene, camera, null, null, null);
+      renderPass.clear = true;
       composer.addPass(renderPass);
 
       bloomPass = UnrealBloomPass1(
         composerSize, // Full screen resolution
-        1.5, // strength: adjusted for visible glow
-        0.5, // radius: softer, wider halo
-        0.9, // threshold: only objects with high brightness (the sun) will bloom
+        2, // strength: adjusted for visible glow
+        1, // radius: softer, wider halo
+        0.7, // threshold: only objects with high brightness (the sun) will bloom
       );
       composer.addPass(bloomPass);
+
+      godraysComposer = EffectComposer1(renderer!, null);
+      godraysComposer.renderToScreen = false;
+
+      final godraysMaskPass = three_jsm.RenderPass(
+        godraysScene,
+        camera,
+        null,
+        null,
+        null,
+      );
+      godraysMaskPass.clear = true;
+      godraysComposer.addPass(godraysMaskPass);
+
+      // Pass 2: Use the mask to generate god rays
+      godRayGeneratePass = three_jsm.ShaderPass(
+        godRaysGenerateShader,
+        'tDiffuse',
+      );
+      godRayGeneratePass.uniforms['fDecay']['value'] = 0.95;
+      godRayGeneratePass.needsSwap = false;
+      godraysComposer.addPass(godRayGeneratePass);
+
+      // Pass 3: Combine the bloomed scene with the god rays
+      godRayCombinePass = three_jsm.ShaderPass(
+        godRaysCombineShader,
+        'tDiffuse',
+      );
+
+      // Read from renderTarget1, where the final rays are written.
+      godRayCombinePass.uniforms['tGodRays']['value'] =
+          godraysComposer.renderTarget1.texture;
+      godRayCombinePass.renderToScreen = true;
+      composer.addPass(godRayCombinePass);
     } on Exception catch (e) {
       print('[3D Debug] _initPostProcessing: $e');
     }
-  }
-
-  void _render() {
-    print('[3D Debug] _render');
-    final gl = three3dRender.gl;
-
-    renderer!.render(scene, camera);
-    gl.flush();
   }
 
   void _animate() {
@@ -189,7 +234,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     final delta = _clock.getDelta();
     _scrollCurrent += (_scrollTarget - _scrollCurrent) * 0.05;
 
-    planet.rotation.y += 0.0005;
+    planet.rotation.y += 0.0008;
+    occluder.rotation.y = planet.rotation.y;
     backgroundSphere.rotation.y = _scrollCurrent * 0.2;
     backgroundSphere.rotation.x = _scrollCurrent * -0.1;
 
@@ -209,18 +255,33 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     camera.position.set(x, y, z);
     camera.lookAt(_origin);
 
+    // --- Update God Ray Uniforms ---
+    // Keep the occluder sun's position in sync
+    sunOccluder.position.copy(sun.position);
+
+    // Update the sun's screen-space position for the God Rays shader
     final sunPosition = three.Vector3().copy(sun.position);
     sunPosition.project(camera);
 
-    renderer!.setClearColor(three.Color(0x000000), 1.0);
-    renderer!.render(godraysScene, camera);
-    renderer!.setRenderTarget(null);
+    final sunScreenPos = three.Vector2(
+      (sunPosition.x + 1) / 2,
+      (sunPosition.y + 1) / 2,
+    );
+    // Update the uniform in the generate pass
+    godRayGeneratePass.uniforms['vSunPositionScreen']['value'] = sunScreenPos;
 
-    // Step 2: Render the full post-processing chain.
+    godraysComposer.render(delta);
     composer.render(delta);
-
     _render();
+
     Future.delayed(const Duration(milliseconds: 16), _animate);
+  }
+
+  void _render() {
+    print('[3D Debug] _render');
+    final gl = three3dRender.gl;
+
+    gl.flush();
   }
 
   @override
