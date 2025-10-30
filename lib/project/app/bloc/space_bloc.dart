@@ -36,6 +36,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   late three.Mesh backgroundSphere;
   late three.Mesh sun;
   late three.Mesh sunOccluder;
+  late three.Points stars;
   late three.AmbientLight ambientLight;
   late three.DirectionalLight directionalLight;
 
@@ -140,6 +141,46 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     planet = three.Mesh(planetGeometry, planetMaterial);
     scene.add(planet);
 
+    // --- ADD STARFIELD ---
+    final int starCount = 5000;
+    final positions = Float32Array(starCount * 3);
+    final random = math.Random();
+    final spawnRadius = 450.0; // Must be less than backgroundSphere (500)
+
+    for (int i = 0; i < starCount; i++) {
+      final i3 = i * 3;
+
+      // Get a random point on a sphere, then move it out
+      // This creates a more natural, less "boxy" distribution
+      final phi = random.nextDouble() * 2 * math.pi;
+      final theta = math.acos((random.nextDouble() * 2) - 1);
+
+      // Give a random distance, but not from 0, so it's a thick shell
+      final r = 200 + random.nextDouble() * (spawnRadius - 200);
+
+      positions[i3] = r * math.sin(theta) * math.cos(phi);     // x
+      positions[i3 + 1] = r * math.sin(theta) * math.sin(phi); // y
+      positions[i3 + 2] = r * math.cos(theta);                // z
+    }
+
+    final starGeometry = three.BufferGeometry();
+    starGeometry.setAttribute(
+      'position',
+      three.Float32BufferAttribute(positions, 3),
+    );
+
+    final starMaterial = three.PointsMaterial({
+      'color': 0xffffff,
+      'size': 1.0,
+      'sizeAttenuation': true, // Stars far away are smaller
+      'blending': three.AdditiveBlending, // Makes stars glow
+      'transparent': true,
+      'depthWrite': false, // Prevents render artifacts with transparency
+    });
+
+    stars = three.Points(starGeometry, starMaterial);
+    scene.add(stars);
+
     // --- Occluders (For God Ray Scene) ---
     // 1. Black Planet
     final occluderMaterial = three.MeshBasicMaterial({'color': 0x000000});
@@ -238,6 +279,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     occluder.rotation.y = planet.rotation.y;
     backgroundSphere.rotation.y = _scrollCurrent * 0.2;
     backgroundSphere.rotation.x = _scrollCurrent * -0.1;
+    stars.rotation.y += 0.0001;
 
     // --- Camera Animation ---
     const double initialDistance = 6.0;
@@ -293,6 +335,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   void dispose() {
     print('[3D Debug] dispose: Disposing controllers and plugin.');
     disposed = true;
+    stars.geometry?.dispose();
+    stars.material?.dispose();
     renderer?.dispose();
     three3dRender.dispose();
   }
