@@ -18,7 +18,7 @@ part 'space_event.dart';
 part 'space_state.dart';
 
 class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
-  final Size screenSize;
+  late Size screenSize;
 
   late FlutterGlPlugin three3dRender;
   three.WebGLRenderer? renderer;
@@ -55,7 +55,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
   bool disposed = false;
 
-  SpaceBloc(this.screenSize) : super(SpaceInitial()) {
+  SpaceBloc() : super(SpaceInitial()) {
     on<Initialize>(_initialize);
     on<Load>(_load);
     on<Scroll>(_onScroll);
@@ -64,6 +64,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
   FutureOr<void> _initialize(Initialize event, Emitter<SpaceState> emit) async {
     log('[3D Debug] _initialize', name: 'SpaceBloc');
+    screenSize = event.screenSize;
     width = screenSize.width;
     height = screenSize.height;
     dpr =
@@ -158,9 +159,9 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
       // Give a random distance, but not from 0, so it's a thick shell
       final r = 200 + random.nextDouble() * (spawnRadius - 200);
 
-      positions[i3] = r * math.sin(theta) * math.cos(phi);     // x
+      positions[i3] = r * math.sin(theta) * math.cos(phi); // x
       positions[i3 + 1] = r * math.sin(theta) * math.sin(phi); // y
-      positions[i3 + 2] = r * math.cos(theta);                // z
+      positions[i3 + 2] = r * math.cos(theta); // z
     }
 
     final starGeometry = three.BufferGeometry();
@@ -207,8 +208,6 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
       print('[3D Debug] _initPostProcessing');
       final size = renderer!.getSize(three.Vector2(0, 0));
       final dpr = renderer!.getPixelRatio();
-      final int targetWidth = (size.width * dpr * 0.5).toInt();
-      final int targetHeight = (size.height * dpr * 0.5).toInt();
 
       final three.Vector2 composerSize = three.Vector2(
         size.width * dpr,

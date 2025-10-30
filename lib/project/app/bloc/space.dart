@@ -13,12 +13,33 @@ class SpaceScene extends StatelessWidget {
     var size = MediaQuery.sizeOf(context);
     return BlocProvider<SpaceBloc>(
       create: (context) {
-        var bloc = SpaceBloc(size);
-        bloc.add(Initialize());
+        var bloc = SpaceBloc();
         return bloc;
       },
       lazy: false,
-      child: _Space(child: child),
+      child: _SpaceScreen(originalSize: size, child: child),
+    );
+  }
+}
+
+class _SpaceScreen extends StatelessWidget {
+  final Size originalSize;
+  final Widget child;
+
+  const _SpaceScreen({
+    super.key,
+    required this.child,
+    required this.originalSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    var size = originalSize;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        BlocProvider.of<SpaceBloc>(context).add(Initialize(screenSize: size));
+        return _Space(child: child);
+      },
     );
   }
 }
@@ -54,12 +75,8 @@ class _Space extends StatelessWidget {
                     width: bloc.screenSize.width,
                     height: bloc.screenSize.height,
                     color: Colors.black,
-                    child: Builder(
-                      builder: (BuildContext context) {
-                        return HtmlElementView(
-                          viewType: bloc.three3dRender.textureId!.toString(),
-                        );
-                      },
+                    child: HtmlElementView(
+                      viewType: bloc.three3dRender.textureId!.toString(),
                     ),
                   ),
                   child,

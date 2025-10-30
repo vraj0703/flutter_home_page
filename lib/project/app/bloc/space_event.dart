@@ -3,7 +3,11 @@ part of 'space_bloc.dart';
 @immutable
 sealed class SpaceEvent {}
 
-final class Initialize extends SpaceEvent {}
+final class Initialize extends SpaceEvent {
+  final Size screenSize;
+
+  Initialize({required this.screenSize});
+}
 
 final class Load extends SpaceEvent {}
 
