@@ -109,13 +109,24 @@ void main() {
   vec4 godRayColor = texture2D(tGodRays, vUv);
   
   // Additive blending
-  vec4 screenColor = sceneColor + godRayColor;
+  // vec4 screenColor = sceneColor + godRayColor;
   
   // Linear Interpolation (Mix)
   // vec4 screenColor = mix(sceneColor, godRayColor, 0.1);
   
   // Screen Blending (A softer alternative)
   // vec4 screenColor = 1.0 - (1.0 - sceneColor) * (1.0 - godRayColor);
+  
+  // Luminance Masking (a better solution)
+  // 1. Calculate the brightness of the main scene
+  float sceneLuminance = dot(sceneColor.rgb, vec3(0.299, 0.587, 0.114));
+  
+  // 2. Create a mask that is 1.0 in dark areas and 0.0 in bright areas
+  //    (You can tweak 0.1 and 0.4 to change the fade-off)
+  float rayMask = 1.0 - smoothstep(0.1, 0.9, sceneLuminance);
+  
+  // 3. Apply the mask to the god rays before adding them
+  vec4 screenColor = sceneColor + godRayColor * rayMask;
   
   gl_FragColor = screenColor;
 }
