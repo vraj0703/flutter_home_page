@@ -26,20 +26,38 @@ uniform float fWeight;
 uniform float fDecay;
 uniform float fExposure;
 uniform float fClamp;
+uniform float fTime; 
+uniform float fAspect;
 
-const int NUM_SAMPLES = 120;
+const int NUM_SAMPLES = 200;
+
+// Simple pseudo-random noise function
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
 
 void main() {
+  // --- ADD NOISE ---
+  // Create a random offset based on screen position and time
+  float dither = rand(vUv + fTime);
+ 
   vec2 delta = vSunPositionScreen - vUv;
+  delta.x *= fAspect;
+  
   float dist = length(delta);
   vec2 step = delta / dist / float(NUM_SAMPLES);
-  float illuminationDecay = 1.0;
+  step.x /= fAspect;
+  
+  // Apply the random offset to the starting position
+  vec2 uv = vUv + dither * step; 
 
-  vec4 c = texture2D(tDiffuse, vUv);
+  float illuminationDecay = 1.0;
+  vec4 c = texture2D(tDiffuse, uv); // Use the new 'uv'
   vec4 result = c * fWeight;
 
   for (int i = 0; i < NUM_SAMPLES; i++) {
-    c = texture2D(tDiffuse, vUv + float(i) * step);
+    // Use the new 'uv' here as well
+    c = texture2D(tDiffuse, uv + float(i) * step); 
     c.rgb *= illuminationDecay * fWeight;
     result.rgb += c.rgb;
     illuminationDecay *= fDecay;
@@ -53,18 +71,19 @@ void main() {
 
 final Map<String, dynamic> godRaysGenerateShader = {
   'uniforms': {
-    'tDiffuse': {'value': three.Texture()},
+    'tDiffuse': {'value': null},
     'vSunPositionScreen': {'value': three.Vector2(0.5, 0.5)},
-    'fExposure': {'value': 0.1}, // Intensity
-    'fDecay': {'value': 0.98}, // How fast rays decay
-    'fDensity': {'value': 1}, // Density of rays
-    'fWeight': {'value': 0.1}, // Weight of each sample
-    'fClamp': {'value': 1},
+    'fDensity': {'value': 0.96},
+    'fWeight': {'value': 0.1},
+    'fDecay': {'value': 0.98},
+    'fExposure': {'value': 0.1},
+    'fClamp': {'value': .6},
+    'fTime': {'value': 0.0},
+    'fAspect': {'value': 1.0},
   },
   'vertexShader': _generateVertexShader,
   'fragmentShader': _generateFragmentShader,
 };
-
 // -----------------------------------------------------------------
 // SHADER 2: GodRaysCombineShader
 // -----------------------------------------------------------------

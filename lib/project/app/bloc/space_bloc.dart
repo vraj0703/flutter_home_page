@@ -214,6 +214,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
         size.height * dpr,
       );
 
+      final fAspect = (size.width * dpr) / (size.height * dpr);
+
       composer = EffectComposer1(renderer!, null);
 
       // Pass 1: Render the main scene.
@@ -247,6 +249,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
         godRaysGenerateShader,
         'tDiffuse',
       );
+      godRayGeneratePass.uniforms['fAspect']['value'] = fAspect;
       godRayGeneratePass.needsSwap = false;
       godraysComposer.addPass(godRayGeneratePass);
 
@@ -271,13 +274,15 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     if (disposed) return;
 
     final delta = _clock.getDelta();
+    final elapsedTime = _clock.getElapsedTime();
+
     _scrollCurrent += (_scrollTarget - _scrollCurrent) * 0.05;
 
     planet.rotation.y += 0.0005;
     occluder.rotation.y = planet.rotation.y;
     backgroundSphere.rotation.y = _scrollCurrent * 0.2;
     backgroundSphere.rotation.x = _scrollCurrent * -0.1;
-    stars.rotation.y += 0.0001;
+    stars.rotation.y += 0.00007;
 
     // --- Camera Animation ---
     const double initialDistance = 6.0;
@@ -309,7 +314,9 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     );
     // Update the uniform in the generate pass
     godRayGeneratePass.uniforms['vSunPositionScreen']['value'] = sunScreenPos;
+    godRayGeneratePass.uniforms['fTime']['value'] = elapsedTime;
 
+    // --- Render ---
     godraysComposer.render(delta);
     composer.render(delta);
     _render();
