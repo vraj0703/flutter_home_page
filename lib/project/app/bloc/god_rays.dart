@@ -54,18 +54,16 @@ void main() {
 final Map<String, dynamic> godRaysGenerateShader = {
   'uniforms': {
     'tDiffuse': {'value': three.Texture()},
-    //'tOcclusion': {'value': godraysRenderTarget.texture},
     'vSunPositionScreen': {'value': three.Vector2(0.5, 0.5)},
     'fExposure': {'value': 0.1}, // Intensity
-    'fDecay': {'value': 0.98},   // How fast rays decay
-    'fDensity': {'value': 0.01}, // Density of rays
-    'fWeight': {'value': 0.01},  // Weight of each sample
-    'fClamp': {'value': 0.2},
+    'fDecay': {'value': 0.98}, // How fast rays decay
+    'fDensity': {'value': 1}, // Density of rays
+    'fWeight': {'value': 0.1}, // Weight of each sample
+    'fClamp': {'value': 1},
   },
   'vertexShader': _generateVertexShader,
   'fragmentShader': _generateFragmentShader,
 };
-
 
 // -----------------------------------------------------------------
 // SHADER 2: GodRaysCombineShader
@@ -92,14 +90,24 @@ void main() {
   vec4 godRayColor = texture2D(tGodRays, vUv);
   
   // Additive blending
-  gl_FragColor = sceneColor + godRayColor;
+  vec4 screenColor = sceneColor + godRayColor;
+  
+  // Linear Interpolation (Mix)
+  // vec4 screenColor = mix(sceneColor, godRayColor, 0.1);
+  
+  // Screen Blending (A softer alternative)
+  // vec4 screenColor = 1.0 - (1.0 - sceneColor) * (1.0 - godRayColor);
+  
+  gl_FragColor = screenColor;
 }
 """;
 
 final Map<String, dynamic> godRaysCombineShader = {
   'uniforms': {
-    'tDiffuse': {'value': null}, // This will be the main scene
-    'tGodRays': {'value': null}, // This will be the output from the generate pass
+    'tDiffuse': {'value': null},
+    // This will be the main scene
+    'tGodRays': {'value': null},
+    // This will be the output from the generate pass
   },
   'vertexShader': _combineVertexShader,
   'fragmentShader': _combineFragmentShader,

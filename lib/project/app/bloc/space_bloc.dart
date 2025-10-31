@@ -247,7 +247,6 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
         godRaysGenerateShader,
         'tDiffuse',
       );
-      godRayGeneratePass.uniforms['fDecay']['value'] = 0.95;
       godRayGeneratePass.needsSwap = false;
       godraysComposer.addPass(godRayGeneratePass);
 
@@ -274,7 +273,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     final delta = _clock.getDelta();
     _scrollCurrent += (_scrollTarget - _scrollCurrent) * 0.05;
 
-    planet.rotation.y += 0.0008;
+    planet.rotation.y += 0.0005;
     occluder.rotation.y = planet.rotation.y;
     backgroundSphere.rotation.y = _scrollCurrent * 0.2;
     backgroundSphere.rotation.x = _scrollCurrent * -0.1;
