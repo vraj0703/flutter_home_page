@@ -22,7 +22,7 @@ class SpaceScene extends StatelessWidget {
   }
 }
 
-class _SpaceScreen extends StatelessWidget {
+class _SpaceScreen extends StatefulWidget {
   final Size originalSize;
   final Widget child;
 
@@ -33,14 +33,30 @@ class _SpaceScreen extends StatelessWidget {
   });
 
   @override
+  State<_SpaceScreen> createState() => _SpaceScreenState();
+}
+
+class _SpaceScreenState extends State<_SpaceScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    // --- THIS IS THE FIX ---
+    // We add the Initialize event here, in initState, which runs
+    // only ONCE when the widget is first added to the tree.
+    // We use listen: false because we are not in a builder.
+    BlocProvider.of<SpaceBloc>(
+      context,
+      listen: false,
+    ).add(Initialize(screenSize: widget.originalSize));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var size = originalSize;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        BlocProvider.of<SpaceBloc>(context).add(Initialize(screenSize: size));
-        return _Space(child: child);
-      },
-    );
+    // The build method now *only* builds the UI.
+    // It no longer sends events.
+    // The LayoutBuilder was redundant, so we can remove it.
+    return _Space(child: widget.child);
   }
 }
 
@@ -60,29 +76,46 @@ class _Space extends StatelessWidget {
             var bloc = BlocProvider.of<SpaceBloc>(context);
             // This Listener captures mouse wheel scroll and touch drag events
             // to control the camera animation.
-            return Listener(
-              onPointerSignal: (event) {
-                if (event is PointerScrollEvent) {
-                  bloc.add(Scroll(event.scrollDelta.dy));
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final newSize = Size(
+                  constraints.maxWidth,
+                  constraints.maxHeight,
+                );
+
+                // Check if the size has *actually* changed to avoid event spam
+                if (newSize != bloc.screenSize) {
+                  // Send event *after* the build
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    bloc.add(Resize(newSize));
+                  });
                 }
-              },
-              onPointerMove: (event) {
-                bloc.add(Scroll(event.delta.dy));
-              },
-              child: Stack(
-                children: [
-                  Container(
-                    width: bloc.screenSize.width,
-                    height: bloc.screenSize.height,
-                    color: Colors.black,
-                    child: HtmlElementView(
-                      viewType: bloc.three3dRender.textureId!.toString(),
-                    ),
+
+                return Listener(
+                  onPointerSignal: (event) {
+                    if (event is PointerScrollEvent) {
+                      bloc.add(Scroll(event.scrollDelta.dy));
+                    }
+                  },
+                  onPointerMove: (event) {
+                    bloc.add(Scroll(event.delta.dy));
+                  },
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: bloc.screenSize.width,
+                        height: bloc.screenSize.height,
+                        color: Colors.black,
+                        child: HtmlElementView(
+                          viewType: bloc.three3dRender.textureId!.toString(),
+                        ),
+                      ),
+                      _PortfolioOverlays(bloc: bloc),
+                      child,
+                    ],
                   ),
-                  _PortfolioOverlays(bloc: bloc),
-                  child,
-                ],
-              ),
+                );
+              },
             );
         }
       },

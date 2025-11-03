@@ -26,3 +26,8 @@ final class Rotate extends SpaceEvent {
 
   Rotate(this.x, this.y, this.z, this.w);
 }
+
+final class Resize extends SpaceEvent {
+  final Size newSize;
+  Resize(this.newSize);
+}

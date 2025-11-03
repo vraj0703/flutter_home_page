@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gl/flutter_gl.dart';
 import 'package:three_dart/three_dart.dart' as three;
@@ -39,6 +40,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   late three.Points stars;
   late three.AmbientLight ambientLight;
   late three.DirectionalLight directionalLight;
+  late three.LineSegments myNameText;
+  late three.LineBasicMaterial myNameTextMaterial;
 
   // Post-processing
   late EffectComposer1 composer;
@@ -62,6 +65,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     on<Load>(_load);
     on<Scroll>(_onScroll);
     on<Rotate>(_rotate);
+    on<Resize>(_onResize);
   }
 
   FutureOr<void> _initialize(Initialize event, Emitter<SpaceState> emit) async {
@@ -100,13 +104,61 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     _initCamera();
     await _addBackground();
     _addLights();
+    await _addMyName();
     var sunGeometry = await _addSun();
     var planetGeometry = await _addPlanet();
     _addStarField();
     _addOccluders(planetGeometry, sunGeometry);
     _initPostProcessing();
-    _animate();
+    SchedulerBinding.instance.addPersistentFrameCallback(
+      _onFrame,
+    );
     emit(SpaceLoaded());
+  }
+
+  FutureOr<void> _onResize(Resize event, Emitter<SpaceState> emit) async {
+    if (state is! SpaceLoaded) return; // Don't resize if not loaded
+
+    log('[3D Debug] Resizing...', name: 'SpaceBloc');
+
+    screenSize = event.newSize;
+    width = screenSize.width;
+    height = screenSize.height;
+    // You might need to re-check DPR, but size is the main thing
+    var dpr =
+        WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+
+    // 1. Update Camera
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+
+    // 2. Update Renderer
+    renderer?.setSize(width, height, false);
+
+    // 3. Update Composers
+    final size = renderer!.getSize(three.Vector2(0, 0));
+    final composerSize = three.Vector2(size.width * dpr, size.height * dpr);
+    final fAspect = (size.width * dpr) / (size.height * dpr);
+
+    composer.setSize(composerSize.width.toInt(), composerSize.height.toInt());
+    godraysComposer.setSize(
+      composerSize.width.toInt(),
+      composerSize.height.toInt(),
+    );
+    bloomPass.setSize(composerSize.width.toInt(), composerSize.height.toInt());
+
+    // 4. Update Shader Uniforms
+    godRayGeneratePass.uniforms['fAspect']['value'] = fAspect;
+  }
+
+  // This is your new "game loop" entry point
+  void _onFrame(Duration timeStamp) {
+    if (disposed) return;
+
+    _updateAndRender(); // Call your existing animation logic
+
+    // The scheduler will call _onFrame again for the next frame.
+    // We don't need to schedule it ourselves.
   }
 
   void _initPostProcessing() {
@@ -175,7 +227,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     }
   }
 
-  void _animate() {
+  void _updateAndRender() {
     print('[3D Debug] _animate');
     if (disposed) return;
 
@@ -211,6 +263,29 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     // Keep the occluder sun's position in sync
     sunOccluder.position.copy(sun.position);
 
+    // --- ADD THIS BLOCK (Text Animation) ---
+    double textProgress;
+    final scrollValue = _scrollCurrent;
+
+    if (scrollValue < 0.2) {
+      textProgress = 0.0;
+    } else if (scrollValue <= 0.5) {
+      // Fade IN: 0.2 -> 0.5
+      textProgress = ((scrollValue - 0.2) / 0.3).clamp(0.0, 1.0);
+    } else if (scrollValue <= 0.7) {
+      // Fade OUT: 0.5 -> 0.7
+      textProgress = (1.0 - ((scrollValue - 0.5) / 0.2)).clamp(0.0, 1.0);
+    } else {
+      textProgress = 0.0;
+    }
+
+    // Apply the progress to opacity and scale
+    myNameText.material.opacity = textProgress;
+    myNameText.scale.set(textProgress, textProgress, textProgress);
+
+    // Make the 3D text always face the camera
+    myNameText.lookAt(camera.position);
+
     // Update the sun's screen-space position for the God Rays shader
     final sunPosition = three.Vector3().copy(sun.position);
     sunPosition.project(camera);
@@ -227,8 +302,6 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     godraysComposer.render(delta);
     composer.render(delta);
     _render();
-
-    Future.delayed(const Duration(milliseconds: 16), _animate);
   }
 
   void _render() {
@@ -246,10 +319,45 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
   void dispose() {
     print('[3D Debug] dispose: Disposing controllers and plugin.');
+    //SchedulerBinding.instance.cancelFrameCallbackWithId(_onFrame);
     disposed = true;
-    stars.geometry?.dispose();
-    stars.material?.dispose();
+
+    // Dispose Notifier
     scrollNotifier.dispose();
+
+    // Dispose Geometries
+    planet.geometry?.dispose();
+    sun.geometry?.dispose();
+    backgroundSphere.geometry?.dispose();
+    stars.geometry?.dispose();
+    myNameText.geometry?.dispose();
+    // occluder and sunOccluder share geometry, so they are already covered.
+
+    // Dispose Materials
+    planet.material?.dispose();
+    sun.material?.dispose();
+    backgroundSphere.material?.dispose();
+    stars.material?.dispose();
+    myNameText.material?.dispose();
+    occluder.material?.dispose();
+    sunOccluder.material?.dispose();
+
+    // Dispose Textures (if you have references to them)
+    // The loader caches textures, but if you have a direct reference:
+    // (await loader.loadAsync("..."))
+    // You should dispose them.
+    // e.g., (backgroundSphere.material as three.MeshBasicMaterial).map?.dispose();
+    // (planet.material as three.MeshStandardMaterial).map?.dispose();
+
+    // Dispose Post-Processing
+    //composer.dispose();
+    //godraysComposer.dispose();
+    bloomPass.dispose();
+    //godRayGeneratePass.dispose();
+    //godRayCombinePass.dispose();
+    // The render passes added to composers are usually disposed by the composer.
+
+    // Dispose Renderer and Plugin
     renderer?.dispose();
     three3dRender.dispose();
   }
@@ -391,5 +499,56 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     sunOccluder = three.Mesh(sunGeometry, sunOcclusionMaterial); // <-- ADDED
     sunOccluder.position.copy(sun.position); // <-- ADDED
     godraysScene.add(sunOccluder);
+  }
+
+  Future<void> _addMyName() async {
+    // 1. Load the 3D font
+    final font = await three.FontLoader(
+      null,
+    ).loadAsync('assets/mono.json');
+
+    // 2. Create the Text Geometry
+    final textGeometry = three.TextGeometry(
+      'Vishal Raj', // <-- Your name
+      {
+        "font": font,
+        "size": 10, // <-- INCREASED SIZE (was 1)
+        "height": 1, // Thinner
+        "curveSegments": 32,
+      },
+    );
+    // 3. Center the Geometry
+    textGeometry.computeBoundingBox();
+    final centerOffset = three.Vector3(
+      (textGeometry.boundingBox!.max.x - textGeometry.boundingBox!.min.x) *
+          -0.5,
+      (textGeometry.boundingBox!.max.y - textGeometry.boundingBox!.min.y) *
+          -0.5,
+      (textGeometry.boundingBox!.max.z - textGeometry.boundingBox!.min.z) *
+          -0.5,
+    );
+    textGeometry.translate(centerOffset.x, centerOffset.y, centerOffset.z);
+
+    // 4. --- NEW: Create EdgesGeometry from the TextGeometry
+    // This creates the wireframe/outline
+    final edgesGeometry = three.EdgesGeometry(textGeometry, null);
+
+    // --- NEW: Dispose the original TextGeometry to save memory
+    textGeometry.dispose();
+
+    // 5. Create the white LINE material
+    myNameTextMaterial = three.LineBasicMaterial({
+      'color': 0xffffff, // White
+      'transparent': true, // For fade animation
+      'opacity': 0.0, // Start invisible
+    });
+
+    // 6. Create the final LineSegments object
+    myNameText = three.LineSegments(edgesGeometry, myNameTextMaterial);
+
+    // 7. Set its static position
+    myNameText.position.set(0, 180, 150);
+
+    scene.add(myNameText);
   }
 }
