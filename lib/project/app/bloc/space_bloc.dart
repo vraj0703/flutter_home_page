@@ -52,8 +52,10 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   double _scrollTarget = 0.0;
   double _scrollCurrent = 0.0;
   final _origin = three.Vector3(0, 0, 0);
+  var loader = three.TextureLoader(null);
 
   bool disposed = false;
+  final scrollNotifier = ValueNotifier<double>(0.0);
 
   SpaceBloc() : super(SpaceInitial()) {
     on<Initialize>(_initialize);
@@ -95,110 +97,14 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     _initRenderer();
     scene = three.Scene();
     godraysScene = three.Scene();
-
-    camera = three.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 6);
-    scene.add(camera);
-
-    var loader = three.TextureLoader(null);
-
-    final backgroundTexture = await loader.loadAsync("assets/stars.jpg");
-    final backgroundGeometry = three.SphereGeometry(500, 64, 32);
-    final backgroundMaterial = three.MeshBasicMaterial({
-      'map': backgroundTexture,
-      'side': three.BackSide,
-    });
-    backgroundSphere = three.Mesh(backgroundGeometry, backgroundMaterial);
-    backgroundSphere.quaternion.set(-0.2, -0.5, 0.9, 0.4);
-    scene.add(backgroundSphere);
-
-    ambientLight = three.AmbientLight(0xffffff, 0.05);
-    scene.add(ambientLight);
-
-    directionalLight = three.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(0, 100, 150);
-    scene.add(directionalLight);
-
-    final sunGeometry = three.SphereGeometry(12, 80, 80);
-    final glowingMaterial = three.MeshStandardMaterial({
-      'color': 0xffffff,
-      'emissive': 0xffffff,
-      // Emissive color also > 1
-      'toneMapped': false,
-      // Important: disable tone mapping for this material
-    });
-    glowingMaterial.emissiveIntensity = 2;
-    sun = three.Mesh(sunGeometry, glowingMaterial);
-    sun.position.copy(directionalLight.position);
-    scene.add(sun);
-
-    final planetTexture = await loader.loadAsync("assets/planet.jpg");
-    final planetGeometry = three.SphereGeometry(1.3, 256, 256);
-    final planetMaterial = three.MeshStandardMaterial({
-      'map': planetTexture,
-      'roughness': 0.6,
-      'metalness': 0.4,
-    });
-    planet = three.Mesh(planetGeometry, planetMaterial);
-    scene.add(planet);
-
-    // --- ADD STARFIELD ---
-    final int starCount = 5000;
-    final positions = Float32Array(starCount * 3);
-    final random = math.Random();
-    final spawnRadius = 450.0; // Must be less than backgroundSphere (500)
-
-    for (int i = 0; i < starCount; i++) {
-      final i3 = i * 3;
-
-      // Get a random point on a sphere, then move it out
-      // This creates a more natural, less "boxy" distribution
-      final phi = random.nextDouble() * 2 * math.pi;
-      final theta = math.acos((random.nextDouble() * 2) - 1);
-
-      // Give a random distance, but not from 0, so it's a thick shell
-      final r = 200 + random.nextDouble() * (spawnRadius - 200);
-
-      positions[i3] = r * math.sin(theta) * math.cos(phi); // x
-      positions[i3 + 1] = r * math.sin(theta) * math.sin(phi); // y
-      positions[i3 + 2] = r * math.cos(theta); // z
-    }
-
-    final starGeometry = three.BufferGeometry();
-    starGeometry.setAttribute(
-      'position',
-      three.Float32BufferAttribute(positions, 3),
-    );
-
-    final starMaterial = three.PointsMaterial({
-      'color': 0xffffff,
-      'size': 1.0,
-      'sizeAttenuation': true, // Stars far away are smaller
-      'blending': three.AdditiveBlending, // Makes stars glow
-      'transparent': true,
-      'depthWrite': false, // Prevents render artifacts with transparency
-    });
-
-    stars = three.Points(starGeometry, starMaterial);
-    scene.add(stars);
-
-    // --- Occluders (For God Ray Scene) ---
-    // 1. Black Planet
-    final occluderMaterial = three.MeshBasicMaterial({'color': 0x000000});
-    occluder = three.Mesh(planetGeometry, occluderMaterial);
-    godraysScene.add(occluder); // <-- Add to godraysScene
-
-    // 2. White Sun
-    final sunOcclusionMaterial = three.MeshBasicMaterial({
-      'color': 0xffffff, // <-- White
-      'toneMapped': false,
-    });
-    sunOccluder = three.Mesh(sunGeometry, sunOcclusionMaterial); // <-- ADDED
-    sunOccluder.position.copy(sun.position); // <-- ADDED
-    godraysScene.add(sunOccluder);
-
+    _initCamera();
+    await _addBackground();
+    _addLights();
+    var sunGeometry = await _addSun();
+    var planetGeometry = await _addPlanet();
+    _addStarField();
+    _addOccluders(planetGeometry, sunGeometry);
     _initPostProcessing();
-
     _animate();
     emit(SpaceLoaded());
   }
@@ -277,6 +183,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     final elapsedTime = _clock.getElapsedTime();
 
     _scrollCurrent += (_scrollTarget - _scrollCurrent) * 0.05;
+    scrollNotifier.value = _scrollCurrent;
 
     planet.rotation.y += 0.0005;
     occluder.rotation.y = planet.rotation.y;
@@ -342,6 +249,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     disposed = true;
     stars.geometry?.dispose();
     stars.material?.dispose();
+    scrollNotifier.dispose();
     renderer?.dispose();
     three3dRender.dispose();
   }
@@ -365,5 +273,123 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     backgroundSphere.quaternion.set(event.x, event.y, event.z, event.w);
     //backgroundSphere.rotation.set(event.x * three.Math.pi, event.y* three.Math.pi, event.z* three.Math.pi);
     _render();
+  }
+
+  _initCamera() {
+    camera = three.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 0, 6);
+    scene.add(camera);
+  }
+
+  Future<void> _addBackground() async {
+    final backgroundTexture = await loader.loadAsync("assets/stars.jpg");
+    final backgroundGeometry = three.SphereGeometry(500, 64, 32);
+    final backgroundMaterial = three.MeshBasicMaterial({
+      'map': backgroundTexture,
+      'side': three.BackSide,
+    });
+    backgroundSphere = three.Mesh(backgroundGeometry, backgroundMaterial);
+    backgroundSphere.quaternion.set(-0.2, -0.5, 0.9, 0.4);
+    scene.add(backgroundSphere);
+  }
+
+  _addLights() {
+    ambientLight = three.AmbientLight(0xffffff, 0.05);
+    scene.add(ambientLight);
+
+    directionalLight = three.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(0, 100, 150);
+    scene.add(directionalLight);
+  }
+
+  Future<three.SphereGeometry> _addSun() async {
+    final sunGeometry = three.SphereGeometry(12, 80, 80);
+    final glowingMaterial = three.MeshStandardMaterial({
+      'color': 0xffffff,
+      'emissive': 0xffffff,
+      // Emissive color also > 1
+      'toneMapped': false,
+      // Important: disable tone mapping for this material
+    });
+    glowingMaterial.emissiveIntensity = 2;
+    sun = three.Mesh(sunGeometry, glowingMaterial);
+    sun.position.copy(directionalLight.position);
+    scene.add(sun);
+    return sunGeometry;
+  }
+
+  Future<three.SphereGeometry> _addPlanet() async {
+    final planetTexture = await loader.loadAsync("assets/planet.jpg");
+    final planetGeometry = three.SphereGeometry(1.3, 256, 256);
+    final planetMaterial = three.MeshStandardMaterial({
+      'map': planetTexture,
+      'roughness': 0.6,
+      'metalness': 0.4,
+    });
+    planet = three.Mesh(planetGeometry, planetMaterial);
+    scene.add(planet);
+    return planetGeometry;
+  }
+
+  _addStarField() {
+    // --- ADD STARFIELD ---
+    final int starCount = 500;
+    final positions = Float32Array(starCount * 3);
+    final random = math.Random();
+    final spawnRadius = 450.0; // Must be less than backgroundSphere (500)
+
+    for (int i = 0; i < starCount; i++) {
+      final i3 = i * 3;
+
+      // Get a random point on a sphere, then move it out
+      // This creates a more natural, less "boxy" distribution
+      final phi = random.nextDouble() * 2 * math.pi;
+      final theta = math.acos((random.nextDouble() * 2) - 1);
+
+      // Give a random distance, but not from 0, so it's a thick shell
+      final r = 200 + random.nextDouble() * (spawnRadius - 200);
+
+      positions[i3] = r * math.sin(theta) * math.cos(phi); // x
+      positions[i3 + 1] = r * math.sin(theta) * math.sin(phi); // y
+      positions[i3 + 2] = r * math.cos(theta); // z
+    }
+
+    final starGeometry = three.BufferGeometry();
+    starGeometry.setAttribute(
+      'position',
+      three.Float32BufferAttribute(positions, 3),
+    );
+
+    final starMaterial = three.PointsMaterial({
+      'color': 0xffffff,
+      'size': 1.0,
+      'sizeAttenuation': true, // Stars far away are smaller
+      'blending': three.AdditiveBlending, // Makes stars glow
+      'transparent': true,
+      'depthWrite': false, // Prevents render artifacts with transparency
+    });
+
+    stars = three.Points(starGeometry, starMaterial);
+    scene.add(stars);
+  }
+
+  _addOccluders(
+    three.SphereGeometry planetGeometry,
+    three.SphereGeometry sunGeometry,
+  ) {
+    // --- Occluders (For God Ray Scene) ---
+    // 1. Black Planet
+    final occluderMaterial = three.MeshBasicMaterial({'color': 0x000000});
+    occluder = three.Mesh(planetGeometry, occluderMaterial);
+    godraysScene.add(occluder); // <-- Add to godraysScene
+
+    // 2. White Sun
+    final sunOcclusionMaterial = three.MeshBasicMaterial({
+      'color': 0xffffff, // <-- White
+      'toneMapped': false,
+    });
+    sunOccluder = three.Mesh(sunGeometry, sunOcclusionMaterial); // <-- ADDED
+    sunOccluder.position.copy(sun.position); // <-- ADDED
+    godraysScene.add(sunOccluder);
   }
 }
