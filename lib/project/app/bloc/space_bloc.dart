@@ -531,9 +531,9 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     // 3. Create the Text Geometry
     final textGeometry = three.TextGeometry('Vishal Raj', {
       "font": font,
-      "size": 12,
-      "height": 0.2,
-      "curveSegments": 12,
+      "size": 15,
+      "height": 5,
+      "curveSegments": 100,
     });
 
     // 4. Center the Geometry
