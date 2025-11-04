@@ -552,9 +552,9 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     // This version adds curveRadiusZ as a depth multiplier
 
     // Tweak these radii: Larger = less curve
-    final curveRadiusX = 50.0; // Horizontal curve
+    final curveRadiusX = 200.0; // Horizontal curve
     final curveRadiusY = 150.0;  // Vertical curve
-    final curveRadiusZ = 2.0;   // <-- NEW: Depth multiplier. 1.0 = normal
+    final curveRadiusZ = 4.0;   // <-- NEW: Depth multiplier. 1.0 = normal
 
     final position = textGeometry.attributes['position'];
     final vertex = three.Vector3(0, 0, 0);
@@ -603,8 +603,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
     // Common settings
     final double intensity = 8.0;
-    final double distance = 50.0;
-    final double angle = math.pi / 2.2;
+    final double distance = 100.0;
+    final double angle = math.pi / 2;
     final double penumbra = 0.8;
     final double decay = 1.0;
 
@@ -631,9 +631,9 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
     // --- Aim the lights (no change needed here) ---
     myNameText.add(lightCenter.target!);
-    lightLeft.target!.position.set(-20, 0, 0);
+    lightLeft.target!.position.set(-40, 0, 40);
     myNameText.add(lightLeft.target!);
-    lightRight.target!.position.set(20, 0, 0);
+    lightRight.target!.position.set(40, 0, 40);
     myNameText.add(lightRight.target!);
 
     scene.add(myNameText);
