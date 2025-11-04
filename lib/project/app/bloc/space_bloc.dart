@@ -19,6 +19,9 @@ part 'space_event.dart';
 part 'space_state.dart';
 
 class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
+  static const int LAYER_SCENE = 0;
+  static const int LAYER_TEXT = 1;
+
   late Size screenSize;
 
   late FlutterGlPlugin three3dRender;
@@ -40,8 +43,15 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   late three.Points stars;
   late three.AmbientLight ambientLight;
   late three.DirectionalLight directionalLight;
-  late three.LineSegments myNameText;
-  late three.LineBasicMaterial myNameTextMaterial;
+
+  late three.Mesh myNameText;
+  late three.MeshStandardMaterial myNameTextMaterial; // <-- Back to Standard
+
+  // --- ADD/UPDATE THESE ---
+  late three.Texture myNameTexture; // For your 'diffuse.jpg'
+  late three.Texture myNameNormalMap;
+  late three.Texture myNameRoughnessMap; // From 'glossiness.png'
+  late three.Texture myNameAlphaMap; // From 'opacity.png'
 
   // Post-processing
   late EffectComposer1 composer;
@@ -110,9 +120,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     _addStarField();
     _addOccluders(planetGeometry, sunGeometry);
     _initPostProcessing();
-    SchedulerBinding.instance.addPersistentFrameCallback(
-      _onFrame,
-    );
+    SchedulerBinding.instance.addPersistentFrameCallback(_onFrame);
     emit(SpaceLoaded());
   }
 
@@ -386,6 +394,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   _initCamera() {
     camera = three.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(0, 0, 6);
+    camera.layers.enableAll();
     scene.add(camera);
   }
 
@@ -397,16 +406,19 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
       'side': three.BackSide,
     });
     backgroundSphere = three.Mesh(backgroundGeometry, backgroundMaterial);
+    backgroundSphere.layers.set(LAYER_SCENE);
     backgroundSphere.quaternion.set(-0.2, -0.5, 0.9, 0.4);
     scene.add(backgroundSphere);
   }
 
   _addLights() {
     ambientLight = three.AmbientLight(0xffffff, 0.05);
+    ambientLight.layers.set(LAYER_SCENE);
     scene.add(ambientLight);
 
     directionalLight = three.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(0, 100, 150);
+    directionalLight.layers.set(LAYER_SCENE);
     scene.add(directionalLight);
   }
 
@@ -422,6 +434,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     glowingMaterial.emissiveIntensity = 2;
     sun = three.Mesh(sunGeometry, glowingMaterial);
     sun.position.copy(directionalLight.position);
+    sun.layers.set(LAYER_SCENE);
     scene.add(sun);
     return sunGeometry;
   }
@@ -435,6 +448,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
       'metalness': 0.4,
     });
     planet = three.Mesh(planetGeometry, planetMaterial);
+    planet.layers.set(LAYER_SCENE);
     scene.add(planet);
     return planetGeometry;
   }
@@ -478,6 +492,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     });
 
     stars = three.Points(starGeometry, starMaterial);
+    stars.layers.set(LAYER_SCENE);
     scene.add(stars);
   }
 
@@ -505,19 +520,23 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     // 1. Load the 3D font
     final font = await three.FontLoader(
       null,
-    ).loadAsync('assets/mono.json');
+    ).loadAsync('assets/bigblue.json');
 
-    // 2. Create the Text Geometry
-    final textGeometry = three.TextGeometry(
-      'Vishal Raj', // <-- Your name
-      {
-        "font": font,
-        "size": 10, // <-- INCREASED SIZE (was 1)
-        "height": 1, // Thinner
-        "curveSegments": 32,
-      },
-    );
-    // 3. Center the Geometry
+    // 2. Load ALL your textures
+    // !! Assumes you still have diffuse.jpg for color !!
+    myNameTexture = await loader.loadAsync("assets/decal_opacity.png");
+    myNameNormalMap = await loader.loadAsync("assets/decal_normal.png");
+    myNameRoughnessMap = await loader.loadAsync("assets/decal_glossiness.png");
+
+    // 3. Create the Text Geometry
+    final textGeometry = three.TextGeometry('Vishal Raj', {
+      "font": font,
+      "size": 12,
+      "height": 0.2,
+      "curveSegments": 12,
+    });
+
+    // 4. Center the Geometry
     textGeometry.computeBoundingBox();
     final centerOffset = three.Vector3(
       (textGeometry.boundingBox!.max.x - textGeometry.boundingBox!.min.x) *
@@ -529,25 +548,93 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     );
     textGeometry.translate(centerOffset.x, centerOffset.y, centerOffset.z);
 
-    // 4. --- NEW: Create EdgesGeometry from the TextGeometry
-    // This creates the wireframe/outline
-    final edgesGeometry = three.EdgesGeometry(textGeometry, null);
+    // 5. --- NEW: BEND THE GEOMETRY (Ellipsoidal) ---
+    // This version adds curveRadiusZ as a depth multiplier
 
-    // --- NEW: Dispose the original TextGeometry to save memory
-    textGeometry.dispose();
+    // Tweak these radii: Larger = less curve
+    final curveRadiusX = 50.0; // Horizontal curve
+    final curveRadiusY = 150.0;  // Vertical curve
+    final curveRadiusZ = 2.0;   // <-- NEW: Depth multiplier. 1.0 = normal
 
-    // 5. Create the white LINE material
-    myNameTextMaterial = three.LineBasicMaterial({
-      'color': 0xffffff, // White
-      'transparent': true, // For fade animation
-      'opacity': 0.0, // Start invisible
+    final position = textGeometry.attributes['position'];
+    final vertex = three.Vector3(0, 0, 0);
+
+    for (int i = 0; i < position.count; i++) {
+      vertex.fromBufferAttribute(position, i); // Get vertex (x, y, z)
+
+      // Calculate angles for X and Y
+      final angleX = vertex.x / curveRadiusX;
+      final angleY = vertex.y / curveRadiusY;
+
+      // --- FIX: Calculate newX AND newY ---
+      final newX = math.sin(angleX) * curveRadiusX;
+      final newY = math.sin(angleY) * curveRadiusY; // <-- This creates the Y-bend
+
+      // Calculate the new Z depth from both curves
+      final zDepth = (1 - math.cos(angleX)) * curveRadiusX +
+          (1 - math.cos(angleY)) * curveRadiusY;
+
+      // Apply the new Z-depth multiplier
+      final newZ = zDepth * curveRadiusZ;
+
+      // Set the new, curved position
+      position.setXYZ(i, newX, newY, newZ); // <-- Use newY here
+    }
+
+    // We changed the vertices, so we must re-calculate the normals
+    textGeometry.computeVertexNormals();
+
+    // 5. Create the new PBR material
+    myNameTextMaterial = three.MeshStandardMaterial({
+      'map': myNameTexture,
+      'normalMap': myNameNormalMap,
+      'roughnessMap': myNameRoughnessMap,
+      'transparent': true, // <-- Still needed for the 'opacity' fade animation
+      'opacity': 0.0,
+      'metalness': 0.7,
     });
-
-    // 6. Create the final LineSegments object
-    myNameText = three.LineSegments(edgesGeometry, myNameTextMaterial);
+    // 6. Create the final Mesh object
+    myNameText = three.Mesh(textGeometry, myNameTextMaterial);
 
     // 7. Set its static position
-    myNameText.position.set(0, 180, 150);
+    myNameText.position.set(0, 200, 150);
+
+    // 9. ADD 3 SpotLights (Adjusted for curve)
+
+    // Common settings
+    final double intensity = 8.0;
+    final double distance = 50.0;
+    final double angle = math.pi / 2.2;
+    final double penumbra = 0.8;
+    final double decay = 1.0;
+
+    // Light 1: Bottom Center
+    final lightCenter = three.SpotLight(
+        0xffffff, intensity, distance, angle, penumbra, decay);
+    // Position: Moved CLOSER to light the "deep" center
+    lightCenter.position.set(0, -25, 15); // <-- z was 20
+    myNameText.add(lightCenter);
+
+    // Light 2: Bottom Left
+    final lightLeft = three.SpotLight(
+        0xffffff, intensity, distance, angle, penumbra, decay);
+    // Position: Moved FURTHER to light the "shallow" edge
+    lightLeft.position.set(-20, -20, 25); // <-- z was 20
+    myNameText.add(lightLeft);
+
+    // Light 3: Bottom Right
+    final lightRight = three.SpotLight(
+        0xffffff, intensity, distance, angle, penumbra, decay);
+    // Position: Moved FURTHER to light the "shallow" edge
+    lightRight.position.set(20, -20, 25); // <-- z was 20
+    myNameText.add(lightRight);
+
+    // --- Aim the lights (no change needed here) ---
+    myNameText.add(lightCenter.target!);
+    lightLeft.target!.position.set(-20, 0, 0);
+    myNameText.add(lightLeft.target!);
+    lightRight.target!.position.set(20, 0, 0);
+    myNameText.add(lightRight.target!);
 
     scene.add(myNameText);
   }
