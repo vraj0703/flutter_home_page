@@ -182,33 +182,50 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
     log('[3D Debug] Resizing...', name: 'SpaceBloc');
 
+    // --- 1. Get New Logical Size ---
     screenSize = event.newSize;
     width = screenSize.width;
     height = screenSize.height;
-    // You might need to re-check DPR, but size is the main thing
-    var dpr =
+
+    // --- 2. Get New Pixel Ratio ---
+    dpr =
         WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
 
-    // 1. Update Camera
+    //print('[3D Debug] _onResize newDpr: $dpr, width: $width, height: $height');
+
+    if (width <= 0 || height <= 0) {
+      log('[3D Debug] Invalid resize dimensions, skipping.', name: 'SpaceBloc');
+      return;
+    }
+
+    // --- 4. Update Camera (uses logical size) ---
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
-    // 2. Update Renderer
+    // --- 5. Update Renderer (uses logical size) ---
+    renderer?.setPixelRatio(dpr); // Tell renderer the new DPR
     renderer?.setSize(width, height, false);
 
-    // 3. Update Composers
-    final size = renderer!.getSize(three.Vector2(0, 0));
-    final composerSize = three.Vector2(size.width * dpr, size.height * dpr);
-    final fAspect = (size.width * dpr) / (size.height * dpr);
+    // --- 6. Update Composers (uses logical size) ---
+    // CRITICAL FIX: Pass the LOGICAL width and height.
+    // The composer will read the dpr from the renderer and
+    // calculate the physical size internally.
+    composer.setPixelRatio(dpr);
+    composer.setSize(width.toInt(), height.toInt());
 
-    composer.setSize(composerSize.width.toInt(), composerSize.height.toInt());
-    godraysComposer.setSize(
-      composerSize.width.toInt(),
-      composerSize.height.toInt(),
-    );
-    bloomPass.setSize(composerSize.width.toInt(), composerSize.height.toInt());
+    godraysComposer.setPixelRatio(dpr);
+    godraysComposer.setSize(width.toInt(), height.toInt());
+    bloomPass.setSize(width.toInt(), height.toInt()); // Pass logical size
 
-    // 4. Update Shader Uniforms
+    // --- 7. Update Shader Uniforms ---
+    // The aspect ratio should be based on the PHYSICAL size
+    final physicalWidth = (width * dpr).toInt();
+    final physicalHeight = (height * dpr).toInt();
+    final fAspect = physicalWidth / physicalHeight;
+
+    three3dRender.element.width = physicalWidth;
+    three3dRender.element.height = physicalHeight;
+
     godRayGeneratePass.uniforms['fAspect']['value'] = fAspect;
   }
 

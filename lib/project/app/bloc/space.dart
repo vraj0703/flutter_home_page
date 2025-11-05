@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/space_bloc.dart';
 import 'package:flutter/gestures.dart';
+import 'package:lottie/lottie.dart';
 
 class SpaceScene extends StatelessWidget {
   final Widget child;
@@ -70,54 +71,75 @@ class _Space extends StatelessWidget {
     return BlocBuilder<SpaceBloc, SpaceState>(
       builder: (context, state) {
         switch (state) {
+          case SpaceLoading():
           case SpaceInitial():
             return const Center(child: CircularProgressIndicator());
           case SpaceLoaded():
             var bloc = BlocProvider.of<SpaceBloc>(context);
             // This Listener captures mouse wheel scroll and touch drag events
             // to control the camera animation.
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final newSize = Size(
-                  constraints.maxWidth,
-                  constraints.maxHeight,
-                );
-
-                // Check if the size has *actually* changed to avoid event spam
-                if (newSize != bloc.screenSize) {
-                  // Send event *after* the build
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    bloc.add(Resize(newSize));
-                  });
-                }
-
-                return Listener(
-                  onPointerSignal: (event) {
-                    if (event is PointerScrollEvent) {
-                      bloc.add(Scroll(event.scrollDelta.dy));
-                    }
-                  },
-                  onPointerMove: (event) {
-                    bloc.add(Scroll(event.delta.dy));
-                  },
-                  child: Stack(
-                    children: [
-                      Container(
-                        width: bloc.screenSize.width,
-                        height: bloc.screenSize.height,
-                        color: Colors.black,
-                        child: HtmlElementView(
-                          viewType: bloc.three3dRender.textureId!.toString(),
-                        ),
-                      ),
-                      _PortfolioOverlays(bloc: bloc),
-                      child,
-                    ],
-                  ),
-                );
-              },
-            );
+            return SpaceBuilder(child: child);
         }
+      },
+    );
+  }
+}
+
+class SpaceBuilder extends StatelessWidget {
+  final Widget child;
+
+  const SpaceBuilder({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    var bloc = BlocProvider.of<SpaceBloc>(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final newSize = Size(constraints.maxWidth, constraints.maxHeight);
+
+        // Check if the size has *actually* changed
+        if (newSize != bloc.screenSize && bloc.state is SpaceLoaded) {
+          // Send event *after* the build to update the 3D camera
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            bloc.add(Resize(newSize));
+          });
+        }
+
+        return Listener(
+          onPointerSignal: (event) {
+            if (event is PointerScrollEvent) {
+              bloc.add(Scroll(event.scrollDelta.dy));
+            }
+          },
+          onPointerMove: (event) {
+            bloc.add(Scroll(event.delta.dy));
+          },
+          child: Stack(
+            children: [
+              Container(
+                // --- FIX #1: USE CONSTRAINTS ---
+                // Use the *current* size from LayoutBuilder,
+                // not the old size from the BLoC state.
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                color: Colors.black,
+
+                // --- FIX #2: USE TEXTURE ---
+                // This is far more performant and handles
+                // resizing better than HtmlElementView.
+                child: HtmlElementView(
+                  viewType: bloc.three3dRender.textureId!.toString(),
+                ),
+                // --- Old Code ---
+                // child: HtmlElementView(
+                //   viewType: bloc.three3dRender.textureId!.toString(),
+                // ),
+              ),
+              _PortfolioOverlays(bloc: bloc),
+              child,
+            ],
+          ),
+        );
       },
     );
   }
@@ -327,6 +349,29 @@ class _PortfolioButton extends StatelessWidget {
             ),
           ),
       child: Text(text),
+    );
+  }
+}
+
+class LottieLoadingScreen extends StatelessWidget {
+  const LottieLoadingScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      // Use black to match the background of your 3D scene
+      color: Colors.black,
+      child: Center(
+        child: Lottie.asset(
+          'assets/wave_lottie.json', // <-- Your asset path
+          width: 250,
+          // Adjust the size as needed
+          height: 250,
+          fit: BoxFit.contain,
+          animate: true,
+          repeat: true,
+        ),
+      ),
     );
   }
 }
