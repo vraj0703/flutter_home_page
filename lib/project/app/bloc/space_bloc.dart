@@ -172,7 +172,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     await _initPostProcessing(); // <-- This will still cause a freeze, but it's the last one.
 
     // Done
-    await Future.delayed(Duration(milliseconds: 1000));
+    await Future.delayed(Duration(milliseconds: 2000));
     SchedulerBinding.instance.addPersistentFrameCallback(_onFrame);
     emit(SpaceLoaded());
   }

@@ -37,50 +37,83 @@ class _SpaceScreen extends StatefulWidget {
   State<_SpaceScreen> createState() => _SpaceScreenState();
 }
 
-class _SpaceScreenState extends State<_SpaceScreen> {
+class _SpaceScreenState extends State<_SpaceScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _lottieFadeController;
+  bool _isSceneBuilt = false;
+
   @override
   void initState() {
     super.initState();
-
-    // --- THIS IS THE FIX ---
-    // We add the Initialize event here, in initState, which runs
-    // only ONCE when the widget is first added to the tree.
-    // We use listen: false because we are not in a builder.
     BlocProvider.of<SpaceBloc>(
       context,
       listen: false,
     ).add(Initialize(screenSize: widget.originalSize));
+
+    _lottieFadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 750), // Fade duration
+      value: 1.0, // Start at full opacity
+    );
+  }
+
+  @override
+  void dispose() {
+    _lottieFadeController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // The build method now *only* builds the UI.
-    // It no longer sends events.
-    // The LayoutBuilder was redundant, so we can remove it.
-    return _Space(child: widget.child);
-  }
-}
+    // This widget now listens AND builds the UI
+    return BlocListener<SpaceBloc, SpaceState>(
+      // --- THIS IS THE FIX ---
+      // The listener now correctly hears the SpaceLoaded state
+      listener: (context, state) {
+        if (state is SpaceLoaded) {
+          // 1. BLoC is loaded. Call setState to build the
+          //    3D scene *behind* the curtain (causes jank).
+          setState(() {
+            _isSceneBuilt = true;
+          });
 
-class _Space extends StatelessWidget {
-  final Widget child;
-
-  const _Space({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<SpaceBloc, SpaceState>(
-      builder: (context, state) {
-        switch (state) {
-          case SpaceLoading():
-          case SpaceInitial():
-            return const Center(child: CircularProgressIndicator());
-          case SpaceLoaded():
-            var bloc = BlocProvider.of<SpaceBloc>(context);
-            // This Listener captures mouse wheel scroll and touch drag events
-            // to control the camera animation.
-            return SpaceBuilder(child: child);
+          // 2. Wait for the janky frame to finish
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // 3. Now, start the smooth fade-out animation
+            _lottieFadeController.reverse();
+          });
         }
       },
+      // --- END FIX ---
+      child: Stack(
+        children: [
+          // --- Layer 1: The 3D Scene (Builds when ready) ---
+          if (_isSceneBuilt) SpaceBuilder(child: widget.child),
+
+          // --- Layer 2: The Lottie Curtain (Fades out) ---
+          // Use a BlocBuilder to get loading messages
+          BlocBuilder<SpaceBloc, SpaceState>(
+            buildWhen: (prev, curr) =>
+                curr is SpaceInitial || curr is SpaceLoading,
+            builder: (context, state) {
+              String? message;
+              if (state is SpaceLoading) {
+                message = state.message;
+              }
+
+              return IgnorePointer(
+                // Ignore pointer when faded out
+                ignoring: _isSceneBuilt && _lottieFadeController.value == 0.0,
+                child: FadeTransition(
+                  opacity: _lottieFadeController,
+                  // Pass the message to the Lottie screen
+                  child: LottieLoadingScreen(message: message),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -354,22 +387,29 @@ class _PortfolioButton extends StatelessWidget {
 }
 
 class LottieLoadingScreen extends StatelessWidget {
-  const LottieLoadingScreen({super.key});
+  final String? message;
+
+  const LottieLoadingScreen({super.key, this.message});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Use black to match the background of your 3D scene
       color: Colors.black,
+      // The FadeTransition is now in the PARENT (_SpaceScreen)
       child: Center(
-        child: Lottie.asset(
-          'assets/wave_lottie.json', // <-- Your asset path
-          width: 250,
-          // Adjust the size as needed
-          height: 250,
-          fit: BoxFit.contain,
-          animate: true,
-          repeat: true,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Lottie.asset(
+              'assets/wave_lottie.json', // Your asset path
+              width: 250,
+              height: 250,
+              fit: BoxFit.contain,
+              animate: true,
+              repeat: true,
+            ),
+          ],
         ),
       ),
     );
