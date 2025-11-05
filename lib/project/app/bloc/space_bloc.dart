@@ -13,6 +13,7 @@ import 'package:three_dart_jsm/three_dart_jsm.dart' as three_jsm;
 import 'bloom_pass.dart';
 import 'effect_composer.dart';
 import 'god_rays.dart';
+import 'helper.dart';
 
 part 'space_event.dart';
 
@@ -45,13 +46,10 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   late three.DirectionalLight directionalLight;
 
   late three.Mesh myNameText;
-  late three.MeshStandardMaterial myNameTextMaterial; // <-- Back to Standard
-
-  // --- ADD/UPDATE THESE ---
-  late three.Texture myNameTexture; // For your 'diffuse.jpg'
+  late three.MeshStandardMaterial myNameTextMaterial;
+  late three.Texture myNameAlphaMap;
+  late three.Texture myNameRoughnessMap;
   late three.Texture myNameNormalMap;
-  late three.Texture myNameRoughnessMap; // From 'glossiness.png'
-  late three.Texture myNameAlphaMap; // From 'opacity.png'
 
   // Post-processing
   late EffectComposer1 composer;
@@ -66,6 +64,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   double _scrollCurrent = 0.0;
   final _origin = three.Vector3(0, 0, 0);
   var loader = three.TextureLoader(null);
+  final _sunPosition = three.Vector3();
+  final _sunScreenPos = three.Vector2();
 
   bool disposed = false;
   final scrollNotifier = ValueNotifier<double>(0.0);
@@ -86,6 +86,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     dpr =
         WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
 
+    await Future.delayed(Duration.zero);
     three3dRender = FlutterGlPlugin();
     Map<String, dynamic> options = {
       "antialias": true,
@@ -94,10 +95,13 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
       "height": height.toInt(),
       "dpr": dpr,
     };
+
     await three3dRender.initialize(options: options);
     await Future.delayed(const Duration(milliseconds: 100));
+
     await three3dRender.prepareContext();
     await Future.delayed(const Duration(milliseconds: 100));
+
     add(Load());
   }
 
@@ -108,18 +112,67 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
   FutureOr<void> _load(Load event, Emitter<SpaceState> emit) async {
     log('[3D Debug] _load', name: 'SpaceBloc');
+    // Stage 1: Init Renderer (Fast)
+    await Future.delayed(Duration.zero); // Let UI update
+    emit(SpaceLoading("Initializing renderer..."));
     _initRenderer();
     scene = three.Scene();
     godraysScene = three.Scene();
+
     _initCamera();
-    await _addBackground();
     _addLights();
-    await _addMyName();
+
+    await Future.delayed(Duration.zero);
+    // Stage 2: Load Assets (Async, non-blocking)
+    emit(SpaceLoading("Loading assets..."));
+    final font = await three.FontLoader(
+      null,
+    ).loadAsync('assets/victormono_bold.json');
+    myNameNormalMap = await loader.loadAsync("assets/decal_normal.png");
+    myNameRoughnessMap = await loader.loadAsync("assets/decal_glossiness.png");
+    myNameAlphaMap = await loader.loadAsync("assets/decal_opacity.png");
+    await Future.delayed(Duration.zero);
+
+    emit(SpaceLoading("Adding main actors..."));
+    await _addBackground();
     var sunGeometry = await _addSun();
     var planetGeometry = await _addPlanet();
-    _addStarField();
-    _addOccluders(planetGeometry, sunGeometry);
-    _initPostProcessing();
+    await Future.delayed(Duration.zero);
+    // Stage 3: Compute Math in Isolates (Async, non-blocking)
+
+    // --- Run Starfield math in isolate ---
+    emit(SpaceLoading("Generating starfield..."));
+    final starfieldData = await compute(computeStarfieldData, {
+      'count': 500,
+      'radius': 450.0,
+    });
+    _addStarField(starfieldData); // Sync
+    await Future.delayed(Duration.zero);
+
+    // --- Run Text geometry math in isolate ---
+    emit(SpaceLoading("Building text geometry..."));
+    final textGeometryData = await compute(computeTextGeometryData, {
+      'font': font,
+      'text': 'Vishal Raj',
+      'curveRadiusX': 200.0,
+      'curveRadiusY': 150.0,
+      'curveRadiusZ': 4.0,
+    });
+    _addMyName(textGeometryData); // Sync
+
+    // Stage 4: Attach to Scene (Fast, on main thread)
+    await Future.delayed(Duration.zero); // Let UI update
+
+    emit(SpaceLoading("Assembling scene..."));
+    _addOccluders(planetGeometry, sunGeometry); // Sync
+
+    // Stage 5: Compile Shaders (This is the LAST remaining freeze)
+    emit(SpaceLoading("Compiling shaders..."));
+    await Future.delayed(Duration.zero);
+    await _initPostProcessing(); // <-- This will still cause a freeze, but it's the last one.
+
+    // Done
+    await Future.delayed(Duration(milliseconds: 1000));
     SchedulerBinding.instance.addPersistentFrameCallback(_onFrame);
     emit(SpaceLoaded());
   }
@@ -169,9 +222,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     // We don't need to schedule it ourselves.
   }
 
-  void _initPostProcessing() {
+  Future<void> _initPostProcessing() async {
     try {
-      print('[3D Debug] _initPostProcessing');
       final size = renderer!.getSize(three.Vector2(0, 0));
       final dpr = renderer!.getPixelRatio();
 
@@ -187,7 +239,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
       // Pass 1: Render the main scene.
       final renderPass = three_jsm.RenderPass(scene, camera, null, null, null);
       renderPass.clear = true;
-      composer.addPass(renderPass);
+      await Future.delayed(Duration.zero);
+      await composer.addPass(renderPass);
 
       bloomPass = UnrealBloomPass1(
         composerSize, // Full screen resolution
@@ -195,7 +248,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
         1, // radius: softer, wider halo
         0.7, // threshold: only objects with high brightness (the sun) will bloom
       );
-      composer.addPass(bloomPass);
+      await Future.delayed(Duration.zero);
+      await composer.addPass(bloomPass);
 
       godraysComposer = EffectComposer1(renderer!, null);
       godraysComposer.renderToScreen = false;
@@ -208,7 +262,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
         null,
       );
       godraysMaskPass.clear = true;
-      godraysComposer.addPass(godraysMaskPass);
+      await Future.delayed(Duration.zero);
+      await godraysComposer.addPass(godraysMaskPass);
 
       // Pass 2: Use the mask to generate god rays
       godRayGeneratePass = three_jsm.ShaderPass(
@@ -217,7 +272,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
       );
       godRayGeneratePass.uniforms['fAspect']['value'] = fAspect;
       godRayGeneratePass.needsSwap = false;
-      godraysComposer.addPass(godRayGeneratePass);
+      await Future.delayed(Duration.zero);
+      await godraysComposer.addPass(godRayGeneratePass);
 
       // Pass 3: Combine the bloomed scene with the god rays
       godRayCombinePass = three_jsm.ShaderPass(
@@ -229,7 +285,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
       godRayCombinePass.uniforms['tGodRays']['value'] =
           godraysComposer.renderTarget1.texture;
       godRayCombinePass.renderToScreen = true;
-      composer.addPass(godRayCombinePass);
+      await Future.delayed(Duration.zero);
+      await composer.addPass(godRayCombinePass);
     } on Exception catch (e) {
       print('[3D Debug] _initPostProcessing: $e');
     }
@@ -295,25 +352,20 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     myNameText.lookAt(camera.position);
 
     // Update the sun's screen-space position for the God Rays shader
-    final sunPosition = three.Vector3().copy(sun.position);
-    sunPosition.project(camera);
+    _sunPosition.copy(sun.position);
+    _sunPosition.project(camera);
 
-    final sunScreenPos = three.Vector2(
-      (sunPosition.x + 1) / 2,
-      (sunPosition.y + 1) / 2,
-    );
+    _sunScreenPos.set((_sunPosition.x + 1) / 2, (_sunPosition.y + 1) / 2);
     // Update the uniform in the generate pass
-    godRayGeneratePass.uniforms['vSunPositionScreen']['value'] = sunScreenPos;
+    godRayGeneratePass.uniforms['vSunPositionScreen']['value'] = _sunScreenPos;
     godRayGeneratePass.uniforms['fTime']['value'] = elapsedTime;
 
     // --- Render ---
     godraysComposer.render(delta);
     composer.render(delta);
-    _render();
   }
 
   void _render() {
-    print('[3D Debug] _render');
     final gl = three3dRender.gl;
 
     gl.flush();
@@ -423,7 +475,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   }
 
   Future<three.SphereGeometry> _addSun() async {
-    final sunGeometry = three.SphereGeometry(12, 80, 80);
+    final sunGeometry = three.SphereGeometry(13, 80, 80);
     final glowingMaterial = three.MeshStandardMaterial({
       'color': 0xffffff,
       'emissive': 0xffffff,
@@ -453,42 +505,20 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     return planetGeometry;
   }
 
-  _addStarField() {
-    // --- ADD STARFIELD ---
-    final int starCount = 500;
-    final positions = Float32Array(starCount * 3);
-    final random = math.Random();
-    final spawnRadius = 450.0; // Must be less than backgroundSphere (500)
-
-    for (int i = 0; i < starCount; i++) {
-      final i3 = i * 3;
-
-      // Get a random point on a sphere, then move it out
-      // This creates a more natural, less "boxy" distribution
-      final phi = random.nextDouble() * 2 * math.pi;
-      final theta = math.acos((random.nextDouble() * 2) - 1);
-
-      // Give a random distance, but not from 0, so it's a thick shell
-      final r = 200 + random.nextDouble() * (spawnRadius - 200);
-
-      positions[i3] = r * math.sin(theta) * math.cos(phi); // x
-      positions[i3 + 1] = r * math.sin(theta) * math.sin(phi); // y
-      positions[i3 + 2] = r * math.cos(theta); // z
-    }
-
+  _addStarField(starfieldData) {
     final starGeometry = three.BufferGeometry();
     starGeometry.setAttribute(
       'position',
-      three.Float32BufferAttribute(positions, 3),
+      three.Float32BufferAttribute(starfieldData, 3),
     );
 
     final starMaterial = three.PointsMaterial({
       'color': 0xffffff,
       'size': 1.0,
-      'sizeAttenuation': true, // Stars far away are smaller
-      'blending': three.AdditiveBlending, // Makes stars glow
+      'sizeAttenuation': true,
+      'blending': three.AdditiveBlending,
       'transparent': true,
-      'depthWrite': false, // Prevents render artifacts with transparency
+      'depthWrite': false,
     });
 
     stars = three.Points(starGeometry, starMaterial);
@@ -516,120 +546,65 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     godraysScene.add(sunOccluder);
   }
 
-  Future<void> _addMyName() async {
-    // 1. Load the 3D font
-    final font = await three.FontLoader(
-      null,
-    ).loadAsync('assets/bigblue.json');
-
-    // 2. Load ALL your textures
-    // !! Assumes you still have diffuse.jpg for color !!
-    myNameTexture = await loader.loadAsync("assets/decal_opacity.png");
-    myNameNormalMap = await loader.loadAsync("assets/decal_normal.png");
-    myNameRoughnessMap = await loader.loadAsync("assets/decal_glossiness.png");
-
-    // 3. Create the Text Geometry
-    final textGeometry = three.TextGeometry('Vishal Raj', {
-      "font": font,
-      "size": 15,
-      "height": 5,
-      "curveSegments": 100,
-    });
-
-    // 4. Center the Geometry
-    textGeometry.computeBoundingBox();
-    final centerOffset = three.Vector3(
-      (textGeometry.boundingBox!.max.x - textGeometry.boundingBox!.min.x) *
-          -0.5,
-      (textGeometry.boundingBox!.max.y - textGeometry.boundingBox!.min.y) *
-          -0.5,
-      (textGeometry.boundingBox!.max.z - textGeometry.boundingBox!.min.z) *
-          -0.5,
-    );
-    textGeometry.translate(centerOffset.x, centerOffset.y, centerOffset.z);
-
-    // 5. --- NEW: BEND THE GEOMETRY (Ellipsoidal) ---
-    // This version adds curveRadiusZ as a depth multiplier
-
-    // Tweak these radii: Larger = less curve
-    final curveRadiusX = 200.0; // Horizontal curve
-    final curveRadiusY = 150.0;  // Vertical curve
-    final curveRadiusZ = 4.0;   // <-- NEW: Depth multiplier. 1.0 = normal
-
-    final position = textGeometry.attributes['position'];
-    final vertex = three.Vector3(0, 0, 0);
-
-    for (int i = 0; i < position.count; i++) {
-      vertex.fromBufferAttribute(position, i); // Get vertex (x, y, z)
-
-      // Calculate angles for X and Y
-      final angleX = vertex.x / curveRadiusX;
-      final angleY = vertex.y / curveRadiusY;
-
-      // --- FIX: Calculate newX AND newY ---
-      final newX = math.sin(angleX) * curveRadiusX;
-      final newY = math.sin(angleY) * curveRadiusY; // <-- This creates the Y-bend
-
-      // Calculate the new Z depth from both curves
-      final zDepth = (1 - math.cos(angleX)) * curveRadiusX +
-          (1 - math.cos(angleY)) * curveRadiusY;
-
-      // Apply the new Z-depth multiplier
-      final newZ = zDepth * curveRadiusZ;
-
-      // Set the new, curved position
-      position.setXYZ(i, newX, newY, newZ); // <-- Use newY here
-    }
-
-    // We changed the vertices, so we must re-calculate the normals
-    textGeometry.computeVertexNormals();
-
-    // 5. Create the new PBR material
+  Future<void> _addMyName(textGeometryData) async {
+    // 1. Create the new PBR material (Fast)
     myNameTextMaterial = three.MeshStandardMaterial({
-      'map': myNameTexture,
+      'color': 0xffffff, // Use color since we don't have a map
       'normalMap': myNameNormalMap,
       'roughnessMap': myNameRoughnessMap,
-      'transparent': true, // <-- Still needed for the 'opacity' fade animation
+      'alphaMap': myNameAlphaMap,
+      'transparent': true,
       'opacity': 0.0,
       'metalness': 0.7,
     });
-    // 6. Create the final Mesh object
-    myNameText = three.Mesh(textGeometry, myNameTextMaterial);
 
-    // 7. Set its static position
+    // 2. Create the final Mesh object (Fast)
+    myNameText = three.Mesh(textGeometryData, myNameTextMaterial);
+
+    // 3. Set its static position (Fast)
     myNameText.position.set(0, 200, 150);
 
-    // 9. ADD 3 SpotLights (Adjusted for curve)
-
-    // Common settings
+    // 4. ADD 3 SpotLights (Fast)
+    // ... (Your existing SpotLight code) ...
     final double intensity = 8.0;
     final double distance = 100.0;
     final double angle = math.pi / 2;
     final double penumbra = 0.8;
     final double decay = 1.0;
-
     // Light 1: Bottom Center
     final lightCenter = three.SpotLight(
-        0xffffff, intensity, distance, angle, penumbra, decay);
-    // Position: Moved CLOSER to light the "deep" center
-    lightCenter.position.set(0, -25, 15); // <-- z was 20
+      0xffffff,
+      intensity,
+      distance,
+      angle,
+      penumbra,
+      decay,
+    );
+    lightCenter.position.set(0, -25, 15);
     myNameText.add(lightCenter);
-
     // Light 2: Bottom Left
     final lightLeft = three.SpotLight(
-        0xffffff, intensity, distance, angle, penumbra, decay);
-    // Position: Moved FURTHER to light the "shallow" edge
-    lightLeft.position.set(-20, -20, 25); // <-- z was 20
+      0xffffff,
+      intensity,
+      distance,
+      angle,
+      penumbra,
+      decay,
+    );
+    lightLeft.position.set(-20, -20, 25);
     myNameText.add(lightLeft);
-
     // Light 3: Bottom Right
     final lightRight = three.SpotLight(
-        0xffffff, intensity, distance, angle, penumbra, decay);
-    // Position: Moved FURTHER to light the "shallow" edge
-    lightRight.position.set(20, -20, 25); // <-- z was 20
+      0xffffff,
+      intensity,
+      distance,
+      angle,
+      penumbra,
+      decay,
+    );
+    lightRight.position.set(20, -20, 25);
     myNameText.add(lightRight);
-
-    // --- Aim the lights (no change needed here) ---
+    // --- Aim the lights ---
     myNameText.add(lightCenter.target!);
     lightLeft.target!.position.set(-40, 0, 40);
     myNameText.add(lightLeft.target!);

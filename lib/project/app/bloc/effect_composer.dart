@@ -70,7 +70,8 @@ class EffectComposer1 {
     writeBuffer = tmp;
   }
 
-  addPass(pass) {
+  Future<void> addPass(pass) async {
+    await Future.delayed(Duration.zero);
     passes.add(pass);
     pass.setSize(
       (_width * _pixelRatio).toInt(),
@@ -119,12 +120,21 @@ class EffectComposer1 {
 
     var pass, i, il = passes.length;
 
+    // Find the last enabled pass index ONCE
+    int lastEnabledPassIndex = -1;
+    for (int j = il - 1; j >= 0; j--) {
+      if (passes[j].enabled) {
+        lastEnabledPassIndex = j;
+        break;
+      }
+    }
+
     for (i = 0; i < il; i++) {
       pass = passes[i];
 
       if (pass.enabled == false) continue;
 
-      pass.renderToScreen = (renderToScreen && isLastEnabledPass(i));
+      pass.renderToScreen = (renderToScreen && i == lastEnabledPassIndex);
       pass.render(
         renderer,
         writeBuffer,

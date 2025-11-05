@@ -29,7 +29,7 @@ uniform float fClamp;
 uniform float fTime; 
 uniform float fAspect;
 
-const int NUM_SAMPLES = 200;
+const int NUM_SAMPLES = 50;
 
 // Simple pseudo-random noise function
 float rand(vec2 co){
