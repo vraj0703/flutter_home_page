@@ -18,16 +18,8 @@ final class Scroll extends SpaceEvent {
   Scroll(this.scrollDelta);
 }
 
-final class Rotate extends SpaceEvent {
-  final double x;
-  final double y;
-  final double z;
-  final double w;
-
-  Rotate(this.x, this.y, this.z, this.w);
-}
-
 final class Resize extends SpaceEvent {
   final Size newSize;
+
   Resize(this.newSize);
 }

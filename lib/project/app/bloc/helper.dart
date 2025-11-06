@@ -3,7 +3,6 @@
 // It only does the math and returns the raw position data.
 import 'package:flutter_gl/native-array/index.dart';
 import 'dart:math' as math;
-import 'package:three_dart/three_dart.dart' as three;
 
 Float32Array computeStarfieldData(Map<String, dynamic> params) {
   final int starCount = params['count'];
@@ -23,54 +22,4 @@ Float32Array computeStarfieldData(Map<String, dynamic> params) {
   }
 
   return positions;
-}
-
-// --- Top-level function for Text Geometry Isolate ---
-// This will run on a separate isolate.
-// It generates, centers, bends, and calculates normals for the text.
-three.BufferGeometry computeTextGeometryData(Map<String, dynamic> params) {
-  // 1. Unpack parameters
-  final three.Font font = params['font'];
-  final String text = params['text'];
-  final double curveRadiusX = params['curveRadiusX'];
-  final double curveRadiusY = params['curveRadiusY'];
-  final double curveRadiusZ = params['curveRadiusZ'];
-
-  // 2. Create the Text Geometry (CPU HEAVY)
-  final textGeometry = three.TextGeometry(text, {
-    "font": font,
-    "size": 15,
-    "height": 5,
-    "curveSegments": 10,
-  });
-
-  // 3. Center the Geometry
-  textGeometry.computeBoundingBox();
-  final centerOffset = three.Vector3(
-    (textGeometry.boundingBox!.max.x - textGeometry.boundingBox!.min.x) * -0.5,
-    (textGeometry.boundingBox!.max.y - textGeometry.boundingBox!.min.y) * -0.5,
-    (textGeometry.boundingBox!.max.z - textGeometry.boundingBox!.min.z) * -0.5,
-  );
-  textGeometry.translate(centerOffset.x, centerOffset.y, centerOffset.z);
-
-  // 4. Bend the Geometry (CPU HEAVY FOR-LOOP)
-  final position = textGeometry.attributes['position'];
-  final vertex = three.Vector3(0, 0, 0);
-
-  for (int i = 0; i < position.count; i++) {
-    vertex.fromBufferAttribute(position, i);
-    final angleX = vertex.x / curveRadiusX;
-    final angleY = vertex.y / curveRadiusY;
-    final newX = math.sin(angleX) * curveRadiusX;
-    final newY = math.sin(angleY) * curveRadiusY;
-    final zDepth = (1 - math.cos(angleX)) * curveRadiusX +
-        (1 - math.cos(angleY)) * curveRadiusY;
-    final newZ = zDepth * curveRadiusZ;
-    position.setXYZ(i, newX, newY, newZ);
-  }
-
-  // 5. Calculate Normals (CPU HEAVY)
-  textGeometry.computeVertexNormals();
-
-  return textGeometry;
 }
