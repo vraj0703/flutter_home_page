@@ -48,7 +48,7 @@ class _SpaceScreenState extends State<_SpaceScreen>
 
     _lottieFadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500), // Fade duration
+      duration: const Duration(milliseconds: 750), // Fade duration
       value: 1.0, // Start at full opacity
     );
   }
@@ -108,14 +108,10 @@ class _LoadingCurtains extends StatelessWidget {
           message = state.message;
         }
 
-        return IgnorePointer(
-          // Ignore pointer when faded out
-          ignoring: isSceneBuilt && lottieFadeController.value == 0.0,
-          child: FadeTransition(
-            opacity: lottieFadeController,
-            // Pass the message to the Lottie screen
-            child: LottieLoadingScreen(message: message),
-          ),
+        return FadeTransition(
+          opacity: lottieFadeController,
+          // Pass the message to the Lottie screen
+          child: LottieLoadingScreen(message: message),
         );
       },
     );
@@ -177,11 +173,10 @@ class SpaceBuilder extends StatelessWidget {
                 PortfolioOverlays(bloc: bloc),
                 child,
               ],
-              if (!isSceneBuilt)
-                _LoadingCurtains(
-                  lottieFadeController: lottieFadeController,
-                  isSceneBuilt: isSceneBuilt,
-                ),
+              _LoadingCurtains(
+                lottieFadeController: lottieFadeController,
+                isSceneBuilt: isSceneBuilt,
+              ),
             ],
           ),
         );
