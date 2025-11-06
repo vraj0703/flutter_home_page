@@ -47,8 +47,6 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
   late three.Mesh myNameText;
   late three.MeshStandardMaterial myNameTextMaterial;
-  late three.Texture myNameAlphaMap;
-  late three.Texture myNameRoughnessMap;
   late three.Texture myNameNormalMap;
   late three.Font _font;
 
@@ -137,17 +135,11 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
       Future.microtask(() async {
         _font = await three.FontLoader(
           null,
-        ).loadAsync('assets/victormono_bold.json');
+        ).loadAsync('assets/fonts/pixel_code.json');
       }),
       loader
           .loadAsync("assets/decal_normal.png")
           .then((map) => myNameNormalMap = map),
-      loader
-          .loadAsync("assets/decal_glossiness.png")
-          .then((map) => myNameRoughnessMap = map),
-      loader
-          .loadAsync("assets/decal_opacity.png")
-          .then((map) => myNameAlphaMap = map),
     ]);
     var sunGeometry = await _addSun();
     var planetGeometry = await _addPlanet();
@@ -324,7 +316,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
         'tDiffuse',
       );
       godRayCombinePass.uniforms['tGodRays']['value'] =
-          godraysComposer.renderTarget2.texture;
+          godraysComposer.renderTarget1.texture;
       godRayCombinePass.renderToScreen = true;
       await composer.addPass(godRayCombinePass);
       log(
@@ -342,7 +334,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
       "font": _font,
       "size": 15,
       "height": 5,
-      "curveSegments": 12,
+      "curveSegments": 40,
     });
 
     // Center the Geometry
@@ -428,63 +420,14 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
   void _attachMyNameMesh(three.BufferGeometry textGeometry) {
     myNameTextMaterial = three.MeshStandardMaterial({
-      'color': 0xffffff,
-      'normalMap': myNameNormalMap,
-      'roughnessMap': myNameRoughnessMap,
-      'alphaMap': myNameAlphaMap,
+      'alphaMap': myNameNormalMap,
       'transparent': true,
       'opacity': 0.0,
-      'metalness': 0.7,
+      'emissive': 0xFFFFFF,
     });
 
     myNameText = three.Mesh(textGeometry, myNameTextMaterial);
     myNameText.position.set(0, 200, 150);
-
-    // 4. ADD 3 SpotLights (Fast)
-    final double intensity = 8.0;
-    final double distance = 100.0;
-    final double angle = math.pi / 2;
-    final double penumbra = 0.8;
-    final double decay = 1.0;
-    // Light 1: Bottom Center
-    final lightCenter = three.SpotLight(
-      0xffffff,
-      intensity,
-      distance,
-      angle,
-      penumbra,
-      decay,
-    );
-    lightCenter.position.set(0, -25, 15);
-    myNameText.add(lightCenter);
-    // Light 2: Bottom Left
-    final lightLeft = three.SpotLight(
-      0xffffff,
-      intensity,
-      distance,
-      angle,
-      penumbra,
-      decay,
-    );
-    lightLeft.position.set(-20, -20, 25);
-    myNameText.add(lightLeft);
-    // Light 3: Bottom Right
-    final lightRight = three.SpotLight(
-      0xffffff,
-      intensity,
-      distance,
-      angle,
-      penumbra,
-      decay,
-    );
-    lightRight.position.set(20, -20, 25);
-    myNameText.add(lightRight);
-    // --- Aim the lights ---
-    myNameText.add(lightCenter.target!);
-    lightLeft.target!.position.set(-40, 0, 40);
-    myNameText.add(lightLeft.target!);
-    lightRight.target!.position.set(40, 0, 40);
-    myNameText.add(lightRight.target!);
 
     scene.add(myNameText);
   }

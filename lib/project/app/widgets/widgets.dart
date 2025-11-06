@@ -227,7 +227,7 @@ class LottieLoadingScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Lottie.asset(
-              'assets/wave_lottie.json', // Your asset path
+              'assets/calming_circle_white.json', // Your asset path
               width: 250,
               height: 250,
               fit: BoxFit.contain,
