@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:math' as math;
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -68,6 +69,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
   bool disposed = false;
   final scrollNotifier = ValueNotifier<double>(0.0);
+  late final AudioPlayer _audioPlayer;
+  bool _isAudioPlaying = false;
 
   SpaceBloc() : super(SpaceInitial()) {
     on<Initialize>(_initialize);
@@ -78,6 +81,9 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
   FutureOr<void> _initialize(Initialize event, Emitter<SpaceState> emit) async {
     log('[3D Debug] _initialize', name: 'SpaceBloc');
+    _audioPlayer = AudioPlayer();
+    _audioPlayer.setReleaseMode(ReleaseMode.loop);
+
     screenSize = event.screenSize;
     width = screenSize.width;
     height = screenSize.height;
@@ -104,6 +110,11 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   }
 
   FutureOr<void> _onScroll(Scroll event, Emitter<SpaceState> emit) {
+    if (!_isAudioPlaying && state is SpaceLoaded) {
+      // User has interacted, so we can now safely play audio
+      _audioPlayer.play(AssetSource('audio/space_ambient.mp3'));
+      _isAudioPlaying = true; // Set flag so this only runs once
+    }
     _scrollTarget += event.scrollDelta * 0.0005;
     _scrollTarget = _scrollTarget.clamp(0.0, 1.0);
   }
@@ -198,7 +209,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
     // Done
     SchedulerBinding.instance.addPersistentFrameCallback(_onFrame);
-    emit(SpaceLoaded());
+    emit(SpaceLoaded(screenSize: screenSize, three3dRender: three3dRender));
   }
 
   FutureOr<void> _onResize(Resize event, Emitter<SpaceState> emit) async {
@@ -512,6 +523,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   void dispose() {
     disposed = true;
 
+    _audioPlayer.stop();
+    _audioPlayer.dispose();
     // Dispose Notifier
     scrollNotifier.dispose();
 

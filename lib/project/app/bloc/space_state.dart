@@ -11,4 +11,10 @@ final class SpaceLoading extends SpaceState {
   SpaceLoading(this.message);
 }
 
-final class SpaceLoaded extends SpaceState {}
+final class SpaceLoaded extends SpaceState {
+  final Size screenSize;
+  final FlutterGlPlugin three3dRender;
+
+
+  SpaceLoaded({required this.screenSize, required this.three3dRender});
+}

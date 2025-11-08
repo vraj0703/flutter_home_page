@@ -1,19 +1,18 @@
-
 // --- 2. ADD ALL THE WIDGETS BELOW ---
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/space_bloc.dart';
 import 'package:lottie/lottie.dart';
 
 /// Main overlay widget that listens to scroll changes
 /// and orchestrates the fading of UI elements.
 class PortfolioOverlays extends StatelessWidget {
-  final SpaceBloc bloc;
-
-  const PortfolioOverlays({required this.bloc});
+  const PortfolioOverlays({super.key});
 
   @override
   Widget build(BuildContext context) {
+    var bloc = BlocProvider.of<SpaceBloc>(context, listen: false);
     // Use ValueListenableBuilder to react to scroll changes from the BLoC
     return ValueListenableBuilder<double>(
       valueListenable: bloc.scrollNotifier,
@@ -187,25 +186,25 @@ class PortfolioButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onPressed,
       style:
-      OutlinedButton.styleFrom(
-        foregroundColor: Colors.white,
-        side: const BorderSide(color: Colors.white, width: 1.5),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        textStyle: const TextStyle(
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-          fontSize: 14,
-          decoration: TextDecoration.none, // Remove underline
-        ),
-      ).copyWith(
-        // Add a subtle hover effect
-        overlayColor: WidgetStateProperty.all(
-          Colors.white.withOpacity(0.1),
-        ),
-      ),
+          OutlinedButton.styleFrom(
+            foregroundColor: Colors.white,
+            side: const BorderSide(color: Colors.white, width: 1.5),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+              fontSize: 14,
+              decoration: TextDecoration.none, // Remove underline
+            ),
+          ).copyWith(
+            // Add a subtle hover effect
+            overlayColor: WidgetStateProperty.all(
+              Colors.white.withOpacity(0.1),
+            ),
+          ),
       child: Text(text),
     );
   }
