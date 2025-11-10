@@ -1,9 +1,22 @@
-import 'package:flame/events.dart';
-import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
-import 'package:flutter/material.dart';
+import 'package:flame/post_process.dart';
+import 'package:flame_svg/svg.dart';
+import 'package:flame_svg/svg_component.dart';
+import 'package:flutter/material.dart'
+    show
+        Color,
+        Paint,
+        StatelessWidget,
+        BuildContext,
+        Widget,
+        Stack,
+        Scaffold,
+        MaterialApp,
+        Colors;
+import 'dart:ui';
 
 class FlameScene extends StatelessWidget {
   const FlameScene({super.key});
@@ -13,152 +26,86 @@ class FlameScene extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        body: Stack(
-          children: [
-            // 1. The Flame GameWidget lives in the background
-            GameWidget(game: ShadowGame()),
-            // 2. The Flutter UI (button) lives on top
-            //const Center(child: ClickAnywhereButton()),
-          ],
-        ),
+        body: Stack(children: [GameWidget(game: MyGame())]),
       ),
     );
   }
-}
+} // The main game class
 
-class ShadowGame extends FlameGame with MouseMovementDetector {
-  // A factor to control how much the shadow moves.
-  // A smaller number means the "light" is "further away".
-  final double _shadowFactor = 0.1;
-
-  late SpriteComponent _faintLogo;
-  late SpriteComponent _shadowLogo;
-  late SpriteComponent _light;
-  late Vector2 _center;
-  Vector2 _targetPosition = Vector2.zero();
+// Use PointerMoveCallbacks to get mouse movement events
+class MyGame extends FlameGame with PointerMoveCallbacks {
+  Vector2 _mousePosition = Vector2.zero();
+  late GodRayComponent godRay;
 
   @override
-  Color backgroundColor() => const Color(0xFFEBEBEB); // The hazy background color from the video
+  Color backgroundColor() => const Color(0xFF222222);
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Cache the center of the screen
-    _center = size / 2;
-
-    // Step 2: Load the faint, static company logo
-    _faintLogo = SpriteComponent.fromImage(
-      await images.load('logo.png'),
+    final svgAsset = await Svg.load('images/logo.svg');
+    final svgComponent = SvgComponent(
+      svg: svgAsset,
+      position: size / 2, // Center it
       anchor: Anchor.center,
-      position: _center,
-      size: Vector2(300, 300),
-      // Change opacity from 0.05 to 0.1
-      paint: Paint()..color = Colors.black.withOpacity(1),
+      size: Vector2.all(300), // Give it a size
     );
-    add(_faintLogo);
+    svgComponent.priority = 1;
+    await add(svgComponent);
 
-    _shadowLogo = SpriteComponent.fromImage(
-      await images.load('shadow_logo.png'),
-      anchor: Anchor.center,
-      position: _center,
-      size: Vector2(300, 300),
-      // Add this line to make the shadow semi-transparent
-      paint: Paint()..color = Colors.white.withOpacity(0.5),
-    );
-    add(_shadowLogo);
+    // Create and add the god ray component
+    godRay = GodRayComponent();
+    godRay.priority = 2;
+    await add(godRay);
 
-    // Step 4: Load the light source
-    _light = SpriteComponent.fromImage(
-      await images.load('sun.png'),
-      anchor: Anchor.center,
-      position: _center,
-      size: Vector2(80, 80), // Adjust size as needed
-    );
-    add(_light);
+    godRay.position = _mousePosition;
   }
 
+  // This callback is from PointerMoveCallbacks
+  // It is triggered whenever the mouse moves over the game widget
   @override
-  void onMouseMove(PointerHoverInfo info) {
-    _targetPosition = info.eventPosition.widget;
-    super.onMouseMove(info);
+  void onPointerMove(PointerMoveEvent event) {
+    // Update the godRay's position to the mouse's game position
+    // event.localPosition gives the position in the game's coordinate system
+    _mousePosition = event.localPosition;
+  }
+}
+
+class GodRayComponent extends PositionComponent with HasGameReference<MyGame> {
+  final Paint _paint = Paint();
+  static const double rayRadius = 50.0;
+  final double smoothingSpeed = 5.0;
+
+  GodRayComponent() {
+    anchor = Anchor.center;
+
+    _paint.shader = Gradient.radial(
+      Offset.zero,
+      rayRadius,
+      [
+        Colors.yellow.withOpacity(0.9),
+        Colors.yellow.withOpacity(0.5),
+        Colors.orange.withOpacity(0.0),
+      ],
+      [0.0, 0.5, 1.0],
+    );
   }
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    // --- SMOOTHING LOGIC ---
-    // 'dt' is 'delta time' - the time since the last frame.
-    // We move the light 10% of the way to the target each frame.
-    // This creates a smooth "chasing" effect.
-    final double lerpFactor = 10.0 * dt;
+    // Get the target position from the game class using `game`
+    final Vector2 targetPosition = game._mousePosition;
 
-    // Smoothly move the light's position towards the target
-    _light.position.lerp(_targetPosition, lerpFactor);
-
-    // --- SHADOW LOGIC ---
-    // This logic is the same, but now it's in update()
-    // so the shadow moves smoothly with the light.
-    final lightVector = _light.position - _center;
-    _shadowLogo.position = _center - (lightVector * _shadowFactor);
+    // Use lerp (linear interpolation) to move smoothly
+    position.lerp(targetPosition, smoothingSpeed * dt);
   }
-}
-
-
-class ClickAnywhereButton extends StatelessWidget {
-  const ClickAnywhereButton({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const Color crosshairColor = Color(0x33000000); // Faint black
-    const double crosshairThickness = 1.0;
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-          print('Clicked!');
-        },
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Horizontal crosshair
-            Container(
-              width: 150, // Match button size
-              height: crosshairThickness,
-              color: crosshairColor,
-            ),
-            // Vertical crosshair
-            Container(
-              width: crosshairThickness,
-              height: 150, // Match button size
-              color: crosshairColor,
-            ),
-            // The button
-            Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: crosshairColor, width: 1.0),
-              ),
-              child: Center(
-                child: Text(
-                  'CLICK ANYWHERE',
-                  style: TextStyle(
-                    color: Colors.black.withOpacity(0.4),
-                    fontSize: 12,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  void render(Canvas canvas) {
+    super.render(canvas);
+    canvas.drawCircle(Offset.zero, rayRadius, _paint);
   }
 }
-
-
