@@ -17,12 +17,9 @@ const float STEP_SIZE = 0.006; // Increased from 0.002
 
 const float DENSITY = 0.8;
 
-// --- FIX 2: WIDER, MORE AGGRESSIVE DECAY RANGE ---
-// The decay rate when the light is at the screen edge (long shadows)
-const float MIN_SHADOW_DECAY = 0.02; // Was 0.05
-// The decay rate when the light is at the screen center (short shadows)
-const float MAX_SHADOW_DECAY = 8.0;  // Was 0.5
-
+// Decay rates for shadow length
+const float MIN_SHADOW_DECAY = 0.02; // For long shadows at horizontal edges
+const float MAX_SHADOW_DECAY = 8.0;  // For short shadows at vertical center
 
 // Colors
 const vec3 COLOR_BG = vec3(0.85, 0.85, 0.83);
@@ -30,7 +27,7 @@ const vec3 COLOR_SHADOW = vec3(0.55, 0.55, 0.58);
 const vec3 COLOR_LIGHT = vec3(1.0, 0.9, 0.6);
 const vec3 COLOR_GLOW = vec3(1.0, 0.6, 0.2);
 
-// Helper to check if a pixel hits the Logo
+// Helper to check for logo collision
 float getAlpha(vec2 uv) {
     vec2 pixelPos = uv * uResolution;
     vec2 offset = pixelPos - (uLogoPos - uLogoSize * 0.5);
@@ -49,21 +46,17 @@ void main() {
     vec2 lightUV = vec2(uLightPos.x, uResolution.y - uLightPos.y) / uResolution;
 
     float aspect = uResolution.x / uResolution.y;
-
-    // Correct aspect for math
     vec2 p = uv; p.x *= aspect;
     vec2 l = lightUV; l.x *= aspect;
 
-    // --- DYNAMIC SHADOW CALCULATION ---
+    // --- FINAL FIX: HORIZONTALLY-BIASED SHADOW CALCULATION ---
     vec2 lightNDC = lightUV * 2.0 - 1.0;
-    float distFromCenter = clamp(length(lightNDC), 0.0, 1.0);
+    // We now use the absolute horizontal distance from center, not the radial distance.
+    float horizontalFactor = abs(lightNDC.x);
+    // This makes shadows long only when the light is on the far left or right.
+    float dynamicShadowDecay = mix(MAX_SHADOW_DECAY, MIN_SHADOW_DECAY, horizontalFactor);
 
-    // Interpolate between max and min decay based on the distance from center.
-    // The new, wider range will create a much more noticeable effect.
-    float dynamicShadowDecay = mix(MAX_SHADOW_DECAY, MIN_SHADOW_DECAY, distFromCenter);
-
-
-    // --- RAY MARCHING ---
+    // --- Ray Marching ---
     vec2 dir = l - p;
     float distToLight = length(dir);
     dir /= distToLight;
@@ -90,13 +83,13 @@ void main() {
 
     shadowAccum = clamp(shadowAccum * DENSITY, 0.0, 1.0);
 
-    // --- COMPOSITING ---
+    // --- Compositing ---
     vec3 finalColor = COLOR_BG;
     finalColor = mix(finalColor, COLOR_SHADOW, shadowAccum);
 
     float d = distance(p, l);
-    float core = smoothstep(0.02, 0.01, d);
-    float glow = exp(-d * 12.0) * 0.8;
+    float core = smoothstep(0.015, 0.005, d);
+    float glow = exp(-d * 40.0) * 0.8;
 
     finalColor += (COLOR_LIGHT * core) + (COLOR_GLOW * glow);
     fragColor = vec4(finalColor, 1.0);
