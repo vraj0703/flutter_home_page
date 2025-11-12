@@ -3,17 +3,17 @@
 // --- UNIFORMS ---
 uniform vec2 uResolution;
 uniform vec2 uLightPos;
-uniform vec2 uLogoPos;   // NEW: Exact position of the logo center
-uniform vec2 uLogoSize;  // NEW: Exact size of the logo
+uniform vec2 uLogoPos;
+uniform vec2 uLogoSize;
 uniform sampler2D uTexture;
 
 out vec4 fragColor;
 
 // --- SETTINGS ---
-const int MAX_STEPS = 150;       // Increased for smoother long shadows
-const float DENSITY = 0.8;       // Shadow darkness
-const float STEP_SIZE = 0.002;   // Step size for marching
-const float SHADOW_DECAY = 0.1;  // LOWER = LONGER SHADOWS (0.3 is very long)
+const int MAX_STEPS = 150;
+const float DENSITY = 0.8;
+const float STEP_SIZE = 0.002;
+const float SHADOW_DECAY = 0.3;
 
 // Colors
 const vec3 COLOR_BG = vec3(0.85, 0.85, 0.83);
@@ -23,18 +23,14 @@ const vec3 COLOR_GLOW = vec3(1.0, 0.6, 0.2);
 
 // Helper to check if a pixel hits the Logo
 float getAlpha(vec2 uv) {
-    // 1. Calculate UVs relative to the Logo Object
-    // (This replaces the hardcoded LOGO_SCALE)
     vec2 pixelPos = uv * uResolution;
     vec2 offset = pixelPos - (uLogoPos - uLogoSize * 0.5);
     vec2 localUV = offset / uLogoSize;
 
-    // 2. Bounds check
     if (localUV.x < 0.0 || localUV.x > 1.0 || localUV.y < 0.0 || localUV.y > 1.0) {
         return 0.0;
     }
 
-    // 3. Sample Texture (FLIPPED Y to fix inversion)
     return texture(uTexture, vec2(localUV.x, 1.0 - localUV.y)).a;
 }
 
@@ -52,24 +48,19 @@ void main() {
     // --- RAY MARCHING ---
     vec2 dir = l - p;
     float distToLight = length(dir);
-    dir /= distToLight; // Normalize direction
+    dir /= distToLight;
 
     float shadowAccum = 0.0;
     float marchDist = 0.0;
 
-    // Dither noise to remove "banding" artifacts
     float noise = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
 
     for(int i = 0; i < MAX_STEPS; i++) {
-        // March towards light
         vec2 samplePos = uv + (dir * (marchDist + noise * 0.005) / aspect);
 
         float objectAlpha = getAlpha(samplePos);
 
         if(objectAlpha > 0.05) {
-            // We hit the logo!
-            // Calculate blockage based on distance (how "thick" the shadow is)
-            // Lower multiplier = Longer shadow persistence
             float blockage = objectAlpha * (1.0 - marchDist * SHADOW_DECAY);
             shadowAccum = max(shadowAccum, blockage);
 
@@ -88,13 +79,17 @@ void main() {
     // Apply Shadow
     finalColor = mix(finalColor, COLOR_SHADOW, shadowAccum);
 
-    // NOTE: We do NOT draw the logo here anymore.
-    // We only draw the shadow/bg. The real logo is a SpriteComponent on top.
-
     // Draw Light/Glow
     float d = distance(p, l);
-    float core = smoothstep(0.04, 0.02, d);
-    float glow = exp(-d * 6.0) * 0.8;
+
+    // 1. REDUCED CORE RADIUS
+    // Was smoothstep(0.04, 0.02, d). Changed to 0.02, 0.01 to make it half the size.
+    float core = smoothstep(0.02, 0.01, d);
+
+    // 2. REDUCED GLOW SPREAD
+    // Was exp(-d * 6.0). Increased 6.0 to 12.0 to make the glow fade twice as fast.
+    float glow = exp(-d * 12.0) * 0.8;
+
     finalColor += (COLOR_LIGHT * core) + (COLOR_GLOW * glow);
 
     fragColor = vec4(finalColor, 1.0);
