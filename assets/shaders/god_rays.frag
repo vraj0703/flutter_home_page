@@ -28,8 +28,23 @@ float sampleAlpha(vec2 worldPos) {
         return 0.0;
     }
 
-    // Sample Alpha
-    return texture(uLogoTexture, uv).a;
+    float distance = texture(uLogoTexture, uv).a;
+
+    // --- THE COMPATIBLE SOLUTION ---
+    // We use a very small, fixed value for the edge width.
+    // This avoids the fwidth() crash and produces a sharp result.
+    //
+    // HOW TO TUNE THIS:
+    // - Smaller value = Sharper, more aliased edge.
+    // - Larger value = Softer, more anti-aliased edge.
+    // A value of 0.005 is a great starting point for high-res SDFs.
+    float edgeWidth = 0.5;
+
+    // Use smoothstep for a perfect anti-aliased transition.
+    float alpha = smoothstep(0.5 - edgeWidth, 0.5 + edgeWidth, distance);
+
+    return alpha;
+
 }
 
 void main() {
