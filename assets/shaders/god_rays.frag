@@ -37,23 +37,16 @@ void main() {
 
     // --- COLORS ---
     // Adjust these to match your video reference exactly
-    vec4 floorColor = vec4(0.85, 0.85, 0.85, 1.0);// Light Grey Base
-    vec4 shadowColor = vec4(0.50, 0.50, 0.50, 1.0);// Darker Shadow
+    vec3 floorColor = vec3(0.84, 0.76, 0.70);// Light Grey Base
+    vec3 shadowColor = vec3(0.52, 0.46, 0.39);// Darker Shadow
 
     // Vector from pixel to light
     vec2 toLight = uLightPos - pixelPos;
     float distToLight = length(toLight);
     vec2 rayDir = normalize(toLight);
 
-    // --- OPTIMIZATION ---
-    // 1. If pixel is inside the light radius, no shadow
-    if (distToLight < 20.0) {
-        fragColor = floorColor;
-        return;
-    }
-
     // --- RAY MARCHING SETUP ---
-    const int steps = 40;// Lower steps = more performance. Jitter hides the low count.
+    const int steps = 120;// Lower steps = more performance. Jitter hides the low count.
     float stepSize = distToLight / float(steps);
 
     // --- THE SECRET SAUCE: JITTER ---
@@ -91,9 +84,9 @@ void main() {
     // --- FINAL MIX ---
     // Apply the shadow to the floor color
     // We also add a tiny bit of noise to the floor itself for texture
-    vec4 noisyFloor = floorColor * (0.98 + 0.04 * noise);
+    vec3 noisyFloor = floorColor * (0.98 + 0.04 * noise);
 
-    vec4 finalColor = mix(noisyFloor, shadowColor, t);
+    vec3 finalColor = mix(noisyFloor, shadowColor, t);
 
     float d = distToLight / uSize.y;
 
@@ -104,15 +97,15 @@ void main() {
 
     // 3. The Glow (The Atmosphere)
     // exp() creates that beautiful "Dune" bloom
-    float glow = exp(-d * 30.0) * 0.85;
+    float glow = exp(-d * 10.0) * 0.45;
 
     // 4. Define Colors
     //vec3 sunCoreColor = vec3(1.0, 1.0, 0.9);// White-hot center
-    vec3 sunGlowColor = vec3(1.0, 0.7, 0.3);// Golden orange halo
+    vec3 sunGlowColor = vec3(1.0, 0.75, 0.79);// Golden orange halo
 
     // 5. Additive Blending (Physics)
     // We add the core and glow on top of the shadowed floor
-    finalColor += vec4(sunGlowColor * glow, 1.0);
-    fragColor = finalColor;
+    finalColor += sunGlowColor * glow;
+    fragColor = vec4(finalColor, 1.0);
 }
 

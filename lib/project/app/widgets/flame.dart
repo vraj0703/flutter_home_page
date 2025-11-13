@@ -39,7 +39,7 @@ class FlameScene extends StatelessWidget {
 
 class MyGame extends FlameGame with PointerMoveCallbacks {
   late RayMarchingShadowComponent shadowScene;
-  late GodRayComponent godRay;
+  late AdvancedGodRayComponent godRay;
   late SpriteComponent logoSprite;
 
   // --- FIX 1: CHANGE VARIABLES TO REPRESENT DIRECTION ---
@@ -48,11 +48,11 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
   Vector2 _lightDirection = Vector2.zero();
   Vector2 _targetLightDirection = Vector2.zero();
 
-  final double smoothingSpeed = 5.0;
-  final double glowVerticalOffset = 15.0;
+  final double smoothingSpeed = 8.0;
+  final double glowVerticalOffset = 10.0;
 
   @override
-  Color backgroundColor() => const Color(0xFFE0E0E0);
+  Color backgroundColor() => const Color(0xFFD8C5B4);
 
   @override
   Future<void> onLoad() async {
@@ -81,15 +81,21 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
     );
     shadowScene.logoPosition = size / 2;
     await add(shadowScene);
+    final bgColor = backgroundColor();
     logoSprite = SpriteComponent(
       sprite: sprite,
       size: logoSize,
       position: size / 2,
       anchor: Anchor.center,
       priority: 10,
+      paint: Paint()
+        ..colorFilter = ColorFilter.mode(
+          bgColor,          // Use the background color
+          BlendMode.srcIn,  // This applies the color to the source image pixels
+        ),
     );
     await add(logoSprite);
-    godRay = GodRayComponent();
+    godRay = AdvancedGodRayComponent();
     godRay.priority = 20;
     godRay.position = size / 2;
     await add(godRay);
@@ -119,19 +125,16 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
 
   @override
   void onPointerMove(PointerMoveEvent event) {
-    // --- FIX 3: UPDATE BOTH TARGETS ---
     godRay.position = event.localPosition;
     final center = size / 2;
     final cursorPosition = event.localPosition;
 
-    // Update the target position (for the glow)
     _targetLightPosition = cursorPosition + Vector2(0, glowVerticalOffset);
 
-    // Update the target direction (for the shadows)
+    // --- THIS IS THE MOST IMPORTANT PART ---
+    // We are now sending the RAW vector. DO NOT normalize it.
     final vectorFromCenter = cursorPosition - center;
-    if (vectorFromCenter.length > 0) {
-      _targetLightDirection = vectorFromCenter..normalize();
-    }
+    _targetLightDirection = vectorFromCenter;
   }
 }
 
@@ -185,9 +188,9 @@ class RayMarchingShadowComponent extends PositionComponent
   }
 }
 
-class GodRayComponent extends PositionComponent with HasGameReference<MyGame> {
+class GodRayComponent extends PositionComponent {
   final Paint _paint = Paint();
-  static const double rayRadius = 50.0;
+  static const double rayRadius = 70.0;
 
   GodRayComponent() {
     anchor = Anchor.center;
@@ -199,7 +202,7 @@ class GodRayComponent extends PositionComponent with HasGameReference<MyGame> {
         const Color(0x80F69E7C), // 128, 246, 158, 124
         const Color(0x40EDDAD1), // 64, 237, 218, 209
       ],
-      [0.0, 0.5, 1.0],
+      [0.0, 0.4, 1.0],
     );
   }
 
@@ -207,5 +210,59 @@ class GodRayComponent extends PositionComponent with HasGameReference<MyGame> {
   void render(Canvas canvas) {
     super.render(canvas);
     canvas.drawCircle(Offset.zero, rayRadius, _paint);
+  }
+}
+
+
+class AdvancedGodRayComponent extends PositionComponent {
+  // --- Tweak these values to customize the sun's appearance ---
+
+  // Layer 1: The hot, tight core
+  final double coreSize = 0.0;
+  final Color coreColor = const Color(0xFFFFFFFF); // White-hot
+  final double coreBlurSigma = 2.0;
+
+  // Layer 2: The vibrant inner halo
+  final double innerGlowSize = 24.0;
+  final Color innerGlowColor = const Color(0xAAFFE082); // Golden Yellow
+  final double innerGlowBlurSigma = 15.0;
+
+  // Layer 3: The soft outer atmosphere
+  final double outerGlowSize = 64.0;
+  final Color outerGlowColor = const Color(0xAAE68A4D); // Dusty Orange
+  final double outerGlowBlurSigma = 35.0;
+  // -----------------------------------------------------------
+
+  late final Paint _corePaint;
+  late final Paint _innerGlowPaint;
+  late final Paint _outerGlowPaint;
+
+  AdvancedGodRayComponent() {
+    // It's more performant to create Paint objects once.
+    anchor = Anchor.center;
+
+    // The MaskFilter is what creates the beautiful blur effect.
+    // The sigma value controls the "spread" of the blur.
+    _outerGlowPaint = Paint()
+      ..color = outerGlowColor
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, outerGlowBlurSigma);
+
+    _innerGlowPaint = Paint()
+      ..color = innerGlowColor
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, innerGlowBlurSigma);
+
+    _corePaint = Paint()
+      ..color = coreColor
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, coreBlurSigma);
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    // We draw the layers from back to front (largest to smallest)
+    // to ensure they stack correctly.
+    canvas.drawCircle(Offset.zero, outerGlowSize, _outerGlowPaint);
+    canvas.drawCircle(Offset.zero, innerGlowSize, _innerGlowPaint);
+    canvas.drawCircle(Offset.zero, coreSize, _corePaint);
   }
 }
