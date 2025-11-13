@@ -40,13 +40,16 @@ class FlameScene extends StatelessWidget {
 class MyGame extends FlameGame with PointerMoveCallbacks {
   late RayMarchingShadowComponent shadowScene;
   late GodRayComponent godRay;
-  late SpriteComponent logoSprite; // The Visible Logo
-  Vector2 _mousePosition = Vector2.zero();
+  late SpriteComponent logoSprite;
+
+  // --- FIX 1: CHANGE VARIABLES TO REPRESENT DIRECTION ---
   Vector2 _virtualLightPosition = Vector2.zero();
   Vector2 _targetLightPosition = Vector2.zero();
+  Vector2 _lightDirection = Vector2.zero();
+  Vector2 _targetLightDirection = Vector2.zero();
 
-  final double smoothingSpeed = 10;
-  final double glowVerticalOffset = 2.0;
+  final double smoothingSpeed = 5.0;
+  final double glowVerticalOffset = 15.0;
 
   @override
   Color backgroundColor() => const Color(0xFFE0E0E0);
@@ -55,58 +58,47 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
   Future<void> onLoad() async {
     await super.onLoad();
 
+    // Set an initial default direction
     _targetLightPosition = size / 2;
     _virtualLightPosition = size / 2;
-    // 1. Setup Assets
+    _targetLightDirection = Vector2(0, 1)..normalize();
+    _lightDirection = _targetLightDirection.clone();
+
+    // --- (Component loading is unchanged) ---
     final sprite = await Sprite.load('logo.png');
     final Image image = sprite.image;
-
-    // Define Logo Size (Adjust this to match your design)
-    double zoom = 0.8;
+    double zoom = 3;
     Vector2 logoSize =
         Vector2(image.width.toDouble(), image.height.toDouble()) * zoom;
-
-    // 2. Load Shader
     final program = await FragmentProgram.fromAsset(
       'assets/shaders/god_rays.frag',
     );
     final shader = program.fragmentShader();
-
-    // 3. Add Shadow Layer (Background)
     shadowScene = RayMarchingShadowComponent(
       fragmentShader: shader,
       logoImage: image,
-      logoSize: logoSize, // Tell shader exactly how big the logo is
+      logoSize: logoSize,
     );
-    // Position it centered (logically)
     shadowScene.logoPosition = size / 2;
     await add(shadowScene);
-
-    // 4. Add Logo Layer (Foreground)
-    // This sits EXACTLY where the shader thinks the logo is
     logoSprite = SpriteComponent(
       sprite: sprite,
       size: logoSize,
       position: size / 2,
       anchor: Anchor.center,
-      priority: 10, // Ensure it renders ON TOP of the shadow
+      priority: 10,
     );
     await add(logoSprite);
-
-    _mousePosition = size / 2 + Vector2(200, -100);
-
     godRay = GodRayComponent();
-    godRay.priority = 100;
+    godRay.priority = 20;
+    godRay.position = size / 2;
     await add(godRay);
-
-    godRay.position = _mousePosition;
   }
 
   @override
   void onGameResize(Vector2 newSize) {
     super.onGameResize(newSize);
     if (isLoaded) {
-      // Keep logo centered
       logoSprite.position = newSize / 2;
       shadowScene.logoPosition = newSize / 2;
     }
@@ -116,30 +108,30 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
   void update(double dt) {
     super.update(dt);
     if (isLoaded) {
-      // Smoothly interpolate the virtual light towards its target.
       _virtualLightPosition.lerp(_targetLightPosition, smoothingSpeed * dt);
+      _lightDirection.lerp(_targetLightDirection, smoothingSpeed * dt);
 
-      // Pass the smoothed, virtual position to the shader.
+      // Pass both to the shader component
       shadowScene.lightPosition = _virtualLightPosition;
+      shadowScene.lightDirection = _lightDirection;
     }
   }
 
   @override
   void onPointerMove(PointerMoveEvent event) {
-    // 1. The visible glow snaps directly to the cursor.
+    // --- FIX 3: UPDATE BOTH TARGETS ---
     godRay.position = event.localPosition;
-
-    // --- FINAL, SIMPLIFIED LOGIC ---
-    // 2. The light's target position is now taken directly from the cursor.
-    // The "push" effect has been removed for a more direct feel.
+    final center = size / 2;
     final cursorPosition = event.localPosition;
 
-    // 3. Assemble the final target position.
-    // It's simply the cursor's position plus the constant vertical offset.
-    _targetLightPosition = Vector2(
-      cursorPosition.x,
-      cursorPosition.y + glowVerticalOffset,
-    );
+    // Update the target position (for the glow)
+    _targetLightPosition = cursorPosition + Vector2(0, glowVerticalOffset);
+
+    // Update the target direction (for the shadows)
+    final vectorFromCenter = cursorPosition - center;
+    if (vectorFromCenter.length > 0) {
+      _targetLightDirection = vectorFromCenter..normalize();
+    }
   }
 }
 
@@ -149,9 +141,11 @@ class RayMarchingShadowComponent extends PositionComponent
   final Image logoImage;
   Vector2 logoSize;
   Vector2 logoPosition = Vector2.zero();
-  Vector2 lightPosition = Vector2.zero();
 
   final Paint _paint = Paint();
+
+  Vector2 lightPosition = Vector2.zero();
+  Vector2 lightDirection = Vector2.zero();
 
   RayMarchingShadowComponent({
     required this.fragmentShader,
@@ -182,6 +176,8 @@ class RayMarchingShadowComponent extends PositionComponent
       ..setFloat(5, logoPosition.y)
       ..setFloat(6, logoSize.x)
       ..setFloat(7, logoSize.y)
+      ..setFloat(8, lightDirection.x) // Send the new direction uniform
+      ..setFloat(9, lightDirection.y) // Send the new direction uniform
       ..setImageSampler(0, logoImage);
 
     _paint.shader = fragmentShader;
