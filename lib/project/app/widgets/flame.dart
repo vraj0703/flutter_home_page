@@ -40,6 +40,9 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
   Vector2 _lightDirection = Vector2.zero();
   Vector2 _targetLightDirection = Vector2.zero();
 
+  double _sceneProgress = 0.0;
+  Vector2? _lastKnownPointerPosition;
+
   final double smoothingSpeed = 8.0;
   final double glowVerticalOffset = 10.0;
 
@@ -49,12 +52,17 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    final center = size / 2;
 
-    // Set an initial default direction
-    _targetLightPosition = size / 2;
-    _virtualLightPosition = size / 2;
-    _targetLightDirection = Vector2(0, 1)..normalize();
+    // --- Set Initial Centered State ---
+    _targetLightPosition = center;
+    _virtualLightPosition = center.clone();
+    _targetLightDirection = Vector2(0, -1)..normalize();
     _lightDirection = _targetLightDirection.clone();
+
+    sceneProgressNotifier.addListener(() {
+      _sceneProgress = sceneProgressNotifier.value;
+    });
 
     final sprite = await Sprite.load('logo.png');
     final Image image = sprite.image;
@@ -103,12 +111,22 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
   }
 
   @override
+  void onRemove() {
+    sceneProgressNotifier.removeListener(() {
+      _sceneProgress = sceneProgressNotifier.value;
+    });
+    super.onRemove();
+  }
+
+
+  @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
     if (isLoaded) {
-      logoComponent.position = size / 2;
-      shadowScene.logoPosition = size / 2;
-      interactiveUI.position = size / 2;
+      final center = size / 2;
+      logoComponent.position = center;
+      shadowScene.logoPosition = center;
+      interactiveUI.position = center;
       interactiveUI.gameSize = size;
     }
   }
@@ -116,27 +134,46 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
   @override
   void update(double dt) {
     super.update(dt);
-    if (isLoaded) {
-      _virtualLightPosition.lerp(_targetLightPosition, smoothingSpeed * dt);
-      _lightDirection.lerp(_targetLightDirection, smoothingSpeed * dt);
+    if (!isLoaded) return;
 
-      // Pass both to the shader component
-      shadowScene.lightPosition = _virtualLightPosition;
-      shadowScene.lightDirection = _lightDirection;
+    // --- CORE LOGIC CHANGE ---
+    // This block now decides the behavior based on the animation's progress.
+
+    if (_sceneProgress < 1.0) {
+      // Animation is NOT complete. Keep everything fixed at the center.
+      final center = size / 2;
+      _targetLightPosition = center;
+      godRay.position = center;
+      _targetLightDirection = Vector2(0, -1)..normalize();
+      interactiveUI.cursorPosition = Vector2.zero();
+    } else {
+      // Animation IS complete. Use the last known pointer position.
+      // If the user hasn't moved the mouse yet, default to the center.
+      final cursorPosition = _lastKnownPointerPosition ?? size / 2;
+
+      // Update all interactive elements based on the cursor.
+      godRay.position = cursorPosition;
+      _targetLightPosition = cursorPosition + Vector2(0, glowVerticalOffset);
+
+      final vectorFromCenter = cursorPosition - size / 2;
+      if (vectorFromCenter.length2 > 0) {
+        _targetLightDirection = vectorFromCenter.normalized();
+      }
+      interactiveUI.cursorPosition = cursorPosition - interactiveUI.position;
     }
+
+    // This smoothing logic runs every frame, ensuring a seamless transition
+    // from the centered state to the user-controlled state.
+    _virtualLightPosition.lerp(_targetLightPosition, smoothingSpeed * dt);
+    _lightDirection.lerp(_targetLightDirection, smoothingSpeed * dt);
+
+    shadowScene.lightPosition = _virtualLightPosition;
+    shadowScene.lightDirection = _lightDirection;
   }
 
   @override
   void onPointerMove(PointerMoveEvent event) {
-    godRay.position = event.localPosition;
-    final center = size / 2;
-    final cursorPosition = event.localPosition;
-
-    _targetLightPosition = cursorPosition + Vector2(0, glowVerticalOffset);
-
-    final vectorFromCenter = cursorPosition - center;
-    _targetLightDirection = vectorFromCenter;
-    interactiveUI.cursorPosition = cursorPosition - interactiveUI.position;
+    _lastKnownPointerPosition = event.localPosition;
   }
 }
 
