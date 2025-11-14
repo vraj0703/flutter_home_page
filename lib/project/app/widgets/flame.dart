@@ -11,8 +11,11 @@ import 'package:flutter/material.dart'
         Stack,
         Scaffold,
         MaterialApp,
-        TextStyle;
+        TextStyle,
+        Colors;
 import 'dart:ui';
+
+import 'reveal_animation.dart';
 
 class FlameScene extends StatelessWidget {
   const FlameScene({super.key});
@@ -21,9 +24,7 @@ class FlameScene extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Stack(children: [GameWidget(game: MyGame())]),
-      ),
+      home: Scaffold(body: RevealScene()),
     );
   }
 } // The main game class
@@ -288,6 +289,9 @@ class InteractiveUIComponent extends PositionComponent
   final double verticalLineGap = 120.0;
   final double verticalThreshold = 150.0;
 
+  final String _fullText = 'START';
+  double _sceneProgress = 0.0;
+
   final Color uiColor = const Color(0xFFF9F8F6);
 
   final double startThickness = 3.0; // Thickness near the center
@@ -320,6 +324,19 @@ class InteractiveUIComponent extends PositionComponent
   Vector2 cursorPosition = Vector2.zero();
   Vector2 gameSize = Vector2.zero();
 
+  InteractiveUIComponent() {
+    sceneProgressNotifier.addListener(() {
+      _sceneProgress = sceneProgressNotifier.value;
+    });
+  }
+
+  // NEW: Add onRemove to clean up the listener
+  @override
+  void onRemove() {
+    sceneProgressNotifier.removeListener(() {});
+    super.onRemove();
+  }
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
@@ -332,7 +349,7 @@ class InteractiveUIComponent extends PositionComponent
 
     // Create and add the central text.
     _textComponent = TextComponent(
-      text: 'START',
+      text: '',
       textRenderer: TextPaint(
         style: TextStyle(
           fontSize: 15.0,
@@ -358,6 +375,9 @@ class InteractiveUIComponent extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
+    final textProgress = ((_sceneProgress - 0.5) / 0.5).clamp(0.0, 1.0);
+    final charCount = (_fullText.length * textProgress).floor();
+    _textComponent.text = _fullText.substring(0, charCount);
     // --- NEW: NORMALIZED MOVEMENT LOGIC ---
     // Ensure gameSize is valid to avoid division by zero errors on the first frame.
     if (gameSize.x == 0 || gameSize.y == 0) return;
@@ -396,6 +416,13 @@ class InteractiveUIComponent extends PositionComponent
 
   @override
   void render(Canvas canvas) {
+    final fadeProgress = ((_sceneProgress - 0.2) / 0.8).clamp(0.0, 1.0);
+    if (fadeProgress == 0.0) return;
+
+    canvas.saveLayer(
+      null,
+      Paint()..color = Colors.white.withOpacity(fadeProgress),
+    );
     super.render(canvas);
     final center = Vector2.zero();
 
@@ -470,6 +497,8 @@ class InteractiveUIComponent extends PositionComponent
       glassyStops,
     );
     canvas.drawPath(topPath, _materialPaint);
+
+    canvas.restore();
   }
 }
 
