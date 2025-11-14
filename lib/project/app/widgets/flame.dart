@@ -1,9 +1,6 @@
-import 'dart:math' as Math;
-
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
-import 'package:flame/input.dart';
 import 'package:flutter/material.dart'
     show
         Color,
@@ -14,14 +11,8 @@ import 'package:flutter/material.dart'
         Stack,
         Scaffold,
         MaterialApp,
-        Colors,
-        Container,
-        BoxDecoration,
-        Alignment,
-        RadialGradient;
+        TextStyle;
 import 'dart:ui';
-
-import 'package:flutter/services.dart';
 
 class FlameScene extends StatelessWidget {
   const FlameScene({super.key});
@@ -40,10 +31,9 @@ class FlameScene extends StatelessWidget {
 class MyGame extends FlameGame with PointerMoveCallbacks {
   late RayMarchingShadowComponent shadowScene;
   late AdvancedGodRayComponent godRay;
-  //late SpriteComponent logoSprite;
+  late InteractiveUIComponent interactiveUI;
   late SdfLogoComponent logoComponent;
 
-  // --- FIX 1: CHANGE VARIABLES TO REPRESENT DIRECTION ---
   Vector2 _virtualLightPosition = Vector2.zero();
   Vector2 _targetLightPosition = Vector2.zero();
   Vector2 _lightDirection = Vector2.zero();
@@ -65,7 +55,6 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
     _targetLightDirection = Vector2(0, 1)..normalize();
     _lightDirection = _targetLightDirection.clone();
 
-    // --- (Component loading is unchanged) ---
     final sprite = await Sprite.load('logo.png');
     final Image image = sprite.image;
     double zoom = 3;
@@ -88,22 +77,6 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
     shadowScene.logoPosition = size / 2;
     await add(shadowScene);
 
-    /*final bgColor = backgroundColor();
-    logoSprite = SpriteComponent(
-      sprite: sprite,
-      size: logoSize,
-      position: size / 2,
-      anchor: Anchor.center,
-      priority: 10,
-      paint: Paint()
-        ..filterQuality = FilterQuality.none
-        ..colorFilter = ColorFilter.mode(
-          bgColor,          // Use the background color
-          BlendMode.srcIn,  // This applies the color to the source image pixels
-        ),
-    );
-    await add(logoSprite);*/
-
     final bgColor = backgroundColor();
     logoComponent = SdfLogoComponent(
       shader: logoProgram.fragmentShader(),
@@ -119,14 +92,23 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
     godRay.priority = 20;
     godRay.position = size / 2;
     await add(godRay);
+
+    interactiveUI = InteractiveUIComponent();
+    interactiveUI.position = size / 2;
+    interactiveUI.priority = 30;
+    interactiveUI.position = size / 2;
+    interactiveUI.gameSize = size;
+    await add(interactiveUI);
   }
 
   @override
-  void onGameResize(Vector2 newSize) {
-    super.onGameResize(newSize);
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
     if (isLoaded) {
-      logoComponent.position = newSize / 2;
-      shadowScene.logoPosition = newSize / 2;
+      logoComponent.position = size / 2;
+      shadowScene.logoPosition = size / 2;
+      interactiveUI.position = size / 2;
+      interactiveUI.gameSize = size;
     }
   }
 
@@ -151,10 +133,9 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
 
     _targetLightPosition = cursorPosition + Vector2(0, glowVerticalOffset);
 
-    // --- THIS IS THE MOST IMPORTANT PART ---
-    // We are now sending the RAW vector. DO NOT normalize it.
     final vectorFromCenter = cursorPosition - center;
     _targetLightDirection = vectorFromCenter;
+    interactiveUI.cursorPosition = cursorPosition - interactiveUI.position;
   }
 }
 
@@ -182,14 +163,6 @@ class RayMarchingShadowComponent extends PositionComponent
     if (size.x == 0 || size.y == 0) return;
 
     // --- Uniform Mapping ---
-    // This section maps your Dart variables to the GLSL uniforms.
-    // The index corresponds to the uniform's position in the shader.
-    // 0, 1: uResolution (vec2)
-    // 2, 3: uLightPos (vec2)
-    // 4, 5: uLogoPos (vec2)
-    // 6, 7: uLogoSize (vec2)
-    // Sampler 0: uTexture (sampler2D)
-
     fragmentShader
       ..setFloat(0, size.x)
       ..setFloat(1, size.y)
@@ -208,32 +181,6 @@ class RayMarchingShadowComponent extends PositionComponent
   }
 }
 
-class GodRayComponent extends PositionComponent {
-  final Paint _paint = Paint();
-  static const double rayRadius = 70.0;
-
-  GodRayComponent() {
-    anchor = Anchor.center;
-    _paint.shader = Gradient.radial(
-      Offset.zero,
-      rayRadius,
-      [
-        const Color(0xF4F69E7C), // 244, 246, 158, 124
-        const Color(0x80F69E7C), // 128, 246, 158, 124
-        const Color(0x40EDDAD1), // 64, 237, 218, 209
-      ],
-      [0.0, 0.4, 1.0],
-    );
-  }
-
-  @override
-  void render(Canvas canvas) {
-    super.render(canvas);
-    canvas.drawCircle(Offset.zero, rayRadius, _paint);
-  }
-}
-
-
 class AdvancedGodRayComponent extends PositionComponent {
   // --- Tweak these values to customize the sun's appearance ---
 
@@ -251,6 +198,7 @@ class AdvancedGodRayComponent extends PositionComponent {
   final double outerGlowSize = 64.0;
   final Color outerGlowColor = const Color(0xAAE68A4D); // Dusty Orange
   final double outerGlowBlurSigma = 35.0;
+
   // -----------------------------------------------------------
 
   late final Paint _corePaint;
@@ -320,5 +268,239 @@ class SdfLogoComponent extends PositionComponent {
 
     // Draw a rectangle covering the component's size
     canvas.drawRect(Offset.zero & size.toSize(), paint);
+  }
+}
+
+/// A component that renders an interactive UI element with circles, text,
+/// and four lines that animate based on the cursor's position.
+class InteractiveUIComponent extends PositionComponent
+    with PointerMoveCallbacks {
+  // --- Configuration ---
+  final double ratio = 1;
+  final double outerRadius = 135.0;
+  final double innerRadius = 95.0;
+
+  final double horizontalLineLength = 80.0;
+  final double horizontalLineGap = 120.0;
+  final double horizontalThreshold = 300.0;
+
+  final double verticalLineLength = 70.0;
+  final double verticalLineGap = 120.0;
+  final double verticalThreshold = 150.0;
+
+  final Color uiColor = const Color(0xFFF9F8F6);
+
+  final double startThickness = 3.0; // Thickness near the center
+  final double endThickness = 0.5; // Thickness at the far end
+
+  final List<Color> glassyColors = [
+    const Color.fromRGBO(255, 255, 255, 0.2), // Faint Edge Highlight
+    const Color.fromRGBO(255, 255, 255, 0.05), // Darker transparent part
+    const Color.fromRGBO(255, 255, 255, 0.7), // Sharp Central Highlight
+    const Color.fromRGBO(255, 255, 255, 0.05), // Darker transparent part
+    const Color.fromRGBO(255, 255, 255, 0.2), // Faint Edge Highlight
+  ];
+  final List<double> glassyStops = [
+    0.0, // Start edge
+    0.4, // Start of central highlight
+    0.5, // Peak of highlight
+    0.6, // End of central highlight
+    1.0, // End edge
+  ];
+
+  final BouncyLine _rightLine = BouncyLine();
+  final BouncyLine _leftLine = BouncyLine();
+  final BouncyLine _topLine = BouncyLine();
+  final BouncyLine _bottomLine = BouncyLine();
+
+  // --- State ---
+  late final TextComponent _textComponent;
+  late final Paint _materialPaint;
+
+  Vector2 cursorPosition = Vector2.zero();
+  Vector2 gameSize = Vector2.zero();
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+
+    // Set the component's anchor to its center for easy positioning.
+    anchor = Anchor.center;
+
+    // Configure the paint object for drawing circles and lines.
+    _materialPaint = Paint()..style = PaintingStyle.fill;
+
+    // Create and add the central text.
+    _textComponent = TextComponent(
+      text: 'START',
+      textRenderer: TextPaint(
+        style: TextStyle(
+          fontSize: 15.0,
+          color: uiColor,
+          letterSpacing: 10.0,
+          fontWeight: FontWeight.w900,
+          shadows: [
+            Shadow(
+              color: const Color(0xFF867665), // Shadow color with opacity
+              offset: const Offset(5.0, 5.0), // X and Y displacement
+              blurRadius: 10.0, // Blur radius of the shadow
+            ),
+          ],
+        ),
+      ),
+      anchor: Anchor.center,
+      position: size / 2, // Positioned at the center of this component
+    );
+    add(_textComponent);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    // --- NEW: NORMALIZED MOVEMENT LOGIC ---
+    // Ensure gameSize is valid to avoid division by zero errors on the first frame.
+    if (gameSize.x == 0 || gameSize.y == 0) return;
+
+    // 1. Calculate the maximum possible cursor displacement from the center.
+    final maxDisplacementX = gameSize.x / 2;
+    final maxDisplacementY = gameSize.y / 2;
+
+    // 2. Calculate the proportion of the cursor's displacement relative to the max.
+    // This value is normalized to be between 0.0 and 1.0.
+    final proportionX = (cursorPosition.x.abs() / maxDisplacementX).clamp(
+      0.0,
+      1.0,
+    );
+    final proportionY = (cursorPosition.y.abs() / maxDisplacementY).clamp(
+      0.0,
+      1.0,
+    );
+
+    // 3. Map this normalized proportion to the desired threshold for the lines' movement.
+    final horizontalOffset = proportionX * horizontalThreshold;
+    final verticalOffset = proportionY * verticalThreshold;
+
+    // 4. Set the target positions for the physics simulation using the new offsets.
+    _rightLine.targetPosition = horizontalOffset;
+    _leftLine.targetPosition = -horizontalOffset;
+    _bottomLine.targetPosition = verticalOffset;
+    _topLine.targetPosition = -verticalOffset;
+
+    // --- Physics and Rotation updates (unchanged) ---
+    _rightLine.update(dt);
+    _leftLine.update(dt);
+    _topLine.update(dt);
+    _bottomLine.update(dt);
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    final center = Vector2.zero();
+
+    // Right line
+    final rightPath = Path();
+    final rightScaledLength = horizontalLineLength * _rightLine.scale;
+    final rightStartX = _rightLine.currentPosition + horizontalLineGap;
+    final rightEndX = rightStartX + rightScaledLength;
+    rightPath.moveTo(rightStartX, center.y - startThickness / 2);
+    rightPath.lineTo(rightEndX, center.y - endThickness / 2);
+    rightPath.lineTo(rightEndX, center.y + endThickness / 2);
+    rightPath.lineTo(rightStartX, center.y + startThickness / 2);
+    rightPath.close();
+    _materialPaint.shader = Gradient.linear(
+      Offset(rightStartX, center.y - startThickness),
+      Offset(rightStartX, center.y + startThickness),
+      glassyColors,
+      glassyStops,
+    );
+    canvas.drawPath(rightPath, _materialPaint);
+
+    // Left line
+    final leftPath = Path();
+    final leftScaledLength = horizontalLineLength * _leftLine.scale;
+    final leftStartX = _leftLine.currentPosition - horizontalLineGap;
+    final leftEndX = leftStartX - leftScaledLength;
+    leftPath.moveTo(leftStartX, center.y - startThickness / 2);
+    leftPath.lineTo(leftEndX, center.y - endThickness / 2);
+    leftPath.lineTo(leftEndX, center.y + endThickness / 2);
+    leftPath.lineTo(leftStartX, center.y + startThickness / 2);
+    leftPath.close();
+    _materialPaint.shader = Gradient.linear(
+      Offset(leftStartX, center.y - startThickness),
+      Offset(leftStartX, center.y + startThickness),
+      glassyColors,
+      glassyStops,
+    );
+    canvas.drawPath(leftPath, _materialPaint);
+
+    // Bottom line
+    final bottomPath = Path();
+    final bottomScaledLength = verticalLineLength * _bottomLine.scale;
+    final bottomStartY = _bottomLine.currentPosition + verticalLineGap;
+    final bottomEndY = bottomStartY + bottomScaledLength;
+    bottomPath.moveTo(center.x - startThickness / 2, bottomStartY);
+    bottomPath.lineTo(center.x - endThickness / 2, bottomEndY);
+    bottomPath.lineTo(center.x + endThickness / 2, bottomEndY);
+    bottomPath.lineTo(center.x + startThickness / 2, bottomStartY);
+    bottomPath.close();
+    _materialPaint.shader = Gradient.linear(
+      Offset(center.x - startThickness, bottomStartY),
+      Offset(center.x + startThickness, bottomStartY),
+      glassyColors,
+      glassyStops,
+    );
+    canvas.drawPath(bottomPath, _materialPaint);
+
+    // Top line
+    final topPath = Path();
+    final topScaledLength = verticalLineLength * _topLine.scale;
+    final topStartY = _topLine.currentPosition - verticalLineGap;
+    final topEndY = topStartY - topScaledLength;
+    topPath.moveTo(center.x - startThickness / 2, topStartY);
+    topPath.lineTo(center.x - endThickness / 2, topEndY);
+    topPath.lineTo(center.x + endThickness / 2, topEndY);
+    topPath.lineTo(center.x + startThickness / 2, topStartY);
+    topPath.close();
+    _materialPaint.shader = Gradient.linear(
+      Offset(center.x - startThickness, topStartY),
+      Offset(center.x + startThickness, topStartY),
+      glassyColors,
+      glassyStops,
+    );
+    canvas.drawPath(topPath, _materialPaint);
+  }
+}
+
+class BouncyLine {
+  // --- Physics Configuration ---
+  final double stiffness = 500.0; // How "strong" the spring is
+  final double damping = 70.0; // How quickly it stops bouncing
+  final double mass = 20.0; // The "weight" of the line
+
+  // --- State ---
+  double currentPosition = 0.0;
+  double targetPosition = 0.0;
+  double velocity = 0.0;
+
+  // --- Size Animation ---
+  double scale = 1.0;
+  final double maxScale = 2; // How big it gets when moving fast
+  final double scaleSpeed = 15.0; // How fast it scales
+
+  void update(double dt) {
+    // --- Spring Physics Calculation ---
+    final double springForce = (targetPosition - currentPosition) * stiffness;
+    final double dampingForce = -velocity * damping;
+    final double totalForce = springForce + dampingForce;
+    final double acceleration = totalForce / mass;
+    velocity += acceleration * dt;
+    currentPosition += velocity * dt;
+
+    // --- Scale Animation Calculation ---
+    final double targetScale =
+        1.0 + (velocity.abs() / 150.0).clamp(0, maxScale - 1.0);
+    scale = scale + (targetScale - scale) * scaleSpeed * dt;
   }
 }

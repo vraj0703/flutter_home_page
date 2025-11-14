@@ -41,7 +41,6 @@ dependencies:
   flutter_bloc: ^9.1.1
   lottie: ^3.0.0
   audioplayers: ^6.5.1
-  rive: ^0.13.20
   flame: ^1.33.0
   flame_svg: ^1.11.17
   flutter_svg: ^2.0.9
@@ -104,7 +103,6 @@ flutter:
     - assets/
     - assets/fonts/
     - assets/audio/
-    - assets/rive/
     - assets/images/
 
   shaders:

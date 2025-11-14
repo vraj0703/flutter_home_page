@@ -30,7 +30,6 @@ float sampleAlpha(vec2 worldPos) {
 
     float distance = texture(uLogoTexture, uv).a;
 
-    // --- THE COMPATIBLE SOLUTION ---
     // We use a very small, fixed value for the edge width.
     // This avoids the fwidth() crash and produces a sharp result.
     //
@@ -51,7 +50,6 @@ void main() {
     vec2 pixelPos = FlutterFragCoord().xy;
 
     // --- COLORS ---
-    // Adjust these to match your video reference exactly
     vec3 floorColor = vec3(0.84, 0.76, 0.70);// Light Grey Base
     vec3 shadowColor = vec3(0.52, 0.46, 0.39);// Darker Shadow
 
@@ -61,7 +59,8 @@ void main() {
     vec2 rayDir = normalize(toLight);
 
     // --- RAY MARCHING SETUP ---
-    const int steps = 120;// Lower steps = more performance. Jitter hides the low count.
+    // Lower steps = more performance. Jitter hides the low count.
+    const int steps = 120;
     float stepSize = distToLight / float(steps);
 
     // --- THE SECRET SAUCE: JITTER ---
@@ -71,7 +70,8 @@ void main() {
     float currentDist = noise * stepSize;
 
     float shadowAccumulation = 0.0;
-    float shadowSoftness = 6.0;// Controls how "foggy" the shadow looks
+    // Controls how "foggy" the shadow looks
+    float shadowSoftness = 6.0;
 
     // --- THE LOOP ---
     for (int i = 0; i < steps; i++) {
@@ -97,7 +97,7 @@ void main() {
     float t = clamp(shadowAccumulation, 0.0, 1.0);
 
     // --- FINAL MIX ---
-    // Apply the shadow to the floor color
+    // 1. Apply the shadow to the floor color
     // We also add a tiny bit of noise to the floor itself for texture
     vec3 noisyFloor = floorColor * (0.98 + 0.04 * noise);
 
