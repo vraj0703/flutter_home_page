@@ -1,4 +1,3 @@
-
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/widgets/widgets.dart';
@@ -75,16 +74,14 @@ class _RevealSceneState extends State<RevealScene>
         GameWidget(game: _game),
 
         // Layer 2: The Black Curtain.
-        // This is the core of the new effect. It's a black container that
+        // This is the core of the curtain effect. It's a black container that
         // is "clipped" away by an animated path.
         AnimatedBuilder(
           animation: _revealController,
           builder: (context, child) {
             return ClipPath(
               // The custom clipper uses the controller's value to animate the path.
-              clipper: CurtainClipper(
-                revealProgress: _revealController.value,
-              ),
+              clipper: CurtainClipper(revealProgress: _revealController.value),
               child: Container(color: Colors.black),
             );
           },

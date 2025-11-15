@@ -8,17 +8,19 @@ import 'package:flutter/material.dart'
         StatelessWidget,
         BuildContext,
         Widget,
-        Stack,
         Scaffold,
         MaterialApp,
-        TextStyle,
-        Colors;
+        TextStyle;
 import 'dart:ui';
 
 import 'reveal_animation.dart';
 
+enum _LineOrientation { horizontal, vertical }
+
 class FlameScene extends StatelessWidget {
-  const FlameScene({super.key});
+  final VoidCallback onClick;
+
+  const FlameScene({super.key, required this.onClick});
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +36,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
   late AdvancedGodRayComponent godRay;
   late InteractiveUIComponent interactiveUI;
   late SdfLogoComponent logoComponent;
+  late final void Function() _sceneProgressListener;
 
   Vector2 _virtualLightPosition = Vector2.zero();
   Vector2 _targetLightPosition = Vector2.zero();
@@ -60,9 +63,11 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
     _targetLightDirection = Vector2(0, -1)..normalize();
     _lightDirection = _targetLightDirection.clone();
 
-    sceneProgressNotifier.addListener(() {
+    _sceneProgressListener = () {
       _sceneProgress = sceneProgressNotifier.value;
-    });
+    };
+    // Add the listener using the variable
+    sceneProgressNotifier.addListener(_sceneProgressListener);
 
     final sprite = await Sprite.load('logo.png');
     final Image image = sprite.image;
@@ -112,12 +117,9 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
 
   @override
   void onRemove() {
-    sceneProgressNotifier.removeListener(() {
-      _sceneProgress = sceneProgressNotifier.value;
-    });
+    sceneProgressNotifier.removeListener(_sceneProgressListener);
     super.onRemove();
   }
-
 
   @override
   void onGameResize(Vector2 size) {
@@ -136,9 +138,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
     super.update(dt);
     if (!isLoaded) return;
 
-    // --- CORE LOGIC CHANGE ---
-    // This block now decides the behavior based on the animation's progress.
-
+    // This block decides the behavior based on the animation's progress.
     if (_sceneProgress < 1.0) {
       // Animation is NOT complete. Keep everything fixed at the center.
       final center = size / 2;
@@ -210,8 +210,8 @@ class RayMarchingShadowComponent extends PositionComponent
       ..setFloat(5, logoPosition.y)
       ..setFloat(6, logoSize.x)
       ..setFloat(7, logoSize.y)
-      ..setFloat(8, lightDirection.x) // Send the new direction uniform
-      ..setFloat(9, lightDirection.y) // Send the new direction uniform
+      ..setFloat(8, lightDirection.x)
+      ..setFloat(9, lightDirection.y)
       ..setImageSampler(0, logoImage);
 
     _paint.shader = fragmentShader;
@@ -237,16 +237,13 @@ class AdvancedGodRayComponent extends PositionComponent {
   final Color outerGlowColor = const Color(0xAAE68A4D); // Dusty Orange
   final double outerGlowBlurSigma = 35.0;
 
-  // -----------------------------------------------------------
-
   late final Paint _corePaint;
   late final Paint _innerGlowPaint;
   late final Paint _outerGlowPaint;
 
   AdvancedGodRayComponent() {
-    // It's more performant to create Paint objects once.
     anchor = Anchor.center;
-
+    // It's more performant to create Paint objects once.
     // The MaskFilter is what creates the beautiful blur effect.
     // The sigma value controls the "spread" of the blur.
     _outerGlowPaint = Paint()
@@ -277,6 +274,7 @@ class SdfLogoComponent extends PositionComponent {
   final FragmentShader shader;
   final Image logoTexture;
   final Color tintColor;
+  late final Paint _paint;
 
   SdfLogoComponent({
     required this.shader,
@@ -284,7 +282,15 @@ class SdfLogoComponent extends PositionComponent {
     required this.tintColor,
     required Vector2 size,
     required Vector2 position,
-  }) : super(size: size, position: position, anchor: Anchor.center);
+  }) : super(size: size, position: position, anchor: Anchor.center) {
+    // Create a Paint object that uses the shader and tints the result
+    _paint = Paint()
+      ..shader = shader
+      ..colorFilter = ColorFilter.mode(
+        tintColor,
+        BlendMode.srcIn, // Apply tint to the shader's output
+      );
+  }
 
   @override
   void render(Canvas canvas) {
@@ -296,16 +302,8 @@ class SdfLogoComponent extends PositionComponent {
       ..setFloat(1, size.y)
       ..setImageSampler(0, logoTexture);
 
-    // Create a Paint object that uses the shader and tints the result
-    final paint = Paint()
-      ..shader = shader
-      ..colorFilter = ColorFilter.mode(
-        tintColor,
-        BlendMode.srcIn, // Apply tint to the shader's output
-      );
-
     // Draw a rectangle covering the component's size
-    canvas.drawRect(Offset.zero & size.toSize(), paint);
+    canvas.drawRect(Offset.zero & size.toSize(), _paint);
   }
 }
 
@@ -357,20 +355,28 @@ class InteractiveUIComponent extends PositionComponent
   // --- State ---
   late final TextComponent _textComponent;
   late final Paint _materialPaint;
+  late final void Function() _sceneProgressListener;
+
+  // --- Cache Path objects to avoid reallocation ---
+  final Path _rightPath = Path();
+  final Path _leftPath = Path();
+  final Path _topPath = Path();
+  final Path _bottomPath = Path();
 
   Vector2 cursorPosition = Vector2.zero();
   Vector2 gameSize = Vector2.zero();
 
   InteractiveUIComponent() {
-    sceneProgressNotifier.addListener(() {
+    _sceneProgressListener = () {
       _sceneProgress = sceneProgressNotifier.value;
-    });
+    };
+    sceneProgressNotifier.addListener(_sceneProgressListener);
   }
 
-  // NEW: Add onRemove to clean up the listener
+  // Add onRemove to clean up the listener
   @override
   void onRemove() {
-    sceneProgressNotifier.removeListener(() {});
+    sceneProgressNotifier.removeListener(_sceneProgressListener);
     super.onRemove();
   }
 
@@ -411,11 +417,14 @@ class InteractiveUIComponent extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+    // Set the component's opacity directly
+    var opacity = ((_sceneProgress - 0.2) / 0.8).clamp(0.0, 1.0);
+    if (opacity == 0.0) return;
 
     final textProgress = ((_sceneProgress - 0.5) / 0.5).clamp(0.0, 1.0);
     final charCount = (_fullText.length * textProgress).floor();
     _textComponent.text = _fullText.substring(0, charCount);
-    // --- NEW: NORMALIZED MOVEMENT LOGIC ---
+    // --- NORMALIZED MOVEMENT LOGIC ---
     // Ensure gameSize is valid to avoid division by zero errors on the first frame.
     if (gameSize.x == 0 || gameSize.y == 0) return;
 
@@ -444,7 +453,7 @@ class InteractiveUIComponent extends PositionComponent
     _bottomLine.targetPosition = verticalOffset;
     _topLine.targetPosition = -verticalOffset;
 
-    // --- Physics and Rotation updates (unchanged) ---
+    // --- Physics and Rotation updates ---
     _rightLine.update(dt);
     _leftLine.update(dt);
     _topLine.update(dt);
@@ -453,89 +462,92 @@ class InteractiveUIComponent extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    final fadeProgress = ((_sceneProgress - 0.2) / 0.8).clamp(0.0, 1.0);
-    if (fadeProgress == 0.0) return;
-
-    canvas.saveLayer(
-      null,
-      Paint()..color = Colors.white.withOpacity(fadeProgress),
-    );
     super.render(canvas);
+    _renderBouncyLine(
+      canvas: canvas,
+      line: _rightLine,
+      path: _rightPath,
+      length: horizontalLineLength,
+      gap: horizontalLineGap,
+      orientation: _LineOrientation.horizontal,
+    );
+
+    _renderBouncyLine(
+      canvas: canvas,
+      line: _leftLine,
+      path: _leftPath,
+      length: horizontalLineLength,
+      // Negative gap for left direction
+      gap: -horizontalLineGap,
+      orientation: _LineOrientation.horizontal,
+    );
+
+    _renderBouncyLine(
+      canvas: canvas,
+      line: _bottomLine,
+      path: _bottomPath,
+      length: verticalLineLength,
+      gap: verticalLineGap,
+      orientation: _LineOrientation.vertical,
+    );
+
+    _renderBouncyLine(
+      canvas: canvas,
+      line: _topLine,
+      path: _topPath,
+      length: verticalLineLength,
+      // Negative gap for top direction
+      gap: -verticalLineGap,
+      orientation: _LineOrientation.vertical,
+    );
+    canvas.drawPath(_topPath, _materialPaint);
+  }
+
+  void _renderBouncyLine({
+    required Canvas canvas,
+    required BouncyLine line,
+    required Path path,
+    required double length,
+    required double gap,
+    required _LineOrientation orientation,
+  }) {
+    path.reset();
+    final scaledLength = length * line.scale;
     final center = Vector2.zero();
 
-    // Right line
-    final rightPath = Path();
-    final rightScaledLength = horizontalLineLength * _rightLine.scale;
-    final rightStartX = _rightLine.currentPosition + horizontalLineGap;
-    final rightEndX = rightStartX + rightScaledLength;
-    rightPath.moveTo(rightStartX, center.y - startThickness / 2);
-    rightPath.lineTo(rightEndX, center.y - endThickness / 2);
-    rightPath.lineTo(rightEndX, center.y + endThickness / 2);
-    rightPath.lineTo(rightStartX, center.y + startThickness / 2);
-    rightPath.close();
-    _materialPaint.shader = Gradient.linear(
-      Offset(rightStartX, center.y - startThickness),
-      Offset(rightStartX, center.y + startThickness),
-      glassyColors,
-      glassyStops,
-    );
-    canvas.drawPath(rightPath, _materialPaint);
+    // The logic is split based on orientation, but it's all in one place.
+    if (orientation == _LineOrientation.horizontal) {
+      final startX = line.currentPosition + gap;
+      final endX = startX + (gap > 0 ? scaledLength : -scaledLength);
+      path.moveTo(startX, center.y - startThickness / 2);
+      path.lineTo(endX, center.y - endThickness / 2);
+      path.lineTo(endX, center.y + endThickness / 2);
+      path.lineTo(startX, center.y + startThickness / 2);
+      path.close();
+      _materialPaint.shader = Gradient.linear(
+        Offset(startX, center.y - startThickness),
+        Offset(startX, center.y + startThickness),
+        glassyColors,
+        glassyStops,
+      );
+    } else {
+      // Vertical
+      final startY = line.currentPosition + gap;
+      final endY = startY + (gap > 0 ? scaledLength : -scaledLength);
+      path.moveTo(center.x - startThickness / 2, startY);
+      path.lineTo(center.x - endThickness / 2, endY);
+      path.lineTo(center.x + endThickness / 2, endY);
+      path.lineTo(center.x + startThickness / 2, startY);
+      path.close();
+      _materialPaint.shader = Gradient.linear(
+        Offset(center.x - startThickness, startY),
+        Offset(center.x + startThickness, startY),
+        glassyColors,
+        glassyStops,
+      );
+    }
 
-    // Left line
-    final leftPath = Path();
-    final leftScaledLength = horizontalLineLength * _leftLine.scale;
-    final leftStartX = _leftLine.currentPosition - horizontalLineGap;
-    final leftEndX = leftStartX - leftScaledLength;
-    leftPath.moveTo(leftStartX, center.y - startThickness / 2);
-    leftPath.lineTo(leftEndX, center.y - endThickness / 2);
-    leftPath.lineTo(leftEndX, center.y + endThickness / 2);
-    leftPath.lineTo(leftStartX, center.y + startThickness / 2);
-    leftPath.close();
-    _materialPaint.shader = Gradient.linear(
-      Offset(leftStartX, center.y - startThickness),
-      Offset(leftStartX, center.y + startThickness),
-      glassyColors,
-      glassyStops,
-    );
-    canvas.drawPath(leftPath, _materialPaint);
-
-    // Bottom line
-    final bottomPath = Path();
-    final bottomScaledLength = verticalLineLength * _bottomLine.scale;
-    final bottomStartY = _bottomLine.currentPosition + verticalLineGap;
-    final bottomEndY = bottomStartY + bottomScaledLength;
-    bottomPath.moveTo(center.x - startThickness / 2, bottomStartY);
-    bottomPath.lineTo(center.x - endThickness / 2, bottomEndY);
-    bottomPath.lineTo(center.x + endThickness / 2, bottomEndY);
-    bottomPath.lineTo(center.x + startThickness / 2, bottomStartY);
-    bottomPath.close();
-    _materialPaint.shader = Gradient.linear(
-      Offset(center.x - startThickness, bottomStartY),
-      Offset(center.x + startThickness, bottomStartY),
-      glassyColors,
-      glassyStops,
-    );
-    canvas.drawPath(bottomPath, _materialPaint);
-
-    // Top line
-    final topPath = Path();
-    final topScaledLength = verticalLineLength * _topLine.scale;
-    final topStartY = _topLine.currentPosition - verticalLineGap;
-    final topEndY = topStartY - topScaledLength;
-    topPath.moveTo(center.x - startThickness / 2, topStartY);
-    topPath.lineTo(center.x - endThickness / 2, topEndY);
-    topPath.lineTo(center.x + endThickness / 2, topEndY);
-    topPath.lineTo(center.x + startThickness / 2, topStartY);
-    topPath.close();
-    _materialPaint.shader = Gradient.linear(
-      Offset(center.x - startThickness, topStartY),
-      Offset(center.x + startThickness, topStartY),
-      glassyColors,
-      glassyStops,
-    );
-    canvas.drawPath(topPath, _materialPaint);
-
-    canvas.restore();
+    canvas.drawPath(path, _materialPaint);
   }
 }
 
