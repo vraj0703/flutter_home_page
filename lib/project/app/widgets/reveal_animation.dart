@@ -1,8 +1,7 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/widgets/widgets.dart';
-
-import 'flame.dart';
+import 'scene.dart';
 
 final sceneProgressNotifier = ValueNotifier<double>(0.0);
 
