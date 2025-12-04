@@ -7,7 +7,18 @@ import 'package:flutter_home_page/project/app/widgets/reveal_animation.dart';
 import 'components.dart';
 import 'interactive_ui_component.dart';
 
-class MyGame extends FlameGame with PointerMoveCallbacks {
+enum UIState {
+  visible,
+  fadingOut,
+  hidden,
+  fadingIn,
+}
+
+class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
+  VoidCallback? onStartExitAnimation;
+
+  MyGame({this.onStartExitAnimation});
+
   late RayMarchingShadowComponent shadowScene;
   late AdvancedGodRayComponent godRay;
   late InteractiveUIComponent interactiveUI;
@@ -25,6 +36,12 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
   final double smoothingSpeed = 8.0;
   final double glowVerticalOffset = 10.0;
 
+  late final Timer _inactivityTimer;
+  UIState _uiState = UIState.visible;
+
+  static const double inactivityTimeout = 5.0;
+  static const double uiFadeDuration = 0.5;
+
   @override
   Color backgroundColor() => const Color(0xFFD8C5B4);
 
@@ -32,6 +49,18 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
   Future<void> onLoad() async {
     await super.onLoad();
     final center = size / 2;
+
+    _inactivityTimer = Timer(
+      inactivityTimeout,
+      onTick: () {
+        // This code runs when the user has been inactive for the timeout duration.
+        // If the UI is currently fully visible, we trigger the fade-out.
+        if (_uiState == UIState.visible) {
+          _uiState = UIState.fadingOut;
+        }
+      },
+      repeat: false, // The timer should only fire once per period of inactivity.
+    );
 
     // --- Set Initial Centered State ---
     _targetLightPosition = center;
@@ -86,9 +115,18 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
     interactiveUI = InteractiveUIComponent();
     interactiveUI.position = size / 2;
     interactiveUI.priority = 30;
-    interactiveUI.position = size / 2;
     interactiveUI.gameSize = size;
+    interactiveUI.onExitAnimationComplete = () {
+      onStartExitAnimation?.call();
+    };
     await add(interactiveUI);
+    _inactivityTimer.start();
+  }
+
+  @override
+  void onTapDown(TapDownEvent event) {
+    interactiveUI.startExitAnimation();
+    super.onTapDown(event);
   }
 
   @override
@@ -113,6 +151,31 @@ class MyGame extends FlameGame with PointerMoveCallbacks {
   void update(double dt) {
     super.update(dt);
     if (!isLoaded) return;
+
+    _inactivityTimer.update(dt);
+    switch (_uiState) {
+      case UIState.fadingOut:
+      // Decrease the UI's opacity over the defined fade duration.
+        interactiveUI.inactivityOpacity -= dt / uiFadeDuration;
+        if (interactiveUI.inactivityOpacity <= 0.0) {
+          interactiveUI.inactivityOpacity = 0.0;
+          _uiState = UIState.hidden; // Transition to the hidden state.
+        }
+        break;
+      case UIState.fadingIn:
+      // Increase the UI's opacity over the defined fade duration.
+        interactiveUI.inactivityOpacity += dt / uiFadeDuration;
+        if (interactiveUI.inactivityOpacity >= 1.0) {
+          interactiveUI.inactivityOpacity = 1.0;
+          _uiState = UIState.visible; // Transition to the visible state.
+        }
+        break;
+      case UIState.visible:
+      case UIState.hidden:
+      // In these stable states, we do nothing and wait for an event.
+        break;
+    }
+
 
     // This block decides the behavior based on the animation's progress.
     if (_sceneProgress < 1.0) {

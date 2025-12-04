@@ -16,25 +16,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Vishal Raj',
       theme: ThemeData.dark(),
-      home: SpaceScene(child: App()),
+      home: SpaceScene(child: Container()),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class App extends StatelessWidget {
-  const App({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    var controller = TextEditingController();
-    return Scaffold(
-      body: Column(
 
-      ),
-      backgroundColor: Colors.transparent,
-    );
-  }
-}
-
-double pd(String a) => parseFloat(a);

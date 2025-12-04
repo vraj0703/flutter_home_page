@@ -8,10 +8,6 @@ class FlameScene extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(body: RevealScene()),
-    );
+    return RevealScene(onClick: onClick);
   }
-} // The main game class
-
+}

@@ -71,6 +71,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   final scrollNotifier = ValueNotifier<double>(0.0);
   late final AudioPlayer _audioPlayer;
   bool _isAudioPlaying = false;
+  late AssetSource assetSource;
 
   SpaceBloc() : super(SpaceInitial()) {
     on<Initialize>(_initialize);
@@ -83,6 +84,8 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
     log('[3D Debug] _initialize', name: 'SpaceBloc');
     _audioPlayer = AudioPlayer();
     _audioPlayer.setReleaseMode(ReleaseMode.loop);
+    assetSource = AssetSource('audio/space_ambient.mp3');
+    assetSource.setOnPlayer(_audioPlayer);
 
     screenSize = event.screenSize;
     width = screenSize.width;
@@ -112,7 +115,7 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
   FutureOr<void> _onScroll(Scroll event, Emitter<SpaceState> emit) {
     if (!_isAudioPlaying && state is SpaceLoaded) {
       // User has interacted, so we can now safely play audio
-      _audioPlayer.play(AssetSource('audio/space_ambient.mp3'));
+      _audioPlayer.play(assetSource);
       _isAudioPlaying = true; // Set flag so this only runs once
     }
     _scrollTarget += event.scrollDelta * 0.0005;

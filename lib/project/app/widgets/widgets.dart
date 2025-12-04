@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/space_bloc.dart';
 import 'package:lottie/lottie.dart';
 
-import 'flame.dart';
-
 /// Main overlay widget that listens to scroll changes
 /// and orchestrates the fading of UI elements.
 class PortfolioOverlays extends StatelessWidget {
@@ -230,14 +228,6 @@ class LottieLoadingScreen extends StatelessWidget {
               fit: BoxFit.contain,
               animate: true,
               repeat: true,
-            ),
-            FlameScene(
-              onClick: () {
-                BlocProvider.of<SpaceBloc>(
-                  context,
-                  listen: false,
-                ).add(Initialize(screenSize: MediaQuery.sizeOf(context)));
-              },
             ),
           ],
         ),

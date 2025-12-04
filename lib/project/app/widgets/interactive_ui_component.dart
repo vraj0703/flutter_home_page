@@ -33,6 +33,7 @@ class InteractiveUIComponent extends PositionComponent
 
   final double startThickness = 3.0; // Thickness near the center
   final double endThickness = 0.5; // Thickness at the far end
+  double inactivityOpacity = 1.0;
 
   final List<Color> glassyColors = [
     const Color.fromRGBO(255, 255, 255, 0.2), // Faint Edge Highlight
@@ -54,12 +55,10 @@ class InteractiveUIComponent extends PositionComponent
   final BouncyLine _topLine = BouncyLine();
   final BouncyLine _bottomLine = BouncyLine();
 
-  // --- State ---
   late final TextComponent _textComponent;
   late final Paint _materialPaint;
   late final void Function() _sceneProgressListener;
 
-  // --- Cache Path objects to avoid reallocation ---
   final Path _rightPath = Path();
   final Path _leftPath = Path();
   final Path _topPath = Path();
@@ -70,7 +69,7 @@ class InteractiveUIComponent extends PositionComponent
 
   _ExitState _currentState = _ExitState.interactive;
   double _textAnimationProgress = 0.0;
-  final double _textAnimationSpeed = 1.5; // Controls speed of typing/deleting
+  final double _textAnimationSpeed = 2; // Controls speed of typing/deleting
 
   // Callback to notify the game that the text animation is done
   // and the curtain should close.
@@ -152,7 +151,6 @@ class InteractiveUIComponent extends PositionComponent
   }
 
   void _updateInteractiveState(double dt) {
-    // This is the original update logic
     var opacity = ((_sceneProgress - 0.2) / 0.8).clamp(0.0, 1.0);
     if (opacity == 0.0) return;
 
@@ -201,7 +199,7 @@ class InteractiveUIComponent extends PositionComponent
   }
 
   void _updateTypingWelcomeState(double dt) {
-    const newText = 'Welcome to my space';
+    const newText = 'V I S H A L  R A J';
     _textAnimationProgress += _textAnimationSpeed * dt;
     final charsToType = (_textAnimationProgress * newText.length).floor();
 
@@ -216,45 +214,56 @@ class InteractiveUIComponent extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    super.render(canvas);
-    _renderBouncyLine(
-      canvas: canvas,
-      line: _rightLine,
-      path: _rightPath,
-      length: horizontalLineLength,
-      gap: horizontalLineGap,
-      orientation: _LineOrientation.horizontal,
-    );
+    final revealFade = ((_sceneProgress - 0.2) / 0.8).clamp(0.0, 1.0);
+    if (revealFade <= 0.0) {
+      return; // Exit early if not yet visible.
+    }
 
-    _renderBouncyLine(
-      canvas: canvas,
-      line: _leftLine,
-      path: _leftPath,
-      length: horizontalLineLength,
-      // Negative gap for left direction
-      gap: -horizontalLineGap,
-      orientation: _LineOrientation.horizontal,
-    );
+    // Set the text's opacity based on its reveal progress.
+    // The TextComponent's own paint will be combined with the parent's opacity.
+    //_textComponent.paint.color = uiColor.withOpacity(revealFade);
+    super.render(canvas); // Renders the text child component
 
-    _renderBouncyLine(
-      canvas: canvas,
-      line: _bottomLine,
-      path: _bottomPath,
-      length: verticalLineLength,
-      gap: verticalLineGap,
-      orientation: _LineOrientation.vertical,
-    );
+    final lineFade = ((_sceneProgress - 0.4) / 0.4).clamp(0.0, 1.0);
+    if (lineFade > 0.0) {
+      // The overall opacity of the lines is a combination of their fade-in
+      // and the parent component's opacity (from the OpacityEffect).
+      // Flame handles this combination automatically when we set the paint color.
+      _materialPaint.color = flutter.Colors.white.withOpacity(lineFade);
 
-    _renderBouncyLine(
-      canvas: canvas,
-      line: _topLine,
-      path: _topPath,
-      length: verticalLineLength,
-      // Negative gap for top direction
-      gap: -verticalLineGap,
-      orientation: _LineOrientation.vertical,
-    );
-    canvas.drawPath(_topPath, _materialPaint);
+      _renderBouncyLine(
+        canvas: canvas,
+        line: _rightLine,
+        path: _rightPath,
+        length: horizontalLineLength,
+        gap: horizontalLineGap,
+        orientation: _LineOrientation.horizontal,
+      );
+      _renderBouncyLine(
+        canvas: canvas,
+        line: _leftLine,
+        path: _leftPath,
+        length: horizontalLineLength,
+        gap: -horizontalLineGap,
+        orientation: _LineOrientation.horizontal,
+      );
+      _renderBouncyLine(
+        canvas: canvas,
+        line: _bottomLine,
+        path: _bottomPath,
+        length: verticalLineLength,
+        gap: verticalLineGap,
+        orientation: _LineOrientation.vertical,
+      );
+      _renderBouncyLine(
+        canvas: canvas,
+        line: _topLine,
+        path: _topPath,
+        length: verticalLineLength,
+        gap: -verticalLineGap,
+        orientation: _LineOrientation.vertical,
+      );
+    }
   }
 
   void _renderBouncyLine({

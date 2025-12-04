@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/space_bloc.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_home_page/project/app/widgets/flame.dart';
 import 'package:flutter_home_page/project/app/widgets/widgets.dart';
 
 class SpaceScene extends StatelessWidget {
@@ -41,11 +42,6 @@ class _SpaceScreenState extends State<_SpaceScreen>
   @override
   void initState() {
     super.initState();
-
-    BlocProvider.of<SpaceBloc>(
-      context,
-      listen: false,
-    ).add(Initialize(screenSize: widget.originalSize));
   }
 
   @override
@@ -75,31 +71,6 @@ class _SpaceScreenState extends State<_SpaceScreen>
         startFade: _startFade,
         child: widget.child,
       ),
-    );
-  }
-}
-
-class _LoadingCurtains extends StatelessWidget {
-  final AnimationController lottieFadeController;
-
-  const _LoadingCurtains({required this.lottieFadeController});
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<SpaceBloc, SpaceState>(
-      buildWhen: (prev, curr) => curr is SpaceInitial || curr is SpaceLoading,
-      builder: (context, state) {
-        String? message;
-        if (state is SpaceLoading) {
-          message = state.message;
-        }
-
-        return FadeTransition(
-          opacity: lottieFadeController,
-          // Pass the message to the Lottie screen
-          child: LottieLoadingScreen(message: message),
-        );
-      },
     );
   }
 }
@@ -195,7 +166,19 @@ class SpaceBuilder extends StatelessWidget {
                     child: !startFade
                         // Key 1: If we haven't started the fade,
                         // show the Lottie screen.
-                        ? LottieLoadingScreen(key: const ValueKey('loading'))
+                        ? FlameScene(
+                            key: const ValueKey('loading'),
+                            onClick: () {
+                              BlocProvider.of<SpaceBloc>(
+                                context,
+                                listen: false,
+                              ).add(
+                                Initialize(
+                                  screenSize: MediaQuery.sizeOf(context),
+                                ),
+                              );
+                            },
+                          )
                         // Key 2: If we *have* started the fade,
                         // tell the switcher to show an empty box.
                         : const SizedBox.shrink(key: ValueKey('loaded')),

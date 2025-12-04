@@ -6,7 +6,9 @@ import 'scene.dart';
 final sceneProgressNotifier = ValueNotifier<double>(0.0);
 
 class RevealScene extends StatefulWidget {
-  const RevealScene({super.key});
+  final VoidCallback onClick;
+
+  const RevealScene({super.key, required this.onClick});
 
   @override
   State<RevealScene> createState() => _RevealSceneState();
@@ -23,7 +25,7 @@ class _RevealSceneState extends State<RevealScene>
   @override
   void initState() {
     super.initState();
-    _game = MyGame();
+    _game = MyGame(onStartExitAnimation: _closeCurtain);
 
     // Controller for the "LOADING" text's blinking effect.
     _blinkingController = AnimationController(
@@ -38,11 +40,24 @@ class _RevealSceneState extends State<RevealScene>
     );
 
     // Link the controller to our global notifier.
-    _revealController.addListener(() {
-      sceneProgressNotifier.value = _revealController.value;
+    _revealController.addListener(_updateSceneProgress);
+
+    _revealController.addStatusListener((status) {
+      // When the curtain has fully closed (animation is 'dismissed')
+      if (status == AnimationStatus.dismissed) {
+        widget.onClick(); // Call the final callback
+      }
     });
 
     _initializeAndStartAnimation();
+  }
+
+  void _updateSceneProgress() {
+    sceneProgressNotifier.value = _revealController.value;
+  }
+
+  void _closeCurtain() {
+    _revealController.reverse();
   }
 
   void _initializeAndStartAnimation() async {
@@ -59,6 +74,7 @@ class _RevealSceneState extends State<RevealScene>
 
   @override
   void dispose() {
+    _revealController.removeListener(_updateSceneProgress);
     _blinkingController.dispose();
     _revealController.dispose();
     super.dispose();
