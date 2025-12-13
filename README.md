@@ -1,16 +1,34 @@
-# flutter_home_page
+# Flutter Home Page
 
-A new Flutter project.
+A feature module implementing the home screen experience, featuring 3D elements and interactive UI.
+
+## Key Features
+
+- **3D Rendering**: Utilizes `three_dart` and `flutter_gl` for 3D scenes.
+- **Game Engine Integration**: Uses `flame` for game-like interactions.
+- **State Management**: Powered by `flutter_bloc`.
+- **Rich Media**: Includes support for Lottie animations and SVG assets.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+### Prerequisites
 
-A few resources to get you started if this is your first Flutter project:
+- Flutter SDK
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### Installation
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Add to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  flutter_home_page:
+    path: ../flutter_home_page
+```
+
+### Usage
+
+This package exports the home page widget which can be integrated into the main app routing.
+
+## Maintainers
+
+Maintained by the core development team.
