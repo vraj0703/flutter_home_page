@@ -45,6 +45,7 @@ dependencies:
   flame_svg: ^1.11.17
   flutter_svg: ^2.0.9
   freezed: ^3.2.3
+  google_fonts: ^4.0.4
 
 dependency_overrides:
   universal_html: ^2.2.4
@@ -103,10 +104,16 @@ flutter:
   # see https://flutter.dev/to/font-from-package
   assets:
     - assets/
-    - assets/fonts/
-    - assets/audio/
-    - assets/images/
+    - assets/fonts/deecode_regular.json
+    - assets/fonts/helvetiker.json
+    - assets/fonts/monoblock_bold.json
+    - assets/fonts/pixel_code.json
+    - assets/fonts/trt_artnik.json
+    - assets/audio/space_ambient.mp3
+    - assets/images/logo.png
 
   shaders:
     - assets/shaders/god_rays.frag
     - assets/shaders/logo.frag
+    - assets/shaders/jupiter.frag
+    - assets/shaders/background_run.frag

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/space.dart';
-import 'package:flutter_home_page/project/app/bloc/space_bloc.dart';
-import 'package:three_dart/three3d/dart_helpers.dart';
+import 'package:flutter_home_page/project/app/widgets/flame.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,11 +14,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Vishal Raj',
       theme: ThemeData.dark(),
-      home: SpaceScene(child: Container()),
+      home: FlameScene(onClick: () {}),
       debugShowCheckedModeBanner: false,
     );
   }
 }
-
-
-

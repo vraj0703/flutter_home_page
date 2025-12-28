@@ -169,6 +169,7 @@ class SpaceBuilder extends StatelessWidget {
                         ? FlameScene(
                             key: const ValueKey('loading'),
                             onClick: () {
+                              /* 
                               BlocProvider.of<SpaceBloc>(
                                 context,
                                 listen: false,
@@ -176,7 +177,7 @@ class SpaceBuilder extends StatelessWidget {
                                 Initialize(
                                   screenSize: MediaQuery.sizeOf(context),
                                 ),
-                              );
+                              ); */
                             },
                           )
                         // Key 2: If we *have* started the fade,

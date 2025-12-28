@@ -116,6 +116,8 @@ class InteractiveUIComponent extends PositionComponent
           color: uiColor,
           letterSpacing: 10.0,
           fontWeight: FontWeight.w900,
+          fontFamily:
+              'Roboto', // AssumingRoboto is available, fallback to default
           shadows: [
             Shadow(
               color: const Color(0xFF867665), // Shadow color with opacity
@@ -196,14 +198,26 @@ class InteractiveUIComponent extends PositionComponent
       _currentState = _ExitState.typingWelcome; // Transition to next state
       _textAnimationProgress = 0.0; // Reset for typing
     }
+
+    // Animate lines away or keep them? Design says "fade out godrays, subtle shadow".
+    // For now, let's reset lines to zero.
+    _rightLine.targetPosition = 0;
+    _leftLine.targetPosition = 0;
+    _bottomLine.targetPosition = 0;
+    _topLine.targetPosition = 0;
+
+    _rightLine.update(dt);
+    _leftLine.update(dt);
+    _topLine.update(dt);
+    _bottomLine.update(dt);
   }
 
   void _updateTypingWelcomeState(double dt) {
-    const newText = 'V I S H A L  R A J';
+    const newText = 'VISHAL RAJ'; // Updated text
     _textAnimationProgress += _textAnimationSpeed * dt;
     final charsToType = (_textAnimationProgress * newText.length).floor();
 
-    if (charsToType < newText.length) {
+    if (charsToType <= newText.length) {
       _textComponent.text = newText.substring(0, charsToType);
     } else {
       _textComponent.text = newText;
@@ -219,50 +233,49 @@ class InteractiveUIComponent extends PositionComponent
       return; // Exit early if not yet visible.
     }
 
-    // Set the text's opacity based on its reveal progress.
-    // The TextComponent's own paint will be combined with the parent's opacity.
-    //_textComponent.paint.color = uiColor.withOpacity(revealFade);
-    super.render(canvas); // Renders the text child component
+    // Render Text
+    super.render(canvas);
 
-    final lineFade = ((_sceneProgress - 0.4) / 0.4).clamp(0.0, 1.0);
-    if (lineFade > 0.0) {
-      // The overall opacity of the lines is a combination of their fade-in
-      // and the parent component's opacity (from the OpacityEffect).
-      // Flame handles this combination automatically when we set the paint color.
-      _materialPaint.color = flutter.Colors.white.withOpacity(lineFade);
+    // Only render lines in interactive state or while removing start
+    if (_currentState == _ExitState.interactive ||
+        _currentState == _ExitState.removingStart) {
+      final lineFade = ((_sceneProgress - 0.4) / 0.4).clamp(0.0, 1.0);
+      if (lineFade > 0.0) {
+        _materialPaint.color = flutter.Colors.white.withOpacity(lineFade);
 
-      _renderBouncyLine(
-        canvas: canvas,
-        line: _rightLine,
-        path: _rightPath,
-        length: horizontalLineLength,
-        gap: horizontalLineGap,
-        orientation: _LineOrientation.horizontal,
-      );
-      _renderBouncyLine(
-        canvas: canvas,
-        line: _leftLine,
-        path: _leftPath,
-        length: horizontalLineLength,
-        gap: -horizontalLineGap,
-        orientation: _LineOrientation.horizontal,
-      );
-      _renderBouncyLine(
-        canvas: canvas,
-        line: _bottomLine,
-        path: _bottomPath,
-        length: verticalLineLength,
-        gap: verticalLineGap,
-        orientation: _LineOrientation.vertical,
-      );
-      _renderBouncyLine(
-        canvas: canvas,
-        line: _topLine,
-        path: _topPath,
-        length: verticalLineLength,
-        gap: -verticalLineGap,
-        orientation: _LineOrientation.vertical,
-      );
+        _renderBouncyLine(
+          canvas: canvas,
+          line: _rightLine,
+          path: _rightPath,
+          length: horizontalLineLength,
+          gap: horizontalLineGap,
+          orientation: _LineOrientation.horizontal,
+        );
+        _renderBouncyLine(
+          canvas: canvas,
+          line: _leftLine,
+          path: _leftPath,
+          length: horizontalLineLength,
+          gap: -horizontalLineGap,
+          orientation: _LineOrientation.horizontal,
+        );
+        _renderBouncyLine(
+          canvas: canvas,
+          line: _bottomLine,
+          path: _bottomPath,
+          length: verticalLineLength,
+          gap: verticalLineGap,
+          orientation: _LineOrientation.vertical,
+        );
+        _renderBouncyLine(
+          canvas: canvas,
+          line: _topLine,
+          path: _topPath,
+          length: verticalLineLength,
+          gap: -verticalLineGap,
+          orientation: _LineOrientation.vertical,
+        );
+      }
     }
   }
 

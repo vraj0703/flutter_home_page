@@ -1,21 +1,23 @@
 import 'dart:ui';
 
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flutter/animation.dart';
 import 'package:flutter_home_page/project/app/widgets/reveal_animation.dart';
+import 'package:flutter_home_page/project/app/widgets/jupiter_planet.dart';
+import 'package:flutter_home_page/project/app/widgets/background_run_component.dart';
 import 'components.dart';
 import 'interactive_ui_component.dart';
 
-enum UIState {
-  visible,
-  fadingOut,
-  hidden,
-  fadingIn,
-}
+enum UIState { visible, fadingOut, hidden, fadingIn }
+
+enum HomeState { intro, transitioning, home }
 
 class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
   VoidCallback? onStartExitAnimation;
+  VoidCallback? onHeaderAnimationComplete;
 
   MyGame({this.onStartExitAnimation});
 
@@ -23,12 +25,22 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
   late AdvancedGodRayComponent godRay;
   late InteractiveUIComponent interactiveUI;
   late SdfLogoComponent logoComponent;
+  late JupiterComponent jupiterPlanet;
+  late BackgroundRunComponent backgroundRun;
   late final void Function() _sceneProgressListener;
 
   Vector2 _virtualLightPosition = Vector2.zero();
   Vector2 _targetLightPosition = Vector2.zero();
   Vector2 _lightDirection = Vector2.zero();
   Vector2 _targetLightDirection = Vector2.zero();
+
+  // Transformation targets
+  Vector2 _targetLogoPosition = Vector2.zero();
+  double _targetLogoScale = 3.0; // Initial zoom
+  double _currentLogoScale = 3.0;
+  Vector2 _baseLogoSize = Vector2.zero();
+
+  HomeState _homeState = HomeState.intro;
 
   double _sceneProgress = 0.0;
   Vector2? _lastKnownPointerPosition;
@@ -59,7 +71,8 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
           _uiState = UIState.fadingOut;
         }
       },
-      repeat: false, // The timer should only fire once per period of inactivity.
+      repeat:
+          false, // The timer should only fire once per period of inactivity.
     );
 
     // --- Set Initial Centered State ---
@@ -77,8 +90,8 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     final sprite = await Sprite.load('logo.png');
     final Image image = sprite.image;
     double zoom = 3;
-    Vector2 logoSize =
-        Vector2(image.width.toDouble(), image.height.toDouble()) * zoom;
+    _baseLogoSize = Vector2(image.width.toDouble(), image.height.toDouble());
+    Vector2 logoSize = _baseLogoSize * zoom;
     final program = await FragmentProgram.fromAsset(
       'assets/shaders/god_rays.frag',
     );
@@ -87,6 +100,21 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     final logoProgram = await FragmentProgram.fromAsset(
       'assets/shaders/logo.frag',
     );
+
+    final jupiterProgram = await FragmentProgram.fromAsset(
+      'assets/shaders/jupiter.frag',
+    );
+
+    final backgroundProgram = await FragmentProgram.fromAsset(
+      'assets/shaders/background_run.frag',
+    );
+
+    backgroundRun = BackgroundRunComponent(
+      shader: backgroundProgram.fragmentShader(),
+      size: size,
+      priority: 1,
+    );
+    await add(backgroundRun);
 
     shadowScene = RayMarchingShadowComponent(
       fragmentShader: shader,
@@ -116,16 +144,41 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     interactiveUI.position = size / 2;
     interactiveUI.priority = 30;
     interactiveUI.gameSize = size;
+    interactiveUI.gameSize = size;
     interactiveUI.onExitAnimationComplete = () {
-      onStartExitAnimation?.call();
+      // Instead of exiting, we transition to the header state!
+      animateToHeader();
+      // onStartExitAnimation?.call(); // Old behavior
     };
     await add(interactiveUI);
+
+    jupiterPlanet = JupiterComponent(
+      shader: jupiterProgram.fragmentShader(),
+      size: Vector2(300, 300),
+      position: size / 2,
+      anchor: Anchor.center,
+    );
+    jupiterPlanet.scale = Vector2.zero(); // Start hidden
+    jupiterPlanet.priority = 5; // Behind logo, maybe equal to others
+    await add(jupiterPlanet);
+
     _inactivityTimer.start();
   }
 
   @override
   void onTapDown(TapDownEvent event) {
     interactiveUI.startExitAnimation();
+
+    // Fade in background shader
+    if (backgroundRun.opacity == 0) {
+      backgroundRun.add(
+        OpacityEffect.to(
+          1.0,
+          EffectController(duration: 2.0, curve: Curves.easeInOut),
+        ),
+      );
+    }
+
     super.onTapDown(event);
   }
 
@@ -144,6 +197,11 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
       shadowScene.logoPosition = center;
       interactiveUI.position = center;
       interactiveUI.gameSize = size;
+      if (_homeState != HomeState.home) {
+        jupiterPlanet.position = center;
+      } else {
+        jupiterPlanet.position = center; // Always keep it centered for now
+      }
     }
   }
 
@@ -155,7 +213,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     _inactivityTimer.update(dt);
     switch (_uiState) {
       case UIState.fadingOut:
-      // Decrease the UI's opacity over the defined fade duration.
+        // Decrease the UI's opacity over the defined fade duration.
         interactiveUI.inactivityOpacity -= dt / uiFadeDuration;
         if (interactiveUI.inactivityOpacity <= 0.0) {
           interactiveUI.inactivityOpacity = 0.0;
@@ -163,7 +221,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
         }
         break;
       case UIState.fadingIn:
-      // Increase the UI's opacity over the defined fade duration.
+        // Increase the UI's opacity over the defined fade duration.
         interactiveUI.inactivityOpacity += dt / uiFadeDuration;
         if (interactiveUI.inactivityOpacity >= 1.0) {
           interactiveUI.inactivityOpacity = 1.0;
@@ -172,10 +230,9 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
         break;
       case UIState.visible:
       case UIState.hidden:
-      // In these stable states, we do nothing and wait for an event.
+        // In these stable states, we do nothing and wait for an event.
         break;
     }
-
 
     // This block decides the behavior based on the animation's progress.
     if (_sceneProgress < 1.0) {
@@ -208,6 +265,51 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
 
     shadowScene.lightPosition = _virtualLightPosition;
     shadowScene.lightDirection = _lightDirection;
+
+    // --- Home Page Transformation Logic ---
+    if (_homeState == HomeState.transitioning) {
+      // Interpolate Logo Position to Top-Left
+      logoComponent.position.lerp(_targetLogoPosition, dt * 5.0);
+      shadowScene.logoPosition.lerp(_targetLogoPosition, dt * 5.0);
+
+      // Interpolate Scale
+      _currentLogoScale =
+          lerpDouble(_currentLogoScale, _targetLogoScale, dt * 5.0) ?? 3.0;
+
+      // Update components with new scale
+      // Update components with new scale
+      if (_baseLogoSize != Vector2.zero()) {
+        final newSize = _baseLogoSize * _currentLogoScale;
+        logoComponent.size = newSize;
+        shadowScene.logoSize = newSize;
+      }
+
+      // Move UI "Vishal Raj" text to follow
+      // interactiveUI is centered on screen, but we want it relative to logo?
+      // Actually interactiveUI has its own logic.
+
+      if (logoComponent.position.distanceTo(_targetLogoPosition) < 1.0) {
+        _homeState = HomeState.home;
+        onHeaderAnimationComplete?.call();
+      }
+    }
+  }
+
+  void animateToHeader() {
+    _homeState = HomeState.transitioning;
+    _targetLogoPosition = Vector2(60, 60); // Top Left with padding
+    _targetLogoScale = 0.3; // Shrink further to fit screen
+
+    // Reveal Jupiter
+    jupiterPlanet.add(
+      ScaleEffect.to(
+        Vector2.all(1.5),
+        EffectController(duration: 3.0, curve: Curves.easeInOut),
+      ),
+    );
+
+    // Also tell GodRays to fade out or move
+    // godRay.add(OpacityEffect.fadeOut(EffectController(duration: 1.0)));
   }
 
   @override

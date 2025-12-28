@@ -1,6 +1,7 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/widgets/widgets.dart';
+import 'package:flutter_home_page/project/app/widgets/home_overlay.dart'; // Import overlay
 import 'scene.dart';
 
 final sceneProgressNotifier = ValueNotifier<double>(0.0);
@@ -20,12 +21,20 @@ class _RevealSceneState extends State<RevealScene>
   late final AnimationController _revealController;
   late final MyGame _game;
 
+  // Notifier to trigger the overlay reveal
+  final ValueNotifier<bool> _showOverlayNotifier = ValueNotifier(false);
+
   bool _isGameLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _game = MyGame(onStartExitAnimation: _closeCurtain);
+
+    // Wire up the new callback
+    _game.onHeaderAnimationComplete = () {
+      _showOverlayNotifier.value = true;
+    };
 
     // Controller for the "LOADING" text's blinking effect.
     _blinkingController = AnimationController(
@@ -77,6 +86,7 @@ class _RevealSceneState extends State<RevealScene>
     _revealController.removeListener(_updateSceneProgress);
     _blinkingController.dispose();
     _revealController.dispose();
+    _showOverlayNotifier.dispose();
     super.dispose();
   }
 
@@ -85,8 +95,11 @@ class _RevealSceneState extends State<RevealScene>
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Layer 1: The Flame Game. It's always here, but initially hidden.
-        GameWidget(game: _game),
+        // Layer 1: The Flame Game wrapped in HomeOverlay
+        HomeOverlay(
+          showOverlayNotifier: _showOverlayNotifier,
+          child: GameWidget(game: _game),
+        ),
 
         // Layer 2: The Black Curtain.
         // This is the core of the curtain effect. It's a black container that

@@ -64,7 +64,7 @@ class PortfolioOverlays extends StatelessWidget {
 
 /// The "Scroll to know more" text and blinking arrow
 class ScrollPrompt extends StatelessWidget {
-  const ScrollPrompt();
+  const ScrollPrompt({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +94,8 @@ class ScrollPrompt extends StatelessWidget {
 
 /// A stateful widget for the blinking arrow animation
 class BlinkingArrow extends StatefulWidget {
+  const BlinkingArrow({super.key});
+
   @override
   BlinkingArrowState createState() => BlinkingArrowState();
 }
@@ -177,7 +179,11 @@ class PortfolioButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
 
-  const PortfolioButton({required this.text, required this.onPressed});
+  const PortfolioButton({
+    super.key,
+    required this.text,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
