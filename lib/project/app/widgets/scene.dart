@@ -6,7 +6,7 @@ import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter_home_page/project/app/widgets/reveal_animation.dart';
-import 'package:flutter_home_page/project/app/widgets/jupiter_planet.dart';
+// import 'package:flutter_home_page/project/app/widgets/jupiter_planet.dart';
 import 'package:flutter_home_page/project/app/widgets/background_run_component.dart';
 import 'components.dart';
 import 'interactive_ui_component.dart';
@@ -25,7 +25,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
   late AdvancedGodRayComponent godRay;
   late InteractiveUIComponent interactiveUI;
   late SdfLogoComponent logoComponent;
-  late JupiterComponent jupiterPlanet;
+  // late JupiterComponent jupiterPlanet;
   late BackgroundRunComponent backgroundRun;
   late final void Function() _sceneProgressListener;
 
@@ -101,12 +101,12 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
       'assets/shaders/logo.frag',
     );
 
-    final jupiterProgram = await FragmentProgram.fromAsset(
-      'assets/shaders/jupiter.frag',
-    );
+    // final jupiterProgram = await FragmentProgram.fromAsset(
+    //   'assets/shaders/jupiter.frag',
+    // );
 
     final backgroundProgram = await FragmentProgram.fromAsset(
-      'assets/shaders/background_run.frag',
+      'assets/shaders/background_run_v2.frag',
     );
 
     backgroundRun = BackgroundRunComponent(
@@ -152,6 +152,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     };
     await add(interactiveUI);
 
+    /*
     jupiterPlanet = JupiterComponent(
       shader: jupiterProgram.fragmentShader(),
       size: Vector2(300, 300),
@@ -161,6 +162,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     jupiterPlanet.scale = Vector2.zero(); // Start hidden
     jupiterPlanet.priority = 5; // Behind logo, maybe equal to others
     await add(jupiterPlanet);
+    */
 
     _inactivityTimer.start();
   }
@@ -197,11 +199,13 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
       shadowScene.logoPosition = center;
       interactiveUI.position = center;
       interactiveUI.gameSize = size;
+      /*
       if (_homeState != HomeState.home) {
         jupiterPlanet.position = center;
       } else {
         jupiterPlanet.position = center; // Always keep it centered for now
       }
+      */
     }
   }
 
@@ -300,6 +304,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     _targetLogoPosition = Vector2(60, 60); // Top Left with padding
     _targetLogoScale = 0.3; // Shrink further to fit screen
 
+    /*
     // Reveal Jupiter
     jupiterPlanet.add(
       ScaleEffect.to(
@@ -307,6 +312,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
         EffectController(duration: 3.0, curve: Curves.easeInOut),
       ),
     );
+    */
 
     // Also tell GodRays to fade out or move
     // godRay.add(OpacityEffect.fadeOut(EffectController(duration: 1.0)));

@@ -116,4 +116,4 @@ flutter:
     - assets/shaders/god_rays.frag
     - assets/shaders/logo.frag
     - assets/shaders/jupiter.frag
-    - assets/shaders/background_run.frag
+    - assets/shaders/background_run_v2.frag

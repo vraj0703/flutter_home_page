@@ -9,8 +9,9 @@ uniform float uTime;
 out vec4 fragColor;
 
 vec4 tanh_polyline(vec4 x) {
-    vec4 ex = exp(x);
-    vec4 emx = exp(-x);
+    vec4 val = clamp(x, -20.0, 20.0);
+    vec4 ex = exp(val);
+    vec4 emx = exp(-val);
     return (ex - emx) / (ex + emx);
 }
 
@@ -29,18 +30,20 @@ void main() {
 
     // Normalize coordinates
     u = (u - p_res.xy / 2.0) / p_res.y;
+    u.y *= -1.0; // FLIP Y to match Shadertoy/Original geometry (Y-up)
 
     // Raymarching loop
-    // Using simple for-loop with integer index which is generally safe
+    // match reference: i < 1e2 (100)
     for(int loop_i = 0; loop_i < 100; loop_i++) {
         p = vec3(u * d, d + t);
         q = p;
 
         // start noise loop
-        // Fixed iteration loop (7 steps covers 0.03 to ~2.0 with doubling)
+        // match reference: s = .03; s < 2.0; s+=s
+        // .03, .06, .12, .24, .48, .96, 1.92 -> 7 iterations.
         s = 0.03;
         for (int k = 0; k < 7; k++) {
-            p += abs(dot(sin(p * s * 4.0), vec3(0.035))) / s;
+            p += vec3(abs(dot(sin(p * s * 4.0), vec3(0.035))) / s);
             s += s;
         }
 
@@ -62,5 +65,6 @@ void main() {
     vec4 col = vec4(4.0, 2.0, 1.0, 1.0) * o / 4000.0 / len;
     o = tanh_polyline(col);
 
-    fragColor = o;
+    // Force alpha to 1.0 to ensure the color is vibrant and doesn't blend with the light background
+    fragColor = vec4(o.rgb, 1.0);
 }
