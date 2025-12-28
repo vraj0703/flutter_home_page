@@ -195,8 +195,9 @@ class InteractiveUIComponent extends PositionComponent
       _textComponent.text = _fullText.substring(0, remainingChars);
     } else {
       _textComponent.text = '';
-      _currentState = _ExitState.typingWelcome; // Transition to next state
-      _textAnimationProgress = 0.0; // Reset for typing
+      _currentState = _ExitState.finished; // Skip "VISHAL RAJ", go to finished
+      onExitAnimationComplete?.call(); // Signal completion immediately
+      _textAnimationProgress = 0.0;
     }
 
     // Animate lines away or keep them? Design says "fade out godrays, subtle shadow".
