@@ -195,8 +195,10 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     super.onGameResize(size);
     if (isLoaded) {
       final center = size / 2;
-      logoComponent.position = center;
-      shadowScene.logoPosition = center;
+      if (_homeState == HomeState.intro) {
+        logoComponent.position = center;
+        shadowScene.logoPosition = center;
+      }
       interactiveUI.position = center;
       interactiveUI.gameSize = size;
       /*

@@ -42,8 +42,8 @@ class _HomeOverlayState extends State<HomeOverlay> {
                       right: 40,
                       child: Row(
                         children: [
-                          _buildLanguageSwitcher(),
-                          const SizedBox(width: 20),
+                          // _buildLanguageSwitcher(), // Removed
+                          // const SizedBox(width: 20), // Removed
                           _buildMenuCircle(),
                         ],
                       ),
@@ -66,40 +66,7 @@ class _HomeOverlayState extends State<HomeOverlay> {
     );
   }
 
-  Widget _buildLanguageSwitcher() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          _runLangPill("IT", true),
-          const SizedBox(width: 4),
-          _runLangPill("EN", false),
-        ],
-      ),
-    );
-  }
-
-  Widget _runLangPill(String code, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.white : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        code,
-        style: TextStyle(
-          color: isActive ? Colors.black : Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
+  // Language Switcher Methods Removed
 
   Widget _buildMenuCircle() {
     return Container(

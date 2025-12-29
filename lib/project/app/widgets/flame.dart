@@ -8,6 +8,6 @@ class FlameScene extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RevealScene(onClick: onClick);
+    return Scaffold(body: RevealScene(onClick: onClick));
   }
 }
