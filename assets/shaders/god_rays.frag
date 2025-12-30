@@ -50,8 +50,8 @@ void main() {
     vec2 pixelPos = FlutterFragCoord().xy;
 
     // --- COLORS ---
-    vec3 floorColor = vec3(0.84, 0.76, 0.70);// Light Grey Base
-    vec3 shadowColor = vec3(0.52, 0.46, 0.39);// Darker Shadow
+    vec3 floorColor = vec3(0.81, 0.66, 0.41);// Light Grey Base
+    vec3 shadowColor = vec3(0.56, 0.3, 0.21);// Darker Shadow
 
     // Vector from pixel to light
     vec2 toLight = uLightPos - pixelPos;

@@ -29,18 +29,18 @@ class InteractiveUIComponent extends PositionComponent
   final String _fullText = 'START';
   double _sceneProgress = 0.0;
 
-  final Color uiColor = const Color(0xFFF9F8F6);
+  final Color uiColor = const Color(0xFF9A482F);
 
   final double startThickness = 3.0; // Thickness near the center
   final double endThickness = 0.5; // Thickness at the far end
   double inactivityOpacity = 1.0;
 
   final List<Color> glassyColors = [
-    const Color.fromRGBO(255, 255, 255, 0.2), // Faint Edge Highlight
-    const Color.fromRGBO(255, 255, 255, 0.05), // Darker transparent part
-    const Color.fromRGBO(255, 255, 255, 0.7), // Sharp Central Highlight
-    const Color.fromRGBO(255, 255, 255, 0.05), // Darker transparent part
-    const Color.fromRGBO(255, 255, 255, 0.2), // Faint Edge Highlight
+    const Color.fromRGBO(214, 166, 95, 0.2), // Faint Edge Highlight
+    const Color.fromRGBO(169, 95, 59, 0.05), // Darker transparent part
+    const Color.fromRGBO(154, 72, 47, 0.7), // Sharp Central Highlight
+    const Color.fromRGBO(169, 95, 59, 0.05), // Darker transparent part
+    const Color.fromRGBO(214, 166, 95, 0.2), // Faint Edge Highlight
   ];
   final List<double> glassyStops = [
     0.0, // Start edge
@@ -117,11 +117,11 @@ class InteractiveUIComponent extends PositionComponent
           letterSpacing: 10.0,
           fontWeight: FontWeight.w900,
           fontFamily:
-              'Roboto', // AssumingRoboto is available, fallback to default
+              'Broadway', // AssumingRoboto is available, fallback to default
           shadows: [
             Shadow(
-              color: const Color(0xFF867665), // Shadow color with opacity
-              offset: const Offset(5.0, 5.0), // X and Y displacement
+              color: const Color(0xFFD6A65F), // Shadow color with opacity
+              offset: const Offset(2.0, 2.0), // X and Y displacement
               blurRadius: 10.0, // Blur radius of the shadow
             ),
           ],

@@ -33,7 +33,7 @@ class _RevealSceneState extends State<RevealScene>
 
     // Wire up the new callback
     _game.onHeaderAnimationComplete = () {
-      Future.delayed(const Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 6), () {
         if (mounted) {
           _showOverlayNotifier.value = true;
         }

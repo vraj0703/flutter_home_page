@@ -57,9 +57,6 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
   static const double uiFadeDuration = 0.5;
 
   @override
-  Color backgroundColor() => const Color(0xFFD8C5B4);
-
-  @override
   Future<void> onLoad() async {
     await super.onLoad();
     final center = size / 2;
@@ -172,6 +169,9 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
 
     _inactivityTimer.start();
   }
+
+  @override
+  Color backgroundColor() => const Color(0xFFC78E53);
 
   @override
   void onTapDown(TapDownEvent event) {

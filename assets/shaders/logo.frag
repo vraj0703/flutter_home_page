@@ -27,5 +27,5 @@ void main() {
 
     // Output a solid color (white in this case, we'll tint it in Flutter)
     // The final pixel color is the base color multiplied by the calculated alpha.
-    fragColor = vec4(4.0, 1.8, 0.8, 1.0) * alpha;
+    fragColor = vec4(1.0, 1.0, 1.0, 1.0) * alpha;
 }

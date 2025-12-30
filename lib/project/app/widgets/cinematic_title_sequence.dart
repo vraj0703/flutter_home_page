@@ -17,6 +17,7 @@ class FadeTextComponent extends TextComponent with HasPaint, HasGameReference {
     this.baseColor = const Color(0xFFF0F0F2),
     super.position,
     super.anchor,
+    super.priority,
   }) : super(
          textRenderer: TextPaint(
            style: textStyle.copyWith(
@@ -57,9 +58,9 @@ class FadeTextComponent extends TextComponent with HasPaint, HasGameReference {
       ..setFloat(2, physicalTopLeft.x)
       ..setFloat(3, physicalTopLeft.y)
       ..setFloat(4, _time)
-      ..setFloat(5, baseColor.red / 255)
-      ..setFloat(6, baseColor.green / 255)
-      ..setFloat(7, baseColor.blue / 255)
+      ..setFloat(5, baseColor.r / 255)
+      ..setFloat(6, baseColor.g / 255)
+      ..setFloat(7, baseColor.b / 255)
       ..setFloat(8, opacity)
       ..setFloat(9, physicalLightPos.x)
       ..setFloat(10, physicalLightPos.y);
@@ -97,14 +98,18 @@ class CinematicTitleComponent extends PositionComponent with HasGameRef {
       fontFamily: 'ModrntUrban',
     );
 
-    _primaryTitle = FadeTextComponent(
-      text: primaryText.toUpperCase(),
-      textStyle: primaryStyle,
-      shader: shader,
-      baseColor: const Color(0xFFE3E4E5),
-      // Gold/Copper
-      anchor: Anchor.center,
-    )..opacity = 0;
+    _primaryTitle =
+        FadeTextComponent(
+            text: primaryText.toUpperCase(),
+            textStyle: primaryStyle,
+            shader: shader,
+            baseColor: const Color(0xFFE3E4E5),
+            // Gold/Copper
+            anchor: Anchor.center,
+            priority: 8,
+          )
+          ..opacity = 0
+          ..scale = Vector2.zero();
 
     // --- 2. Initialize Secondary Title ("PORTFOLIO MMXXV") ---
     const secondaryStyle = TextStyle(
@@ -114,16 +119,20 @@ class CinematicTitleComponent extends PositionComponent with HasGameRef {
       color: Colors.white, // Base color (shader overrides this)
     );
 
-    _secondaryTitle = FadeTextComponent(
-      text: secondaryText,
-      textStyle: secondaryStyle,
-      shader: shader,
-      // Reuse the metallic shader logic
-      baseColor: const Color(0xFFAAB0B5),
-      // Muted Silver/Grey
-      anchor: Anchor.center,
-      position: Vector2(0, 70), // Positioned below primary title
-    )..opacity = 0;
+    _secondaryTitle =
+        FadeTextComponent(
+            text: secondaryText,
+            textStyle: secondaryStyle,
+            shader: shader,
+            // Reuse the metallic shader logic
+            baseColor: const Color(0xFFAAB0B5),
+            // Muted Silver/Grey
+            anchor: Anchor.center,
+            priority: 1,
+            position: Vector2(0, 48), // Positioned below primary title
+          )
+          ..opacity = 0
+          ..scale = Vector2.zero();
 
     // Add both to the component tree
     addAll([_primaryTitle, _secondaryTitle]);
@@ -133,20 +142,30 @@ class CinematicTitleComponent extends PositionComponent with HasGameRef {
     // Primary reveal
     _primaryTitle.add(
       SequenceEffect([
-        WaitEffect(1.2),
+        WaitEffect(1),
         OpacityEffect.to(
           1.0,
-          EffectController(duration: 5, curve: Curves.linear),
+          EffectController(duration: 4, curve: Curves.easeOut),
         ),
       ]),
     );
 
     _primaryTitle.add(
       SequenceEffect([
-        WaitEffect(1.2),
+        WaitEffect(1),
+        ScaleEffect.to(
+          Vector2(1, 1),
+          EffectController(duration: 4, curve: Curves.fastLinearToSlowEaseIn),
+        ),
+      ]),
+    );
+
+    _primaryTitle.add(
+      SequenceEffect([
+        WaitEffect(1),
         MoveByEffect(
-          Vector2(0, -10), // Subtle upward "heat" drift
-          EffectController(duration: 5.0, curve: Curves.easeInOut),
+          Vector2(0, -20), // Subtle upward "heat" drift
+          EffectController(duration: 4, curve: Curves.easeInCubic),
         ),
       ]),
     );
@@ -154,24 +173,33 @@ class CinematicTitleComponent extends PositionComponent with HasGameRef {
     // Secondary reveal (Staggered)
     _secondaryTitle.add(
       SequenceEffect([
-        WaitEffect(1.2), // Custom effect created earlier (1.2s delay)
+        WaitEffect(5.5), // Custom effect created earlier (1.2s delay)
         OpacityEffect.to(
           1.0,
-          EffectController(duration: 3.0, curve: Curves.linear),
-        ),
-      ]),
-    );
-
-    // Secondary drift (Starts exactly when the fade starts)
-    _secondaryTitle.add(
-      SequenceEffect([
-        WaitEffect(1.2),
-        MoveByEffect(
-          Vector2(0, -10), // Subtle upward "heat" drift
           EffectController(duration: 2.0, curve: Curves.easeOut),
         ),
       ]),
     );
+
+    _secondaryTitle.add(
+      SequenceEffect([
+        WaitEffect(5.5),
+        ScaleEffect.to(
+          Vector2(1, 1),
+          EffectController(duration: 2, curve: Curves.fastLinearToSlowEaseIn),
+        ),
+      ]),
+    );
+    // Secondary drift (Starts exactly when the fade starts)
+    /*_secondaryTitle.add(
+      SequenceEffect([
+        WaitEffect(4.9),
+        MoveByEffect(
+          Vector2(0, -10), // Subtle upward "heat" drift
+          EffectController(duration: 1.0, curve: Curves.easeIn),
+        ),
+      ]),
+    );*/
   }
 }
 

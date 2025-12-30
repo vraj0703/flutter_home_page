@@ -92,6 +92,12 @@ flutter:
     - family: ModrntUrban
       fonts:
        - asset: fonts/modrnt_urban.otf
+    - family: Poseidon
+      fonts:
+       - asset: fonts/poseidon.otf
+    - family: Broadway
+      fonts:
+       - asset: fonts/broadway.ttf
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro
@@ -111,6 +117,7 @@ flutter:
     - assets/fonts/trt_artnik.json
     - assets/audio/space_ambient.mp3
     - assets/images/logo.png
+    - assets/vectors/down_arrow.svg
 
   shaders:
     - assets/shaders/god_rays.frag
