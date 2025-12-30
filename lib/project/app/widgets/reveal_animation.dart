@@ -33,7 +33,11 @@ class _RevealSceneState extends State<RevealScene>
 
     // Wire up the new callback
     _game.onHeaderAnimationComplete = () {
-      _showOverlayNotifier.value = true;
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          _showOverlayNotifier.value = true;
+        }
+      });
     };
 
     // Controller for the "LOADING" text's blinking effect.

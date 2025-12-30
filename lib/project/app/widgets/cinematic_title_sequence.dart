@@ -115,7 +115,7 @@ class CinematicTitleComponent extends PositionComponent with HasGameRef {
     );
 
     _secondaryTitle = FadeTextComponent(
-      text: secondaryText.toUpperCase(),
+      text: secondaryText,
       textStyle: secondaryStyle,
       shader: shader,
       // Reuse the metallic shader logic

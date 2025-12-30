@@ -5,6 +5,7 @@ import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/animation.dart';
+import 'package:flutter_home_page/project/app/widgets/cinematic_title_sequence.dart';
 import 'package:flutter_home_page/project/app/widgets/reveal_animation.dart';
 // import 'package:flutter_home_page/project/app/widgets/jupiter_planet.dart';
 import 'package:flutter_home_page/project/app/widgets/background_run_component.dart';
@@ -28,6 +29,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
   // late JupiterComponent jupiterPlanet;
   late BackgroundRunComponent backgroundRun;
   late final void Function() _sceneProgressListener;
+  late CinematicTitleComponent _cinematicTitle;
 
   Vector2 _virtualLightPosition = Vector2.zero();
   Vector2 _targetLightPosition = Vector2.zero();
@@ -101,10 +103,6 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
       'assets/shaders/logo.frag',
     );
 
-    // final jupiterProgram = await FragmentProgram.fromAsset(
-    //   'assets/shaders/jupiter.frag',
-    // );
-
     final backgroundProgram = await FragmentProgram.fromAsset(
       'assets/shaders/background_run_v2.frag',
     );
@@ -139,6 +137,14 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     godRay.priority = 20;
     godRay.position = size / 2;
     await add(godRay);
+
+    _cinematicTitle = CinematicTitleComponent(
+      primaryText: "VISHAL RAJ",
+      secondaryText: "Welcome to my portfolio",
+      position: size / 2, // Centered on screen
+    );
+    _cinematicTitle.priority = 25; // Above logo, below UI
+    add(_cinematicTitle);
 
     interactiveUI = InteractiveUIComponent();
     interactiveUI.position = size / 2;
@@ -216,6 +222,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     super.update(dt);
     if (!isLoaded) return;
 
+    _cinematicTitle.position = size / 2;
     _inactivityTimer.update(dt);
     switch (_uiState) {
       case UIState.fadingOut:
@@ -305,6 +312,29 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     _homeState = HomeState.transitioning;
     _targetLogoPosition = Vector2(60, 60); // Top Left with padding
     _targetLogoScale = 0.3; // Shrink further to fit screen
+
+    godRay.add(
+      SequenceEffect([
+        ScaleEffect.by(
+          Vector2.all(2.5),
+          EffectController(duration: 0.4, curve: Curves.easeIn),
+        ),
+        ScaleEffect.to(
+          Vector2.all(1.0),
+          EffectController(duration: 0.8, curve: Curves.easeOut),
+        ),
+      ]),
+    );
+
+    // 2. Trigger the text reveal once the screen "flashes"
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _cinematicTitle.show();
+    });
+
+    // 3. Existing logic for background shader
+    if (backgroundRun.opacity < 1.0) {
+      backgroundRun.add(OpacityEffect.to(1.0, EffectController(duration: 2.0)));
+    }
 
     /*
     // Reveal Jupiter

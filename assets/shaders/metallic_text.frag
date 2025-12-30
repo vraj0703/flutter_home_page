@@ -39,18 +39,18 @@ void main() {
     float dist = sqrt(dx*dx + (dy*dy * 0.3));
 
     // Large radius ensures the text catches the light even from the bottom of the screen
-    float lightRadius = 600.0;
+    float lightRadius = 800.0;
     float glow = smoothstep(lightRadius, 0.0, dist);
 
     // SHINE LOGIC:
     // High-intensity specular 'hit'
-    float glint = pow(glow, 25.0) * 40.0;
+    float glint = pow(glow, 60.0) * 25.0;
 
     // Base ambient glow from the sun/cursor
-    float ambientGlow =  1;
+    float ambientGlow = 1 - glow;
 
     // Combine with a warm 'Sandy' light tint
-    //vec3 lightColor = vec3(1.0, 0.95, 0.8);
+    vec3 lightColor = vec3(1.0, 0.95, 0.8);
     color += (ambientGlow + glint);
 
     // 4. Final Tone Mapping & Fade
