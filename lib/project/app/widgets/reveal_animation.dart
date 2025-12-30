@@ -2,6 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/widgets/widgets.dart';
 import 'package:flutter_home_page/project/app/widgets/home_overlay.dart'; // Import overlay
+import 'package:flutter/gestures.dart';
 import 'scene.dart';
 
 final sceneProgressNotifier = ValueNotifier<double>(0.0);
@@ -23,6 +24,7 @@ class _RevealSceneState extends State<RevealScene>
 
   // Notifier to trigger the overlay reveal
   final ValueNotifier<bool> _showOverlayNotifier = ValueNotifier(false);
+  final ValueNotifier<bool> _showArrowNotifier = ValueNotifier(true);
 
   bool _isGameLoaded = false;
 
@@ -65,6 +67,14 @@ class _RevealSceneState extends State<RevealScene>
     _initializeAndStartAnimation();
   }
 
+  void _handleScroll() {
+    // Only trigger if the overlay is visible and arrow is still showing
+    if (_showOverlayNotifier.value && _showArrowNotifier.value) {
+      _showArrowNotifier.value = false;
+      _game.onScroll();
+    }
+  }
+
   void _updateSceneProgress() {
     sceneProgressNotifier.value = _revealController.value;
   }
@@ -91,6 +101,7 @@ class _RevealSceneState extends State<RevealScene>
     _blinkingController.dispose();
     _revealController.dispose();
     _showOverlayNotifier.dispose();
+    _showArrowNotifier.dispose();
     super.dispose();
   }
 
@@ -100,9 +111,24 @@ class _RevealSceneState extends State<RevealScene>
       alignment: Alignment.center,
       children: [
         // Layer 1: The Flame Game wrapped in HomeOverlay
-        HomeOverlay(
-          showOverlayNotifier: _showOverlayNotifier,
-          child: GameWidget(game: _game),
+        GestureDetector(
+          onVerticalDragUpdate: (details) {
+            if (details.delta.dy < -5) {
+              _handleScroll();
+            }
+          },
+          child: Listener(
+            onPointerSignal: (event) {
+              if (event is PointerScrollEvent && event.scrollDelta.dy > 0) {
+                _handleScroll();
+              }
+            },
+            child: HomeOverlay(
+              showOverlayNotifier: _showOverlayNotifier,
+              showArrowNotifier: _showArrowNotifier,
+              child: GameWidget(game: _game),
+            ),
+          ),
         ),
 
         // Layer 2: The Black Curtain.

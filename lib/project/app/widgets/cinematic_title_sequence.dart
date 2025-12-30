@@ -201,6 +201,34 @@ class CinematicTitleComponent extends PositionComponent with HasGameRef {
       ]),
     );*/
   }
+
+  void animateToHeader(Vector2 targetPosition, double scale) {
+    // 0. Remove pending/running effects (like the initial delayed reveal)
+    _secondaryTitle.removeWhere((c) => c is Effect);
+
+    // 1. Fade out secondary text immediately
+    _secondaryTitle.add(
+      OpacityEffect.to(
+        0.0,
+        EffectController(duration: 0.1, curve: Curves.easeOut),
+      ),
+    );
+
+    // 2. Move and Scale THIS component (the parent)
+    add(
+      MoveToEffect(
+        targetPosition,
+        EffectController(duration: 1.2, curve: Curves.easeInOutCubic),
+      ),
+    );
+
+    add(
+      ScaleEffect.to(
+        Vector2.all(scale),
+        EffectController(duration: 1.2, curve: Curves.easeInOutCubic),
+      ),
+    );
+  }
 }
 
 /// A custom effect that does nothing for a specific duration.

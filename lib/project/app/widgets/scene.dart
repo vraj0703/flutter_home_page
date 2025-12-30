@@ -137,7 +137,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
 
     _cinematicTitle = CinematicTitleComponent(
       primaryText: "VISHAL RAJ",
-      secondaryText: "Welcome to my portfolio",
+      secondaryText: "Welcome to my space",
       position: size / 2, // Centered on screen
     );
     _cinematicTitle.priority = 25; // Above logo, below UI
@@ -204,16 +204,16 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
       if (_homeState == HomeState.intro) {
         logoComponent.position = center;
         shadowScene.logoPosition = center;
+        _cinematicTitle.position = center;
+      } else if (_isHeaderMode) {
+        // Enforce header position on resize
+        final logoWidth = _baseLogoSize.x;
+        final xPos = 60 + (logoWidth * 0.3) + 150; // 150px padding
+        _cinematicTitle.position = Vector2(xPos, 70);
       }
+
       interactiveUI.position = center;
       interactiveUI.gameSize = size;
-      /*
-      if (_homeState != HomeState.home) {
-        jupiterPlanet.position = center;
-      } else {
-        jupiterPlanet.position = center; // Always keep it centered for now
-      }
-      */
     }
   }
 
@@ -222,7 +222,11 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     super.update(dt);
     if (!isLoaded) return;
 
-    _cinematicTitle.position = size / 2;
+    // Only force center position if NOT in header mode
+    if (!_isHeaderMode) {
+      _cinematicTitle.position = size / 2;
+    }
+
     _inactivityTimer.update(dt);
     switch (_uiState) {
       case UIState.fadingOut:
@@ -353,5 +357,35 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
   @override
   void onPointerMove(PointerMoveEvent event) {
     _lastKnownPointerPosition = event.localPosition;
+  }
+
+  bool _isHeaderMode = false;
+
+  void onScroll() {
+    // Only trigger if we are in the home state and haven't already animated
+    if (_homeState == HomeState.home && !_isHeaderMode) {
+      _isHeaderMode = true;
+
+      // Calculate the position for the title
+      // Logo is at (60, 60) with scale 0.3.
+      // Base Logo Size is ~original width/height.
+      // Let's assume the logo effectively takes up some space.
+      // We'll position the text to the right of it.
+
+      // Target Text Position:
+      // X = 60 + (LogoWidth * 0.3) + Padding
+      // Y = 60 (Vertically aligned with logo center)
+
+      final logoWidth = _baseLogoSize.x;
+      final xPos = 48 + (logoWidth * 0.3) + 128; // 150px padding
+
+      final targetPos = Vector2(
+        xPos,
+        70,
+      ); // Adjusted Y to 70 for visual alignment
+
+      // Pass Absolute Target Position
+      _cinematicTitle.animateToHeader(targetPos, 0.5);
+    }
   }
 }

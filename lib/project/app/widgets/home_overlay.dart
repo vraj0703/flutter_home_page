@@ -5,18 +5,21 @@ import 'dart:ui' as ui;
 class HomeOverlay extends StatefulWidget {
   final Widget child;
   final ValueNotifier<bool> showOverlayNotifier;
+  final ValueNotifier<bool> showArrowNotifier;
 
   const HomeOverlay({
     super.key,
     required this.child,
     required this.showOverlayNotifier,
+    required this.showArrowNotifier,
   });
 
   @override
   State<HomeOverlay> createState() => _HomeOverlayState();
 }
 
-class _HomeOverlayState extends State<HomeOverlay> with SingleTickerProviderStateMixin {
+class _HomeOverlayState extends State<HomeOverlay>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _bounceController;
   late final Animation<double> _bounceAnimation;
 
@@ -63,18 +66,25 @@ class _HomeOverlayState extends State<HomeOverlay> with SingleTickerProviderStat
                 child: Stack(
                   children: [
                     // Top Right: Menu
-                    Positioned(
-                      top: 40,
-                      right: 40,
-                      child: _buildMenuCircle(),
-                    ),
+                    Positioned(top: 40, right: 40, child: _buildMenuCircle()),
 
                     // Bottom: Animated Silver Arrow
                     Positioned(
                       bottom: 60, // Adjusted height
                       left: 0,
                       right: 0,
-                      child: Center(child: _buildBouncingArrow()),
+                      child: Center(
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: widget.showArrowNotifier,
+                          builder: (context, showArrow, child) {
+                            return AnimatedOpacity(
+                              opacity: showArrow ? 1.0 : 0.0,
+                              duration: const Duration(milliseconds: 500),
+                              child: _buildBouncingArrow(),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ],
                 ),
