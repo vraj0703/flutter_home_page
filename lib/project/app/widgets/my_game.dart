@@ -82,6 +82,8 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     await loadLogoLayer();
     await loadLayerLineAndStart();
     await loadLayerName();
+
+    queuer.queue(event: const SceneEvent.gameReady());
   }
 
   Future<void> loadLogoLayer() async {
@@ -192,7 +194,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
     stateProvider.sceneState().when(
-      loading: () {},
+      loading: (isSvgReady, isGameReady) {},
       logo: () {
         final center = size / 2;
         logoComponent.position = center;
@@ -204,12 +206,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
       },
       logoOverlayRemoving: () {},
       titleLoading: () {},
-      title: () {
-        /*// Enforce header position on resize
-        final logoWidth = _baseLogoSize.x;
-        final xPos = 60 + (logoWidth * 0.3) + 150; // 150px padding
-        cinematicTitle.position = Vector2(xPos, 70);*/
-      },
+      title: () {},
     );
   }
 
@@ -220,7 +217,7 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     final cursorPosition = _lastKnownPointerPosition ?? size / 2;
     followCursor(dt, cursorPosition);
     stateProvider.sceneState().when(
-      loading: () {
+      loading: (isSvgReady, isGameReady) {
         cinematicTitle.position = size / 2;
         interactiveUI.inactivityOpacity += dt / uiFadeDuration;
       },
@@ -280,19 +277,6 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
   }
 
   void enterTitle() {
-  /*  godRay.add(
-      SequenceEffect([
-        ScaleEffect.by(
-          Vector2.all(2.5),
-          EffectController(duration: 0.4, curve: Curves.easeIn),
-        ),
-        ScaleEffect.to(
-          Vector2.all(1.0),
-          EffectController(duration: 0.8, curve: Curves.easeOut),
-        ),
-      ]),
-    );*/
-
     // 2. Trigger the text reveal once the screen "flashes"
     Future.delayed(const Duration(milliseconds: 500), () {
       cinematicTitle.show(() {
@@ -301,7 +285,6 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     });
 
     // Also tell GodRays to fade out or move
-    // godRay.add(OpacityEffect.fadeOut(EffectController(duration: 1.0)));
   }
 
   @override

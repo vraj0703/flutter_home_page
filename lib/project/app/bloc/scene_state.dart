@@ -2,7 +2,10 @@ part of 'scene_bloc.dart';
 
 @freezed
 class SceneState with _$SceneState {
-  const factory SceneState.loading() = Loading;
+  const factory SceneState.loading({
+    @Default(false) bool isSvgReady,
+    @Default(false) bool isGameReady,
+  }) = Loading;
 
   const factory SceneState.logo() = Logo;
 

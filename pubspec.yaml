@@ -43,6 +43,7 @@ dependencies:
   flutter_svg: ^2.0.9
   freezed: ^3.2.3
   google_fonts: ^4.0.4
+  freezed_annotation: ^3.1.0
 
 dependency_overrides:
   universal_html: ^2.2.4

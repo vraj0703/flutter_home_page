@@ -112,7 +112,7 @@ class LogoOverlayComponent extends PositionComponent with PointerMoveCallbacks {
   void update(double dt) {
     super.update(dt);
     stateProvider.sceneState().when(
-      loading: () {},
+      loading: (isSvgReady, isGameReady) {},
       logo: () {
         _updateInteractiveState(dt);
       },
@@ -193,16 +193,14 @@ class LogoOverlayComponent extends PositionComponent with PointerMoveCallbacks {
       return; // Exit early if not yet visible.
     }
     stateProvider.sceneState().when(
-      loading: () {},
+      loading: (isSvgReady, isGameReady) {},
       logo: () {
         _renderBouncyLines(canvas);
       },
       logoOverlayRemoving: () {
         _renderBouncyLines(canvas);
       },
-      titleLoading: () {
-
-      },
+      titleLoading: () {},
       title: () {},
     );
   }

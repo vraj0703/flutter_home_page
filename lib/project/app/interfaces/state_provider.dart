@@ -4,4 +4,6 @@ abstract class StateProvider {
   SceneState sceneState();
 
   double revealProgress();
+
+  void updateRevealProgress(double progress);
 }

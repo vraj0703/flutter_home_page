@@ -1,11 +1,9 @@
 import 'dart:async';
-
 import 'package:flame/events.dart';
-import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
-import 'package:flutter_home_page/project/app/widgets/my_game.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -15,32 +13,19 @@ part 'scene_state.dart';
 
 part 'scene_bloc.freezed.dart';
 
-final revealProgressNotifier = ValueNotifier<double>(0.0);
-
 class SceneBloc extends Bloc<SceneEvent, SceneState>
     implements Queuer, StateProvider {
-  late final MyGame game;
   double _revealProgress = 0.0;
-  late final void Function() _revealProgressListener;
+
   late SvgAssetLoader downArrowLoader;
 
   SceneBloc() : super(const SceneState.loading()) {
     on<Initialize>(_initialize);
+    on<GameReady>(_gameReady);
     on<CloseCurtain>(_closeCurtain);
     on<TapDown>(_tapDown);
     on<LoadTitle>(_loadTitle);
     on<TitleLoaded>(_titleLoaded);
-
-    game = MyGame(
-      queuer: this,
-      stateProvider: this,
-      onStartExitAnimation: () => add(SceneEvent.closeCurtain()),
-    );
-    _revealProgressListener = () {
-      _revealProgress = revealProgressNotifier.value;
-    };
-    // Add the listener using the variable
-    revealProgressNotifier.addListener(_revealProgressListener);
   }
 
   @override
@@ -50,26 +35,44 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   double revealProgress() => _revealProgress;
 
   @override
-  Future<void> close() async {
-    revealProgressNotifier.removeListener(_revealProgressListener);
-    super.close();
-  }
-
-  @override
   queue({required SceneEvent event}) {
     add(event);
   }
 
-  FutureOr<void> _initialize(SceneEvent event, Emitter<SceneState> emit) async {
+  FutureOr<void> _initialize(Initialize event, Emitter<SceneState> emit) async {
     downArrowLoader = SvgAssetLoader('assets/vectors/down_arrow.svg');
     svg.cache.putIfAbsent(
       downArrowLoader.cacheKey(null),
       () => downArrowLoader.loadBytes(null),
     );
 
-    await game.loaded;
-    await Future.delayed(Duration(milliseconds: 600));
-    emit(SceneState.logo());
+    // Mark SVG as ready
+    if (state is Loading) {
+      final currentState = state as Loading;
+      final newState = currentState.copyWith(isSvgReady: true);
+      emit(newState);
+      await _checkReadiness(newState, emit);
+    }
+  }
+
+  FutureOr<void> _gameReady(GameReady event, Emitter<SceneState> emit) async {
+    if (state is Loading) {
+      final currentState = state as Loading;
+      final newState = currentState.copyWith(isGameReady: true);
+      emit(newState);
+      await _checkReadiness(newState, emit);
+    }
+  }
+
+  FutureOr<void> _checkReadiness(
+    Loading state,
+    Emitter<SceneState> emit,
+  ) async {
+    if (state.isSvgReady && state.isGameReady) {
+      // Optional delay for effect, similar to original code
+      await Future.delayed(const Duration(milliseconds: 600));
+      emit(const SceneState.logo());
+    }
   }
 
   FutureOr<void> _closeCurtain(CloseCurtain event, Emitter<SceneState> emit) {
@@ -78,17 +81,20 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
 
   FutureOr<void> _tapDown(TapDown event, Emitter<SceneState> emit) async {
     if (state is Logo) {
-      emit(SceneState.logoOverlayRemoving());
-      game.loadTitleBackground();
+      emit(const SceneState.logoOverlayRemoving());
     }
   }
 
   FutureOr<void> _loadTitle(LoadTitle event, Emitter<SceneState> emit) {
-    emit(SceneState.titleLoading());
-    game.enterTitle();
+    emit(const SceneState.titleLoading());
   }
 
   FutureOr<void> _titleLoaded(TitleLoaded event, Emitter<SceneState> emit) {
     emit(SceneState.title());
+  }
+
+  @override
+  void updateRevealProgress(double progress) {
+    _revealProgress = progress;
   }
 }

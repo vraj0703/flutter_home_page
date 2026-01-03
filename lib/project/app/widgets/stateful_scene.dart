@@ -2,6 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
+import 'package:flutter_home_page/project/app/widgets/my_game.dart';
 import 'package:flutter_home_page/project/app/widgets/widgets/curtain_clipper.dart';
 import 'package:flutter_home_page/project/app/widgets/widgets/home_overlay.dart'; // Import overlay
 
@@ -21,6 +22,7 @@ class _StatefulSceneState extends State<StatefulScene>
   late final AnimationController _downArrowBounceController;
   late final Animation<double> _downArrowBounceAnimation;
   late SceneBloc _bloc;
+  late final MyGame _game;
 
   @override
   void initState() {
@@ -62,10 +64,16 @@ class _StatefulSceneState extends State<StatefulScene>
         curve: Curves.easeInOutQuad, // Smooth "floating" motion
       ),
     );
+
+    _game = MyGame(
+      queuer: _bloc,
+      stateProvider: _bloc,
+      onStartExitAnimation: () => _bloc.add(const SceneEvent.closeCurtain()),
+    );
   }
 
   void _updateSceneProgress() {
-    revealProgressNotifier.value = _revealController.value;
+    _bloc.updateRevealProgress(_revealController.value);
   }
 
   @override
@@ -82,7 +90,7 @@ class _StatefulSceneState extends State<StatefulScene>
     return BlocConsumer<SceneBloc, SceneState>(
       listener: (context, state) {
         state.when(
-          loading: () {
+          loading: (isSvgReady, isGameReady) {
             _revealController.reverse();
           },
           logo: () {
@@ -91,8 +99,12 @@ class _StatefulSceneState extends State<StatefulScene>
               _revealController.forward();
             }
           },
-          logoOverlayRemoving: () {},
-          titleLoading: () {},
+          logoOverlayRemoving: () {
+            _game.loadTitleBackground();
+          },
+          titleLoading: () {
+            _game.enterTitle();
+          },
           title: () {},
         );
       },
@@ -100,7 +112,7 @@ class _StatefulSceneState extends State<StatefulScene>
         return Stack(
           alignment: Alignment.center,
           children: [
-            GameWidget(game: _bloc.game),
+            GameWidget(game: _game),
             // Layer 1: The Flame Game wrapped in HomeOverlay
             HomeOverlay(
               key: ValueKey("home_overlay"),
