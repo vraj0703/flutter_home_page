@@ -1,34 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
-
-// --- STATE 1 WIDGETS --
-class LottieLoadingScreen extends StatelessWidget {
-  final String? message;
-
-  const LottieLoadingScreen({super.key, this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black,
-      // The FadeTransition is now in the PARENT (_SpaceScreen)
-      child: Center(
-        child: Stack(
-          children: [
-            Lottie.asset(
-              'assets/calming_circle_white.json', // Your asset path
-              width: 250,
-              height: 250,
-              fit: BoxFit.contain,
-              animate: true,
-              repeat: true,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 /// A custom clipper that creates a "curtain opening" effect.
 ///

@@ -90,9 +90,9 @@ void main() {
         // Let's keep the atmosphere glow but maybe make the deep space part transparent? 
         // Or just port it as is.
         // The user request was "add this planet...", so maybe just the planet + aura.
-        // The `scene.dart` already has a background.
+        // The `my_game.dart` already has a background.
         // If I keep the black background it might obscure the existing scene unless I put it behind?
-        // But the scene.dart has other elements.
+        // But the my_game.dart has other elements.
         // Let's try to make the "black" part transparent but keep the atmosphere glow.
         
         float starAmount = rand(fragCoord.xy, 0.0);

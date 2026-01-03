@@ -2,17 +2,21 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flutter_home_page/project/app/widgets/reveal_animation.dart';
+import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
+import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter/material.dart' as flutter;
+import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
+
+import 'bouncy_lines.dart';
 
 enum _LineOrientation { horizontal, vertical }
 
-enum _ExitState { interactive, removingStart, typingWelcome, finished }
-
 /// A component that renders an interactive UI element with circles, text,
 /// and four lines that animate based on the cursor's position.
-class InteractiveUIComponent extends PositionComponent
-    with PointerMoveCallbacks {
+class LogoOverlayComponent extends PositionComponent with PointerMoveCallbacks {
+  final StateProvider stateProvider;
+  final Queuer queuer;
+
   // --- Configuration ---
   final double ratio = 1;
   final double outerRadius = 135.0;
@@ -27,8 +31,6 @@ class InteractiveUIComponent extends PositionComponent
   final double verticalThreshold = 150.0;
 
   final String _fullText = 'START';
-  double _sceneProgress = 0.0;
-
   final Color uiColor = const Color(0xFF9A482F);
 
   final double startThickness = 3.0; // Thickness near the center
@@ -57,7 +59,6 @@ class InteractiveUIComponent extends PositionComponent
 
   late final TextComponent _textComponent;
   late final Paint _materialPaint;
-  late final void Function() _sceneProgressListener;
 
   final Path _rightPath = Path();
   final Path _leftPath = Path();
@@ -67,35 +68,10 @@ class InteractiveUIComponent extends PositionComponent
   Vector2 cursorPosition = Vector2.zero();
   Vector2 gameSize = Vector2.zero();
 
-  _ExitState _currentState = _ExitState.interactive;
   double _textAnimationProgress = 0.0;
   final double _textAnimationSpeed = 2; // Controls speed of typing/deleting
 
-  // Callback to notify the game that the text animation is done
-  // and the curtain should close.
-  VoidCallback? onExitAnimationComplete;
-
-  InteractiveUIComponent() {
-    _sceneProgressListener = () {
-      _sceneProgress = sceneProgressNotifier.value;
-    };
-    sceneProgressNotifier.addListener(_sceneProgressListener);
-  }
-
-  void startExitAnimation() {
-    // Prevent the animation from being triggered multiple times.
-    if (_currentState == _ExitState.interactive) {
-      _currentState = _ExitState.removingStart;
-      _textAnimationProgress = 0.0; // Reset progress for the animation
-    }
-  }
-
-  // Add onRemove to clean up the listener
-  @override
-  void onRemove() {
-    sceneProgressNotifier.removeListener(_sceneProgressListener);
-    super.onRemove();
-  }
+  LogoOverlayComponent({required this.stateProvider, required this.queuer});
 
   @override
   Future<void> onLoad() async {
@@ -116,8 +92,7 @@ class InteractiveUIComponent extends PositionComponent
           color: uiColor,
           letterSpacing: 10.0,
           fontWeight: FontWeight.w900,
-          fontFamily:
-              'Broadway', // AssumingRoboto is available, fallback to default
+          fontFamily: 'Broadway',
           shadows: [
             Shadow(
               color: const Color(0xFFD6A65F), // Shadow color with opacity
@@ -136,27 +111,25 @@ class InteractiveUIComponent extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    switch (_currentState) {
-      case _ExitState.interactive:
+    stateProvider.sceneState().when(
+      loading: () {},
+      logo: () {
         _updateInteractiveState(dt);
-        break;
-      case _ExitState.removingStart:
+      },
+      logoOverlayRemoving: () {
         _updateRemovingStartState(dt);
-        break;
-      case _ExitState.typingWelcome:
-        _updateTypingWelcomeState(dt);
-        break;
-      case _ExitState.finished:
-        // Do nothing once finished.
-        break;
-    }
+      },
+      titleLoading: () {},
+      title: () {},
+    );
   }
 
   void _updateInteractiveState(double dt) {
-    var opacity = ((_sceneProgress - 0.2) / 0.8).clamp(0.0, 1.0);
+    var sceneProgress = stateProvider.revealProgress();
+    var opacity = ((sceneProgress - 0.2) / 0.8).clamp(0.0, 1.0);
     if (opacity == 0.0) return;
 
-    final textProgress = ((_sceneProgress - 0.5) / 0.5).clamp(0.0, 1.0);
+    final textProgress = ((sceneProgress - 0.5) / 0.5).clamp(0.0, 1.0);
     final charCount = (_fullText.length * textProgress).floor();
     _textComponent.text = _fullText.substring(0, charCount);
 
@@ -195,12 +168,10 @@ class InteractiveUIComponent extends PositionComponent
       _textComponent.text = _fullText.substring(0, remainingChars);
     } else {
       _textComponent.text = '';
-      _currentState = _ExitState.finished; // Skip "VISHAL RAJ", go to finished
-      onExitAnimationComplete?.call(); // Signal completion immediately
+      queuer.queue(event: SceneEvent.loadTitle());
       _textAnimationProgress = 0.0;
     }
 
-    // Animate lines away or keep them? Design says "fade out godrays, subtle shadow".
     // For now, let's reset lines to zero.
     _rightLine.targetPosition = 0;
     _leftLine.targetPosition = 0;
@@ -213,70 +184,66 @@ class InteractiveUIComponent extends PositionComponent
     _bottomLine.update(dt);
   }
 
-  void _updateTypingWelcomeState(double dt) {
-    const newText = 'VISHAL RAJ'; // Updated text
-    _textAnimationProgress += _textAnimationSpeed * dt;
-    final charsToType = (_textAnimationProgress * newText.length).floor();
-
-    if (charsToType <= newText.length) {
-      _textComponent.text = newText.substring(0, charsToType);
-    } else {
-      _textComponent.text = newText;
-      _currentState = _ExitState.finished; // Transition to final state
-      onExitAnimationComplete?.call(); // Signal completion
-    }
-  }
-
   @override
   void render(Canvas canvas) {
-    final revealFade = ((_sceneProgress - 0.2) / 0.8).clamp(0.0, 1.0);
+    super.render(canvas);
+    var sceneProgress = stateProvider.revealProgress();
+    final revealFade = ((sceneProgress - 0.2) / 0.8).clamp(0.0, 1.0);
     if (revealFade <= 0.0) {
       return; // Exit early if not yet visible.
     }
+    stateProvider.sceneState().when(
+      loading: () {},
+      logo: () {
+        _renderBouncyLines(canvas);
+      },
+      logoOverlayRemoving: () {
+        _renderBouncyLines(canvas);
+      },
+      titleLoading: () {
 
-    // Render Text
-    super.render(canvas);
+      },
+      title: () {},
+    );
+  }
 
-    // Only render lines in interactive state or while removing start
-    if (_currentState == _ExitState.interactive ||
-        _currentState == _ExitState.removingStart) {
-      final lineFade = ((_sceneProgress - 0.4) / 0.4).clamp(0.0, 1.0);
-      if (lineFade > 0.0) {
-        _materialPaint.color = flutter.Colors.white.withOpacity(lineFade);
-
-        _renderBouncyLine(
-          canvas: canvas,
-          line: _rightLine,
-          path: _rightPath,
-          length: horizontalLineLength,
-          gap: horizontalLineGap,
-          orientation: _LineOrientation.horizontal,
-        );
-        _renderBouncyLine(
-          canvas: canvas,
-          line: _leftLine,
-          path: _leftPath,
-          length: horizontalLineLength,
-          gap: -horizontalLineGap,
-          orientation: _LineOrientation.horizontal,
-        );
-        _renderBouncyLine(
-          canvas: canvas,
-          line: _bottomLine,
-          path: _bottomPath,
-          length: verticalLineLength,
-          gap: verticalLineGap,
-          orientation: _LineOrientation.vertical,
-        );
-        _renderBouncyLine(
-          canvas: canvas,
-          line: _topLine,
-          path: _topPath,
-          length: verticalLineLength,
-          gap: -verticalLineGap,
-          orientation: _LineOrientation.vertical,
-        );
-      }
+  void _renderBouncyLines(Canvas canvas) {
+    var sceneProgress = stateProvider.revealProgress();
+    final lineFade = ((sceneProgress - 0.4) / 0.4).clamp(0.0, 1.0);
+    if (lineFade > 0.0) {
+      _materialPaint.color = flutter.Colors.white.withValues(alpha: lineFade);
+      _renderBouncyLine(
+        canvas: canvas,
+        line: _rightLine,
+        path: _rightPath,
+        length: horizontalLineLength,
+        gap: horizontalLineGap,
+        orientation: _LineOrientation.horizontal,
+      );
+      _renderBouncyLine(
+        canvas: canvas,
+        line: _leftLine,
+        path: _leftPath,
+        length: horizontalLineLength,
+        gap: -horizontalLineGap,
+        orientation: _LineOrientation.horizontal,
+      );
+      _renderBouncyLine(
+        canvas: canvas,
+        line: _bottomLine,
+        path: _bottomPath,
+        length: verticalLineLength,
+        gap: verticalLineGap,
+        orientation: _LineOrientation.vertical,
+      );
+      _renderBouncyLine(
+        canvas: canvas,
+        line: _topLine,
+        path: _topPath,
+        length: verticalLineLength,
+        gap: -verticalLineGap,
+        orientation: _LineOrientation.vertical,
+      );
     }
   }
 
@@ -325,37 +292,5 @@ class InteractiveUIComponent extends PositionComponent
     }
 
     canvas.drawPath(path, _materialPaint);
-  }
-}
-
-class BouncyLine {
-  // --- Physics Configuration ---
-  final double stiffness = 500.0; // How "strong" the spring is
-  final double damping = 70.0; // How quickly it stops bouncing
-  final double mass = 20.0; // The "weight" of the line
-
-  // --- State ---
-  double currentPosition = 0.0;
-  double targetPosition = 0.0;
-  double velocity = 0.0;
-
-  // --- Size Animation ---
-  double scale = 1.0;
-  final double maxScale = 2; // How big it gets when moving fast
-  final double scaleSpeed = 15.0; // How fast it scales
-
-  void update(double dt) {
-    // --- Spring Physics Calculation ---
-    final double springForce = (targetPosition - currentPosition) * stiffness;
-    final double dampingForce = -velocity * damping;
-    final double totalForce = springForce + dampingForce;
-    final double acceleration = totalForce / mass;
-    velocity += acceleration * dt;
-    currentPosition += velocity * dt;
-
-    // --- Scale Animation Calculation ---
-    final double targetScale =
-        1.0 + (velocity.abs() / 150.0).clamp(0, maxScale - 1.0);
-    scale = scale + (targetScale - scale) * scaleSpeed * dt;
   }
 }

@@ -1,9 +1,8 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
-import 'package:flutter/widgets.dart';
 
 class BackgroundRunComponent extends PositionComponent
-    with HasGameRef, HasPaint {
+    with HasGameReference, HasPaint {
   final FragmentShader shader;
   double _time = 0;
 

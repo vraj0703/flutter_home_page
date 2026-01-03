@@ -1,0 +1,774 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
+// ignore_for_file: type=lint
+// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
+
+part of 'scene_bloc.dart';
+
+// **************************************************************************
+// FreezedGenerator
+// **************************************************************************
+
+// dart format off
+T _$identity<T>(T value) => value;
+/// @nodoc
+mixin _$SceneEvent {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SceneEvent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneEvent()';
+}
+
+
+}
+
+/// @nodoc
+class $SceneEventCopyWith<$Res>  {
+$SceneEventCopyWith(SceneEvent _, $Res Function(SceneEvent) __);
+}
+
+
+/// Adds pattern-matching-related methods to [SceneEvent].
+extension SceneEventPatterns on SceneEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Initialize value)?  initialize,TResult Function( CloseCurtain value)?  closeCurtain,TResult Function( Start value)?  start,TResult Function( TapDown value)?  tapDown,TResult Function( LoadTitle value)?  loadTitle,TResult Function( TitleLoaded value)?  titleLoaded,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case Initialize() when initialize != null:
+return initialize(_that);case CloseCurtain() when closeCurtain != null:
+return closeCurtain(_that);case Start() when start != null:
+return start(_that);case TapDown() when tapDown != null:
+return tapDown(_that);case LoadTitle() when loadTitle != null:
+return loadTitle(_that);case TitleLoaded() when titleLoaded != null:
+return titleLoaded(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Initialize value)  initialize,required TResult Function( CloseCurtain value)  closeCurtain,required TResult Function( Start value)  start,required TResult Function( TapDown value)  tapDown,required TResult Function( LoadTitle value)  loadTitle,required TResult Function( TitleLoaded value)  titleLoaded,}){
+final _that = this;
+switch (_that) {
+case Initialize():
+return initialize(_that);case CloseCurtain():
+return closeCurtain(_that);case Start():
+return start(_that);case TapDown():
+return tapDown(_that);case LoadTitle():
+return loadTitle(_that);case TitleLoaded():
+return titleLoaded(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Initialize value)?  initialize,TResult? Function( CloseCurtain value)?  closeCurtain,TResult? Function( Start value)?  start,TResult? Function( TapDown value)?  tapDown,TResult? Function( LoadTitle value)?  loadTitle,TResult? Function( TitleLoaded value)?  titleLoaded,}){
+final _that = this;
+switch (_that) {
+case Initialize() when initialize != null:
+return initialize(_that);case CloseCurtain() when closeCurtain != null:
+return closeCurtain(_that);case Start() when start != null:
+return start(_that);case TapDown() when tapDown != null:
+return tapDown(_that);case LoadTitle() when loadTitle != null:
+return loadTitle(_that);case TitleLoaded() when titleLoaded != null:
+return titleLoaded(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initialize,TResult Function()?  closeCurtain,TResult Function()?  start,TResult Function( TapDownEvent tapDownEvent)?  tapDown,TResult Function()?  loadTitle,TResult Function()?  titleLoaded,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case Initialize() when initialize != null:
+return initialize();case CloseCurtain() when closeCurtain != null:
+return closeCurtain();case Start() when start != null:
+return start();case TapDown() when tapDown != null:
+return tapDown(_that.tapDownEvent);case LoadTitle() when loadTitle != null:
+return loadTitle();case TitleLoaded() when titleLoaded != null:
+return titleLoaded();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initialize,required TResult Function()  closeCurtain,required TResult Function()  start,required TResult Function( TapDownEvent tapDownEvent)  tapDown,required TResult Function()  loadTitle,required TResult Function()  titleLoaded,}) {final _that = this;
+switch (_that) {
+case Initialize():
+return initialize();case CloseCurtain():
+return closeCurtain();case Start():
+return start();case TapDown():
+return tapDown(_that.tapDownEvent);case LoadTitle():
+return loadTitle();case TitleLoaded():
+return titleLoaded();case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initialize,TResult? Function()?  closeCurtain,TResult? Function()?  start,TResult? Function( TapDownEvent tapDownEvent)?  tapDown,TResult? Function()?  loadTitle,TResult? Function()?  titleLoaded,}) {final _that = this;
+switch (_that) {
+case Initialize() when initialize != null:
+return initialize();case CloseCurtain() when closeCurtain != null:
+return closeCurtain();case Start() when start != null:
+return start();case TapDown() when tapDown != null:
+return tapDown(_that.tapDownEvent);case LoadTitle() when loadTitle != null:
+return loadTitle();case TitleLoaded() when titleLoaded != null:
+return titleLoaded();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class Initialize implements SceneEvent {
+  const Initialize();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Initialize);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneEvent.initialize()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class CloseCurtain implements SceneEvent {
+  const CloseCurtain();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CloseCurtain);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneEvent.closeCurtain()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class Start implements SceneEvent {
+  const Start();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Start);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneEvent.start()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class TapDown implements SceneEvent {
+  const TapDown(this.tapDownEvent);
+  
+
+ final  TapDownEvent tapDownEvent;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TapDownCopyWith<TapDown> get copyWith => _$TapDownCopyWithImpl<TapDown>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TapDown&&(identical(other.tapDownEvent, tapDownEvent) || other.tapDownEvent == tapDownEvent));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,tapDownEvent);
+
+@override
+String toString() {
+  return 'SceneEvent.tapDown(tapDownEvent: $tapDownEvent)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $TapDownCopyWith<$Res> implements $SceneEventCopyWith<$Res> {
+  factory $TapDownCopyWith(TapDown value, $Res Function(TapDown) _then) = _$TapDownCopyWithImpl;
+@useResult
+$Res call({
+ TapDownEvent tapDownEvent
+});
+
+
+
+
+}
+/// @nodoc
+class _$TapDownCopyWithImpl<$Res>
+    implements $TapDownCopyWith<$Res> {
+  _$TapDownCopyWithImpl(this._self, this._then);
+
+  final TapDown _self;
+  final $Res Function(TapDown) _then;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? tapDownEvent = null,}) {
+  return _then(TapDown(
+null == tapDownEvent ? _self.tapDownEvent : tapDownEvent // ignore: cast_nullable_to_non_nullable
+as TapDownEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class LoadTitle implements SceneEvent {
+  const LoadTitle();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LoadTitle);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneEvent.loadTitle()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class TitleLoaded implements SceneEvent {
+  const TitleLoaded();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TitleLoaded);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneEvent.titleLoaded()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+mixin _$SceneState {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SceneState);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneState()';
+}
+
+
+}
+
+/// @nodoc
+class $SceneStateCopyWith<$Res>  {
+$SceneStateCopyWith(SceneState _, $Res Function(SceneState) __);
+}
+
+
+/// Adds pattern-matching-related methods to [SceneState].
+extension SceneStatePatterns on SceneState {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Loading value)?  loading,TResult Function( Logo value)?  logo,TResult Function( LogoOverlayRemoving value)?  logoOverlayRemoving,TResult Function( TitleLoading value)?  titleLoading,TResult Function( Title value)?  title,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case Loading() when loading != null:
+return loading(_that);case Logo() when logo != null:
+return logo(_that);case LogoOverlayRemoving() when logoOverlayRemoving != null:
+return logoOverlayRemoving(_that);case TitleLoading() when titleLoading != null:
+return titleLoading(_that);case Title() when title != null:
+return title(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Loading value)  loading,required TResult Function( Logo value)  logo,required TResult Function( LogoOverlayRemoving value)  logoOverlayRemoving,required TResult Function( TitleLoading value)  titleLoading,required TResult Function( Title value)  title,}){
+final _that = this;
+switch (_that) {
+case Loading():
+return loading(_that);case Logo():
+return logo(_that);case LogoOverlayRemoving():
+return logoOverlayRemoving(_that);case TitleLoading():
+return titleLoading(_that);case Title():
+return title(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Loading value)?  loading,TResult? Function( Logo value)?  logo,TResult? Function( LogoOverlayRemoving value)?  logoOverlayRemoving,TResult? Function( TitleLoading value)?  titleLoading,TResult? Function( Title value)?  title,}){
+final _that = this;
+switch (_that) {
+case Loading() when loading != null:
+return loading(_that);case Logo() when logo != null:
+return logo(_that);case LogoOverlayRemoving() when logoOverlayRemoving != null:
+return logoOverlayRemoving(_that);case TitleLoading() when titleLoading != null:
+return titleLoading(_that);case Title() when title != null:
+return title(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  loading,TResult Function()?  logo,TResult Function()?  logoOverlayRemoving,TResult Function()?  titleLoading,TResult Function()?  title,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case Loading() when loading != null:
+return loading();case Logo() when logo != null:
+return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
+return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
+return titleLoading();case Title() when title != null:
+return title();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  loading,required TResult Function()  logo,required TResult Function()  logoOverlayRemoving,required TResult Function()  titleLoading,required TResult Function()  title,}) {final _that = this;
+switch (_that) {
+case Loading():
+return loading();case Logo():
+return logo();case LogoOverlayRemoving():
+return logoOverlayRemoving();case TitleLoading():
+return titleLoading();case Title():
+return title();case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  loading,TResult? Function()?  logo,TResult? Function()?  logoOverlayRemoving,TResult? Function()?  titleLoading,TResult? Function()?  title,}) {final _that = this;
+switch (_that) {
+case Loading() when loading != null:
+return loading();case Logo() when logo != null:
+return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
+return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
+return titleLoading();case Title() when title != null:
+return title();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class Loading implements SceneState {
+  const Loading();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Loading);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneState.loading()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class Logo implements SceneState {
+  const Logo();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Logo);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneState.logo()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class LogoOverlayRemoving implements SceneState {
+  const LogoOverlayRemoving();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LogoOverlayRemoving);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneState.logoOverlayRemoving()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class TitleLoading implements SceneState {
+  const TitleLoading();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TitleLoading);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneState.titleLoading()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class Title implements SceneState {
+  const Title();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Title);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneState.title()';
+}
+
+
+}
+
+
+
+
+// dart format on

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_home_page/project/app/widgets/flame.dart';
+import 'package:flutter_home_page/project/app/widgets/scene.dart';
 
 void main() {
   runApp(const MyApp());
