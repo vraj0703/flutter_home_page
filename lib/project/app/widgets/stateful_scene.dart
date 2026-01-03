@@ -22,10 +22,6 @@ class _StatefulSceneState extends State<StatefulScene>
   late final Animation<double> _downArrowBounceAnimation;
   late SceneBloc _bloc;
 
-  // Notifier to trigger the overlay reveal
-  final ValueNotifier<bool> _showOverlayNotifier = ValueNotifier(false);
-  final ValueNotifier<bool> _showArrowNotifier = ValueNotifier(true);
-
   @override
   void initState() {
     super.initState();
@@ -77,8 +73,6 @@ class _StatefulSceneState extends State<StatefulScene>
     _revealController.removeListener(_updateSceneProgress);
     _blinkingController.dispose();
     _revealController.dispose();
-    _showOverlayNotifier.dispose();
-    _showArrowNotifier.dispose();
     _downArrowBounceController.dispose();
     super.dispose();
   }
@@ -109,8 +103,7 @@ class _StatefulSceneState extends State<StatefulScene>
             GameWidget(game: _bloc.game),
             // Layer 1: The Flame Game wrapped in HomeOverlay
             HomeOverlay(
-              showOverlayNotifier: _showOverlayNotifier,
-              showArrowNotifier: _showArrowNotifier,
+              key: ValueKey("home_overlay"),
               bounceAnimation: _downArrowBounceAnimation,
             ),
 

@@ -1,6 +1,8 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 
 class BouncingArrow extends StatelessWidget {
@@ -27,8 +29,8 @@ class BouncingArrow extends StatelessWidget {
                     offset: const Offset(0, 4), // Push shadow slightly down
                     child: ImageFiltered(
                       imageFilter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                      child: SvgPicture.asset(
-                        'assets/vectors/down_arrow.svg',
+                      child: SvgPicture(
+                        BlocProvider.of<SceneBloc>(context).downArrowLoader,
                         width: 30,
                         height: 30,
                         colorFilter: ColorFilter.mode(
@@ -40,8 +42,8 @@ class BouncingArrow extends StatelessWidget {
                   ),
 
                   // --- LAYER 2: THE SILVER ARROW ---
-                  SvgPicture.asset(
-                    'assets/vectors/down_arrow.svg',
+                  SvgPicture(
+                    BlocProvider.of<SceneBloc>(context).downArrowLoader,
                     width: 30,
                     height: 30,
                     colorFilter: const ColorFilter.mode(

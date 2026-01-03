@@ -79,12 +79,12 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     _targetLightDirection = Vector2(0, -1)..normalize();
     _lightDirection = _targetLightDirection.clone();
 
-    await loadLayerLogo();
+    await loadLogoLayer();
     await loadLayerLineAndStart();
     await loadLayerName();
   }
 
-  Future<void> loadLayerLogo() async {
+  Future<void> loadLogoLayer() async {
     final sprite = await Sprite.load('logo.png');
     final Image image = sprite.image;
     double zoom = 3;
@@ -180,8 +180,6 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
 
   void loadTitleBackground() {
     // Fade in background shader
-    _targetLogoPosition = Vector2(60, 60); // Top Left with padding
-    _targetLogoScale = 0.3; // Shrink further to fit screen
     backgroundRun.add(
       OpacityEffect.to(
         1.0,
@@ -207,10 +205,10 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
       logoOverlayRemoving: () {},
       titleLoading: () {},
       title: () {
-        // Enforce header position on resize
+        /*// Enforce header position on resize
         final logoWidth = _baseLogoSize.x;
         final xPos = 60 + (logoWidth * 0.3) + 150; // 150px padding
-        cinematicTitle.position = Vector2(xPos, 70);
+        cinematicTitle.position = Vector2(xPos, 70);*/
       },
     );
   }
@@ -230,33 +228,31 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
         cinematicTitle.position = size / 2;
       },
       logoOverlayRemoving: () {
-        interactiveUI.inactivityOpacity -= dt / uiFadeDuration;
-        // Interpolate Logo Position to Top-Left
-        logoComponent.position.lerp(_targetLogoPosition, dt * 5.0);
-        shadowScene.logoPosition.lerp(_targetLogoPosition, dt * 5.0);
-
-        // Interpolate Scale
-        _currentLogoScale =
-            lerpDouble(_currentLogoScale, _targetLogoScale, dt * 5.0) ?? 3.0;
-
-        // Update components with new scale
-        if (_baseLogoSize != Vector2.zero()) {
-          final newSize = _baseLogoSize * _currentLogoScale;
-          logoComponent.size = newSize;
-          shadowScene.logoSize = newSize;
-        }
-
-        // Move UI "Vishal Raj" text to follow
-        // interactiveUI is centered on screen, but we want it relative to logo?
-        // Actually interactiveUI has its own logic.
-        if (logoComponent.position.distanceTo(_targetLogoPosition) < 1.0) {
-          queuer.queue(event: SceneEvent.titleLoaded());
-        }
+        zoomLogo(dt);
       },
       titleLoading: () {},
       title: () {},
     );
     _inactivityTimer.update(dt);
+  }
+
+  void zoomLogo(double dt) {
+    _targetLogoPosition = Vector2(36, 36); // Top Left with padding
+    _targetLogoScale = 0.3; // Shrink further to fit screen
+    // Interpolate Logo Position to Top-Left
+    logoComponent.position.lerp(_targetLogoPosition, dt * 5.0);
+    shadowScene.logoPosition.lerp(_targetLogoPosition, dt * 5.0);
+
+    // Interpolate Scale
+    _currentLogoScale =
+        lerpDouble(_currentLogoScale, _targetLogoScale, dt * 5.0) ?? 3.0;
+
+    // Update components with new scale
+    if (_baseLogoSize != Vector2.zero()) {
+      final newSize = _baseLogoSize * _currentLogoScale;
+      logoComponent.size = newSize;
+      shadowScene.logoSize = newSize;
+    }
   }
 
   void followCursor(double dt, Vector2 position) {
@@ -283,8 +279,8 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     shadowScene.logoSize = logoComponent.size;
   }
 
-  void animateToHeader() {
-    godRay.add(
+  void enterTitle() {
+  /*  godRay.add(
       SequenceEffect([
         ScaleEffect.by(
           Vector2.all(2.5),
@@ -295,17 +291,14 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
           EffectController(duration: 0.8, curve: Curves.easeOut),
         ),
       ]),
-    );
+    );*/
 
     // 2. Trigger the text reveal once the screen "flashes"
     Future.delayed(const Duration(milliseconds: 500), () {
-      cinematicTitle.show();
+      cinematicTitle.show(() {
+        queuer.queue(event: SceneEvent.titleLoaded());
+      });
     });
-
-    // 3. Existing logic for background shader
-    if (backgroundRun.opacity < 1.0) {
-      backgroundRun.add(OpacityEffect.to(1.0, EffectController(duration: 2.0)));
-    }
 
     // Also tell GodRays to fade out or move
     // godRay.add(OpacityEffect.fadeOut(EffectController(duration: 1.0)));

@@ -78,12 +78,12 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
     if (!isLoaded) return;
   }
 
-  void show() {
+  void show(VoidCallback showComplete) {
     if (_primaryTitle.opacity > 0) return;
     // Primary reveal
     _primaryTitle.add(
       SequenceEffect([
-        WaitEffect(1),
+        WaitEffect(.7),
         OpacityEffect.to(
           1.0,
           EffectController(duration: 4, curve: Curves.easeOut),
@@ -93,7 +93,7 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
 
     _primaryTitle.add(
       SequenceEffect([
-        WaitEffect(1),
+        WaitEffect(.7),
         ScaleEffect.to(
           Vector2(1, 1),
           EffectController(duration: 4, curve: Curves.fastLinearToSlowEaseIn),
@@ -114,7 +114,7 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
     // Secondary reveal (Staggered)
     _secondaryTitle.add(
       SequenceEffect([
-        WaitEffect(5.5), // Custom effect created earlier (1.2s delay)
+        WaitEffect(5), // Custom effect created earlier (1.2s delay)
         OpacityEffect.to(
           1.0,
           EffectController(duration: 2.0, curve: Curves.easeOut),
@@ -124,10 +124,16 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
 
     _secondaryTitle.add(
       SequenceEffect([
-        WaitEffect(5.5),
+        WaitEffect(5),
         ScaleEffect.to(
           Vector2(1, 1),
-          EffectController(duration: 2, curve: Curves.fastLinearToSlowEaseIn),
+          EffectController(
+            duration: 2,
+            curve: Curves.fastLinearToSlowEaseIn,
+            onMax: () {
+              showComplete();
+            },
+          ),
         ),
       ]),
     );

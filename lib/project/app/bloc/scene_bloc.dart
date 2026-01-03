@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/widgets/my_game.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'scene_event.dart';
@@ -21,13 +22,14 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   late final MyGame game;
   double _revealProgress = 0.0;
   late final void Function() _revealProgressListener;
+  late SvgAssetLoader downArrowLoader;
 
   SceneBloc() : super(const SceneState.loading()) {
     on<Initialize>(_initialize);
     on<CloseCurtain>(_closeCurtain);
     on<TapDown>(_tapDown);
-    on<TitleLoaded>(_titleLoaded);
     on<LoadTitle>(_loadTitle);
+    on<TitleLoaded>(_titleLoaded);
 
     game = MyGame(
       queuer: this,
@@ -47,10 +49,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   @override
   double revealProgress() => _revealProgress;
 
-  FutureOr<void> _titleLoaded(TitleLoaded event, Emitter<SceneState> emit) {
-    emit(SceneState.title());
-  }
-
   @override
   Future<void> close() async {
     revealProgressNotifier.removeListener(_revealProgressListener);
@@ -63,6 +61,12 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   }
 
   FutureOr<void> _initialize(SceneEvent event, Emitter<SceneState> emit) async {
+    downArrowLoader = SvgAssetLoader('assets/vectors/down_arrow.svg');
+    svg.cache.putIfAbsent(
+      downArrowLoader.cacheKey(null),
+      () => downArrowLoader.loadBytes(null),
+    );
+
     await game.loaded;
     await Future.delayed(Duration(milliseconds: 600));
     emit(SceneState.logo());
@@ -81,6 +85,10 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
 
   FutureOr<void> _loadTitle(LoadTitle event, Emitter<SceneState> emit) {
     emit(SceneState.titleLoading());
-    game.animateToHeader();
+    game.enterTitle();
+  }
+
+  FutureOr<void> _titleLoaded(TitleLoaded event, Emitter<SceneState> emit) {
+    emit(SceneState.title());
   }
 }
