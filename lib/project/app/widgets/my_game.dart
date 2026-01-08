@@ -16,7 +16,8 @@ import 'components/logo.dart';
 import 'components/navigation_tabs.dart';
 import 'components/logo_overlay.dart';
 
-class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
+class MyGame extends FlameGame
+    with PointerMoveCallbacks, TapCallbacks, ScrollDetector {
   VoidCallback? onStartExitAnimation;
   final Queuer queuer;
   final StateProvider stateProvider;
@@ -175,6 +176,11 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
   Color backgroundColor() => const Color(0xFFC78E53);
 
   @override
+  void onScroll(PointerScrollInfo info) {
+    queuer.queue(event: const SceneEvent.onScroll());
+  }
+
+  @override
   void onTapDown(TapDownEvent event) {
     queuer.queue(event: SceneEvent.tapDown(event));
     super.onTapDown(event);
@@ -193,10 +199,10 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
+    final center = size / 2;
     stateProvider.sceneState().when(
       loading: (isSvgReady, isGameReady) {},
       logo: () {
-        final center = size / 2;
         logoComponent.position = center;
         shadowScene.logoPosition = center;
         cinematicTitle.position = center;
@@ -205,9 +211,52 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
         interactiveUI.gameSize = size;
       },
       logoOverlayRemoving: () {},
-      titleLoading: () {},
-      title: () {},
+      titleLoading: () {
+        cinematicTitle.position = center;
+      },
+      title: () {
+        cinematicTitle.position = center;
+      },
+      menu: () {
+        _updateMenuLayoutTargets();
+        // Snap? No, update loop will animate.
+        // But cinematicTitle needs explicit updateLayout call during resize
+        cinematicTitle.updateLayout(
+          targetPos: _menuTitlePos,
+          targetScale: 0.6,
+          showSecondary: false,
+        );
+        // Calculate the right edge of the title for collision detection
+        final titleRightEdge = _menuTitlePos.x + (_titleVisualWidth / 2);
+
+        _tabs.updateLayout(size, minX: titleRightEdge);
+      },
     );
+  }
+
+  // Temporary storage for menu layout to share between resize and enter
+  Vector2 _menuTitlePos = Vector2.zero();
+  final double _titleVisualWidth = 360.0; // Reduced from 420 for tighter gap
+
+  void _updateMenuLayoutTargets() {
+    final logoScale = 0.25;
+    final logoW = _baseLogoSize.x * logoScale;
+    final gap = 15.0; // Reduced from 30
+    final headerY = 60.0; // Standardized vertical center for header elements
+
+    final startX = 60.0; // Left Margin
+
+    // Logo Left align (center of logo relative to startX)
+    final logoCX = startX + (logoW / 2);
+    _targetLogoPosition = Vector2(logoCX, headerY);
+    _targetLogoScale = logoScale;
+
+    // Title Left align (relative to logo end)
+    // Center = (LeftEdge + Width/2)
+    // LeftEdge = startX + logoW + gap
+    final titleCX = startX + logoW + gap + (_titleVisualWidth / 2);
+    // Visual alignment is now handled internally by CinematicTitleComponent (offset +17)
+    _menuTitlePos = Vector2(titleCX, headerY);
   }
 
   @override
@@ -225,18 +274,21 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
         cinematicTitle.position = size / 2;
       },
       logoOverlayRemoving: () {
-        zoomLogo(dt);
+        _targetLogoPosition = Vector2(36, 36);
+        _targetLogoScale = 0.3;
+        _animateLogo(dt);
       },
       titleLoading: () {},
       title: () {},
+      menu: () {
+        _animateLogo(dt);
+      },
     );
     _inactivityTimer.update(dt);
   }
 
-  void zoomLogo(double dt) {
-    _targetLogoPosition = Vector2(36, 36); // Top Left with padding
-    _targetLogoScale = 0.3; // Shrink further to fit screen
-    // Interpolate Logo Position to Top-Left
+  void _animateLogo(double dt) {
+    // Interpolate Logo Position
     logoComponent.position.lerp(_targetLogoPosition, dt * 5.0);
     shadowScene.logoPosition.lerp(_targetLogoPosition, dt * 5.0);
 
@@ -271,20 +323,27 @@ class MyGame extends FlameGame with PointerMoveCallbacks, TapCallbacks {
     shadowScene.lightPosition = _virtualLightPosition;
     shadowScene.lightDirection = _lightDirection;
 
-    // --- FIX: Ensure shadow size always matches logo size ---
+    // --- Ensure shadow size always matches logo size ---
     // This handles both the manual lerp in 'update' AND the SizeEffects
     shadowScene.logoSize = logoComponent.size;
   }
 
   void enterTitle() {
-    // 2. Trigger the text reveal once the screen "flashes"
     Future.delayed(const Duration(milliseconds: 500), () {
       cinematicTitle.show(() {
         queuer.queue(event: SceneEvent.titleLoaded());
       });
     });
+  }
 
-    // Also tell GodRays to fade out or move
+  void enterMenu() {
+    // 1. Move Title to Header
+    cinematicTitle.animateToHeader(_menuTitlePos, 0.6);
+
+    // 2. Show Navigation Tabs
+    final titleRightEdge = _menuTitlePos.x + (_titleVisualWidth / 2);
+    _tabs.updateLayout(size, minX: titleRightEdge);
+    _tabs.show();
   }
 
   @override

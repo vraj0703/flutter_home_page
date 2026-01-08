@@ -14,4 +14,6 @@ class SceneState with _$SceneState {
   const factory SceneState.titleLoading() = TitleLoading;
 
   const factory SceneState.title() = Title;
+
+  const factory SceneState.menu() = Menu;
 }

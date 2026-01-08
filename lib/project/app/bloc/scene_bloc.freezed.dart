@@ -55,7 +55,7 @@ extension SceneEventPatterns on SceneEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Initialize value)?  initialize,TResult Function( CloseCurtain value)?  closeCurtain,TResult Function( TapDown value)?  tapDown,TResult Function( LoadTitle value)?  loadTitle,TResult Function( TitleLoaded value)?  titleLoaded,TResult Function( GameReady value)?  gameReady,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Initialize value)?  initialize,TResult Function( CloseCurtain value)?  closeCurtain,TResult Function( TapDown value)?  tapDown,TResult Function( LoadTitle value)?  loadTitle,TResult Function( TitleLoaded value)?  titleLoaded,TResult Function( GameReady value)?  gameReady,TResult Function( OnScroll value)?  onScroll,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
@@ -64,7 +64,8 @@ return closeCurtain(_that);case TapDown() when tapDown != null:
 return tapDown(_that);case LoadTitle() when loadTitle != null:
 return loadTitle(_that);case TitleLoaded() when titleLoaded != null:
 return titleLoaded(_that);case GameReady() when gameReady != null:
-return gameReady(_that);case _:
+return gameReady(_that);case OnScroll() when onScroll != null:
+return onScroll(_that);case _:
   return orElse();
 
 }
@@ -82,7 +83,7 @@ return gameReady(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Initialize value)  initialize,required TResult Function( CloseCurtain value)  closeCurtain,required TResult Function( TapDown value)  tapDown,required TResult Function( LoadTitle value)  loadTitle,required TResult Function( TitleLoaded value)  titleLoaded,required TResult Function( GameReady value)  gameReady,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Initialize value)  initialize,required TResult Function( CloseCurtain value)  closeCurtain,required TResult Function( TapDown value)  tapDown,required TResult Function( LoadTitle value)  loadTitle,required TResult Function( TitleLoaded value)  titleLoaded,required TResult Function( GameReady value)  gameReady,required TResult Function( OnScroll value)  onScroll,}){
 final _that = this;
 switch (_that) {
 case Initialize():
@@ -91,7 +92,8 @@ return closeCurtain(_that);case TapDown():
 return tapDown(_that);case LoadTitle():
 return loadTitle(_that);case TitleLoaded():
 return titleLoaded(_that);case GameReady():
-return gameReady(_that);case _:
+return gameReady(_that);case OnScroll():
+return onScroll(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -108,7 +110,7 @@ return gameReady(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Initialize value)?  initialize,TResult? Function( CloseCurtain value)?  closeCurtain,TResult? Function( TapDown value)?  tapDown,TResult? Function( LoadTitle value)?  loadTitle,TResult? Function( TitleLoaded value)?  titleLoaded,TResult? Function( GameReady value)?  gameReady,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Initialize value)?  initialize,TResult? Function( CloseCurtain value)?  closeCurtain,TResult? Function( TapDown value)?  tapDown,TResult? Function( LoadTitle value)?  loadTitle,TResult? Function( TitleLoaded value)?  titleLoaded,TResult? Function( GameReady value)?  gameReady,TResult? Function( OnScroll value)?  onScroll,}){
 final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
@@ -117,7 +119,8 @@ return closeCurtain(_that);case TapDown() when tapDown != null:
 return tapDown(_that);case LoadTitle() when loadTitle != null:
 return loadTitle(_that);case TitleLoaded() when titleLoaded != null:
 return titleLoaded(_that);case GameReady() when gameReady != null:
-return gameReady(_that);case _:
+return gameReady(_that);case OnScroll() when onScroll != null:
+return onScroll(_that);case _:
   return null;
 
 }
@@ -134,7 +137,7 @@ return gameReady(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initialize,TResult Function()?  closeCurtain,TResult Function( TapDownEvent tapDownEvent)?  tapDown,TResult Function()?  loadTitle,TResult Function()?  titleLoaded,TResult Function()?  gameReady,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initialize,TResult Function()?  closeCurtain,TResult Function( TapDownEvent tapDownEvent)?  tapDown,TResult Function()?  loadTitle,TResult Function()?  titleLoaded,TResult Function()?  gameReady,TResult Function()?  onScroll,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
 return initialize();case CloseCurtain() when closeCurtain != null:
@@ -142,7 +145,8 @@ return closeCurtain();case TapDown() when tapDown != null:
 return tapDown(_that.tapDownEvent);case LoadTitle() when loadTitle != null:
 return loadTitle();case TitleLoaded() when titleLoaded != null:
 return titleLoaded();case GameReady() when gameReady != null:
-return gameReady();case _:
+return gameReady();case OnScroll() when onScroll != null:
+return onScroll();case _:
   return orElse();
 
 }
@@ -160,7 +164,7 @@ return gameReady();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initialize,required TResult Function()  closeCurtain,required TResult Function( TapDownEvent tapDownEvent)  tapDown,required TResult Function()  loadTitle,required TResult Function()  titleLoaded,required TResult Function()  gameReady,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initialize,required TResult Function()  closeCurtain,required TResult Function( TapDownEvent tapDownEvent)  tapDown,required TResult Function()  loadTitle,required TResult Function()  titleLoaded,required TResult Function()  gameReady,required TResult Function()  onScroll,}) {final _that = this;
 switch (_that) {
 case Initialize():
 return initialize();case CloseCurtain():
@@ -168,7 +172,8 @@ return closeCurtain();case TapDown():
 return tapDown(_that.tapDownEvent);case LoadTitle():
 return loadTitle();case TitleLoaded():
 return titleLoaded();case GameReady():
-return gameReady();case _:
+return gameReady();case OnScroll():
+return onScroll();case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -185,7 +190,7 @@ return gameReady();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initialize,TResult? Function()?  closeCurtain,TResult? Function( TapDownEvent tapDownEvent)?  tapDown,TResult? Function()?  loadTitle,TResult? Function()?  titleLoaded,TResult? Function()?  gameReady,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initialize,TResult? Function()?  closeCurtain,TResult? Function( TapDownEvent tapDownEvent)?  tapDown,TResult? Function()?  loadTitle,TResult? Function()?  titleLoaded,TResult? Function()?  gameReady,TResult? Function()?  onScroll,}) {final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
 return initialize();case CloseCurtain() when closeCurtain != null:
@@ -193,7 +198,8 @@ return closeCurtain();case TapDown() when tapDown != null:
 return tapDown(_that.tapDownEvent);case LoadTitle() when loadTitle != null:
 return loadTitle();case TitleLoaded() when titleLoaded != null:
 return titleLoaded();case GameReady() when gameReady != null:
-return gameReady();case _:
+return gameReady();case OnScroll() when onScroll != null:
+return onScroll();case _:
   return null;
 
 }
@@ -428,6 +434,38 @@ String toString() {
 
 
 /// @nodoc
+
+
+class OnScroll implements SceneEvent {
+  const OnScroll();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnScroll);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneEvent.onScroll()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
 mixin _$SceneState {
 
 
@@ -471,7 +509,7 @@ extension SceneStatePatterns on SceneState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Loading value)?  loading,TResult Function( Logo value)?  logo,TResult Function( LogoOverlayRemoving value)?  logoOverlayRemoving,TResult Function( TitleLoading value)?  titleLoading,TResult Function( Title value)?  title,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Loading value)?  loading,TResult Function( Logo value)?  logo,TResult Function( LogoOverlayRemoving value)?  logoOverlayRemoving,TResult Function( TitleLoading value)?  titleLoading,TResult Function( Title value)?  title,TResult Function( Menu value)?  menu,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case Loading() when loading != null:
@@ -479,7 +517,8 @@ return loading(_that);case Logo() when logo != null:
 return logo(_that);case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving(_that);case TitleLoading() when titleLoading != null:
 return titleLoading(_that);case Title() when title != null:
-return title(_that);case _:
+return title(_that);case Menu() when menu != null:
+return menu(_that);case _:
   return orElse();
 
 }
@@ -497,7 +536,7 @@ return title(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Loading value)  loading,required TResult Function( Logo value)  logo,required TResult Function( LogoOverlayRemoving value)  logoOverlayRemoving,required TResult Function( TitleLoading value)  titleLoading,required TResult Function( Title value)  title,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Loading value)  loading,required TResult Function( Logo value)  logo,required TResult Function( LogoOverlayRemoving value)  logoOverlayRemoving,required TResult Function( TitleLoading value)  titleLoading,required TResult Function( Title value)  title,required TResult Function( Menu value)  menu,}){
 final _that = this;
 switch (_that) {
 case Loading():
@@ -505,7 +544,8 @@ return loading(_that);case Logo():
 return logo(_that);case LogoOverlayRemoving():
 return logoOverlayRemoving(_that);case TitleLoading():
 return titleLoading(_that);case Title():
-return title(_that);case _:
+return title(_that);case Menu():
+return menu(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -522,7 +562,7 @@ return title(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Loading value)?  loading,TResult? Function( Logo value)?  logo,TResult? Function( LogoOverlayRemoving value)?  logoOverlayRemoving,TResult? Function( TitleLoading value)?  titleLoading,TResult? Function( Title value)?  title,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Loading value)?  loading,TResult? Function( Logo value)?  logo,TResult? Function( LogoOverlayRemoving value)?  logoOverlayRemoving,TResult? Function( TitleLoading value)?  titleLoading,TResult? Function( Title value)?  title,TResult? Function( Menu value)?  menu,}){
 final _that = this;
 switch (_that) {
 case Loading() when loading != null:
@@ -530,7 +570,8 @@ return loading(_that);case Logo() when logo != null:
 return logo(_that);case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving(_that);case TitleLoading() when titleLoading != null:
 return titleLoading(_that);case Title() when title != null:
-return title(_that);case _:
+return title(_that);case Menu() when menu != null:
+return menu(_that);case _:
   return null;
 
 }
@@ -547,14 +588,15 @@ return title(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isSvgReady,  bool isGameReady)?  loading,TResult Function()?  logo,TResult Function()?  logoOverlayRemoving,TResult Function()?  titleLoading,TResult Function()?  title,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isSvgReady,  bool isGameReady)?  loading,TResult Function()?  logo,TResult Function()?  logoOverlayRemoving,TResult Function()?  titleLoading,TResult Function()?  title,TResult Function()?  menu,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Loading() when loading != null:
 return loading(_that.isSvgReady,_that.isGameReady);case Logo() when logo != null:
 return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
 return titleLoading();case Title() when title != null:
-return title();case _:
+return title();case Menu() when menu != null:
+return menu();case _:
   return orElse();
 
 }
@@ -572,14 +614,15 @@ return title();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isSvgReady,  bool isGameReady)  loading,required TResult Function()  logo,required TResult Function()  logoOverlayRemoving,required TResult Function()  titleLoading,required TResult Function()  title,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isSvgReady,  bool isGameReady)  loading,required TResult Function()  logo,required TResult Function()  logoOverlayRemoving,required TResult Function()  titleLoading,required TResult Function()  title,required TResult Function()  menu,}) {final _that = this;
 switch (_that) {
 case Loading():
 return loading(_that.isSvgReady,_that.isGameReady);case Logo():
 return logo();case LogoOverlayRemoving():
 return logoOverlayRemoving();case TitleLoading():
 return titleLoading();case Title():
-return title();case _:
+return title();case Menu():
+return menu();case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -596,14 +639,15 @@ return title();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isSvgReady,  bool isGameReady)?  loading,TResult? Function()?  logo,TResult? Function()?  logoOverlayRemoving,TResult? Function()?  titleLoading,TResult? Function()?  title,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isSvgReady,  bool isGameReady)?  loading,TResult? Function()?  logo,TResult? Function()?  logoOverlayRemoving,TResult? Function()?  titleLoading,TResult? Function()?  title,TResult? Function()?  menu,}) {final _that = this;
 switch (_that) {
 case Loading() when loading != null:
 return loading(_that.isSvgReady,_that.isGameReady);case Logo() when logo != null:
 return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
 return titleLoading();case Title() when title != null:
-return title();case _:
+return title();case Menu() when menu != null:
+return menu();case _:
   return null;
 
 }
@@ -799,6 +843,38 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'SceneState.title()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class Menu implements SceneState {
+  const Menu();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Menu);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SceneState.menu()';
 }
 
 

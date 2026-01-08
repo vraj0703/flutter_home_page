@@ -26,6 +26,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     on<TapDown>(_tapDown);
     on<LoadTitle>(_loadTitle);
     on<TitleLoaded>(_titleLoaded);
+    on<OnScroll>(_onScroll);
   }
 
   @override
@@ -91,6 +92,12 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
 
   FutureOr<void> _titleLoaded(TitleLoaded event, Emitter<SceneState> emit) {
     emit(SceneState.title());
+  }
+
+  FutureOr<void> _onScroll(OnScroll event, Emitter<SceneState> emit) {
+    if (state is Title) {
+      emit(const SceneState.menu());
+    }
   }
 
   @override

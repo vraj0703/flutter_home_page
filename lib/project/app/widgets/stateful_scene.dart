@@ -106,6 +106,9 @@ class _StatefulSceneState extends State<StatefulScene>
             _game.enterTitle();
           },
           title: () {},
+          menu: () {
+            _game.enterMenu();
+          },
         );
       },
       builder: (context, state) {

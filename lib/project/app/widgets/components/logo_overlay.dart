@@ -30,7 +30,7 @@ class LogoOverlayComponent extends PositionComponent with PointerMoveCallbacks {
   final double verticalLineGap = 120.0;
   final double verticalThreshold = 150.0;
 
-  final String _fullText = 'START';
+  final String _fullText = 'ENTER';
   final Color uiColor = const Color(0xFF9A482F);
 
   final double startThickness = 3.0; // Thickness near the center
@@ -121,6 +121,7 @@ class LogoOverlayComponent extends PositionComponent with PointerMoveCallbacks {
       },
       titleLoading: () {},
       title: () {},
+      menu: () {},
     );
   }
 
@@ -202,6 +203,7 @@ class LogoOverlayComponent extends PositionComponent with PointerMoveCallbacks {
       },
       titleLoading: () {},
       title: () {},
+      menu: () {},
     );
   }
 

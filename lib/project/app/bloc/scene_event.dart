@@ -13,4 +13,6 @@ class SceneEvent with _$SceneEvent {
   const factory SceneEvent.titleLoaded() = TitleLoaded;
 
   const factory SceneEvent.gameReady() = GameReady;
+
+  const factory SceneEvent.onScroll() = OnScroll;
 }

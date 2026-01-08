@@ -9,13 +9,7 @@ import 'fade_text.dart';
 
 class NavigationTabsComponent extends PositionComponent
     with HasGameReference<MyGame> {
-  final List<String> items = [
-    "About me",
-    "Coding",
-    "Portfolio",
-    "Contact me",
-    "Resume",
-  ];
+  final List<String> items = ["Vishal Raj", "Testimonials", "Resume"];
   final List<FadeTextComponent> _textComponents = [];
   final FragmentShader shader;
   bool _isShown = false;
@@ -30,19 +24,17 @@ class NavigationTabsComponent extends PositionComponent
       final text = FadeTextComponent(
         text: items[i],
         textStyle: const TextStyle(
-          fontSize: 11,
+          fontSize: 20,
           letterSpacing: 2,
-          fontWeight: FontWeight.w600,
+          fontFamily: "ModrntUrban",
         ),
         shader: shader,
-        // Reuse metallic
-        position: Vector2(500 + (i * 130), 70),
-        // Adjust X starting position
+        // Initial position will be set by updateLayout
+        position: Vector2.zero(),
         anchor: Anchor.center,
       )..opacity = 0;
 
       _textComponents.add(text);
-      // add(text); // REMOVED: Lazy add in show()
     }
   }
 
@@ -53,18 +45,17 @@ class NavigationTabsComponent extends PositionComponent
   }
 
   void show() {
-    if (_isShown) return; // Prevent re-triggering
+    if (_isShown) return;
     _isShown = true;
 
     for (int i = 0; i < _textComponents.length; i++) {
-      // Lazy Add: Ensure component is in the tree
       if (_textComponents[i].parent == null) {
         add(_textComponents[i]);
       }
 
       _textComponents[i].removeAll(_textComponents[i].children.query<Effect>());
 
-      // 1. Force Reset State
+      // Reset
       _textComponents[i].opacity = 0;
       _textComponents[i].position.y = 70; // Reset to start Y
 
@@ -86,6 +77,30 @@ class NavigationTabsComponent extends PositionComponent
           EffectController(duration: 0.4, startDelay: delay),
         ),
       );
+    }
+  }
+
+  void updateLayout(Vector2 screenSize, {double minX = 0}) {
+    if (items.isEmpty) return;
+
+    final tabWidth = 100.0; // Est width per tab
+    final gap = 30.0;
+    final totalWidth = (items.length * tabWidth) + ((items.length - 1) * gap);
+
+    // Calculate centered startX
+    double startX = (screenSize.x - totalWidth) / 2 + (tabWidth / 2);
+
+    // Clamp to minX (ensure we don't overlap with left elements)
+    // Add a safety buffer to minX
+    final safeMinX = minX + (tabWidth / 2) + 20; // 20px buffer
+    if (startX < safeMinX) {
+      startX = safeMinX;
+    }
+
+    for (int i = 0; i < _textComponents.length; i++) {
+      final x = startX + (i * (tabWidth + gap));
+      // Standard Header Y = 60
+      _textComponents[i].position = Vector2(x, 60);
     }
   }
 
