@@ -13,6 +13,7 @@ class NavigationTabsComponent extends PositionComponent
   final List<FadeTextComponent> _textComponents = [];
   final FragmentShader shader;
   bool _isShown = false;
+  bool get isShown => _isShown;
 
   NavigationTabsComponent({required this.shader}) {
     priority = 100; // Ensure it's above background and logo
@@ -56,27 +57,39 @@ class NavigationTabsComponent extends PositionComponent
       _textComponents[i].removeAll(_textComponents[i].children.query<Effect>());
 
       // Reset
-      _textComponents[i].opacity = 0;
-      _textComponents[i].position.y = 70; // Reset to start Y
+      final isFirst = i == 0;
+      final startY = isFirst ? 60.0 : 70.0;
+      final targetY = 60.0;
 
-      // 2. Add Effects with startDelay (No WaitEffect needed)
-      double delay = 0.5 + (i * 0.1);
+      _textComponents[i].opacity = 0;
+      _textComponents[i].position.y = startY;
+
+      // 2. Add Effects
+      // First tab appears immediately to replace Title. Others stagger.
+      double delay = i * 0.1;
 
       // Fade In
+      // If first tab, appear instantly to match the end of Title animation
+      final fadeDuration = isFirst ? 0.0 : 0.6;
       _textComponents[i].add(
         OpacityEffect.to(
           1.0,
-          EffectController(duration: 0.6, startDelay: delay),
+          EffectController(duration: fadeDuration, startDelay: delay),
         ),
       );
 
-      // Move Up (Target: 70 - 5 = 65)
-      _textComponents[i].add(
-        MoveToEffect(
-          Vector2(_textComponents[i].position.x, 65),
-          EffectController(duration: 0.4, startDelay: delay),
-        ),
-      );
+      // Move Up (Only for non-first tabs, or redundant for first if start=target)
+      if (!isFirst) {
+        _textComponents[i].add(
+          MoveToEffect(
+            Vector2(_textComponents[i].position.x, targetY),
+            EffectController(duration: 0.4, startDelay: delay),
+          ),
+        );
+      } else {
+        // Ensure it's exactly at target
+        _textComponents[i].position.y = targetY;
+      }
     }
   }
 
@@ -102,6 +115,20 @@ class NavigationTabsComponent extends PositionComponent
       // Standard Header Y = 60
       _textComponents[i].position = Vector2(x, 60);
     }
+  }
+
+  /// Calculates the position of the first tab without applying it or showing tabs.
+  Vector2 getFirstTabPosition(Vector2 screenSize, {double minX = 0}) {
+    if (items.isEmpty) return Vector2.zero();
+    final tabWidth = 100.0;
+    final gap = 30.0;
+    final totalWidth = (items.length * tabWidth) + ((items.length - 1) * gap);
+    double startX = (screenSize.x - totalWidth) / 2 + (tabWidth / 2);
+    final safeMinX = minX + (tabWidth / 2) + 20;
+    if (startX < safeMinX) {
+      startX = safeMinX;
+    }
+    return Vector2(startX, 60);
   }
 
   void hide() {

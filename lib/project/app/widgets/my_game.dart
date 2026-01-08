@@ -9,6 +9,7 @@ import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/widgets/components/cinematic_title.dart';
+import 'package:flutter_home_page/project/app/widgets/components/cinematic_secondary_title.dart';
 import 'package:flutter_home_page/project/app/widgets/components/background_run_component.dart';
 import 'components/god_ray.dart';
 import 'components/carousal.dart';
@@ -36,6 +37,7 @@ class MyGame extends FlameGame
 
   late BackgroundRunComponent backgroundRun;
   late CinematicTitleComponent cinematicTitle;
+  late CinematicSecondaryTitleComponent cinematicSecondaryTitle;
 
   Vector2 _virtualLightPosition = Vector2.zero();
   Vector2 _targetLightPosition = Vector2.zero();
@@ -157,12 +159,40 @@ class MyGame extends FlameGame
 
     cinematicTitle = CinematicTitleComponent(
       primaryText: "VISHAL RAJ",
-      secondaryText: "Welcome to my space",
       shader: metallicShader,
       position: size / 2, // Centered on screen
     );
     cinematicTitle.priority = 25; // Above logo, below UI
     add(cinematicTitle);
+
+    cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
+      text: "Welcome to my space",
+      shader: metallicShader,
+      position:
+          size / 2 +
+          Vector2(
+            0,
+            48 + 17,
+          ), // Match previous relative offset (48) + internal offset fix (17) ??
+      // Wait, primary title moved its internal offset to (0, 17).
+      // Secondary was at (0, 48).
+      // So if both are centered at size/2...
+      // Primary Text is at size/2 + (0, 17).
+      // Secondary Text was at size/2 + (0, 48). (Relative to parent center)
+      // So I should position the component at size/2 + (0, 48).
+    );
+    // Actually, Secondary Text was anchored Center.
+    // CinematicTitleComponent was centered.
+    // Secondary relative position was (0, 48).
+    // So absolute position is size/2 + (0, 48).
+
+    cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
+      text: "Welcome to my space",
+      shader: metallicShader,
+      position: size / 2 + Vector2(0, 48),
+    );
+    cinematicSecondaryTitle.priority = 24;
+    add(cinematicSecondaryTitle);
 
     _tabs = NavigationTabsComponent(shader: metallicShader);
     await add(_tabs);
@@ -206,6 +236,7 @@ class MyGame extends FlameGame
         logoComponent.position = center;
         shadowScene.logoPosition = center;
         cinematicTitle.position = center;
+        cinematicSecondaryTitle.position = center + Vector2(0, 48);
 
         interactiveUI.position = center;
         interactiveUI.gameSize = size;
@@ -213,35 +244,35 @@ class MyGame extends FlameGame
       logoOverlayRemoving: () {},
       titleLoading: () {
         cinematicTitle.position = center;
+        cinematicSecondaryTitle.position = center + Vector2(0, 48);
       },
       title: () {
         cinematicTitle.position = center;
+        cinematicSecondaryTitle.position = center + Vector2(0, 48);
       },
       menu: () {
         _updateMenuLayoutTargets();
-        // Snap? No, update loop will animate.
-        // But cinematicTitle needs explicit updateLayout call during resize
-        cinematicTitle.updateLayout(
-          targetPos: _menuTitlePos,
-          targetScale: 0.6,
-          showSecondary: false,
-        );
-        // Calculate the right edge of the title for collision detection
-        final titleRightEdge = _menuTitlePos.x + (_titleVisualWidth / 2);
-
-        _tabs.updateLayout(size, minX: titleRightEdge);
+        // Title logic is now handled by enterMenu's one-off animation
+        // In menu state, title should disappear, so we don't need to update it here
+        // to avoid it snapping back.
+        // If we are resizing while menu is active, just update tabs.
+        // Note: we might want to check if tabs are visible to update their layout?
+        // _tabs.updateLayout checks internal items list so it's safe.
+        // Collision logic is gone since title becomes a tab.
+        _tabs.updateLayout(size);
       },
     );
   }
 
   // Temporary storage for menu layout to share between resize and enter
-  Vector2 _menuTitlePos = Vector2.zero();
-  final double _titleVisualWidth = 360.0; // Reduced from 420 for tighter gap
+  // Vector2 _menuTitlePos = Vector2.zero(); // Removed
+  // Vector2 _menuTitlePos = Vector2.zero(); // Removed
+  // final double _titleVisualWidth = 360.0; // Unused
 
   void _updateMenuLayoutTargets() {
     final logoScale = 0.25;
     final logoW = _baseLogoSize.x * logoScale;
-    final gap = 15.0; // Reduced from 30
+    // final gap = 15.0; // Unused
     final headerY = 60.0; // Standardized vertical center for header elements
 
     final startX = 60.0; // Left Margin
@@ -251,12 +282,7 @@ class MyGame extends FlameGame
     _targetLogoPosition = Vector2(logoCX, headerY);
     _targetLogoScale = logoScale;
 
-    // Title Left align (relative to logo end)
-    // Center = (LeftEdge + Width/2)
-    // LeftEdge = startX + logoW + gap
-    final titleCX = startX + logoW + gap + (_titleVisualWidth / 2);
-    // Visual alignment is now handled internally by CinematicTitleComponent (offset +17)
-    _menuTitlePos = Vector2(titleCX, headerY);
+    // Title alignment logic removed as it transitions to a tab.
   }
 
   @override
@@ -268,6 +294,7 @@ class MyGame extends FlameGame
     stateProvider.sceneState().when(
       loading: (isSvgReady, isGameReady) {
         cinematicTitle.position = size / 2;
+        cinematicSecondaryTitle.position = size / 2 + Vector2(0, 48);
         interactiveUI.inactivityOpacity += dt / uiFadeDuration;
       },
       logo: () {
@@ -331,19 +358,37 @@ class MyGame extends FlameGame
   void enterTitle() {
     Future.delayed(const Duration(milliseconds: 500), () {
       cinematicTitle.show(() {
-        queuer.queue(event: SceneEvent.titleLoaded());
+        // Once Primary Title finishes, show Secondary Title
+        cinematicSecondaryTitle.show(() {
+          // Once Secondary Title finishes, fire readiness event (Arrow)
+          queuer.queue(event: SceneEvent.titleLoaded());
+        });
       });
     });
   }
 
   void enterMenu() {
-    // 1. Move Title to Header
-    cinematicTitle.animateToHeader(_menuTitlePos, 0.6);
+    _updateMenuLayoutTargets();
 
-    // 2. Show Navigation Tabs
-    final titleRightEdge = _menuTitlePos.x + (_titleVisualWidth / 2);
-    _tabs.updateLayout(size, minX: titleRightEdge);
-    _tabs.show();
+    // 1. Calculate Target Position (First Tab)
+    // We get the position where the "Vishal Raj" tab will be.
+    final firstTabPos = _tabs.getFirstTabPosition(size);
+
+    // 2. Animate Title to becomes the first tab
+    // Target scale: Tab Font (20) / Title Font (54)
+    final targetScale = 20.0 / 54.0;
+
+    // Hide Secondary Title immediately/fade out
+    cinematicSecondaryTitle.hide();
+
+    cinematicTitle.animateToTab(firstTabPos, targetScale, () {
+      // 3. On Complete: Hide Title, Show Tabs
+      cinematicTitle.hide();
+      _tabs.show();
+    });
+
+    // 4. Enter Carousel
+    _carousel.enter();
   }
 
   @override

@@ -1,23 +1,19 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:flutter/material.dart'
-    show Colors, TextStyle, FontWeight, Curves;
+import 'package:flutter/material.dart' show TextStyle, FontWeight, Curves;
 import 'package:flutter_home_page/project/app/utils/wait_effect.dart';
 
 import 'fade_text.dart';
 
 class CinematicTitleComponent extends PositionComponent with HasGameReference {
   final String primaryText;
-  final String secondaryText;
   final FragmentShader shader;
 
   late FadeTextComponent _primaryTitle;
-  late FadeTextComponent _secondaryTitle;
 
   CinematicTitleComponent({
     required this.primaryText,
-    required this.secondaryText,
     required this.shader,
     super.position,
   }) : super(anchor: Anchor.center);
@@ -45,31 +41,8 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
           ..opacity = 0
           ..scale = Vector2.zero();
 
-    // --- 2. Initialize Secondary Title ("PORTFOLIO MMXXV") ---
-    const secondaryStyle = TextStyle(
-      fontSize: 14, // Smaller scale
-      fontWeight: FontWeight.w400,
-      letterSpacing: 4, // High spacing, but smaller than primary
-      color: Colors.white, // Base color (shader overrides this)
-    );
-
-    _secondaryTitle =
-        FadeTextComponent(
-            text: secondaryText,
-            textStyle: secondaryStyle,
-            shader: shader,
-            // Reuse the metallic shader logic
-            baseColor: const Color(0xFFAAB0B5),
-            // Muted Silver/Grey
-            anchor: Anchor.center,
-            priority: 1,
-            position: Vector2(0, 48), // Positioned below primary title
-          )
-          ..opacity = 0
-          ..scale = Vector2.zero();
-
     // Add both to the component tree
-    addAll([_primaryTitle, _secondaryTitle]);
+    add(_primaryTitle);
   }
 
   @override
@@ -97,6 +70,9 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
         ScaleEffect.to(
           Vector2(1, 1),
           EffectController(duration: 4, curve: Curves.fastLinearToSlowEaseIn),
+          onComplete: () {
+            showComplete();
+          },
         ),
       ]),
     );
@@ -110,46 +86,11 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
         ),
       ]),
     );
-
-    // Secondary reveal (Staggered)
-    _secondaryTitle.add(
-      SequenceEffect([
-        WaitEffect(5), // Custom effect created earlier (1.2s delay)
-        OpacityEffect.to(
-          1.0,
-          EffectController(duration: 2.0, curve: Curves.easeOut),
-        ),
-      ]),
-    );
-
-    _secondaryTitle.add(
-      SequenceEffect([
-        WaitEffect(5),
-        ScaleEffect.to(
-          Vector2(1, 1),
-          EffectController(
-            duration: 2,
-            curve: Curves.fastLinearToSlowEaseIn,
-            onMax: () {
-              showComplete();
-            },
-          ),
-        ),
-      ]),
-    );
   }
 
   void animateToHeader(Vector2 targetPosition, double scale) {
     // 0. Remove pending/running effects (like the initial delayed reveal)
-    _secondaryTitle.removeWhere((c) => c is Effect);
-
     // 1. Fade out secondary text immediately
-    _secondaryTitle.add(
-      OpacityEffect.to(
-        0.0,
-        EffectController(duration: 0.1, curve: Curves.easeOut),
-      ),
-    );
 
     // 2. Move and Scale THIS component (the parent)
     add(
@@ -174,7 +115,6 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
   }) {
     // 1. Clear existing move/scale effects to prevent "fighting"
     removeAll(children.query<Effect>());
-    _secondaryTitle.removeAll(_secondaryTitle.children.query<Effect>());
 
     // 2. Animate Parent to position
     add(
@@ -191,11 +131,44 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
     );
 
     // 3. Handle Secondary Text visibility (it's hidden in Header mode usually)
-    _secondaryTitle.add(
-      OpacityEffect.to(
-        showSecondary ? 1.0 : 0.0,
-        EffectController(duration: 0.4),
+  }
+
+  void animateToTab(
+    Vector2 targetPos,
+    double targetScale,
+    VoidCallback onComplete,
+  ) {
+    // 1. Remove conflicting effects
+    removeAll(children.query<Effect>());
+
+    // 2. Fade out secondary text
+
+    // 3. Calculate Parent Target
+    // Primary Text is at (0, 17). We want Primary Text to be at targetPos.
+    // So Parent should be at (targetPos.x, targetPos.y - 17).
+    final parentTarget = targetPos - Vector2(0, 17);
+
+    // 4. Move and Scale Parent
+    add(
+      MoveToEffect(
+        parentTarget,
+        EffectController(duration: 1.0, curve: Curves.easeInOutCubic),
       ),
     );
+
+    add(
+      ScaleEffect.to(
+        Vector2.all(targetScale),
+        EffectController(
+          duration: 1.0,
+          curve: Curves.easeInOutCubic,
+          onMax: onComplete, // Trigger callback when done
+        ),
+      ),
+    );
+  }
+
+  void hide() {
+    _primaryTitle.opacity = 0;
   }
 }
