@@ -3,8 +3,6 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart'
     show Colors, TextStyle, FontWeight, Curves;
-import 'package:flutter_home_page/project/app/utils/wait_effect.dart';
-
 import 'fade_text.dart';
 
 class CinematicSecondaryTitleComponent extends PositionComponent

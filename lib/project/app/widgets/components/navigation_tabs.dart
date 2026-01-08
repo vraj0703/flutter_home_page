@@ -13,29 +13,51 @@ class NavigationTabsComponent extends PositionComponent
   final List<FadeTextComponent> _textComponents = [];
   final FragmentShader shader;
   bool _isShown = false;
+
   bool get isShown => _isShown;
 
   NavigationTabsComponent({required this.shader}) {
-    priority = 100; // Ensure it's above background and logo
+    priority = 25; // Ensure it's above background and logo
   }
 
   @override
   Future<void> onLoad() async {
+    // Calculate initial centered layout to ensure correct placement on load
+    final gap = 40.0;
+    double totalWidth = 0;
     for (int i = 0; i < items.length; i++) {
+      totalWidth += _getTabWidth(i);
+    }
+    if (items.isNotEmpty) {
+      totalWidth += (items.length - 1) * gap;
+    }
+
+    double currentX = (game.size.x - totalWidth) / 2;
+    final safeMinX = 20.0;
+    if (currentX < safeMinX) currentX = safeMinX;
+
+    for (int i = 0; i < items.length; i++) {
+      final tabW = _getTabWidth(i);
+      final centerX = currentX + (tabW / 2);
+      final initialPos = Vector2(centerX, _getTabY(i));
+
       final text = FadeTextComponent(
         text: items[i],
         textStyle: const TextStyle(
           fontSize: 20,
-          letterSpacing: 2,
+          letterSpacing: 10,
+          fontWeight: FontWeight.w500,
           fontFamily: "ModrntUrban",
         ),
         shader: shader,
-        // Initial position will be set by updateLayout
-        position: Vector2.zero(),
+        // Initial position set to correct layout immediately
+        position: initialPos,
         anchor: Anchor.center,
       )..opacity = 0;
 
       _textComponents.add(text);
+
+      currentX += tabW + gap;
     }
   }
 
@@ -45,7 +67,7 @@ class NavigationTabsComponent extends PositionComponent
     if (!isLoaded) return;
   }
 
-  void show() {
+  void show({bool hideFirst = false}) {
     if (_isShown) return;
     _isShown = true;
 
@@ -58,11 +80,12 @@ class NavigationTabsComponent extends PositionComponent
 
       // Reset
       final isFirst = i == 0;
-      final startY = isFirst ? 60.0 : 70.0;
-      final targetY = 60.0;
 
       _textComponents[i].opacity = 0;
-      _textComponents[i].position.y = startY;
+      // Ensure X is correct (redundant if loop above set it, but good for safety)
+      // _textComponents[i].position.x is already set above.
+
+      if (isFirst && hideFirst) continue;
 
       // 2. Add Effects
       // First tab appears immediately to replace Title. Others stagger.
@@ -77,58 +100,51 @@ class NavigationTabsComponent extends PositionComponent
           EffectController(duration: fadeDuration, startDelay: delay),
         ),
       );
-
-      // Move Up (Only for non-first tabs, or redundant for first if start=target)
-      if (!isFirst) {
-        _textComponents[i].add(
-          MoveToEffect(
-            Vector2(_textComponents[i].position.x, targetY),
-            EffectController(duration: 0.4, startDelay: delay),
-          ),
-        );
-      } else {
-        // Ensure it's exactly at target
-        _textComponents[i].position.y = targetY;
-      }
     }
+  }
+
+  double _getTabWidth(int index) {
+    // First tab ("Vishal Raj") is significantly wider due to spacing/scale
+    return items[index].length * 25;
+  }
+
+  double _getTabY(int index) {
+    return MyGame.headerY;
   }
 
   void updateLayout(Vector2 screenSize, {double minX = 0}) {
     if (items.isEmpty) return;
 
-    final tabWidth = 100.0; // Est width per tab
-    final gap = 30.0;
-    final totalWidth = (items.length * tabWidth) + ((items.length - 1) * gap);
+    final gap = 40.0;
+    double totalWidth = 0;
+    for (int i = 0; i < items.length; i++) {
+      totalWidth += _getTabWidth(i);
+    }
+    totalWidth += (items.length - 1) * gap;
 
-    // Calculate centered startX
-    double startX = (screenSize.x - totalWidth) / 2 + (tabWidth / 2);
+    // Calculate left edge of the entire block
+    double currentX = (screenSize.x - totalWidth) / 2;
 
-    // Clamp to minX (ensure we don't overlap with left elements)
-    // Add a safety buffer to minX
-    final safeMinX = minX + (tabWidth / 2) + 20; // 20px buffer
-    if (startX < safeMinX) {
-      startX = safeMinX;
+    // Clamp to minX
+    final safeMinX = minX + 20; // 20px buffer
+    if (currentX < safeMinX) {
+      currentX = safeMinX;
     }
 
     for (int i = 0; i < _textComponents.length; i++) {
-      final x = startX + (i * (tabWidth + gap));
-      // Standard Header Y = 60
-      _textComponents[i].position = Vector2(x, 60);
+      final tabW = _getTabWidth(i);
+      final centerX = currentX + (tabW / 2);
+
+      _textComponents[i].position = Vector2(centerX, _getTabY(i));
+
+      currentX += tabW + gap;
     }
   }
 
   /// Calculates the position of the first tab without applying it or showing tabs.
   Vector2 getFirstTabPosition(Vector2 screenSize, {double minX = 0}) {
     if (items.isEmpty) return Vector2.zero();
-    final tabWidth = 100.0;
-    final gap = 30.0;
-    final totalWidth = (items.length * tabWidth) + ((items.length - 1) * gap);
-    double startX = (screenSize.x - totalWidth) / 2 + (tabWidth / 2);
-    final safeMinX = minX + (tabWidth / 2) + 20;
-    if (startX < safeMinX) {
-      startX = safeMinX;
-    }
-    return Vector2(startX, 60);
+    return _textComponents.first.position;
   }
 
   void hide() {

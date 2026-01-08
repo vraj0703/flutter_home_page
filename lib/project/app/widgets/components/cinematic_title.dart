@@ -88,81 +88,37 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
     );
   }
 
-  void animateToHeader(Vector2 targetPosition, double scale) {
-    // 0. Remove pending/running effects (like the initial delayed reveal)
-    // 1. Fade out secondary text immediately
-
-    // 2. Move and Scale THIS component (the parent)
-    add(
-      MoveToEffect(
-        targetPosition,
-        EffectController(duration: 1.2, curve: Curves.easeInOutCubic),
-      ),
-    );
-
-    add(
-      ScaleEffect.to(
-        Vector2.all(scale),
-        EffectController(duration: 1.2, curve: Curves.easeInOutCubic),
-      ),
-    );
-  }
-
-  void updateLayout({
-    required Vector2 targetPos,
-    required double targetScale,
-    bool showSecondary = true,
-  }) {
-    // 1. Clear existing move/scale effects to prevent "fighting"
-    removeAll(children.query<Effect>());
-
-    // 2. Animate Parent to position
-    add(
-      MoveToEffect(
-        targetPos,
-        EffectController(duration: 0.8, curve: Curves.easeInOutCubic),
-      ),
-    );
-    add(
-      ScaleEffect.to(
-        Vector2.all(targetScale),
-        EffectController(duration: 0.8, curve: Curves.easeInOutCubic),
-      ),
-    );
-
-    // 3. Handle Secondary Text visibility (it's hidden in Header mode usually)
-  }
-
   void animateToTab(
     Vector2 targetPos,
     double targetScale,
     VoidCallback onComplete,
   ) {
-    // 1. Remove conflicting effects
+    // 1. Remove conflicting effects from Parent (just in case)
     removeAll(children.query<Effect>());
 
-    // 2. Fade out secondary text
+    // 2. Remove conflicting effects from Child
+    _primaryTitle.removeAll(_primaryTitle.children.query<Effect>());
 
-    // 3. Calculate Parent Target
-    // Primary Text is at (0, 17). We want Primary Text to be at targetPos.
-    // So Parent should be at (targetPos.x, targetPos.y - 17).
-    final parentTarget = targetPos - Vector2(0, 17);
+    // 3. Calculate Local Target for the Child
+    // Global Target = ParentComp.position + ChildComp.position
+    // ChildComp.target = Global Target - ParentComp.position
+    final localTarget = targetPos - position;
 
-    // 4. Move and Scale Parent
-    add(
+    // 4. Move and Scale Child (_primaryTitle) directly
+    _primaryTitle.add(
       MoveToEffect(
-        parentTarget,
+        localTarget,
         EffectController(duration: 1.0, curve: Curves.easeInOutCubic),
       ),
     );
 
-    add(
+    _primaryTitle.add(
       ScaleEffect.to(
         Vector2.all(targetScale),
         EffectController(
           duration: 1.0,
           curve: Curves.easeInOutCubic,
-          onMax: onComplete, // Trigger callback when done
+          onMax: onComplete,
         ),
       ),
     );

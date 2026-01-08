@@ -58,6 +58,7 @@ class MyGame extends FlameGame
   late final Timer _inactivityTimer;
   static const double inactivityTimeout = 5.0;
   static const double uiFadeDuration = 0.5;
+  static const double headerY = 60.0;
 
   // Unified State
   //GameState _gameState = GameState.introIdle;
@@ -273,7 +274,8 @@ class MyGame extends FlameGame
     final logoScale = 0.25;
     final logoW = _baseLogoSize.x * logoScale;
     // final gap = 15.0; // Unused
-    final headerY = 60.0; // Standardized vertical center for header elements
+    final headerY =
+        MyGame.headerY; // Standardized vertical center for header elements
 
     final startX = 60.0; // Left Margin
 
@@ -382,9 +384,8 @@ class MyGame extends FlameGame
     cinematicSecondaryTitle.hide();
 
     cinematicTitle.animateToTab(firstTabPos, targetScale, () {
-      // 3. On Complete: Hide Title, Show Tabs
-      cinematicTitle.hide();
-      _tabs.show();
+      // 3. On Complete: Title stays visible as the "first tab"
+      _tabs.show(hideFirst: true);
     });
 
     // 4. Enter Carousel
