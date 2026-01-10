@@ -16,6 +16,7 @@ import 'components/carousal.dart';
 import 'components/logo.dart';
 import 'components/navigation_tabs.dart';
 import 'components/logo_overlay.dart';
+import 'components/grid_component.dart';
 
 class MyGame extends FlameGame
     with PointerMoveCallbacks, TapCallbacks, ScrollDetector {
@@ -38,6 +39,8 @@ class MyGame extends FlameGame
   late BackgroundRunComponent backgroundRun;
   late CinematicTitleComponent cinematicTitle;
   late CinematicSecondaryTitleComponent cinematicSecondaryTitle;
+
+  late GridComponent gridComponent;
 
   Vector2 _virtualLightPosition = Vector2.zero();
   Vector2 _targetLightPosition = Vector2.zero();
@@ -168,27 +171,6 @@ class MyGame extends FlameGame
     cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
       text: "Welcome to my space",
       shader: metallicShader,
-      position:
-          size / 2 +
-          Vector2(
-            0,
-            48 + 17,
-          ), // Match previous relative offset (48) + internal offset fix (17) ??
-      // Wait, primary title moved its internal offset to (0, 17).
-      // Secondary was at (0, 48).
-      // So if both are centered at size/2...
-      // Primary Text is at size/2 + (0, 17).
-      // Secondary Text was at size/2 + (0, 48). (Relative to parent center)
-      // So I should position the component at size/2 + (0, 48).
-    );
-    // Actually, Secondary Text was anchored Center.
-    // CinematicTitleComponent was centered.
-    // Secondary relative position was (0, 48).
-    // So absolute position is size/2 + (0, 48).
-
-    cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
-      text: "Welcome to my space",
-      shader: metallicShader,
       position: size / 2 + Vector2(0, 48),
     );
     cinematicSecondaryTitle.priority = 24;
@@ -196,6 +178,10 @@ class MyGame extends FlameGame
 
     _tabs = NavigationTabsComponent(shader: metallicShader);
     await add(_tabs);
+
+    // Grid Component (Initially hidden/transparent handled by component)
+    gridComponent = GridComponent(shader: metallicShader);
+    await add(gridComponent);
 
     // 3. Load the carousel
     _carousel = ProjectCarouselComponent();
@@ -209,6 +195,18 @@ class MyGame extends FlameGame
   void onScroll(PointerScrollInfo info) {
     if (!isLoaded) return;
     queuer.queue(event: const SceneEvent.onScroll());
+
+    stateProvider.sceneState().maybeWhen(
+      menu: () {
+        // Dispatch requested event based on delta
+        queuer.queue(
+          event: SceneEvent.onScrollSequence(info.scrollDelta.global.y),
+        );
+        // Directly update grid component
+        gridComponent.onScroll(info.scrollDelta.global.y);
+      },
+      orElse: () {},
+    );
   }
 
   @override
@@ -253,14 +251,8 @@ class MyGame extends FlameGame
       },
       menu: () {
         _updateMenuLayoutTargets();
-        // Title logic is now handled by enterMenu's one-off animation
-        // In menu state, title should disappear, so we don't need to update it here
-        // to avoid it snapping back.
-        // If we are resizing while menu is active, just update tabs.
-        // Note: we might want to check if tabs are visible to update their layout?
-        // _tabs.updateLayout checks internal items list so it's safe.
-        // Collision logic is gone since title becomes a tab.
         _tabs.updateLayout(size);
+        // Grid auto-updates via onGameResize
       },
     );
   }
@@ -268,18 +260,11 @@ class MyGame extends FlameGame
   void _updateMenuLayoutTargets() {
     final logoScale = 0.25;
     final logoW = _baseLogoSize.x * logoScale;
-    // final gap = 15.0; // Unused
-    final headerY =
-        MyGame.headerY; // Standardized vertical center for header elements
-
-    final startX = 60.0; // Left Margin
-
-    // Logo Left align (center of logo relative to startX)
+    final headerY = MyGame.headerY;
+    final startX = 60.0;
     final logoCX = startX + (logoW / 2);
     _targetLogoPosition = Vector2(logoCX, headerY);
     _targetLogoScale = logoScale;
-
-    // Title alignment logic removed as it transitions to a tab.
   }
 
   @override
@@ -312,15 +297,11 @@ class MyGame extends FlameGame
   }
 
   void _animateLogo(double dt) {
-    // Interpolate Logo Position
     logoComponent.position.lerp(_targetLogoPosition, dt * 5.0);
     shadowScene.logoPosition.lerp(_targetLogoPosition, dt * 5.0);
-
-    // Interpolate Scale
     _currentLogoScale =
         lerpDouble(_currentLogoScale, _targetLogoScale, dt * 5.0) ?? 3.0;
 
-    // Update components with new scale
     if (_baseLogoSize != Vector2.zero()) {
       final newSize = _baseLogoSize * _currentLogoScale;
       logoComponent.size = newSize;
@@ -331,33 +312,23 @@ class MyGame extends FlameGame
   void followCursor(double dt, Vector2 position) {
     godRay.position = position;
     _targetLightPosition = position + Vector2(0, glowVerticalOffset);
-
     final vectorFromCenter = position - size / 2;
     if (vectorFromCenter.length2 > 0) {
       _targetLightDirection = vectorFromCenter.normalized();
     }
     interactiveUI.cursorPosition = position - interactiveUI.position;
-
-    // This smoothing logic runs every frame, ensuring a seamless transition
-    // from the centered state to the user-controlled state.
     _virtualLightPosition.lerp(_targetLightPosition, smoothingSpeed * dt);
     _lightDirection.lerp(_targetLightDirection, smoothingSpeed * dt);
-
     shadowScene.lightPosition = _virtualLightPosition;
     shadowScene.lightPosition = _virtualLightPosition;
     shadowScene.lightDirection = _lightDirection;
-
-    // --- Ensure shadow size always matches logo size ---
-    // This handles both the manual lerp in 'update' AND the SizeEffects
     shadowScene.logoSize = logoComponent.size;
   }
 
   void enterTitle() {
     Future.delayed(const Duration(milliseconds: 500), () {
       cinematicTitle.show(() {
-        // Once Primary Title finishes, show Secondary Title
         cinematicSecondaryTitle.show(() {
-          // Once Secondary Title finishes, fire readiness event (Arrow)
           queuer.queue(event: SceneEvent.titleLoaded());
         });
       });
@@ -366,24 +337,19 @@ class MyGame extends FlameGame
 
   void enterMenu() {
     _updateMenuLayoutTargets();
-
-    // 1. Calculate Target Position (First Tab)
-    // We get the position where the "Vishal Raj" tab will be.
     final firstTabPos = _tabs.getFirstTabPosition(size);
-
-    // 2. Animate Title to becomes the first tab
-    // Target scale: Tab Font (20) / Title Font (54)
     final targetScale = 20.0 / 54.0;
 
-    // Hide Secondary Title immediately/fade out
     cinematicSecondaryTitle.hide();
 
     cinematicTitle.animateToTab(firstTabPos, targetScale, () {
-      // 3. On Complete: Title stays visible as the "first tab"
       _tabs.show(hideFirst: true);
     });
 
     _tabs.setActive(0);
+
+    // TRIGGERS SCROLL SEQUENCE START
+    gridComponent.show();
   }
 
   @override

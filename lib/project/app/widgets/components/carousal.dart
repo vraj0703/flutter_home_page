@@ -31,24 +31,61 @@ class ProjectCarouselComponent extends PositionComponent
     position = Vector2(game.size.x / 2 - cardWidth / 2, game.size.y + 400);
   }
 
-  void enter() {
+  void enter({bool reverse = false}) {
+    // Target Y: Centered (game.size.y / 2 - 100) or wherever needed.
+    // Let's align with the previous target.
+    final targetY = game.size.y / 2 - 100;
+
+    if (reverse) {
+      // Coming from Contact (Tab 2) -> Enter from Top
+      position.y = -400;
+    } else {
+      // Coming from Timeline (Tab 0) -> Enter from Bottom
+      position.y = game.size.y + 400;
+    }
+
     add(
       MoveToEffect(
-        Vector2(position.x, game.size.y / 2 - 100),
+        Vector2(position.x, targetY),
         EffectController(duration: 0.8, curve: Curves.easeOut),
       ),
     );
   }
 
-  void exit() {
+  void exit({bool reverse = false}) {
+    final targetY = reverse ? game.size.y + 400.0 : -400.0;
+
     add(
       MoveToEffect(
-        Vector2(position.x, game.size.y + 400),
+        Vector2(position.x, targetY),
         EffectController(duration: 0.6, curve: Curves.easeIn),
       ),
     );
   }
 
+  double get _maxScroll => (4 * (cardWidth + spacing)); // 5 cards (0-4)
+
+  bool get isAtEnd {
+    if (!isLoaded) return false;
+    return _horizontalMover.position.x <= -_maxScroll - 50;
+  }
+
+  bool get isAtStart {
+    if (!isLoaded) return true;
+    return _horizontalMover.position.x >= 0;
+  }
+
+  void scroll(double delta) {
+    if (!isLoaded) return;
+    double newX = _horizontalMover.position.x - delta;
+
+    if (newX > 0) newX = 0;
+    if (newX < -_maxScroll - 100) newX = -_maxScroll - 100;
+
+    _horizontalMover.position.x = newX;
+  }
+
+  // Keep scrollTo for potentially programmatic navigation, or remove if unused.
   void scrollTo(int index) {
     double targetX = -index * (cardWidth + spacing);
     _horizontalMover.add(

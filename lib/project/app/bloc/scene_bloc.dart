@@ -27,6 +27,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     on<LoadTitle>(_loadTitle);
     on<TitleLoaded>(_titleLoaded);
     on<OnScroll>(_onScroll);
+    on<OnScrollSequence>(_onScrollSequence);
   }
 
   @override
@@ -98,6 +99,13 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     if (state is Title) {
       emit(const SceneState.menu());
     }
+  }
+
+  FutureOr<void> _onScrollSequence(
+    OnScrollSequence event,
+    Emitter<SceneState> emit,
+  ) {
+    // Scroll sequence logic to be implemented or handled by UI
   }
 
   @override

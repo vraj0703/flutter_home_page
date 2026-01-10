@@ -55,7 +55,7 @@ extension SceneEventPatterns on SceneEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Initialize value)?  initialize,TResult Function( CloseCurtain value)?  closeCurtain,TResult Function( TapDown value)?  tapDown,TResult Function( LoadTitle value)?  loadTitle,TResult Function( TitleLoaded value)?  titleLoaded,TResult Function( GameReady value)?  gameReady,TResult Function( OnScroll value)?  onScroll,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Initialize value)?  initialize,TResult Function( CloseCurtain value)?  closeCurtain,TResult Function( TapDown value)?  tapDown,TResult Function( LoadTitle value)?  loadTitle,TResult Function( TitleLoaded value)?  titleLoaded,TResult Function( GameReady value)?  gameReady,TResult Function( OnScroll value)?  onScroll,TResult Function( OnScrollSequence value)?  onScrollSequence,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
@@ -65,7 +65,8 @@ return tapDown(_that);case LoadTitle() when loadTitle != null:
 return loadTitle(_that);case TitleLoaded() when titleLoaded != null:
 return titleLoaded(_that);case GameReady() when gameReady != null:
 return gameReady(_that);case OnScroll() when onScroll != null:
-return onScroll(_that);case _:
+return onScroll(_that);case OnScrollSequence() when onScrollSequence != null:
+return onScrollSequence(_that);case _:
   return orElse();
 
 }
@@ -83,7 +84,7 @@ return onScroll(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Initialize value)  initialize,required TResult Function( CloseCurtain value)  closeCurtain,required TResult Function( TapDown value)  tapDown,required TResult Function( LoadTitle value)  loadTitle,required TResult Function( TitleLoaded value)  titleLoaded,required TResult Function( GameReady value)  gameReady,required TResult Function( OnScroll value)  onScroll,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Initialize value)  initialize,required TResult Function( CloseCurtain value)  closeCurtain,required TResult Function( TapDown value)  tapDown,required TResult Function( LoadTitle value)  loadTitle,required TResult Function( TitleLoaded value)  titleLoaded,required TResult Function( GameReady value)  gameReady,required TResult Function( OnScroll value)  onScroll,required TResult Function( OnScrollSequence value)  onScrollSequence,}){
 final _that = this;
 switch (_that) {
 case Initialize():
@@ -93,7 +94,8 @@ return tapDown(_that);case LoadTitle():
 return loadTitle(_that);case TitleLoaded():
 return titleLoaded(_that);case GameReady():
 return gameReady(_that);case OnScroll():
-return onScroll(_that);case _:
+return onScroll(_that);case OnScrollSequence():
+return onScrollSequence(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -110,7 +112,7 @@ return onScroll(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Initialize value)?  initialize,TResult? Function( CloseCurtain value)?  closeCurtain,TResult? Function( TapDown value)?  tapDown,TResult? Function( LoadTitle value)?  loadTitle,TResult? Function( TitleLoaded value)?  titleLoaded,TResult? Function( GameReady value)?  gameReady,TResult? Function( OnScroll value)?  onScroll,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Initialize value)?  initialize,TResult? Function( CloseCurtain value)?  closeCurtain,TResult? Function( TapDown value)?  tapDown,TResult? Function( LoadTitle value)?  loadTitle,TResult? Function( TitleLoaded value)?  titleLoaded,TResult? Function( GameReady value)?  gameReady,TResult? Function( OnScroll value)?  onScroll,TResult? Function( OnScrollSequence value)?  onScrollSequence,}){
 final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
@@ -120,7 +122,8 @@ return tapDown(_that);case LoadTitle() when loadTitle != null:
 return loadTitle(_that);case TitleLoaded() when titleLoaded != null:
 return titleLoaded(_that);case GameReady() when gameReady != null:
 return gameReady(_that);case OnScroll() when onScroll != null:
-return onScroll(_that);case _:
+return onScroll(_that);case OnScrollSequence() when onScrollSequence != null:
+return onScrollSequence(_that);case _:
   return null;
 
 }
@@ -137,7 +140,7 @@ return onScroll(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initialize,TResult Function()?  closeCurtain,TResult Function( TapDownEvent tapDownEvent)?  tapDown,TResult Function()?  loadTitle,TResult Function()?  titleLoaded,TResult Function()?  gameReady,TResult Function()?  onScroll,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initialize,TResult Function()?  closeCurtain,TResult Function( TapDownEvent tapDownEvent)?  tapDown,TResult Function()?  loadTitle,TResult Function()?  titleLoaded,TResult Function()?  gameReady,TResult Function()?  onScroll,TResult Function( double delta)?  onScrollSequence,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
 return initialize();case CloseCurtain() when closeCurtain != null:
@@ -146,7 +149,8 @@ return tapDown(_that.tapDownEvent);case LoadTitle() when loadTitle != null:
 return loadTitle();case TitleLoaded() when titleLoaded != null:
 return titleLoaded();case GameReady() when gameReady != null:
 return gameReady();case OnScroll() when onScroll != null:
-return onScroll();case _:
+return onScroll();case OnScrollSequence() when onScrollSequence != null:
+return onScrollSequence(_that.delta);case _:
   return orElse();
 
 }
@@ -164,7 +168,7 @@ return onScroll();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initialize,required TResult Function()  closeCurtain,required TResult Function( TapDownEvent tapDownEvent)  tapDown,required TResult Function()  loadTitle,required TResult Function()  titleLoaded,required TResult Function()  gameReady,required TResult Function()  onScroll,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initialize,required TResult Function()  closeCurtain,required TResult Function( TapDownEvent tapDownEvent)  tapDown,required TResult Function()  loadTitle,required TResult Function()  titleLoaded,required TResult Function()  gameReady,required TResult Function()  onScroll,required TResult Function( double delta)  onScrollSequence,}) {final _that = this;
 switch (_that) {
 case Initialize():
 return initialize();case CloseCurtain():
@@ -173,7 +177,8 @@ return tapDown(_that.tapDownEvent);case LoadTitle():
 return loadTitle();case TitleLoaded():
 return titleLoaded();case GameReady():
 return gameReady();case OnScroll():
-return onScroll();case _:
+return onScroll();case OnScrollSequence():
+return onScrollSequence(_that.delta);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -190,7 +195,7 @@ return onScroll();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initialize,TResult? Function()?  closeCurtain,TResult? Function( TapDownEvent tapDownEvent)?  tapDown,TResult? Function()?  loadTitle,TResult? Function()?  titleLoaded,TResult? Function()?  gameReady,TResult? Function()?  onScroll,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initialize,TResult? Function()?  closeCurtain,TResult? Function( TapDownEvent tapDownEvent)?  tapDown,TResult? Function()?  loadTitle,TResult? Function()?  titleLoaded,TResult? Function()?  gameReady,TResult? Function()?  onScroll,TResult? Function( double delta)?  onScrollSequence,}) {final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
 return initialize();case CloseCurtain() when closeCurtain != null:
@@ -199,7 +204,8 @@ return tapDown(_that.tapDownEvent);case LoadTitle() when loadTitle != null:
 return loadTitle();case TitleLoaded() when titleLoaded != null:
 return titleLoaded();case GameReady() when gameReady != null:
 return gameReady();case OnScroll() when onScroll != null:
-return onScroll();case _:
+return onScroll();case OnScrollSequence() when onScrollSequence != null:
+return onScrollSequence(_that.delta);case _:
   return null;
 
 }
@@ -464,6 +470,72 @@ String toString() {
 
 
 
+
+/// @nodoc
+
+
+class OnScrollSequence implements SceneEvent {
+  const OnScrollSequence(this.delta);
+  
+
+ final  double delta;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$OnScrollSequenceCopyWith<OnScrollSequence> get copyWith => _$OnScrollSequenceCopyWithImpl<OnScrollSequence>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnScrollSequence&&(identical(other.delta, delta) || other.delta == delta));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,delta);
+
+@override
+String toString() {
+  return 'SceneEvent.onScrollSequence(delta: $delta)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $OnScrollSequenceCopyWith<$Res> implements $SceneEventCopyWith<$Res> {
+  factory $OnScrollSequenceCopyWith(OnScrollSequence value, $Res Function(OnScrollSequence) _then) = _$OnScrollSequenceCopyWithImpl;
+@useResult
+$Res call({
+ double delta
+});
+
+
+
+
+}
+/// @nodoc
+class _$OnScrollSequenceCopyWithImpl<$Res>
+    implements $OnScrollSequenceCopyWith<$Res> {
+  _$OnScrollSequenceCopyWithImpl(this._self, this._then);
+
+  final OnScrollSequence _self;
+  final $Res Function(OnScrollSequence) _then;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? delta = null,}) {
+  return _then(OnScrollSequence(
+null == delta ? _self.delta : delta // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
 
 /// @nodoc
 mixin _$SceneState {
