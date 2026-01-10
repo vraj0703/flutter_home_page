@@ -61,7 +61,6 @@ class MyGame extends FlameGame
   static const double headerY = 60.0;
 
   // Unified State
-  //GameState _gameState = GameState.introIdle;
   late NavigationTabsComponent _tabs;
   late ProjectCarouselComponent _carousel;
 
@@ -200,7 +199,7 @@ class MyGame extends FlameGame
 
     // 3. Load the carousel
     _carousel = ProjectCarouselComponent();
-    await add(_carousel);
+    // await add(_carousel);
   }
 
   @override
@@ -208,6 +207,7 @@ class MyGame extends FlameGame
 
   @override
   void onScroll(PointerScrollInfo info) {
+    if (!isLoaded) return;
     queuer.queue(event: const SceneEvent.onScroll());
   }
 
@@ -264,11 +264,6 @@ class MyGame extends FlameGame
       },
     );
   }
-
-  // Temporary storage for menu layout to share between resize and enter
-  // Vector2 _menuTitlePos = Vector2.zero(); // Removed
-  // Vector2 _menuTitlePos = Vector2.zero(); // Removed
-  // final double _titleVisualWidth = 360.0; // Unused
 
   void _updateMenuLayoutTargets() {
     final logoScale = 0.25;
@@ -388,8 +383,7 @@ class MyGame extends FlameGame
       _tabs.show(hideFirst: true);
     });
 
-    // 4. Enter Carousel
-    _carousel.enter();
+    _tabs.setActive(0);
   }
 
   @override
