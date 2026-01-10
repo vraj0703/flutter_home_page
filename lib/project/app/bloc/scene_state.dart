@@ -15,5 +15,5 @@ class SceneState with _$SceneState {
 
   const factory SceneState.title() = Title;
 
-  const factory SceneState.menu() = Menu;
+  const factory SceneState.menu({@Default(1.0) double uiOpacity}) = Menu;
 }

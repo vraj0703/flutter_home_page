@@ -32,7 +32,7 @@ class _StatefulSceneState extends State<StatefulScene>
     // Controller for the "LOADING" text's blinking effect.
     _blinkingController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 600),
     )..repeat(reverse: true);
 
     // This controller drives the curtain opening and the in-game animations.
@@ -88,6 +88,11 @@ class _StatefulSceneState extends State<StatefulScene>
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<SceneBloc, SceneState>(
+      listenWhen: (previous, current) {
+        // Only trigger listener if the state type changes (e.g. Title -> Menu).
+        // Ignore internal state updates like uiOpacity changes in Menu.
+        return previous.runtimeType != current.runtimeType;
+      },
       listener: (context, state) {
         state.when(
           loading: (isSvgReady, isGameReady) {
@@ -106,7 +111,7 @@ class _StatefulSceneState extends State<StatefulScene>
             _game.enterTitle();
           },
           title: () {},
-          menu: () {
+          menu: (uiOpacity) {
             _game.enterMenu();
           },
         );

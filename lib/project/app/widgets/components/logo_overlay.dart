@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
@@ -13,8 +14,11 @@ enum _LineOrientation { horizontal, vertical }
 
 /// A component that renders an interactive UI element with circles, text,
 /// and four lines that animate based on the cursor's position.
-class LogoOverlayComponent extends PositionComponent with PointerMoveCallbacks {
+class LogoOverlayComponent extends PositionComponent
+    with PointerMoveCallbacks
+    implements OpacityProvider {
   final StateProvider stateProvider;
+
   final Queuer queuer;
 
   // --- Configuration ---
@@ -36,6 +40,31 @@ class LogoOverlayComponent extends PositionComponent with PointerMoveCallbacks {
   final double startThickness = 3.0; // Thickness near the center
   final double endThickness = 0.5; // Thickness at the far end
   double inactivityOpacity = 1.0;
+
+  // OpacityProvider implementation
+  double _opacity = 1.0;
+  @override
+  double get opacity => _opacity;
+  @override
+  set opacity(double value) {
+    _opacity = value;
+    _textComponent.textRenderer = TextPaint(
+      style: flutter.TextStyle(
+        fontSize: 15.0,
+        color: uiColor.withValues(alpha: _opacity), // Apply opacity
+        letterSpacing: 10.0,
+        fontWeight: FontWeight.w900,
+        fontFamily: 'Broadway',
+        shadows: [
+          Shadow(
+            color: const Color(0xFFD6A65F).withValues(alpha: _opacity),
+            offset: const Offset(2.0, 2.0),
+            blurRadius: 10.0,
+          ),
+        ],
+      ),
+    );
+  }
 
   final List<Color> glassyColors = [
     const Color.fromRGBO(214, 166, 95, 0.2), // Faint Edge Highlight
@@ -121,7 +150,7 @@ class LogoOverlayComponent extends PositionComponent with PointerMoveCallbacks {
       },
       titleLoading: () {},
       title: () {},
-      menu: () {},
+      menu: (uiOpacity) {},
     );
   }
 
@@ -203,15 +232,19 @@ class LogoOverlayComponent extends PositionComponent with PointerMoveCallbacks {
       },
       titleLoading: () {},
       title: () {},
-      menu: () {},
+      menu: (uiOpacity) {},
     );
   }
 
   void _renderBouncyLines(Canvas canvas) {
     var sceneProgress = stateProvider.revealProgress();
     final lineFade = ((sceneProgress - 0.4) / 0.4).clamp(0.0, 1.0);
-    if (lineFade > 0.0) {
-      _materialPaint.color = flutter.Colors.white.withValues(alpha: lineFade);
+    final combinedOpacity = lineFade * _opacity; // Combine with scroll opacity
+
+    if (combinedOpacity > 0.0) {
+      _materialPaint.color = flutter.Colors.white.withValues(
+        alpha: combinedOpacity,
+      );
       _renderBouncyLine(
         canvas: canvas,
         line: _rightLine,

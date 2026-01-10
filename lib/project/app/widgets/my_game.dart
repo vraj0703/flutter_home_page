@@ -12,11 +12,11 @@ import 'package:flutter_home_page/project/app/widgets/components/cinematic_title
 import 'package:flutter_home_page/project/app/widgets/components/cinematic_secondary_title.dart';
 import 'package:flutter_home_page/project/app/widgets/components/background_run_component.dart';
 import 'components/god_ray.dart';
-import 'components/carousal.dart';
 import 'components/logo.dart';
-import 'components/navigation_tabs.dart';
 import 'components/logo_overlay.dart';
 import 'components/grid_component.dart';
+import 'package:flutter_home_page/project/app/system/scroll_system.dart';
+import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
 
 class MyGame extends FlameGame
     with PointerMoveCallbacks, TapCallbacks, ScrollDetector {
@@ -40,7 +40,8 @@ class MyGame extends FlameGame
   late CinematicTitleComponent cinematicTitle;
   late CinematicSecondaryTitleComponent cinematicSecondaryTitle;
 
-  late GridComponent gridComponent;
+  late final GridComponent gridComponent;
+  RectangleComponent? _dimLayer;
 
   Vector2 _virtualLightPosition = Vector2.zero();
   Vector2 _targetLightPosition = Vector2.zero();
@@ -64,8 +65,11 @@ class MyGame extends FlameGame
   static const double headerY = 60.0;
 
   // Unified State
-  late NavigationTabsComponent _tabs;
-  late ProjectCarouselComponent _carousel;
+  // late NavigationTabsComponent _tabs;
+  // late ProjectCarouselComponent _carousel;
+
+  final ScrollSystem scrollSystem = ScrollSystem();
+  final ScrollOrchestrator scrollOrchestrator = ScrollOrchestrator();
 
   @override
   Future<void> onLoad() async {
@@ -90,6 +94,9 @@ class MyGame extends FlameGame
     await loadLayerName();
 
     queuer.queue(event: const SceneEvent.gameReady());
+
+    // Register Orchestrator
+    scrollSystem.register(scrollOrchestrator);
   }
 
   Future<void> loadLogoLayer() async {
@@ -176,15 +183,27 @@ class MyGame extends FlameGame
     cinematicSecondaryTitle.priority = 24;
     add(cinematicSecondaryTitle);
 
-    _tabs = NavigationTabsComponent(shader: metallicShader);
-    await add(_tabs);
+    // _tabs = NavigationTabsComponent(shader: metallicShader);
+    // await add(_tabs);
 
     // Grid Component (Initially hidden/transparent handled by component)
-    gridComponent = GridComponent(shader: metallicShader);
+    gridComponent = GridComponent(
+      shader: metallicShader,
+      scrollSystem: scrollSystem,
+      scrollOrchestrator: scrollOrchestrator,
+    );
     await add(gridComponent);
 
+    // Dim Layer (Overlay)
+    _dimLayer = RectangleComponent(
+      priority: 2, // Above background (1), below content (likely > 2)
+      size: size,
+      paint: Paint()..color = const Color(0xFF000000).withValues(alpha: 0.0),
+    );
+    await add(_dimLayer!);
+
     // 3. Load the carousel
-    _carousel = ProjectCarouselComponent();
+    //_carousel = ProjectCarouselComponent();
     // await add(_carousel);
   }
 
@@ -197,7 +216,7 @@ class MyGame extends FlameGame
     queuer.queue(event: const SceneEvent.onScroll());
 
     stateProvider.sceneState().maybeWhen(
-      menu: () {
+      menu: (uiOpacity) {
         // Dispatch requested event based on delta
         queuer.queue(
           event: SceneEvent.onScrollSequence(info.scrollDelta.global.y),
@@ -249,12 +268,14 @@ class MyGame extends FlameGame
         cinematicTitle.position = center;
         cinematicSecondaryTitle.position = center + Vector2(0, 48);
       },
-      menu: () {
+      menu: (uiOpacity) {
+        // Opacity handled by bindings, but we trigger layout update
         _updateMenuLayoutTargets();
-        _tabs.updateLayout(size);
+        // _tabs.updateLayout(size);
         // Grid auto-updates via onGameResize
       },
     );
+    _dimLayer?.size = size;
   }
 
   void _updateMenuLayoutTargets() {
@@ -289,7 +310,8 @@ class MyGame extends FlameGame
       },
       titleLoading: () {},
       title: () {},
-      menu: () {
+      menu: (uiOpacity) {
+        _targetLightPosition = size / 2; // Assuming _centerPosition is size / 2
         _animateLogo(dt);
       },
     );
@@ -337,23 +359,93 @@ class MyGame extends FlameGame
 
   void enterMenu() {
     _updateMenuLayoutTargets();
-    final firstTabPos = _tabs.getFirstTabPosition(size);
-    final targetScale = 20.0 / 54.0;
 
-    cinematicSecondaryTitle.hide();
+    // 1. Reset Title State if needed (ensure visible)
+    cinematicTitle.show(() {});
+    cinematicSecondaryTitle.show(() {});
 
-    cinematicTitle.animateToTab(firstTabPos, targetScale, () {
-      _tabs.show(hideFirst: true);
-    });
+    // 2. Bind Titles to Scroll System (Parallax Upwards)
+    // They are centered. As we scroll, they move up.
+    // initialPosition is set in _updateMenuLayoutTargets or standard layout for 'menu' state.
+    // We want them to scroll away.
 
-    _tabs.setActive(0);
+    // Bind Cinematic Title
+    scrollOrchestrator.addBinding(
+      cinematicTitle,
+      ParallaxScrollEffect(
+        startScroll: 0,
+        endScroll: 1000, // Move out over 1000 pixels
+        initialPosition: cinematicTitle.position.clone(),
+        endOffset: Vector2(0, -1000), // Move up 1000px
+      ),
+    );
 
-    // TRIGGERS SCROLL SEQUENCE START
+    // Bind Secondary Title
+    scrollOrchestrator.addBinding(
+      cinematicSecondaryTitle,
+      ParallaxScrollEffect(
+        startScroll: 0,
+        endScroll: 1000,
+        initialPosition: cinematicSecondaryTitle.position.clone(),
+        endOffset: Vector2(0, -1000),
+      ),
+    );
+
+    // Bind Secondary Title Fade Out
+    scrollOrchestrator.addBinding(
+      cinematicSecondaryTitle,
+      OpacityScrollEffect(
+        startScroll: 0,
+        endScroll: 100,
+        startOpacity: 1.0,
+        endOpacity: 0.0,
+      ),
+    );
+
+    // Bind LogoOverlay Fade Out (Interactive UI)
+    scrollOrchestrator.addBinding(
+      interactiveUI,
+      OpacityScrollEffect(
+        startScroll: 0,
+        endScroll: 100,
+        startOpacity: 1.0,
+        endOpacity: 0.0,
+      ),
+    );
+
+    // Bind Dim Layer Fade In
+    scrollOrchestrator.addBinding(
+      _dimLayer!,
+      OpacityScrollEffect(
+        startScroll: 0,
+        endScroll: 300,
+        startOpacity: 0.0,
+        endOpacity: 0.6,
+      ),
+    );
+
+    // Observe Scroll for UI Opacity (Down Arrow Sync)
+    scrollSystem.register(UIOpacityObserver(stateProvider: stateProvider));
+
+    // 3. Grid Component Show
     gridComponent.show();
   }
 
   @override
   void onPointerMove(PointerMoveEvent event) {
     _lastKnownPointerPosition = event.localPosition;
+  }
+}
+
+class UIOpacityObserver extends ScrollObserver {
+  final StateProvider stateProvider;
+
+  UIOpacityObserver({required this.stateProvider});
+
+  @override
+  void onScroll(double scrollOffset) {
+    // Fades out over first 100 pixels
+    final opacity = (1.0 - (scrollOffset / 100)).clamp(0.0, 1.0);
+    stateProvider.updateUIOpacity(opacity);
   }
 }

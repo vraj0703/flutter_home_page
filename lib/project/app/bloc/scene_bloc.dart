@@ -28,6 +28,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     on<TitleLoaded>(_titleLoaded);
     on<OnScroll>(_onScroll);
     on<OnScrollSequence>(_onScrollSequence);
+    on<UpdateUIOpacity>(_updateUIOpacity);
   }
 
   @override
@@ -35,6 +36,11 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
 
   @override
   double revealProgress() => _revealProgress;
+
+  @override
+  void updateUIOpacity(double opacity) {
+    add(SceneEvent.updateUIOpacity(opacity));
+  }
 
   @override
   queue({required SceneEvent event}) {
@@ -106,6 +112,18 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     Emitter<SceneState> emit,
   ) {
     // Scroll sequence logic to be implemented or handled by UI
+  }
+
+  FutureOr<void> _updateUIOpacity(
+    UpdateUIOpacity event,
+    Emitter<SceneState> emit,
+  ) {
+    if (state is Menu) {
+      final menuState = state as Menu;
+      if (menuState.uiOpacity != event.opacity) {
+        emit(menuState.copyWith(uiOpacity: event.opacity));
+      }
+    }
   }
 
   @override

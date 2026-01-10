@@ -6,11 +6,20 @@ import 'package:flutter/material.dart'
 import 'fade_text.dart';
 
 class CinematicSecondaryTitleComponent extends PositionComponent
-    with HasGameReference {
+    with HasGameReference
+    implements OpacityProvider {
   final String text;
   final FragmentShader shader;
 
   late FadeTextComponent _textComponent;
+
+  @override
+  double get opacity => _textComponent.opacity;
+
+  @override
+  set opacity(double value) {
+    _textComponent.opacity = value;
+  }
 
   CinematicSecondaryTitleComponent({
     required this.text,

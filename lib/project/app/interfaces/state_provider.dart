@@ -6,4 +6,6 @@ abstract class StateProvider {
   double revealProgress();
 
   void updateRevealProgress(double progress);
+
+  void updateUIOpacity(double opacity);
 }

@@ -55,7 +55,7 @@ extension SceneEventPatterns on SceneEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Initialize value)?  initialize,TResult Function( CloseCurtain value)?  closeCurtain,TResult Function( TapDown value)?  tapDown,TResult Function( LoadTitle value)?  loadTitle,TResult Function( TitleLoaded value)?  titleLoaded,TResult Function( GameReady value)?  gameReady,TResult Function( OnScroll value)?  onScroll,TResult Function( OnScrollSequence value)?  onScrollSequence,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Initialize value)?  initialize,TResult Function( CloseCurtain value)?  closeCurtain,TResult Function( TapDown value)?  tapDown,TResult Function( LoadTitle value)?  loadTitle,TResult Function( TitleLoaded value)?  titleLoaded,TResult Function( GameReady value)?  gameReady,TResult Function( OnScroll value)?  onScroll,TResult Function( OnScrollSequence value)?  onScrollSequence,TResult Function( UpdateUIOpacity value)?  updateUIOpacity,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
@@ -66,7 +66,8 @@ return loadTitle(_that);case TitleLoaded() when titleLoaded != null:
 return titleLoaded(_that);case GameReady() when gameReady != null:
 return gameReady(_that);case OnScroll() when onScroll != null:
 return onScroll(_that);case OnScrollSequence() when onScrollSequence != null:
-return onScrollSequence(_that);case _:
+return onScrollSequence(_that);case UpdateUIOpacity() when updateUIOpacity != null:
+return updateUIOpacity(_that);case _:
   return orElse();
 
 }
@@ -84,7 +85,7 @@ return onScrollSequence(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Initialize value)  initialize,required TResult Function( CloseCurtain value)  closeCurtain,required TResult Function( TapDown value)  tapDown,required TResult Function( LoadTitle value)  loadTitle,required TResult Function( TitleLoaded value)  titleLoaded,required TResult Function( GameReady value)  gameReady,required TResult Function( OnScroll value)  onScroll,required TResult Function( OnScrollSequence value)  onScrollSequence,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Initialize value)  initialize,required TResult Function( CloseCurtain value)  closeCurtain,required TResult Function( TapDown value)  tapDown,required TResult Function( LoadTitle value)  loadTitle,required TResult Function( TitleLoaded value)  titleLoaded,required TResult Function( GameReady value)  gameReady,required TResult Function( OnScroll value)  onScroll,required TResult Function( OnScrollSequence value)  onScrollSequence,required TResult Function( UpdateUIOpacity value)  updateUIOpacity,}){
 final _that = this;
 switch (_that) {
 case Initialize():
@@ -95,7 +96,8 @@ return loadTitle(_that);case TitleLoaded():
 return titleLoaded(_that);case GameReady():
 return gameReady(_that);case OnScroll():
 return onScroll(_that);case OnScrollSequence():
-return onScrollSequence(_that);case _:
+return onScrollSequence(_that);case UpdateUIOpacity():
+return updateUIOpacity(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -112,7 +114,7 @@ return onScrollSequence(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Initialize value)?  initialize,TResult? Function( CloseCurtain value)?  closeCurtain,TResult? Function( TapDown value)?  tapDown,TResult? Function( LoadTitle value)?  loadTitle,TResult? Function( TitleLoaded value)?  titleLoaded,TResult? Function( GameReady value)?  gameReady,TResult? Function( OnScroll value)?  onScroll,TResult? Function( OnScrollSequence value)?  onScrollSequence,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Initialize value)?  initialize,TResult? Function( CloseCurtain value)?  closeCurtain,TResult? Function( TapDown value)?  tapDown,TResult? Function( LoadTitle value)?  loadTitle,TResult? Function( TitleLoaded value)?  titleLoaded,TResult? Function( GameReady value)?  gameReady,TResult? Function( OnScroll value)?  onScroll,TResult? Function( OnScrollSequence value)?  onScrollSequence,TResult? Function( UpdateUIOpacity value)?  updateUIOpacity,}){
 final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
@@ -123,7 +125,8 @@ return loadTitle(_that);case TitleLoaded() when titleLoaded != null:
 return titleLoaded(_that);case GameReady() when gameReady != null:
 return gameReady(_that);case OnScroll() when onScroll != null:
 return onScroll(_that);case OnScrollSequence() when onScrollSequence != null:
-return onScrollSequence(_that);case _:
+return onScrollSequence(_that);case UpdateUIOpacity() when updateUIOpacity != null:
+return updateUIOpacity(_that);case _:
   return null;
 
 }
@@ -140,7 +143,7 @@ return onScrollSequence(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initialize,TResult Function()?  closeCurtain,TResult Function( TapDownEvent tapDownEvent)?  tapDown,TResult Function()?  loadTitle,TResult Function()?  titleLoaded,TResult Function()?  gameReady,TResult Function()?  onScroll,TResult Function( double delta)?  onScrollSequence,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initialize,TResult Function()?  closeCurtain,TResult Function( TapDownEvent tapDownEvent)?  tapDown,TResult Function()?  loadTitle,TResult Function()?  titleLoaded,TResult Function()?  gameReady,TResult Function()?  onScroll,TResult Function( double delta)?  onScrollSequence,TResult Function( double opacity)?  updateUIOpacity,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
 return initialize();case CloseCurtain() when closeCurtain != null:
@@ -150,7 +153,8 @@ return loadTitle();case TitleLoaded() when titleLoaded != null:
 return titleLoaded();case GameReady() when gameReady != null:
 return gameReady();case OnScroll() when onScroll != null:
 return onScroll();case OnScrollSequence() when onScrollSequence != null:
-return onScrollSequence(_that.delta);case _:
+return onScrollSequence(_that.delta);case UpdateUIOpacity() when updateUIOpacity != null:
+return updateUIOpacity(_that.opacity);case _:
   return orElse();
 
 }
@@ -168,7 +172,7 @@ return onScrollSequence(_that.delta);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initialize,required TResult Function()  closeCurtain,required TResult Function( TapDownEvent tapDownEvent)  tapDown,required TResult Function()  loadTitle,required TResult Function()  titleLoaded,required TResult Function()  gameReady,required TResult Function()  onScroll,required TResult Function( double delta)  onScrollSequence,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initialize,required TResult Function()  closeCurtain,required TResult Function( TapDownEvent tapDownEvent)  tapDown,required TResult Function()  loadTitle,required TResult Function()  titleLoaded,required TResult Function()  gameReady,required TResult Function()  onScroll,required TResult Function( double delta)  onScrollSequence,required TResult Function( double opacity)  updateUIOpacity,}) {final _that = this;
 switch (_that) {
 case Initialize():
 return initialize();case CloseCurtain():
@@ -178,7 +182,8 @@ return loadTitle();case TitleLoaded():
 return titleLoaded();case GameReady():
 return gameReady();case OnScroll():
 return onScroll();case OnScrollSequence():
-return onScrollSequence(_that.delta);case _:
+return onScrollSequence(_that.delta);case UpdateUIOpacity():
+return updateUIOpacity(_that.opacity);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,7 +200,7 @@ return onScrollSequence(_that.delta);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initialize,TResult? Function()?  closeCurtain,TResult? Function( TapDownEvent tapDownEvent)?  tapDown,TResult? Function()?  loadTitle,TResult? Function()?  titleLoaded,TResult? Function()?  gameReady,TResult? Function()?  onScroll,TResult? Function( double delta)?  onScrollSequence,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initialize,TResult? Function()?  closeCurtain,TResult? Function( TapDownEvent tapDownEvent)?  tapDown,TResult? Function()?  loadTitle,TResult? Function()?  titleLoaded,TResult? Function()?  gameReady,TResult? Function()?  onScroll,TResult? Function( double delta)?  onScrollSequence,TResult? Function( double opacity)?  updateUIOpacity,}) {final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
 return initialize();case CloseCurtain() when closeCurtain != null:
@@ -205,7 +210,8 @@ return loadTitle();case TitleLoaded() when titleLoaded != null:
 return titleLoaded();case GameReady() when gameReady != null:
 return gameReady();case OnScroll() when onScroll != null:
 return onScroll();case OnScrollSequence() when onScrollSequence != null:
-return onScrollSequence(_that.delta);case _:
+return onScrollSequence(_that.delta);case UpdateUIOpacity() when updateUIOpacity != null:
+return updateUIOpacity(_that.opacity);case _:
   return null;
 
 }
@@ -538,6 +544,72 @@ as double,
 }
 
 /// @nodoc
+
+
+class UpdateUIOpacity implements SceneEvent {
+  const UpdateUIOpacity(this.opacity);
+  
+
+ final  double opacity;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$UpdateUIOpacityCopyWith<UpdateUIOpacity> get copyWith => _$UpdateUIOpacityCopyWithImpl<UpdateUIOpacity>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UpdateUIOpacity&&(identical(other.opacity, opacity) || other.opacity == opacity));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,opacity);
+
+@override
+String toString() {
+  return 'SceneEvent.updateUIOpacity(opacity: $opacity)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $UpdateUIOpacityCopyWith<$Res> implements $SceneEventCopyWith<$Res> {
+  factory $UpdateUIOpacityCopyWith(UpdateUIOpacity value, $Res Function(UpdateUIOpacity) _then) = _$UpdateUIOpacityCopyWithImpl;
+@useResult
+$Res call({
+ double opacity
+});
+
+
+
+
+}
+/// @nodoc
+class _$UpdateUIOpacityCopyWithImpl<$Res>
+    implements $UpdateUIOpacityCopyWith<$Res> {
+  _$UpdateUIOpacityCopyWithImpl(this._self, this._then);
+
+  final UpdateUIOpacity _self;
+  final $Res Function(UpdateUIOpacity) _then;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? opacity = null,}) {
+  return _then(UpdateUIOpacity(
+null == opacity ? _self.opacity : opacity // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$SceneState {
 
 
@@ -660,7 +732,7 @@ return menu(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isSvgReady,  bool isGameReady)?  loading,TResult Function()?  logo,TResult Function()?  logoOverlayRemoving,TResult Function()?  titleLoading,TResult Function()?  title,TResult Function()?  menu,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isSvgReady,  bool isGameReady)?  loading,TResult Function()?  logo,TResult Function()?  logoOverlayRemoving,TResult Function()?  titleLoading,TResult Function()?  title,TResult Function( double uiOpacity)?  menu,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Loading() when loading != null:
 return loading(_that.isSvgReady,_that.isGameReady);case Logo() when logo != null:
@@ -668,7 +740,7 @@ return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
 return titleLoading();case Title() when title != null:
 return title();case Menu() when menu != null:
-return menu();case _:
+return menu(_that.uiOpacity);case _:
   return orElse();
 
 }
@@ -686,7 +758,7 @@ return menu();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isSvgReady,  bool isGameReady)  loading,required TResult Function()  logo,required TResult Function()  logoOverlayRemoving,required TResult Function()  titleLoading,required TResult Function()  title,required TResult Function()  menu,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isSvgReady,  bool isGameReady)  loading,required TResult Function()  logo,required TResult Function()  logoOverlayRemoving,required TResult Function()  titleLoading,required TResult Function()  title,required TResult Function( double uiOpacity)  menu,}) {final _that = this;
 switch (_that) {
 case Loading():
 return loading(_that.isSvgReady,_that.isGameReady);case Logo():
@@ -694,7 +766,7 @@ return logo();case LogoOverlayRemoving():
 return logoOverlayRemoving();case TitleLoading():
 return titleLoading();case Title():
 return title();case Menu():
-return menu();case _:
+return menu(_that.uiOpacity);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -711,7 +783,7 @@ return menu();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isSvgReady,  bool isGameReady)?  loading,TResult? Function()?  logo,TResult? Function()?  logoOverlayRemoving,TResult? Function()?  titleLoading,TResult? Function()?  title,TResult? Function()?  menu,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isSvgReady,  bool isGameReady)?  loading,TResult? Function()?  logo,TResult? Function()?  logoOverlayRemoving,TResult? Function()?  titleLoading,TResult? Function()?  title,TResult? Function( double uiOpacity)?  menu,}) {final _that = this;
 switch (_that) {
 case Loading() when loading != null:
 return loading(_that.isSvgReady,_that.isGameReady);case Logo() when logo != null:
@@ -719,7 +791,7 @@ return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
 return titleLoading();case Title() when title != null:
 return title();case Menu() when menu != null:
-return menu();case _:
+return menu(_that.uiOpacity);case _:
   return null;
 
 }
@@ -927,32 +999,66 @@ String toString() {
 
 
 class Menu implements SceneState {
-  const Menu();
+  const Menu({this.uiOpacity = 1.0});
   
 
+@JsonKey() final  double uiOpacity;
 
-
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MenuCopyWith<Menu> get copyWith => _$MenuCopyWithImpl<Menu>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Menu);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Menu&&(identical(other.uiOpacity, uiOpacity) || other.uiOpacity == uiOpacity));
 }
 
 
 @override
-int get hashCode => runtimeType.hashCode;
+int get hashCode => Object.hash(runtimeType,uiOpacity);
 
 @override
 String toString() {
-  return 'SceneState.menu()';
+  return 'SceneState.menu(uiOpacity: $uiOpacity)';
 }
 
 
 }
 
+/// @nodoc
+abstract mixin class $MenuCopyWith<$Res> implements $SceneStateCopyWith<$Res> {
+  factory $MenuCopyWith(Menu value, $Res Function(Menu) _then) = _$MenuCopyWithImpl;
+@useResult
+$Res call({
+ double uiOpacity
+});
 
 
+
+
+}
+/// @nodoc
+class _$MenuCopyWithImpl<$Res>
+    implements $MenuCopyWith<$Res> {
+  _$MenuCopyWithImpl(this._self, this._then);
+
+  final Menu _self;
+  final $Res Function(Menu) _then;
+
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? uiOpacity = null,}) {
+  return _then(Menu(
+uiOpacity: null == uiOpacity ? _self.uiOpacity : uiOpacity // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
 
 // dart format on

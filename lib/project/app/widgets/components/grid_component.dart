@@ -3,11 +3,14 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/system/scroll_system.dart';
 import 'package:flutter_home_page/project/app/widgets/my_game.dart';
 import 'vision_component.dart';
 import 'hello_world_component.dart';
 import 'timeline_component.dart';
 import 'footer_component.dart';
+
+import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
 
 class GridComponent extends PositionComponent
     with HasGameReference<MyGame>
@@ -24,15 +27,15 @@ class GridComponent extends PositionComponent
     GridItemData("Consulting", "Strategic tech advice."),
   ];
 
-  late VisionComponent visionComponent;
-  late HelloWorldComponent helloWorldComponent;
-  late TimelineComponent timelineComponent;
-  late FooterComponent footerComponent;
+  VisionComponent? visionComponent;
+  HelloWorldComponent? helloWorldComponent;
+  TimelineComponent? timelineComponent;
+  FooterComponent? footerComponent;
 
   // Layout
   final double itemHeight = 220.0;
   final double gap = 20.0;
-  final double topMargin = 120.0; // Start below tabs
+  double topMargin = 0.0; // Set in _layout based on screen height
 
   // Scroll
   double _scrollY = 0.0;
@@ -50,7 +53,14 @@ class GridComponent extends PositionComponent
     _opacity = value;
   }
 
-  GridComponent({this.shader});
+  final ScrollSystem scrollSystem;
+  final ScrollOrchestrator scrollOrchestrator;
+
+  GridComponent({
+    this.shader,
+    required this.scrollSystem,
+    required this.scrollOrchestrator,
+  });
 
   @override
   Future<void> onLoad() async {
@@ -65,20 +75,21 @@ class GridComponent extends PositionComponent
     }
 
     // Add Vision Component
+    // Add Vision Component
     visionComponent = VisionComponent();
-    add(visionComponent);
+    add(visionComponent!);
 
     // Add Hello World Component
     helloWorldComponent = HelloWorldComponent();
-    add(helloWorldComponent);
+    add(helloWorldComponent!);
 
     // Add Timeline Component
     timelineComponent = TimelineComponent();
-    add(timelineComponent);
+    add(timelineComponent!);
 
     // Add Footer Component
     footerComponent = FooterComponent();
-    add(footerComponent);
+    add(footerComponent!);
 
     // Start with opacity 0
     _opacity = 0;
@@ -91,6 +102,7 @@ class GridComponent extends PositionComponent
   }
 
   void _layout(Vector2 size) {
+    topMargin = size.y; // Ensure grid starts below the fold
     int cols = 2; // Fixed 2 columns for "premium" look (unless very narrow)
     if (size.x < 600) cols = 1;
 
@@ -122,38 +134,91 @@ class GridComponent extends PositionComponent
     double gridEndY = topMargin + rows * (itemHeight + gap);
 
     // Vision Component layout
-    visionComponent.size = Vector2(size.x, 500);
-    double visionBaseY = gridEndY + 80.0;
-    _visionBaseY = visionBaseY;
+    if (visionComponent != null) {
+      visionComponent!.size = Vector2(size.x, 500);
+      double visionBaseY = gridEndY + 80.0;
+      _visionBaseY = visionBaseY;
+
+      // Bind Scroll Effect (Standard Parallax/Scroll)
+      scrollOrchestrator.removeBinding(visionComponent!);
+      scrollOrchestrator.addBinding(
+        visionComponent!,
+        ParallaxScrollEffect(
+          startScroll: 0,
+          endScroll: 100000,
+          initialPosition: Vector2(0, _visionBaseY),
+          endOffset: Vector2(0, -100000),
+        ),
+      );
+    }
 
     // Position Hello World Component below Vision
-    helloWorldComponent.size = Vector2(size.x, 500);
-    double helloWorldBaseY = visionBaseY + visionComponent.size.y + 80.0;
-    _helloWorldBaseY = helloWorldBaseY;
+    if (helloWorldComponent != null) {
+      helloWorldComponent!.size = Vector2(size.x, 500);
+      double helloWorldBaseY =
+          (_visionBaseY > 0 ? _visionBaseY : gridEndY) +
+          (visionComponent?.size.y ?? 0) +
+          80.0;
+      _helloWorldBaseY = helloWorldBaseY;
+
+      scrollOrchestrator.removeBinding(helloWorldComponent!);
+      scrollOrchestrator.addBinding(
+        helloWorldComponent!,
+        ParallaxScrollEffect(
+          startScroll: 0,
+          endScroll: 100000,
+          initialPosition: Vector2(0, _helloWorldBaseY),
+          endOffset: Vector2(0, -100000),
+        ),
+      );
+    }
 
     // Position Timeline Component
-    // Initial guess for height: 350 * 4 = 1400.
-    // It sets its size in onLoad, but we might be layouting before that.
-    // Let's force a size here if needed? No, let component handle internal.
-    // We just need space.
     double timelineHeight = 1500.0;
-    // Ideally Read from component if loaded?
-    if (timelineComponent.isLoaded) {
-      timelineHeight = timelineComponent.size.y;
+    if (timelineComponent != null && timelineComponent!.isLoaded) {
+      timelineHeight = timelineComponent!.size.y;
     }
-    double timelineBaseY =
-        helloWorldBaseY + helloWorldComponent.size.y + 0.0; // No gap? or 80 gap
-    _timelineBaseY = timelineBaseY;
+
+    if (timelineComponent != null) {
+      double timelineBaseY =
+          _helloWorldBaseY + (helloWorldComponent?.size.y ?? 0) + 80.0;
+      if (_helloWorldBaseY == 0) timelineBaseY = gridEndY + 200; // Fallback
+      _timelineBaseY = timelineBaseY;
+
+      scrollOrchestrator.removeBinding(timelineComponent!);
+      scrollOrchestrator.addBinding(
+        timelineComponent!,
+        ParallaxScrollEffect(
+          startScroll: 0,
+          endScroll: 100000,
+          initialPosition: Vector2(0, _timelineBaseY),
+          endOffset: Vector2(0, -100000),
+        ),
+      );
+    }
 
     // Position Footer Component
     double footerHeight = 300.0; // Approx
-    footerComponent.size = Vector2(size.x, footerHeight);
-    double footerBaseY = timelineBaseY + timelineHeight + 80.0;
-    _footerBaseY = footerBaseY;
+    if (footerComponent != null) {
+      footerComponent!.size = Vector2(size.x, footerHeight);
+      double footerBaseY = _timelineBaseY + timelineHeight + 80.0;
+      _footerBaseY = footerBaseY;
+
+      scrollOrchestrator.removeBinding(footerComponent!);
+      scrollOrchestrator.addBinding(
+        footerComponent!,
+        ParallaxScrollEffect(
+          startScroll: 0,
+          endScroll: 100000,
+          initialPosition: Vector2(0, _footerBaseY),
+          endOffset: Vector2(0, -100000),
+        ),
+      );
+    }
 
     // Max Scroll
     double totalContentHeight =
-        footerBaseY + footerHeight + 0.0; // Last item bottom
+        _footerBaseY + footerHeight + 0.0; // Last item bottom
 
     double visibleHeight = size.y;
     _maxScroll = (totalContentHeight - visibleHeight).clamp(
@@ -186,6 +251,9 @@ class GridComponent extends PositionComponent
       _scrollY = _targetScrollY;
     }
 
+    // Sync ScrollSystem
+    scrollSystem.setScrollOffset(_scrollY);
+
     // Update GridCards
     for (final child in children.whereType<GridCard>()) {
       child.position.y = child.basePosition.y - _scrollY;
@@ -199,36 +267,15 @@ class GridComponent extends PositionComponent
       child.opacity = _opacity * (isVisible ? 1.0 : 0.0);
     }
 
-    // Update VisionComponent
-    visionComponent.position.y = _visionBaseY - _scrollY;
-    // Vision visibility check
-    bool isVisionVisible =
-        visionComponent.position.y + visionComponent.size.y > 0 &&
-        visionComponent.position.y < game.size.y;
-    visionComponent.opacity = _opacity * (isVisionVisible ? 1.0 : 0.0);
+    // Components managed by ScrollSystem (Positioning)
 
-    // Update HelloWorldComponent
-    helloWorldComponent.position.y = _helloWorldBaseY - _scrollY;
-    bool isHelloVisible =
-        helloWorldComponent.position.y + helloWorldComponent.size.y > 0 &&
-        helloWorldComponent.position.y < game.size.y;
-    helloWorldComponent.opacity = _opacity * (isHelloVisible ? 1.0 : 0.0);
-
-    // Update TimelineComponent
-    timelineComponent.position.y = _timelineBaseY - _scrollY;
-    bool isTimelineVisible =
-        timelineComponent.position.y + timelineComponent.size.y > 0 &&
-        timelineComponent.position.y < game.size.y;
-    timelineComponent.opacity = _opacity * (isTimelineVisible ? 1.0 : 0.0);
-
-    // Update FooterComponent
-    footerComponent.position.y = _footerBaseY - _scrollY;
-    // Footer is always visible if we scroll to bottom?
-    // Culling:
-    bool isFooterVisible =
-        footerComponent.position.y + footerComponent.size.y > 0 &&
-        footerComponent.position.y < game.size.y;
-    footerComponent.opacity = _opacity * (isFooterVisible ? 1.0 : 0.0);
+    // Opacity Sync regarding page transition
+    if (_opacity > 0) {
+      visionComponent?.opacity = _opacity;
+      helloWorldComponent?.opacity = _opacity;
+      timelineComponent?.opacity = _opacity;
+      footerComponent?.opacity = _opacity;
+    }
   }
 
   void show() {
