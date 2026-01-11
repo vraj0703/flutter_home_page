@@ -15,8 +15,11 @@ import 'components/god_ray.dart';
 import 'components/logo.dart';
 import 'components/logo_overlay.dart';
 import 'components/grid_component.dart';
+import 'components/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/system/scroll_system.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
+import 'package:flutter_home_page/project/app/system/bold_text_controller.dart';
+import 'package:flutter/material.dart' as material;
 
 class MyGame extends FlameGame
     with PointerMoveCallbacks, TapCallbacks, ScrollDetector {
@@ -39,6 +42,8 @@ class MyGame extends FlameGame
   late BackgroundRunComponent backgroundRun;
   late CinematicTitleComponent cinematicTitle;
   late CinematicSecondaryTitleComponent cinematicSecondaryTitle;
+
+  BoldTextRevealComponent? boldTextReveal;
 
   late final GridComponent gridComponent;
   RectangleComponent? _dimLayer;
@@ -183,13 +188,36 @@ class MyGame extends FlameGame
     cinematicSecondaryTitle.priority = 24;
     add(cinematicSecondaryTitle);
 
+    // Bold Text Reveal ("Crafting Clarity from Chaos.")
+    // We use shine_text.frag which now houses the "Corrected Metallic" logic
+    final shineProgram = await FragmentProgram.fromAsset(
+      'assets/shaders/shine_text.frag',
+    );
+
+    boldTextReveal = BoldTextRevealComponent(
+      text: "Crafting Clarity from Chaos.",
+      textStyle: material.TextStyle(
+        fontSize: 80,
+        fontWeight: FontWeight.w500,
+        fontFamily: 'InconsolataNerd',
+        letterSpacing: 2.0,
+      ),
+      shader: shineProgram.fragmentShader(),
+      baseColor: const Color(0xFFCCCCCC), // Lighter Grey to fix "Blur"/Darkness
+      // Shine/Edge colors are unused by the ported logic
+      position: size / 2,
+    );
+    boldTextReveal!.priority = 26; // High priority
+    // Initially invisible, handled by scroll effect
+    boldTextReveal!.opacity = 0.0;
+    await add(boldTextReveal!);
+
     // _tabs = NavigationTabsComponent(shader: metallicShader);
     // await add(_tabs);
 
     // Grid Component (Initially hidden/transparent handled by component)
     gridComponent = GridComponent(
       shader: metallicShader,
-      scrollSystem: scrollSystem,
       scrollOrchestrator: scrollOrchestrator,
     );
     await add(gridComponent);
@@ -215,14 +243,14 @@ class MyGame extends FlameGame
     if (!isLoaded) return;
     queuer.queue(event: const SceneEvent.onScroll());
 
+    // Always update global ScrollSystem to ensure continuity across state transitions
+    final delta = info.scrollDelta.global.y;
+    scrollSystem.onScroll(delta);
+
     stateProvider.sceneState().maybeWhen(
       menu: (uiOpacity) {
-        // Dispatch requested event based on delta
-        queuer.queue(
-          event: SceneEvent.onScrollSequence(info.scrollDelta.global.y),
-        );
-        // Directly update grid component
-        gridComponent.onScroll(info.scrollDelta.global.y);
+        // Dispatch requested event based on delta (for other listeners if any)
+        queuer.queue(event: SceneEvent.onScrollSequence(delta));
       },
       orElse: () {},
     );
@@ -276,6 +304,8 @@ class MyGame extends FlameGame
       },
     );
     _dimLayer?.size = size;
+    // Keep boldTextReveal centered reference for parallax
+    boldTextReveal?.position = center;
   }
 
   void _updateMenuLayoutTargets() {
@@ -348,17 +378,21 @@ class MyGame extends FlameGame
   }
 
   void enterTitle() {
-    Future.delayed(const Duration(milliseconds: 500), () {
-      cinematicTitle.show(() {
-        cinematicSecondaryTitle.show(() {
-          queuer.queue(event: SceneEvent.titleLoaded());
-        });
-      });
-    });
+    Future.delayed(
+      const Duration(milliseconds: 500),
+      () => cinematicTitle.show(
+        () => cinematicSecondaryTitle.show(
+          () => queuer.queue(event: SceneEvent.titleLoaded()),
+        ),
+      ),
+    );
   }
 
   void enterMenu() {
     _updateMenuLayoutTargets();
+
+    // Ensure clean scroll state
+    scrollSystem.setScrollOffset(0.0);
 
     // 1. Reset Title State if needed (ensure visible)
     cinematicTitle.show(() {});
@@ -374,13 +408,23 @@ class MyGame extends FlameGame
       cinematicTitle,
       ParallaxScrollEffect(
         startScroll: 0,
-        endScroll: 1000, // Move out over 1000 pixels
+        endScroll: 1000,
         initialPosition: cinematicTitle.position.clone(),
-        endOffset: Vector2(0, -1000), // Move up 1000px
+        endOffset: Vector2(0, -1000),
+      ),
+    );
+    // Title Fade Out (Ensure it's gone before Bold Text enters at 500)
+    scrollOrchestrator.addBinding(
+      cinematicTitle,
+      OpacityScrollEffect(
+        startScroll: 0,
+        endScroll: 500,
+        startOpacity: 1.0,
+        endOpacity: 0.0,
       ),
     );
 
-    // Bind Secondary Title
+    // Bind Secondary Title Position
     scrollOrchestrator.addBinding(
       cinematicSecondaryTitle,
       ParallaxScrollEffect(
@@ -391,7 +435,7 @@ class MyGame extends FlameGame
       ),
     );
 
-    // Bind Secondary Title Fade Out
+    // Bind Secondary Title Fade Out (Faster)
     scrollOrchestrator.addBinding(
       cinematicSecondaryTitle,
       OpacityScrollEffect(
@@ -424,11 +468,46 @@ class MyGame extends FlameGame
       ),
     );
 
+    // --- BOLD TEXT SEQUENCE ---
+    // Controller manages Position, Opacity, and Shine via ScrollObserver
+    // This resolves conflicts by having a single source of truth for the logic.
+    scrollSystem.register(
+      BoldTextController(
+        component: boldTextReveal!,
+        screenWidth: size.x,
+        centerPosition: size / 2,
+      ),
+    );
+
+    // --- GRID SEQUENCE ---
+    // Page 3: Grid
+    // Enters as Bold Text leaves (1500+)
+    gridComponent.opacity = 0.0;
+
+    // Position: Pin until 1600, then scroll up.
+    // Content starts at size.y (below fold). Moving up brings it into view.
+    scrollOrchestrator.addBinding(
+      gridComponent,
+      ParallaxScrollEffect(
+        startScroll: 1600,
+        endScroll: 101600, // Continuous scroll
+        initialPosition: Vector2.zero(),
+        endOffset: Vector2(0, -100000),
+      ),
+    );
+
+    scrollOrchestrator.addBinding(
+      gridComponent,
+      OpacityScrollEffect(
+        startScroll: 1600, // Starts after Bold Text begins exit
+        endScroll: 1900,
+        startOpacity: 0.0,
+        endOpacity: 1.0,
+      ),
+    );
+
     // Observe Scroll for UI Opacity (Down Arrow Sync)
     scrollSystem.register(UIOpacityObserver(stateProvider: stateProvider));
-
-    // 3. Grid Component Show
-    gridComponent.show();
   }
 
   @override

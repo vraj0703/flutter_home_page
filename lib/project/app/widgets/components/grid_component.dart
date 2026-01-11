@@ -27,20 +27,16 @@ class GridComponent extends PositionComponent
     GridItemData("Consulting", "Strategic tech advice."),
   ];
 
+  // Components
   VisionComponent? visionComponent;
   HelloWorldComponent? helloWorldComponent;
   TimelineComponent? timelineComponent;
   FooterComponent? footerComponent;
-
-  // Layout
   final double itemHeight = 220.0;
   final double gap = 20.0;
   double topMargin = 0.0; // Set in _layout based on screen height
 
-  // Scroll
-  double _scrollY = 0.0;
-  double _targetScrollY = 0.0;
-  double _maxScroll = 0.0;
+  // Scroll - Managed by ScrollOrchestrator
 
   // OpacityProvider override
   double _opacity = 0.0;
@@ -53,14 +49,9 @@ class GridComponent extends PositionComponent
     _opacity = value;
   }
 
-  final ScrollSystem scrollSystem;
   final ScrollOrchestrator scrollOrchestrator;
 
-  GridComponent({
-    this.shader,
-    required this.scrollSystem,
-    required this.scrollOrchestrator,
-  });
+  GridComponent({this.shader, required this.scrollOrchestrator});
 
   @override
   Future<void> onLoad() async {
@@ -74,20 +65,16 @@ class GridComponent extends PositionComponent
       add(card);
     }
 
-    // Add Vision Component
-    // Add Vision Component
+    // Add Components
     visionComponent = VisionComponent();
     add(visionComponent!);
 
-    // Add Hello World Component
     helloWorldComponent = HelloWorldComponent();
     add(helloWorldComponent!);
 
-    // Add Timeline Component
     timelineComponent = TimelineComponent();
     add(timelineComponent!);
 
-    // Add Footer Component
     footerComponent = FooterComponent();
     add(footerComponent!);
 
@@ -114,7 +101,7 @@ class GridComponent extends PositionComponent
     double totalGridWidth = cols * cardWidth + (cols - 1) * gap;
     double startX = (size.x - totalGridWidth) / 2;
 
-    // Position children
+    // Position GridCards
     int i = 0;
     int rows = (items.length / cols).ceil();
 
@@ -122,7 +109,7 @@ class GridComponent extends PositionComponent
       int col = i % cols;
       int row = i ~/ cols;
 
-      child.basePosition = Vector2(
+      child.position = Vector2(
         startX + col * (cardWidth + gap),
         topMargin + row * (itemHeight + gap),
       );
@@ -130,146 +117,63 @@ class GridComponent extends PositionComponent
       i++;
     }
 
-    // Position Vision Component below grid
-    double gridEndY = topMargin + rows * (itemHeight + gap);
+    // Position Custom Components below grid
+    double currentY = topMargin + rows * (itemHeight + gap) + 80.0;
 
-    // Vision Component layout
-    if (visionComponent != null) {
-      visionComponent!.size = Vector2(size.x, 500);
-      double visionBaseY = gridEndY + 80.0;
-      _visionBaseY = visionBaseY;
-
-      // Bind Scroll Effect (Standard Parallax/Scroll)
-      scrollOrchestrator.removeBinding(visionComponent!);
-      scrollOrchestrator.addBinding(
-        visionComponent!,
-        ParallaxScrollEffect(
-          startScroll: 0,
-          endScroll: 100000,
-          initialPosition: Vector2(0, _visionBaseY),
-          endOffset: Vector2(0, -100000),
-        ),
-      );
+    // Helper to position and size component
+    void layoutComponent(PositionComponent? comp, double height) {
+      if (comp != null) {
+        comp.size = Vector2(size.x, height);
+        comp.position = Vector2(0, currentY);
+        currentY += height + 80.0;
+      }
     }
 
-    // Position Hello World Component below Vision
-    if (helloWorldComponent != null) {
-      helloWorldComponent!.size = Vector2(size.x, 500);
-      double helloWorldBaseY =
-          (_visionBaseY > 0 ? _visionBaseY : gridEndY) +
-          (visionComponent?.size.y ?? 0) +
-          80.0;
-      _helloWorldBaseY = helloWorldBaseY;
+    // The instruction seems to imply a change around visionComponent layout.
+    // Assuming the intent was to define visionBaseY locally for visionComponent.
+    // The provided snippet was malformed, so I'm interpreting it as follows:
+    // The line `visionComponent!.size = Vector2(size.x, 500);` is redundant here
+    // as `layoutComponent` already sets the size.
+    // The `double visionBaseY = gridEndY + 80.0;` line uses `gridEndY` which is not defined.
+    // I will assume `visionBaseY` should be `currentY` at the point visionComponent is laid out.
+    // Since `layoutComponent` already manages `currentY`, I will just ensure `visionComponent`
+    // is laid out correctly and remove any non-existent field assignments.
 
-      scrollOrchestrator.removeBinding(helloWorldComponent!);
-      scrollOrchestrator.addBinding(
-        helloWorldComponent!,
-        ParallaxScrollEffect(
-          startScroll: 0,
-          endScroll: 100000,
-          initialPosition: Vector2(0, _helloWorldBaseY),
-          endOffset: Vector2(0, -100000),
-        ),
-      );
-    }
-
-    // Position Timeline Component
-    double timelineHeight = 1500.0;
-    if (timelineComponent != null && timelineComponent!.isLoaded) {
-      timelineHeight = timelineComponent!.size.y;
-    }
-
-    if (timelineComponent != null) {
-      double timelineBaseY =
-          _helloWorldBaseY + (helloWorldComponent?.size.y ?? 0) + 80.0;
-      if (_helloWorldBaseY == 0) timelineBaseY = gridEndY + 200; // Fallback
-      _timelineBaseY = timelineBaseY;
-
-      scrollOrchestrator.removeBinding(timelineComponent!);
-      scrollOrchestrator.addBinding(
-        timelineComponent!,
-        ParallaxScrollEffect(
-          startScroll: 0,
-          endScroll: 100000,
-          initialPosition: Vector2(0, _timelineBaseY),
-          endOffset: Vector2(0, -100000),
-        ),
-      );
-    }
-
-    // Position Footer Component
-    double footerHeight = 300.0; // Approx
-    if (footerComponent != null) {
-      footerComponent!.size = Vector2(size.x, footerHeight);
-      double footerBaseY = _timelineBaseY + timelineHeight + 80.0;
-      _footerBaseY = footerBaseY;
-
-      scrollOrchestrator.removeBinding(footerComponent!);
-      scrollOrchestrator.addBinding(
-        footerComponent!,
-        ParallaxScrollEffect(
-          startScroll: 0,
-          endScroll: 100000,
-          initialPosition: Vector2(0, _footerBaseY),
-          endOffset: Vector2(0, -100000),
-        ),
-      );
-    }
-
-    // Max Scroll
-    double totalContentHeight =
-        _footerBaseY + footerHeight + 0.0; // Last item bottom
-
-    double visibleHeight = size.y;
-    _maxScroll = (totalContentHeight - visibleHeight).clamp(
-      0.0,
-      double.infinity,
+    layoutComponent(visionComponent!, 500);
+    layoutComponent(helloWorldComponent!, 500);
+    layoutComponent(
+      timelineComponent!,
+      (timelineComponent != null && timelineComponent!.isLoaded)
+          ? timelineComponent!.size.y
+          : 1500.0,
     );
-  }
+    layoutComponent(footerComponent, 300);
 
-  double _visionBaseY = 0.0;
-  double _helloWorldBaseY = 0.0;
-  double _timelineBaseY = 0.0;
-  double _footerBaseY = 0.0;
-
-  void onScroll(double delta) {
-    if (_opacity < 0.1) return; // Don't scroll if not visible
-
-    _targetScrollY += delta * 1.5; // Multiplier/Speed
-    _targetScrollY = _targetScrollY.clamp(0.0, _maxScroll);
+    // Bind Self to Scroll Orchestrator (Global Scroll Driver)
+    // REMOVED: Managed externally in MyGame to ensure sequence timing.
+    // scrollOrchestrator.removeBinding(this);
+    // scrollOrchestrator.addBinding(...)
   }
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    // Smooth scroll
-    final double diff = _targetScrollY - _scrollY;
-    if (diff.abs() > 0.1) {
-      _scrollY += diff * 10 * dt;
-    } else {
-      _scrollY = _targetScrollY;
-    }
+    final parentY = position.y;
 
-    // Sync ScrollSystem
-    scrollSystem.setScrollOffset(_scrollY);
-
-    // Update GridCards
+    // Update Opacity and Culling for GridCards
     for (final child in children.whereType<GridCard>()) {
-      child.position.y = child.basePosition.y - _scrollY;
-      child.position.x = child.basePosition.x; // Ensure X is stable
+      // Calculate absolute Y position to determine visibility
+      final absoluteY = parentY + child.position.y;
 
       // culling
-      bool isVisible =
-          child.position.y + child.size.y > 0 && child.position.y < game.size.y;
+      bool isVisible = absoluteY + child.size.y > 0 && absoluteY < game.size.y;
 
       // Combine parent opacity with visibility
       child.opacity = _opacity * (isVisible ? 1.0 : 0.0);
     }
 
-    // Components managed by ScrollSystem (Positioning)
-
-    // Opacity Sync regarding page transition
+    // Pass Opacity to other components
     if (_opacity > 0) {
       visionComponent?.opacity = _opacity;
       helloWorldComponent?.opacity = _opacity;
@@ -343,7 +247,7 @@ class GridCard extends PositionComponent implements OpacityProvider {
       textRenderer: TextPaint(
         style: TextStyle(
           fontFamily: 'ModrntUrban',
-          color: Colors.white.withOpacity(0.7),
+          color: Colors.white.withValues(alpha: 0.7),
           fontSize: 16,
         ),
       ),
@@ -372,7 +276,7 @@ class GridCard extends PositionComponent implements OpacityProvider {
     titleText.textRenderer = TextPaint(
       style: TextStyle(
         fontFamily: 'ModrntUrban',
-        color: Colors.white.withOpacity(alpha),
+        color: Colors.white.withValues(alpha: alpha),
         fontSize: 28,
         fontWeight: FontWeight.bold,
       ),
@@ -381,7 +285,7 @@ class GridCard extends PositionComponent implements OpacityProvider {
     descText.textRenderer = TextPaint(
       style: TextStyle(
         fontFamily: 'ModrntUrban',
-        color: Colors.white.withOpacity(0.7 * alpha),
+        color: Colors.white.withValues(alpha: 0.7 * alpha),
         fontSize: 16,
       ),
     );
@@ -395,11 +299,11 @@ class GridCard extends PositionComponent implements OpacityProvider {
     if (alpha <= 0.01) return;
 
     final paint = Paint()
-      ..color = const Color(0xFF1A1A1A).withOpacity(0.4 * alpha)
+      ..color = const Color(0xFF1A1A1A).withValues(alpha: 0.4 * alpha)
       ..style = PaintingStyle.fill;
 
     final borderPaint = Paint()
-      ..color = Colors.white.withOpacity(0.1 * alpha)
+      ..color = Colors.white.withValues(alpha: 0.1 * alpha)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 

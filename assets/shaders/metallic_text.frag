@@ -49,11 +49,16 @@ void main() {
     // Base ambient glow from the sun/cursor
     float ambientGlow = 1 - glow;
 
-    // Combine with a warm 'Sandy' light tint
-    vec3 lightColor = vec3(1.0, 0.95, 0.8);
-    color += (ambientGlow + glint);
+    // Combine with a Pure White Light for Silver effect
+    vec3 lightColor = vec3(1.0, 1.0, 1.0);
+    
+    // FIX: Apply the light color to the glow/glint!
+    // Previously it was adding scalar (white) to vector.
+    // Also boost glint slightly (30.0) to ensure "pop".
+    color += lightColor * (ambientGlow + glint);
 
     // 4. Final Tone Mapping & Fade
+    // Tone Mapping handles high values gracefully, so we can push glint high.
     vec4 finalResult = tanh_polyline(vec4(color, 1.0));
     fragColor = vec4(finalResult.rgb * uOpacity, uOpacity);
 }

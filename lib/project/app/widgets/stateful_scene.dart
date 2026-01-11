@@ -123,7 +123,7 @@ class _StatefulSceneState extends State<StatefulScene>
             GameWidget(game: _game),
             // Layer 1: The Flame Game wrapped in HomeOverlay
             HomeOverlay(
-              key: ValueKey("home_overlay"),
+              key: const ValueKey("home_overlay"),
               bounceAnimation: _downArrowBounceAnimation,
             ),
 

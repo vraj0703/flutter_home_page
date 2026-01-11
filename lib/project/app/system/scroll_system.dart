@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_home_page/project/app/interfaces/shine_provider.dart';
 
 /// Manages the global scroll state and notifies observers.
 class ScrollSystem {
@@ -24,6 +25,7 @@ class ScrollSystem {
 
   void onScroll(double delta) {
     _scrollOffset += delta;
+    if (_scrollOffset < 0) _scrollOffset = 0; // Clamp min
     _notifyObservers();
   }
 
@@ -157,5 +159,20 @@ class RotateScrollEffect extends ScrollEffect<PositionComponent> {
   void update(PositionComponent component, double progress) {
     final currentAngle = startAngle + (endAngle - startAngle) * progress;
     component.angle = currentAngle;
+  }
+}
+
+class ShineScrollEffect extends ScrollEffect<PositionComponent> {
+  ShineScrollEffect({
+    required super.startScroll,
+    required super.endScroll,
+    super.curve,
+  });
+
+  @override
+  void update(PositionComponent component, double progress) {
+    if (component is ShineProvider) {
+      (component as ShineProvider).fillProgress = progress;
+    }
   }
 }

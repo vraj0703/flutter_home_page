@@ -90,16 +90,21 @@ flutter:
   fonts:
     - family: DuneRise
       fonts:
-       - asset: fonts/dune_rise.ttf
+        - asset: fonts/dune_rise.ttf
     - family: ModrntUrban
       fonts:
-       - asset: fonts/modrnt_urban.otf
+        - asset: fonts/modrnt_urban.otf
     - family: Poseidon
       fonts:
-       - asset: fonts/poseidon.otf
+        - asset: fonts/poseidon.otf
     - family: Broadway
       fonts:
-       - asset: fonts/broadway.ttf
+        - asset: fonts/broadway.ttf
+    - family: InconsolataNerd
+      fonts:
+        - asset: fonts/inconsolata_nerd_mono_regular.ttf
+        - asset: fonts/inconsolata_nerd_mono_bold.ttf
+          weight: 500
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro
@@ -126,3 +131,4 @@ flutter:
     - assets/shaders/logo.frag
     - assets/shaders/background_run_v2.frag
     - assets/shaders/metallic_text.frag
+    - assets/shaders/shine_text.frag
