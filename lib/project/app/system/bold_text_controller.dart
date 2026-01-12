@@ -94,16 +94,10 @@ class BoldTextController implements ScrollObserver {
       // Ramp up full shine
       fullShine = ((scrollOffset - 1400) / 100).clamp(0.0, 1.0);
       fullShine = Curves.easeOut.transform(fullShine);
-    } else if (scrollOffset >= 1500) {
-      // Fade out shine during exit (1500 -> 1700)?
-      // Or keep it lit while exiting?
-      // User said "completely shine ... and then exit".
-      // Let's keep it max or ease it slightly
-      if (scrollOffset < 1700) {
-        fullShine = 1.0 - ((scrollOffset - 1500) / 200).clamp(0.0, 1.0);
-      } else {
-        fullShine = 0.0;
-      }
+    } else {
+      // Exit Phase (1500+)
+      // Keep Full Shine ON as it exits (User Request)
+      fullShine = 1.0;
     }
     component.fullShineStrength = fullShine;
   }

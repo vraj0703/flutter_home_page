@@ -28,10 +28,33 @@ void main() {
     // FIX: Restore Clamp to avoid edge artifacts
     uv = clamp(uv, 0.0, 1.0);
 
-    // 2. Base Metallic Shading (Cylindrical)
-    // Darker edges to give 3D volume
-    float edgeShadow = max(0.5, 1.0 - pow(abs(uv.y - 0.5) * 2.0, 3.0));
-    vec3 baseColor = uBaseColor * edgeShadow;
+    // 2. CHROME HORIZON SHADING
+    // Metal looks like metal because of high contrast reflections.
+    // We create a "Fake Horizon" at Y=0.5.
+    
+    float horizon = 0.0;
+    
+    // Smooth Horizon transition
+    // Top Half (Sky): Gradients from Dark (Horiz) to Light (Top)
+    // Bottom Half (Ground): Gradients from Dark (Horiz) to Lighter (Bot)
+    
+    float y = uv.y;
+    
+    // Hard Cut Horizon for Chrome look
+    if (y < 0.5) {
+       // TOP HALF (0.0 to 0.5)
+       // 0.0 (Top Edge) -> Bright (0.8)
+       // 0.5 (Horizon) -> Dark (0.2)
+       horizon = mix(0.8, 0.2, smoothstep(0.0, 0.5, y));
+    } else {
+       // BOTTOM HALF (0.5 to 1.0)
+       // 0.5 (Horizon) -> Pitch Black (0.0)
+       // 1.0 (Bot Edge) -> Grey (0.5)
+       // This hard black edge at 0.5 creates the "Chrome" feel
+       horizon = mix(0.0, 0.5, smoothstep(0.5, 1.0, y));
+    }
+
+    vec3 baseColor = uBaseColor * horizon;
 
     // 3. DYNAMIC LIGHTING - LOCAL SPACE
     // Calculate distance to light position (Local Coords)
@@ -53,8 +76,8 @@ void main() {
     float glint = pow(glow, 6.0) * 12.0; 
 
     // Ambient Glow
-    // Enough to see the metal texture
-    float ambientGlow = 0.25; 
+    // Reduced to 0.1 to allow the deep blacks to show through (Contrast)
+    float ambientGlow = 0.1; 
 
     // Pure White Light for Silver Effect
     vec3 lightColor = vec3(1.0, 1.0, 1.0);

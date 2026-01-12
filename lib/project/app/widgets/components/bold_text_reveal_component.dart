@@ -100,13 +100,14 @@ class BoldTextRevealComponent extends TextComponent
       ..setFloat(1, physicalSize.y)
       ..setFloat(2, physicalTopLeft.x)
       ..setFloat(3, physicalTopLeft.y)
-      ..setFloat(4, 0.0) // uTime (unused for static shine)
+      ..setFloat(4, _fullShineStrength) // REPURPOSED: uTime -> FullShine
       ..setFloat(5, baseColor.r)
       ..setFloat(6, baseColor.g)
       ..setFloat(7, baseColor.b)
       ..setFloat(8, opacity)
       ..setFloat(9, lightX)
       ..setFloat(10, lightY);
+    // ..setFloat(11, _fullShineStrength); // REMOVED (Index Error)
 
     super.render(canvas);
   }
