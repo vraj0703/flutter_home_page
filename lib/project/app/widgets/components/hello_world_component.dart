@@ -70,19 +70,19 @@ class HelloWorldComponent extends PositionComponent
 
     // Update Text
     final titleColor = const Color(0xFFC78E53);
-    title.textRenderer =  TextPaint(
+    title.textRenderer = TextPaint(
       style: TextStyle(
         fontFamily: 'ModrntUrban',
-        color:titleColor.withOpacity(alpha),
+        color: titleColor.withValues(alpha: alpha),
         fontSize: 28,
         fontWeight: FontWeight.bold,
       ),
     );
 
-    subtitle.textRenderer =  TextPaint(
+    subtitle.textRenderer = TextPaint(
       style: TextStyle(
         fontFamily: 'ModrntUrban',
-        color: Colors.white.withOpacity(alpha),
+        color: Colors.white.withValues(alpha: alpha),
         fontSize: 14,
         fontWeight: FontWeight.bold,
       ),
@@ -158,7 +158,7 @@ class GlobeGraphic extends PositionComponent {
     canvas.drawCircle(
       Offset(dotX, dotY),
       5,
-      Paint()..color = const Color(0xFFC78E53).withOpacity(_opacity),
+      Paint()..color = const Color(0xFFC78E53).withValues(alpha: _opacity),
     );
   }
 }

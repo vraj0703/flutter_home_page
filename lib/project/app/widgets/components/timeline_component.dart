@@ -2,10 +2,8 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:flame/game.dart';
-import 'package:flutter/animation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_home_page/project/app/widgets/components/experience_data.dart';
+import 'package:flutter_home_page/project/app/models/experience_data.dart';
 import 'package:flutter_home_page/project/app/widgets/components/timeline_card.dart';
 import 'package:flutter_home_page/project/app/widgets/components/timeline_node.dart';
 import 'package:flutter_home_page/project/app/widgets/my_game.dart';
@@ -130,7 +128,7 @@ class TimelineComponent extends PositionComponent
     // Timeline might need relayout if width changes drastically,
     // but for now let's assume static width or simple centering.
     if (isLoaded) {
-      this.width = size.x;
+      width = size.x;
       // Updating children positions on resize is complex without full rebuild.
       // We'll leave it simple for now.
     }

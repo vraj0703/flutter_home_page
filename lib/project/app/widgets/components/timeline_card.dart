@@ -1,6 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_home_page/project/app/widgets/components/experience_data.dart';
+import 'package:flutter_home_page/project/app/models/experience_data.dart';
 
 class TimelineCard extends PositionComponent with HasPaint {
   final ExperienceData data;

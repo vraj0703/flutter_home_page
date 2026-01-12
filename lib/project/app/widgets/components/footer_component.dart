@@ -94,13 +94,13 @@ class FooterComponent extends PositionComponent
         fontSize: 14,
         fontFamily: 'Broadway',
         letterSpacing: 1.5,
-      ).copyWith(color: Colors.white.withOpacity(alpha)),
+      ).copyWith(color: Colors.white.withValues(alpha: alpha)),
     );
 
     // Copyright
     copyright.textRenderer = TextPaint(
       style: const TextStyle(color: Colors.white38, fontSize: 12).copyWith(
-        color: Colors.white38.withOpacity(0.38 * alpha),
+        color: Colors.white38.withValues(alpha: 0.38 * alpha),
       ), // Fix logic if base is already transparent
     );
     // Wait, white38 is white with 0.38 opacity. .withOpacity(alpha) overrides it?
@@ -125,6 +125,7 @@ class LinkComponent extends PositionComponent with TapCallbacks, HasPaint {
 
   double _opacity = 1.0;
 
+  @override
   set opacity(double value) {
     _opacity = value;
     _updateTextOpacity();
@@ -158,7 +159,7 @@ class LinkComponent extends PositionComponent with TapCallbacks, HasPaint {
     final color = const Color(0xFFC78E53);
     textComp.textRenderer = TextPaint(
       style: TextStyle(
-        color: color.withOpacity(_opacity),
+        color: color.withValues(alpha: _opacity),
         fontSize: 18,
         decoration: TextDecoration.underline,
       ),

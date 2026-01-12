@@ -8,6 +8,8 @@ import 'package:flutter/animation.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
+import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
+import 'package:flutter_home_page/project/app/system/ui_opacity_observer.dart';
 import 'package:flutter_home_page/project/app/widgets/components/cinematic_title.dart';
 import 'package:flutter_home_page/project/app/widgets/components/cinematic_secondary_title.dart';
 import 'package:flutter_home_page/project/app/widgets/components/background_run_component.dart';
@@ -19,6 +21,9 @@ import 'components/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/system/scroll_system.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/system/bold_text_controller.dart';
+import 'package:flutter_home_page/project/app/system/philosophy_page_controller.dart';
+import 'package:flutter_home_page/project/app/widgets/components/philosophy_text_component.dart';
+import 'package:flutter_home_page/project/app/widgets/components/peeling_card_stack_component.dart';
 import 'package:flutter/material.dart' as material;
 
 class MyGame extends FlameGame
@@ -53,7 +58,6 @@ class MyGame extends FlameGame
   Vector2 _lightDirection = Vector2.zero();
   Vector2 _targetLightDirection = Vector2.zero();
 
-  // Transformation targets
   Vector2 _targetLogoPosition = Vector2.zero();
   double _targetLogoScale = 3.0; // Initial zoom
   double _currentLogoScale = 3.0;
@@ -69,10 +73,6 @@ class MyGame extends FlameGame
   static const double uiFadeDuration = 0.5;
   static const double headerY = 60.0;
 
-  // Unified State
-  // late NavigationTabsComponent _tabs;
-  // late ProjectCarouselComponent _carousel;
-
   final ScrollSystem scrollSystem = ScrollSystem();
   final ScrollOrchestrator scrollOrchestrator = ScrollOrchestrator();
 
@@ -81,14 +81,8 @@ class MyGame extends FlameGame
     await super.onLoad();
     final center = size / 2;
 
-    _inactivityTimer = Timer(
-      inactivityTimeout,
-      onTick: () {},
-      // The timer should only fire once per period of inactivity.
-      repeat: false,
-    );
+    _inactivityTimer = Timer(inactivityTimeout, onTick: () {}, repeat: false);
 
-    // --- Set Initial Centered State ---
     _targetLightPosition = center;
     _virtualLightPosition = center.clone();
     _targetLightDirection = Vector2(0, -1)..normalize();
@@ -100,7 +94,6 @@ class MyGame extends FlameGame
 
     queuer.queue(event: const SceneEvent.gameReady());
 
-    // Register Orchestrator
     scrollSystem.register(scrollOrchestrator);
   }
 
@@ -175,9 +168,9 @@ class MyGame extends FlameGame
     cinematicTitle = CinematicTitleComponent(
       primaryText: "VISHAL RAJ",
       shader: metallicShader,
-      position: size / 2, // Centered on screen
+      position: size / 2,
     );
-    cinematicTitle.priority = 25; // Above logo, below UI
+    cinematicTitle.priority = 25;
     add(cinematicTitle);
 
     cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
@@ -188,8 +181,6 @@ class MyGame extends FlameGame
     cinematicSecondaryTitle.priority = 24;
     add(cinematicSecondaryTitle);
 
-    // Bold Text Reveal ("Crafting Clarity from Chaos.")
-    // We use shine_text.frag which now houses the "Corrected Metallic" logic
     final shineProgram = await FragmentProgram.fromAsset(
       'assets/shaders/shine_text.frag',
     );
@@ -203,17 +194,12 @@ class MyGame extends FlameGame
         letterSpacing: 2.0,
       ),
       shader: shineProgram.fragmentShader(),
-      baseColor: const Color(0xFFCCCCCC), // Lighter Grey to fix "Blur"/Darkness
-      // Shine/Edge colors are unused by the ported logic
+      baseColor: const Color(0xFFCCCCCC),
       position: size / 2,
     );
-    boldTextReveal!.priority = 26; // High priority
-    // Initially invisible, handled by scroll effect
+    boldTextReveal!.priority = 26;
     boldTextReveal!.opacity = 0.0;
     await add(boldTextReveal!);
-
-    // _tabs = NavigationTabsComponent(shader: metallicShader);
-    // await add(_tabs);
 
     // Grid Component (Initially hidden/transparent handled by component)
     gridComponent = GridComponent(
@@ -224,15 +210,11 @@ class MyGame extends FlameGame
 
     // Dim Layer (Overlay)
     _dimLayer = RectangleComponent(
-      priority: 2, // Above background (1), below content (likely > 2)
+      priority: 2,
       size: size,
       paint: Paint()..color = const Color(0xFF000000).withValues(alpha: 0.0),
     );
     await add(_dimLayer!);
-
-    // 3. Load the carousel
-    //_carousel = ProjectCarouselComponent();
-    // await add(_carousel);
   }
 
   @override
@@ -299,12 +281,9 @@ class MyGame extends FlameGame
       menu: (uiOpacity) {
         // Opacity handled by bindings, but we trigger layout update
         _updateMenuLayoutTargets();
-        // _tabs.updateLayout(size);
-        // Grid auto-updates via onGameResize
       },
     );
     _dimLayer?.size = size;
-    // Keep boldTextReveal centered reference for parallax
     boldTextReveal?.position = center;
   }
 
@@ -341,7 +320,7 @@ class MyGame extends FlameGame
       titleLoading: () {},
       title: () {},
       menu: (uiOpacity) {
-        _targetLightPosition = size / 2; // Assuming _centerPosition is size / 2
+        _targetLightPosition = size / 2;
         _animateLogo(dt);
       },
     );
@@ -399,10 +378,6 @@ class MyGame extends FlameGame
     cinematicSecondaryTitle.show(() {});
 
     // 2. Bind Titles to Scroll System (Parallax Upwards)
-    // They are centered. As we scroll, they move up.
-    // initialPosition is set in _updateMenuLayoutTargets or standard layout for 'menu' state.
-    // We want them to scroll away.
-
     // Bind Cinematic Title
     scrollOrchestrator.addBinding(
       cinematicTitle,
@@ -413,6 +388,7 @@ class MyGame extends FlameGame
         endOffset: Vector2(0, -1000),
       ),
     );
+
     // Title Fade Out (Ensure it's gone before Bold Text enters at 500)
     scrollOrchestrator.addBinding(
       cinematicTitle,
@@ -469,8 +445,6 @@ class MyGame extends FlameGame
     );
 
     // --- BOLD TEXT SEQUENCE ---
-    // Controller manages Position, Opacity, and Shine via ScrollObserver
-    // This resolves conflicts by having a single source of truth for the logic.
     scrollSystem.register(
       BoldTextController(
         component: boldTextReveal!,
@@ -479,18 +453,13 @@ class MyGame extends FlameGame
       ),
     );
 
-    // --- GRID SEQUENCE ---
-    // Page 3: Grid
-    // Enters as Bold Text leaves (1500+)
     gridComponent.opacity = 0.0;
 
-    // Position: Pin until 1600, then scroll up.
-    // Content starts at size.y (below fold). Moving up brings it into view.
     scrollOrchestrator.addBinding(
       gridComponent,
       ParallaxScrollEffect(
-        startScroll: 1600,
-        endScroll: 101600, // Continuous scroll
+        startScroll: 4100,
+        endScroll: 104100, // Continuous scroll aligned
         initialPosition: Vector2.zero(),
         endOffset: Vector2(0, -100000),
       ),
@@ -499,10 +468,47 @@ class MyGame extends FlameGame
     scrollOrchestrator.addBinding(
       gridComponent,
       OpacityScrollEffect(
-        startScroll: 1600, // Starts after Bold Text begins exit
-        endScroll: 1900,
+        startScroll: 4100,
+        endScroll: 4300,
         startOpacity: 0.0,
         endOpacity: 1.0,
+      ),
+    );
+
+    // --- PHILOSOPHY SECTION ---
+    final philosophyText = PhilosophyTextComponent(
+      text: "My Philosophy",
+      style: material.TextStyle(
+        fontFamily: 'ModrntUrban',
+        fontSize: 40,
+        fontWeight: FontWeight.bold,
+        color: material.Colors.white,
+        letterSpacing: 1.5,
+      ),
+      anchor: Anchor.centerLeft,
+      position: Vector2(size.x * 0.15, size.y / 2),
+    );
+    philosophyText.priority = 25;
+    philosophyText.opacity = 0.0;
+    add(philosophyText);
+
+    final cardStack = PeelingCardStackComponent(
+      scrollOrchestrator: scrollOrchestrator,
+      cardsData: cardData,
+      size: Vector2(size.x * 0.4, size.y * 0.6),
+      position: Vector2(size.x * 0.75, size.y / 2),
+    );
+    cardStack.anchor = Anchor.center;
+    cardStack.priority = 25; // Same as Text
+    cardStack.opacity = 0.0;
+    add(cardStack);
+
+    scrollSystem.register(
+      PhilosophyPageController(
+        component: philosophyText,
+        cardStack: cardStack,
+        initialTextPos: philosophyText.position.clone(),
+        initialStackPos: cardStack.position.clone(),
       ),
     );
 
@@ -513,18 +519,5 @@ class MyGame extends FlameGame
   @override
   void onPointerMove(PointerMoveEvent event) {
     _lastKnownPointerPosition = event.localPosition;
-  }
-}
-
-class UIOpacityObserver extends ScrollObserver {
-  final StateProvider stateProvider;
-
-  UIOpacityObserver({required this.stateProvider});
-
-  @override
-  void onScroll(double scrollOffset) {
-    // Fades out over first 100 pixels
-    final opacity = (1.0 - (scrollOffset / 100)).clamp(0.0, 1.0);
-    stateProvider.updateUIOpacity(opacity);
   }
 }

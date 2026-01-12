@@ -95,20 +95,20 @@ class VisionComponent extends PositionComponent
     // Optimization: Only if needed.
     // Title
     final titleColor = const Color(0xFFC78E53);
-    title.textRenderer =  TextPaint(
+    title.textRenderer = TextPaint(
       style: TextStyle(
         fontFamily: 'ModrntUrban',
-        color: titleColor.withOpacity(alpha),
+        color: titleColor.withValues(alpha: alpha),
         fontSize: 28,
         fontWeight: FontWeight.bold,
       ),
     );
 
     // Headline
-    headline.textRenderer =  TextPaint(
+    headline.textRenderer = TextPaint(
       style: TextStyle(
         fontFamily: 'ModrntUrban',
-        color: Colors.white.withOpacity(alpha),
+        color: Colors.white.withValues(alpha: alpha),
         fontSize: 18,
         fontWeight: FontWeight.bold,
       ),
@@ -116,7 +116,7 @@ class VisionComponent extends PositionComponent
 
     // Body
     final bodyColor = Colors.white70;
-    body.textRenderer =  TextPaint(
+    body.textRenderer = TextPaint(
       style: TextStyle(
         fontFamily: 'ModrntUrban',
         color: bodyColor,

@@ -42,9 +42,9 @@ class BoldTextController implements ScrollObserver {
       offsetX = 0;
       offsetY = 0;
     } else {
-      // Exit Phase (1500 -> 2000)
+      // Exit Phase (1500 -> 1900) - FASTER EXIT
       // center to Right
-      final t = ((scrollOffset - 1500) / 500).clamp(0.0, 1.0);
+      final t = ((scrollOffset - 1500) / 400).clamp(0.0, 1.0);
       final curvedT = Curves.easeIn.transform(t);
       // Lerp from 0 to +screenWidth
       offsetX = screenWidth * curvedT;
@@ -56,7 +56,7 @@ class BoldTextController implements ScrollObserver {
     // 2. Opacity Logic
     // Phase 1: Fade In (500 -> 700)
     // Phase 2: Visible (700 -> 1700)
-    // Phase 3: Fade Out (1700 -> 2000)
+    // Phase 3: Fade Out (1700 -> 1900) - FASTER FADE
 
     double opacity = 0.0;
 
@@ -70,7 +70,7 @@ class BoldTextController implements ScrollObserver {
       opacity = 1.0;
     } else {
       // Fade Out
-      final t = ((scrollOffset - 1700) / 300).clamp(0.0, 1.0);
+      final t = ((scrollOffset - 1700) / 200).clamp(0.0, 1.0);
       opacity = 1.0 - t;
     }
     component.opacity = opacity;
