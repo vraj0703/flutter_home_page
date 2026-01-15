@@ -24,6 +24,8 @@ import 'package:flutter_home_page/project/app/system/bold_text_controller.dart';
 import 'package:flutter_home_page/project/app/system/philosophy_page_controller.dart';
 import 'package:flutter_home_page/project/app/widgets/components/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/widgets/components/peeling_card_stack_component.dart';
+import 'package:flutter_home_page/project/app/widgets/components/experience_page_component.dart';
+import 'package:flutter_home_page/project/app/system/experience_page_controller.dart';
 import 'package:flutter/material.dart' as material;
 
 class MyGame extends FlameGame
@@ -453,13 +455,15 @@ class MyGame extends FlameGame
       ),
     );
 
+    // --- GRID COMPONENT ---
+    // Shifted to start after Experience Page finishes (New End ~10200)
     gridComponent.opacity = 0.0;
 
     scrollOrchestrator.addBinding(
       gridComponent,
       ParallaxScrollEffect(
-        startScroll: 4100,
-        endScroll: 104100, // Continuous scroll aligned
+        startScroll: 10200, // Experience ends ~10200
+        endScroll: 110200, // Continuous scroll aligned
         initialPosition: Vector2.zero(),
         endOffset: Vector2(0, -100000),
       ),
@@ -468,14 +472,15 @@ class MyGame extends FlameGame
     scrollOrchestrator.addBinding(
       gridComponent,
       OpacityScrollEffect(
-        startScroll: 4100,
-        endScroll: 4300,
+        startScroll: 10200,
+        endScroll: 10500,
         startOpacity: 0.0,
         endOpacity: 1.0,
       ),
     );
 
     // --- PHILOSOPHY SECTION ---
+    // ... (Philosophy Setup remains unchanged) ...
     final philosophyText = PhilosophyTextComponent(
       text: "My Philosophy",
       style: material.TextStyle(
@@ -499,7 +504,7 @@ class MyGame extends FlameGame
       position: Vector2(size.x * 0.75, size.y / 2),
     );
     cardStack.anchor = Anchor.center;
-    cardStack.priority = 25; // Same as Text
+    cardStack.priority = 25;
     cardStack.opacity = 0.0;
     add(cardStack);
 
@@ -509,6 +514,21 @@ class MyGame extends FlameGame
         cardStack: cardStack,
         initialTextPos: philosophyText.position.clone(),
         initialStackPos: cardStack.position.clone(),
+      ),
+    );
+
+    // --- EXPERIENCE SECTION ---
+    // Starts after Philosophy text exit (4100) -> 4200 buffer
+
+    final experiencePage = ExperiencePageComponent(size: size);
+    experiencePage.priority = 25;
+    add(experiencePage);
+
+    scrollSystem.register(
+      ExperiencePageController(
+        component: experiencePage,
+        entranceStart: 4200,
+        interactionStart: 4600,
       ),
     );
 
