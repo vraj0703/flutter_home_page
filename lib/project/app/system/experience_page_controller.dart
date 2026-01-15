@@ -1,6 +1,4 @@
-import 'dart:math';
 import 'package:flame/components.dart';
-import 'package:flutter/widgets.dart'; // For Curves
 import 'package:flutter_home_page/project/app/system/scroll_system.dart';
 import 'package:flutter_home_page/project/app/widgets/components/experience_page_component.dart';
 
