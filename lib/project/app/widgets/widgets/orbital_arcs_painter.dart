@@ -18,7 +18,7 @@ class OrbitalArcsPainter extends CustomPainter {
     if (opacity <= 0.01) return;
 
     final center = Offset(0, size.height / 2); // Anchor at Left-Center
-    final maxRadius = size.height * 0.8;
+    final maxRadius = size.height * 1;
 
     // 1. Outer Arc (Darkest) - 0.8x Speed
     final paint1 = Paint()
@@ -65,13 +65,6 @@ class OrbitalArcsPainter extends CustomPainter {
       ..strokeWidth = 2.0;
 
     canvas.drawCircle(center, maxRadius * 0.65, paint3);
-
-    // Anchor Point (The "S." Logo placeholder/Dot)
-    final anchorPaint = Paint()
-      ..color = accentColor.withValues(alpha: opacity)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(center, 12, anchorPaint);
   }
 
   @override

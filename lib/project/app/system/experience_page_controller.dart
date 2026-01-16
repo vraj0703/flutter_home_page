@@ -10,14 +10,20 @@ class ExperiencePageController implements ScrollObserver {
   final double exitStart;
   final double exitEnd;
 
+  // Scroll Configuration
+  static const double initEntranceStart = 4200.0;
+  static const double initInteractionStart = 4600.0;
+  static const double itemScrollHeight = 500.0;
+  static const int itemCount = 5;
+
   ExperiencePageController({
     required this.component,
-    this.entranceStart = 4200,
-    this.interactionStart = 4600,
-  }) : // 5 items * 1000px = 5000px interaction
-       interactionEnd = interactionStart + (5 * 1000),
-       exitStart = interactionStart + (5 * 1000),
-       exitEnd = interactionStart + (5 * 1000) + 1000;
+    this.entranceStart = initEntranceStart,
+    this.interactionStart = initInteractionStart,
+  }) : interactionEnd = interactionStart + (itemCount * itemScrollHeight),
+       exitStart = interactionStart + (itemCount * itemScrollHeight),
+       exitEnd =
+           interactionStart + (itemCount * itemScrollHeight) + itemScrollHeight;
 
   @override
   void onScroll(double scrollOffset) {

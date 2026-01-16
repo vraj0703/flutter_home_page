@@ -48,13 +48,37 @@ class ExperiencePageComponent extends PositionComponent
   // Warp
   double _warpScale = 1.0;
 
+  // Configuration
+  static const double smoothingFactor = 5.0;
+  static const double orbitRadiusRatio = 0.65; // Relative to 80% screen height
+  static const double activeThreshold = 0.35;
+  static const double activeScale = 1.2;
+  static const double inactiveScale = 0.8;
+  static const double activeOpacity = 1.0;
+  static const double inactiveOpacity = 0.2;
+  static const double warpMaxScale = 8.0;
+
+  final companyStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 12,
+    letterSpacing: 1.5,
+  );
+
+  final roleStyle = TextStyle(
+    fontFamily: 'ModrntUrban',
+    fontSize: 32,
+    fontWeight: FontWeight.bold,
+  );
+
+  final durationStyle = TextStyle(fontFamily: 'Inter', fontSize: 14);
+
   @override
   void update(double dt) {
     super.update(dt);
     if (!isLoaded) return;
 
     // Inertia / Smoothing (Lerp current to target)
-    final double smoothing = 5.0 * dt;
+    final double smoothing = smoothingFactor * dt;
     _currentRotation += (_targetRotation - _currentRotation) * smoothing;
 
     if ((_targetRotation - _currentRotation).abs() < 0.001) {
@@ -75,19 +99,21 @@ class ExperiencePageComponent extends PositionComponent
   void updateInteraction(double localScroll) {
     if (!isLoaded) return;
 
-    // Range: 0 to 5000 (5 items)
-    final index = (localScroll / 1000).floor().clamp(0, data.length - 1);
+    // Range: 0 to 2500 (5 items * 500)
+    final index = (localScroll / 500).floor().clamp(0, data.length - 1);
 
     // Rotation Calculation (Spin wheel) - Set Target - REVERSED
-    // We want alignment: (i * spacing) + (rot * 1.2) = 0 when scroll = i * 1000
+    // New Scroll Per Item = 500.0
+    // We want alignment: (i * spacing) + (rot * 1.2) = 0 when scroll = i * 500
     // rot = -(i * spacing) / 1.2
-    // rot = -(scroll/1000 * spacing) / 1.2 = -(scroll * spacing) / 1200
+    // rot = -(scroll/500 * spacing) / 1.2 = -(scroll * spacing) / 600
     final spacing = pi / 4;
-    _targetRotation = -(localScroll * spacing) / 1200;
+    _targetRotation = -(localScroll * spacing) / 600;
 
     if (index != _currentIndex) {
+      final bool isReverse = index < _currentIndex;
       _currentIndex = index;
-      _updateContent(forceUpdate: true, op: _opacity);
+      _updateContent(forceUpdate: true, op: _opacity, isReverse: isReverse);
       _pulseNeedle();
     }
   }
@@ -95,12 +121,12 @@ class ExperiencePageComponent extends PositionComponent
   void setWarp(double progress) {
     // progress 0.0 -> 1.0 (Exit Phase)
     // Exponential Scale: 1.0 -> 8.0
-    _warpScale = 1.0 + (pow(progress, 3) * 7.0);
+    _warpScale = 1.0 + (pow(progress, 3) * (warpMaxScale - 1.0));
   }
 
   void _updateSatellites(double systemRotation) {
     final center = Vector2(0, size.y / 2);
-    final orbitRadius = (size.y * 0.8) * 0.65;
+    final orbitRadius = (size.y * 1) * orbitRadiusRatio;
 
     // Angle spacing: spread 5 items over e.g. 180 degrees or full circle?
     final spacing = pi / 4;
@@ -126,17 +152,19 @@ class ExperiencePageComponent extends PositionComponent
       if (diff < -pi) diff += 2 * pi;
 
       final dist = diff.abs();
-
-      final activeThreshold = 0.35; // ~20 deg
       final globalFade = _opacity;
 
       if (dist < activeThreshold) {
         final t = 1.0 - (dist / activeThreshold);
-        s.scale = Vector2.all(0.8 + (0.4 * t));
-        s.opacity = (0.2 + (0.8 * t)) * globalFade;
+        s.scale = Vector2.all(
+          inactiveScale + ((activeScale - inactiveScale) * t),
+        );
+        s.opacity =
+            (inactiveOpacity + ((activeOpacity - inactiveOpacity) * t)) *
+            globalFade;
       } else {
-        s.scale = Vector2.all(0.8);
-        s.opacity = 0.2 * globalFade;
+        s.scale = Vector2.all(inactiveScale);
+        s.opacity = inactiveOpacity * globalFade;
       }
     }
   }
@@ -187,22 +215,22 @@ class ExperiencePageComponent extends PositionComponent
     connectorLine = RectangleComponent(
       size: Vector2(60, 2),
       paint: Paint()..color = const Color(0xFFC78E53),
-      position: Vector2(size.x * 0.35, halfHeight), // Connect arc to text
+      position: Vector2(
+        size.y * 1.08,
+        halfHeight,
+      ), // Connect arc to text (Outermost Orbit)
       anchor: Anchor.centerLeft,
     );
     add(connectorLine);
 
     // Right Content Area
-    final textX = size.x * 0.45;
+    final textX = size.x * 0.05; // Moved further Left to avoid collision
 
     // Company (Small Label)
     companyText = TextComponent(
       text: data[0].company.toUpperCase(),
       textRenderer: TextPaint(
-        style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 16,
-          letterSpacing: 1.5,
+        style: companyStyle.copyWith(
           color: Colors.white.withValues(alpha: 0.6),
         ),
       ),
@@ -213,15 +241,7 @@ class ExperiencePageComponent extends PositionComponent
     // Role (Large Title)
     roleText = TextComponent(
       text: data[0].title,
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          fontFamily: 'ModrntUrban',
-          fontSize: 48,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          height: 1.1,
-        ),
-      ),
+      textRenderer: TextPaint(style: roleStyle),
       position: Vector2(textX, halfHeight - 10),
     );
     add(roleText);
@@ -230,9 +250,7 @@ class ExperiencePageComponent extends PositionComponent
     durationText = TextComponent(
       text: "${data[0].duration} | ${data[0].location}",
       textRenderer: TextPaint(
-        style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 14,
+        style: durationStyle.copyWith(
           color: Colors.white.withValues(alpha: 0.5),
         ),
       ),
@@ -264,7 +282,11 @@ class ExperiencePageComponent extends PositionComponent
     _updateContent(forceUpdate: false, op: parentOpacity);
   }
 
-  void _updateContent({bool forceUpdate = false, double? op}) {
+  void _updateContent({
+    bool forceUpdate = false,
+    double? op,
+    bool isReverse = false,
+  }) {
     double alpha = op ?? _opacity;
     final item = data[_currentIndex];
 
@@ -274,9 +296,9 @@ class ExperiencePageComponent extends PositionComponent
 
     if (forceUpdate) {
       // Slide Up Logic
-      final startOffset = 30.0;
+      final startOffset = 30.0 * (isReverse ? -1.0 : 1.0);
       final halfHeight = size.y / 2;
-      final textX = size.x * 0.45;
+      final textX = size.x * 0.05;
 
       companyText.position = Vector2(textX, halfHeight - 40 + startOffset);
       roleText.position = Vector2(textX, halfHeight - 10 + startOffset);
@@ -313,28 +335,17 @@ class ExperiencePageComponent extends PositionComponent
     // Replay text renderer with new alpha
     companyText.text = item.company.toUpperCase();
     companyText.textRenderer = TextPaint(
-      style: TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 16,
-        letterSpacing: 1.5,
-        color: dim,
-      ),
+      style: companyStyle.copyWith(color: dim),
     );
 
     roleText.text = item.title;
     roleText.textRenderer = TextPaint(
-      style: TextStyle(
-        fontFamily: 'ModrntUrban',
-        fontSize: 48,
-        fontWeight: FontWeight.bold,
-        color: white,
-        height: 1.1,
-      ),
+      style: roleStyle.copyWith(color: white, height: 1.1),
     );
 
     durationText.text = "${item.duration} | ${item.location}";
     durationText.textRenderer = TextPaint(
-      style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: dim),
+      style: durationStyle.copyWith(color: dim),
     );
   }
 }
