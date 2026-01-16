@@ -1,5 +1,4 @@
 import 'package:flame/components.dart';
-import 'package:flame/effects.dart'; // Add this import
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/models/testimonial_node.dart';
 import 'package:flutter_home_page/project/app/widgets/components/wrapped_text_component.dart';

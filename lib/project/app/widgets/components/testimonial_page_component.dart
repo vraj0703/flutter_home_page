@@ -1,6 +1,4 @@
 import 'package:flame/components.dart';
-import 'package:flame/effects.dart'; // Add this
-import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/widgets/my_game.dart';
 import 'package:flutter_home_page/project/app/widgets/components/testimonial_carousel_component.dart';

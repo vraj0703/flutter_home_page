@@ -7,7 +7,6 @@ class ContactPageComponent extends PositionComponent
     with HasPaint, HasGameReference {
   ContactPageComponent({super.size});
 
-  late RectangleComponent _background;
   // Left Side
   late TextComponent _titleText;
   late WrappedTextComponent _descriptionText;
