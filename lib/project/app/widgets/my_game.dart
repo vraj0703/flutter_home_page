@@ -26,6 +26,12 @@ import 'package:flutter_home_page/project/app/widgets/components/philosophy_text
 import 'package:flutter_home_page/project/app/widgets/components/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/widgets/components/experience_page_component.dart';
 import 'package:flutter_home_page/project/app/system/experience_page_controller.dart';
+import 'package:flutter_home_page/project/app/widgets/components/testimonial_page_component.dart';
+import 'package:flutter_home_page/project/app/system/testimonial_page_controller.dart';
+import 'package:flutter_home_page/project/app/widgets/components/contact_page_component.dart';
+import 'package:flutter_home_page/project/app/system/contact_page_controller.dart';
+import 'package:flutter_home_page/project/app/widgets/components/skills_keyboard_component.dart';
+import 'package:flutter_home_page/project/app/system/skills_page_controller.dart';
 import 'package:flutter/material.dart' as material;
 
 class MyGame extends FlameGame
@@ -456,28 +462,8 @@ class MyGame extends FlameGame
     );
 
     // --- GRID COMPONENT ---
-    // Shifted to start after Experience Page finishes (New End ~10200)
-    gridComponent.opacity = 0.0;
-
-    scrollOrchestrator.addBinding(
-      gridComponent,
-      ParallaxScrollEffect(
-        startScroll: 10200, // Experience ends ~10200
-        endScroll: 110200, // Continuous scroll aligned
-        initialPosition: Vector2.zero(),
-        endOffset: Vector2(0, -100000),
-      ),
-    );
-
-    scrollOrchestrator.addBinding(
-      gridComponent,
-      OpacityScrollEffect(
-        startScroll: 10200,
-        endScroll: 10500,
-        startOpacity: 0.0,
-        endOpacity: 1.0,
-      ),
-    );
+    // Removed as per request
+    // gridComponent.opacity = 0.0;
 
     // --- PHILOSOPHY SECTION ---
     // ... (Philosophy Setup remains unchanged) ...
@@ -534,6 +520,37 @@ class MyGame extends FlameGame
 
     // Observe Scroll for UI Opacity (Down Arrow Sync)
     scrollSystem.register(UIOpacityObserver(stateProvider: stateProvider));
+
+    // --- TESTIMONIALS SECTION ---
+    // Start ~7600
+    final testimonialPage = TestimonialPageComponent(size: size);
+    testimonialPage.priority = 25;
+    testimonialPage.opacity = 0.0; // Start hidden
+    add(testimonialPage);
+
+    scrollSystem.register(
+      TestimonialPageController(component: testimonialPage),
+    );
+
+    // --- SKILLS KEYBOARD ---
+    // Start ~11600
+    final skillsPage = SkillsKeyboardComponent(size: size);
+    skillsPage.priority = 28; // Above Testimonials, Below Contact
+    skillsPage.opacity = 0.0;
+    add(skillsPage);
+
+    scrollSystem.register(SkillsPageController(component: skillsPage));
+
+    // --- CONTACT PAGE ---
+    // Starts ~14800 (Shifted)
+    final contactPage = ContactPageComponent(size: size);
+    contactPage.priority = 30; // On top of Testimonials
+    contactPage.position = Vector2(0, size.y); // Start hidden below
+    add(contactPage);
+
+    scrollSystem.register(
+      ContactPageController(component: contactPage, screenHeight: size.y),
+    );
   }
 
   @override
