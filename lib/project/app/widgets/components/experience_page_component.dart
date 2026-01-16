@@ -7,6 +7,7 @@ import 'package:flutter_home_page/project/app/widgets/my_game.dart';
 
 import 'orbital_arcs_component.dart';
 import 'satellite_component.dart';
+import 'experience_details_component.dart';
 
 class ExperiencePageComponent extends PositionComponent
     with HasGameReference<MyGame>, HasPaint {
@@ -18,6 +19,7 @@ class ExperiencePageComponent extends PositionComponent
   late TextComponent roleText;
   late TextComponent durationText;
   late RectangleComponent connectorLine;
+  late ExperienceDetailsComponent detailsComponent;
 
   int _currentIndex = 0;
   double _opacity = 0.0;
@@ -86,12 +88,16 @@ class ExperiencePageComponent extends PositionComponent
     }
 
     arcs.rotation = _currentRotation;
+    arcs.rotation = _currentRotation;
     _updateSatellites(_currentRotation);
+    detailsComponent.updateRotation(_currentRotation);
 
     // Apply Warp Scale
     if (_warpScale != 1.0) {
       scale = Vector2.all(_warpScale);
       position = (size / 2) - ((size / 2) * _warpScale);
+    } else {
+      scale = Vector2.all(1.0);
     }
   }
 
@@ -102,13 +108,34 @@ class ExperiencePageComponent extends PositionComponent
     // Range: 0 to 2500 (5 items * 500)
     final index = (localScroll / 500).floor().clamp(0, data.length - 1);
 
-    // Rotation Calculation (Spin wheel) - Set Target - REVERSED
+    // Rotation Calculation (Spin wheel) - Set Target - SNAP EFFECT
     // New Scroll Per Item = 500.0
-    // We want alignment: (i * spacing) + (rot * 1.2) = 0 when scroll = i * 500
-    // rot = -(i * spacing) / 1.2
-    // rot = -(scroll/500 * spacing) / 1.2 = -(scroll * spacing) / 600
+    // Spacing = pi / 4
+    // We want to map scroll linearly to index, but CURVE the rotation within the index
+    // to create a magnetic snap sensation.
+
     final spacing = pi / 4;
-    _targetRotation = -(localScroll * spacing) / 600;
+    final double rawProgress = localScroll / 500.0;
+    final int baseIndex = rawProgress.floor();
+    final double t = rawProgress - baseIndex;
+
+    // Apply sigmoid-like curve for "Snap"
+    // flatten center (near 0.5? No, usually snap is at 0.0, 1.0)
+    // Wait, visual snap means it stays centered LONGER.
+    // So the curve should be steep between items and flat around the integer.
+    // Normal easeInOut is flat at 0 and 1, steep at 0.5.
+    // We want flat at 0.0 (item center) if localScroll is relative to item center?
+    // Here, index 0 is at scroll 0.
+    // So we want flat around integer values.
+    // If we use easeInOut on t (0->1), it's flat at start and end.
+    // Start (t=0) is Item N. End (t=1) is Item N+1.
+    // So standard Curves.easeInOut is perfect. It lingers at the integers.
+
+    final double curvedT = Curves.easeOutQuart.transform(t);
+    final double curvedProgress = baseIndex + curvedT;
+
+    // Map to rotation
+    _targetRotation = -(curvedProgress * spacing);
 
     if (index != _currentIndex) {
       final bool isReverse = index < _currentIndex;
@@ -121,7 +148,8 @@ class ExperiencePageComponent extends PositionComponent
   void setWarp(double progress) {
     // progress 0.0 -> 1.0 (Exit Phase)
     // Exponential Scale: 1.0 -> 8.0
-    _warpScale = 1.0 + (pow(progress, 3) * (warpMaxScale - 1.0));
+    final t = progress.clamp(0.0, 1.0);
+    _warpScale = 1.0 + (pow(t, 3) * (warpMaxScale - 1.0));
   }
 
   void _updateSatellites(double systemRotation) {
@@ -138,7 +166,7 @@ class ExperiencePageComponent extends PositionComponent
       final baseAngle = i * spacing;
 
       // systemRotation is negative (Top-Bottom scroll moves angle Counter-Clockwise/Up)
-      final currentAngle = baseAngle + (systemRotation * 1.2);
+      final currentAngle = baseAngle + systemRotation;
 
       // Position
       final x = center.x + orbitRadius * cos(currentAngle);
@@ -221,7 +249,7 @@ class ExperiencePageComponent extends PositionComponent
       ), // Connect arc to text (Outermost Orbit)
       anchor: Anchor.centerLeft,
     );
-    add(connectorLine);
+    //add(connectorLine);
 
     // Right Content Area
     final textX = size.x * 0.05; // Moved further Left to avoid collision
@@ -258,6 +286,11 @@ class ExperiencePageComponent extends PositionComponent
     );
     add(durationText);
 
+    // Details Component (Right Side)
+    detailsComponent = ExperienceDetailsComponent(data: data)
+      ..size = size; // Full screen for orbit calculations
+    add(detailsComponent);
+
     // REMOVED yearText (replaced by Satellites)
 
     // Initial State Check - Force everything hidden regardless of isLoaded flag
@@ -272,6 +305,9 @@ class ExperiencePageComponent extends PositionComponent
     // Force update text to invisible
     connectorLine.paint.color = const Color(0xFFC78E53).withValues(alpha: 0.0);
     _updateContent(forceUpdate: false, op: 0.0);
+
+    // Force initial layout/opacity calculation for details to prevent flash
+    detailsComponent.updateRotation(_currentRotation);
   }
 
   void _updateTextOpacity(double parentOpacity) {
@@ -279,6 +315,7 @@ class ExperiencePageComponent extends PositionComponent
     connectorLine.paint.color = const Color(
       0xFFC78E53,
     ).withValues(alpha: parentOpacity);
+    detailsComponent.opacity = parentOpacity;
     _updateContent(forceUpdate: false, op: parentOpacity);
   }
 
@@ -347,5 +384,10 @@ class ExperiencePageComponent extends PositionComponent
     durationText.textRenderer = TextPaint(
       style: durationStyle.copyWith(color: dim),
     );
+
+    // Update Details
+    // detailsComponent.show(...) is removed, driven by rotation now
+    // But we might want to pulse or highlight?
+    // Rotation handles it.
   }
 }
