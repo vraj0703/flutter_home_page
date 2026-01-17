@@ -7,15 +7,15 @@ class ContactPageController implements ScrollObserver {
   final ContactPageComponent component;
   final double screenHeight;
 
-  // 1. Entrance: Slide in from bottom (covering Testimonials)
-  static const double initEntranceStart = 15400.0;
-  static const double entranceDuration = 800.0;
+  // 1. Entrance: Slide in from bottom - Compressed timing for faster scroll speed
+  static const double initEntranceStart = 10800.0; // Adjusted from 10400 (skills end at 10800)
+  static const double entranceDuration = 600.0; // Compressed from 800
 
-  // 2. Hold: Static view
-  static const double holdDuration = 1500.0;
+  // 2. Hold: Static view - Compressed timing
+  static const double holdDuration = 1000.0; // Compressed from 1500
 
-  // 3. Exit: Slide up or Fade out
-  static const double exitDuration = 800.0;
+  // 3. Exit: Slide up or Fade out - Compressed timing
+  static const double exitDuration = 600.0; // Compressed from 800
 
   final double visibleStart;
   final double exitStart;

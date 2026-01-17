@@ -6,15 +6,15 @@ import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
 class SkillsPageController implements ScrollObserver {
   final SkillsKeyboardComponent component;
 
-  // 1. Entrance: 12200 -> 12800 (Shifted to ensure Testimonials gone)
-  static const double entranceStart = 12200.0;
-  static const double entranceEnd = 12800.0;
+  // 1. Entrance: 8600 -> 9000 - Compressed timing, starts after testimonials
+  static const double entranceStart = 8600.0; // Adjusted from 8200 (testimonials end at 8600)
+  static const double entranceEnd = 9000.0; // Compressed from 12800
 
-  // 2. Visible/Interact: 12800 -> 14800 (2000px)
-  static const double interactEnd = 14800.0;
+  // 2. Visible/Interact: 9000 -> 10400 (1400px) - Compressed from 2000px
+  static const double interactEnd = 10400.0; // Compressed from 14800
 
-  // 3. Exit: 14800 -> 15400
-  static const double exitEnd = 15400.0;
+  // 3. Exit: 10400 -> 10800 - Compressed timing
+  static const double exitEnd = 10800.0; // Compressed from 15400
 
   SkillsPageController({required this.component});
 

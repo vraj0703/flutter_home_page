@@ -33,29 +33,29 @@ class ContactPageComponent extends PositionComponent
     // );
     // add(_background);
 
-    // --- Columns Setup ---
-    final leftColX = size.x * 0.1;
-    final rightColX = size.x * 0.55;
-    final contentWidth = size.x * 0.35;
+    // --- Columns Setup - Improved spacing for minimal/futuristic theme ---
+    final leftColX = size.x * 0.12; // More left margin (was 0.1)
+    final rightColX = size.x * 0.58; // More gap between columns (was 0.55)
+    final contentWidth = size.x * 0.32; // Slightly narrower for better readability (was 0.35)
 
     // --- LEFT COLUMN ---
 
-    // Title "Contact"
+    // Title "Contact" - More vertical breathing room
     _titleText = TextComponent(
       text: "Contact",
       textRenderer: TextPaint(
         style: const TextStyle(
           fontFamily: 'ModrntUrban',
-          fontSize: 120, // Huge
+          fontSize: 110, // Slightly smaller for better proportion (was 120)
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
       ),
-      position: Vector2(leftColX, size.y * 0.15),
+      position: Vector2(leftColX, size.y * 0.18), // Lower starting position (was 0.15)
     );
     add(_titleText);
 
-    // Description
+    // Description - More spacing from title
     _descriptionText = WrappedTextComponent(
       TextPainter(
         text: const TextSpan(
@@ -63,27 +63,27 @@ class ContactPageComponent extends PositionComponent
               "If you're curious to know more about what you saw, I invite you to contact me or follow me on social media.",
           style: TextStyle(
             fontFamily: 'Inter',
-            fontSize: 20,
+            fontSize: 18, // Slightly smaller for elegance (was 20)
             color: Colors.white70,
-            height: 1.5,
+            height: 1.8, // More line height for readability (was 1.5)
           ),
         ),
         textDirection: TextDirection.ltr,
       ),
       contentWidth,
     );
-    _descriptionText.position = Vector2(leftColX, size.y * 0.45);
+    _descriptionText.position = Vector2(leftColX, size.y * 0.48); // More gap from title (was 0.45)
     add(_descriptionText);
 
-    // Social Icons (Placeholders for now: Just Text/Rects)
-    final iconY = size.y * 0.65;
+    // Social Icons - More spacing between icons and from description
+    final iconY = size.y * 0.72; // Lower position (was 0.65)
     _addSocialIcon(Icons.email, Vector2(leftColX, iconY));
-    _addSocialIcon(Icons.camera_alt, Vector2(leftColX + 60, iconY)); // Insta
-    _addSocialIcon(Icons.link, Vector2(leftColX + 120, iconY)); // LinkedIn
+    _addSocialIcon(Icons.camera_alt, Vector2(leftColX + 70, iconY)); // More spacing (was 60)
+    _addSocialIcon(Icons.link, Vector2(leftColX + 140, iconY)); // More spacing (was 120)
 
     // --- RIGHT COLUMN ---
-    double formY = size.y * 0.45;
-    final formSpacing = 100.0;
+    double formY = size.y * 0.30; // Start higher for better balance (was 0.45)
+    final formSpacing = 120.0; // More spacing between fields (was 100)
 
     // Name
     _addFormField("Name", Vector2(rightColX, formY), contentWidth);
@@ -93,19 +93,19 @@ class ContactPageComponent extends PositionComponent
     _addFormField("Email", Vector2(rightColX, formY), contentWidth);
     formY += formSpacing;
 
-    // Message
+    // Message - More spacing
     _addFormField(
       "How can I help you?",
       Vector2(rightColX, formY),
       contentWidth,
     );
-    formY += 150; // More space for message
+    formY += 180; // More space for message field (was 150)
 
-    // Send Button
+    // Send Button - More refined styling
     _sendButton = RectangleComponent(
-      size: Vector2(200, 60),
+      size: Vector2(180, 55), // Slightly smaller for elegance (was 200x60)
       paint: Paint()..color = Colors.white,
-      position: Vector2(rightColX + contentWidth - 200, formY),
+      position: Vector2(rightColX + contentWidth - 180, formY),
     );
     add(_sendButton);
 
@@ -114,10 +114,10 @@ class ContactPageComponent extends PositionComponent
       textRenderer: TextPaint(
         style: const TextStyle(
           fontFamily: 'Inter',
-          fontSize: 18,
+          fontSize: 16, // Slightly smaller (was 18)
           fontWeight: FontWeight.bold,
           color: Colors.black,
-          letterSpacing: 1.2,
+          letterSpacing: 2.0, // More letter spacing for minimal feel (was 1.2)
         ),
       ),
     );
@@ -129,17 +129,15 @@ class ContactPageComponent extends PositionComponent
   }
 
   void _addSocialIcon(IconData icon, Vector2 pos) {
-    // Since we can't easily render IconData in pure Flame without Flutter overlay or font,
-    // I'll simulate 'Icon' with a small black box for now or try to use Text if font supports it.
-    // Using a simple square placeholder.
+    // Icon placeholders with refined sizing for minimal aesthetic
     final box =
         RectangleComponent(
             position: pos,
-            size: Vector2(40, 40),
+            size: Vector2(45, 45), // Slightly larger for better proportion (was 40)
             paint: Paint()..color = Colors.white,
           )
           ..paint.style = PaintingStyle.stroke
-          ..paint.strokeWidth = 3;
+          ..paint.strokeWidth = 2; // Thinner stroke for elegance (was 3)
     add(box);
   }
 
@@ -149,8 +147,9 @@ class ContactPageComponent extends PositionComponent
       textRenderer: TextPaint(
         style: const TextStyle(
           fontFamily: 'Inter',
-          fontSize: 16,
+          fontSize: 15, // Slightly smaller for elegance (was 16)
           color: Colors.white,
+          letterSpacing: 0.5, // Add subtle letter spacing
         ),
       ),
       position: pos,
@@ -158,7 +157,7 @@ class ContactPageComponent extends PositionComponent
     add(text);
 
     final line = RectangleComponent(
-      position: Vector2(pos.x, pos.y + 35),
+      position: Vector2(pos.x, pos.y + 40), // More gap from label (was 35)
       size: Vector2(width, 1),
       paint: Paint()..color = Colors.white54,
     );

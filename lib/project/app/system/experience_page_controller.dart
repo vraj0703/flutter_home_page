@@ -11,10 +11,10 @@ class ExperiencePageController implements ScrollObserver {
   final double exitStart;
   final double exitEnd;
 
-  // Scroll Configuration
-  static const double initEntranceStart = 4200.0;
-  static const double initInteractionStart = 4600.0;
-  static const double itemScrollHeight = 500.0;
+  // Scroll Configuration - Compressed timing for faster scroll speed
+  static const double initEntranceStart = 3100.0; // Compressed from 4200
+  static const double initInteractionStart = 3400.0; // Compressed from 4600
+  static const double itemScrollHeight = 350.0; // Compressed from 500
   static const int itemCount = 5;
 
   ExperiencePageController({
@@ -38,17 +38,17 @@ class ExperiencePageController implements ScrollObserver {
     const exponentialEaseOut = ExponentialEaseOut();
     double opacity = 0.0;
 
-    // 1. Entrance (Fade In) with ExponentialEaseOut
+    // 1. Entrance (Fade In) with ExponentialEaseOut - Compressed timing
     if (scrollOffset < entranceStart) {
       opacity = 0.0;
-    } else if (scrollOffset < entranceStart + 400) {
-      final t = ((scrollOffset - entranceStart) / 400).clamp(0.0, 1.0);
+    } else if (scrollOffset < entranceStart + 300) {
+      final t = ((scrollOffset - entranceStart) / 300).clamp(0.0, 1.0);
       opacity = exponentialEaseOut.transform(t);
     } else if (scrollOffset < exitStart) {
       opacity = 1.0;
-    } else if (scrollOffset < exitStart + 500) {
-      // Exit Fade Out with ExponentialEaseOut
-      final t = ((scrollOffset - exitStart) / 500).clamp(0.0, 1.0);
+    } else if (scrollOffset < exitStart + 350) {
+      // Exit Fade Out with ExponentialEaseOut - Compressed timing
+      final t = ((scrollOffset - exitStart) / 350).clamp(0.0, 1.0);
       opacity = 1.0 - exponentialEaseOut.transform(t);
     } else {
       opacity = 0.0;

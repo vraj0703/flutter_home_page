@@ -17,8 +17,8 @@ class ScrollSystem {
   bool _isSnapping = false;
   double _snapTarget = 0.0;
 
-  // Snap configuration - Updated for refined timing
-  static const List<double> snapPoints = [500, 2300, 4400, 14800];
+  // Snap configuration - Updated for compressed timing (faster scroll speed)
+  static const List<double> snapPoints = [500, 1700, 3100, 10400]; // Key positions: bold text, philosophy, experience, skills
   static const double snapZoneRadius = 60.0; // Slightly larger for smoother feel
   static const double snapVelocityThreshold = 40.0; // Lower threshold for easier snap
   static const double snapSpeed = 6.0; // Slower for more graceful snap

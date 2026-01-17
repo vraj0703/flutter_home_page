@@ -195,10 +195,7 @@ class MyGame extends FlameGame
     cinematicSecondaryTitle.priority = 24;
     add(cinematicSecondaryTitle);
 
-    final shineProgram = await FragmentProgram.fromAsset(
-      'assets/shaders/shine_text.frag',
-    );
-
+    // Use metallic shader for bold text to match hero title texture
     boldTextReveal = BoldTextRevealComponent(
       text: "Crafting Clarity from Chaos.",
       textStyle: material.TextStyle(
@@ -207,8 +204,8 @@ class MyGame extends FlameGame
         fontFamily: 'InconsolataNerd',
         letterSpacing: 2.0,
       ),
-      shader: shineProgram.fragmentShader(),
-      baseColor: const Color(0xFFCCCCCC),
+      shader: metallicShader, // Changed from shineProgram to use same shader as hero title
+      baseColor: const Color(0xFFE3E4E5), // Match hero title base color
       position: size / 2,
     );
     boldTextReveal!.priority = 26;

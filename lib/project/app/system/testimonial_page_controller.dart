@@ -9,14 +9,14 @@ class TestimonialPageController implements ScrollObserver {
   final double exitStart;
   final double exitEnd;
 
-  // Configuration
-  // Experience ends ~7600 (Exit 7100 -> 7600)
-  static const double initEntranceStart = 7600.0;
+  // Configuration - Compressed timing for faster scroll speed
+  // Experience ends ~5400 (Exit 5050 -> 5400)
+  static const double initEntranceStart = 5400.0; // Compressed from 7600
   static const double initInteractionStart =
-      8000.0; // Start scrolling after fade in
+      5700.0; // Compressed from 8000, start scrolling after fade in
   static const double visibleDuration =
-      4000.0; // Increased to cover full carousel width
-  static const double exitDuration = 600.0;
+      2800.0; // Increased to 2800 to ensure all 10 cards (4360px) are shown in focus
+  static const double exitDuration = 400.0; // Compressed from 600
 
   final double interactionStart;
   final double interactionEnd;
@@ -58,16 +58,16 @@ class TestimonialPageController implements ScrollObserver {
     const exponentialEaseOut = ExponentialEaseOut();
     double opacity = 0.0;
 
-    // 1. Entrance (Fade In) with ExponentialEaseOut
+    // 1. Entrance (Fade In) with ExponentialEaseOut - Compressed timing
     if (scrollOffset < entranceStart) {
       opacity = 0.0;
-    } else if (scrollOffset < entranceStart + 400) {
-      final t = ((scrollOffset - entranceStart) / 400).clamp(0.0, 1.0);
+    } else if (scrollOffset < entranceStart + 300) {
+      final t = ((scrollOffset - entranceStart) / 300).clamp(0.0, 1.0);
       opacity = exponentialEaseOut.transform(t);
     } else if (scrollOffset < exitStart) {
       opacity = 1.0;
     } else if (scrollOffset < exitEnd) {
-      // Exit Fade Out with ExponentialEaseOut
+      // Exit Fade Out with ExponentialEaseOut - Compressed timing
       final t = ((scrollOffset - exitStart) / (exitEnd - exitStart)).clamp(
         0.0,
         1.0,

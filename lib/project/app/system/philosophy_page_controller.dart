@@ -27,30 +27,30 @@ class PhilosophyPageController implements ScrollObserver {
   void _handleText(double scrollOffset) {
     // Refined for minimal, futuristic feel - smooth glide in/out
     // Overlaps with bold text fade for smooth transition
-    // 1. Fade In Phase (2100 -> 2600) - Overlaps with bold text fade
-    // 2. Hold Phase (2600 -> 4000) - Extended for spacious feel
-    // 3. Exit Phase (4000 -> 4400) - Smooth fade to experience
+    // 1. Fade In Phase (1500 -> 1900) - Compressed timing, overlaps with bold text fade
+    // 2. Hold Phase (1900 -> 2800) - Compressed but sufficient viewing time
+    // 3. Exit Phase (2800 -> 3100) - Smooth fade to experience
 
     const exponentialEaseOut = ExponentialEaseOut();
 
     double opacity = 0.0;
     Vector2 pos = initialTextPos.clone();
 
-    if (scrollOffset < 2100) {
+    if (scrollOffset < 1500) {
       opacity = 0.0;
       pos = initialTextPos;
-    } else if (scrollOffset < 2600) {
+    } else if (scrollOffset < 1900) {
       // Fade In - Simple, elegant entrance
-      final t = ((scrollOffset - 2100) / 500).clamp(0.0, 1.0);
+      final t = ((scrollOffset - 1500) / 400).clamp(0.0, 1.0);
       opacity = exponentialEaseOut.transform(t);
       pos = initialTextPos;
-    } else if (scrollOffset < 4000) {
-      // Hold Visible - Extended for breathing room
+    } else if (scrollOffset < 2800) {
+      // Hold Visible - Sufficient breathing room
       opacity = 1.0;
       pos = initialTextPos;
-    } else if (scrollOffset < 4400) {
+    } else if (scrollOffset < 3100) {
       // Exit - Smooth fade with minimal upward drift
-      final t = ((scrollOffset - 4000) / 400).clamp(0.0, 1.0);
+      final t = ((scrollOffset - 2800) / 300).clamp(0.0, 1.0);
       final curvedT = exponentialEaseOut.transform(t);
       opacity = 1.0 - curvedT;
       // Minimal upward float for space theme
@@ -67,16 +67,16 @@ class PhilosophyPageController implements ScrollObserver {
 
   void _handleStack(double scrollOffset) {
     // Refined for minimal theme - smooth, elegant card reveals
-    // Less dramatic, more graceful and spacious
+    // Compressed timing for faster scroll speed
     const exponentialEaseOut = ExponentialEaseOut();
     const gentleSpring = SpringCurve(mass: 0.8, stiffness: 140.0, damping: 16.0);
 
     // Stack Container Master Opacity
     double stackAlpha = 1.0;
-    if (scrollOffset < 2100) {
+    if (scrollOffset < 1500) {
       stackAlpha = 0.0;
-    } else if (scrollOffset < 2600) {
-      stackAlpha = exponentialEaseOut.transform(((scrollOffset - 2100) / 500).clamp(0.0, 1.0));
+    } else if (scrollOffset < 1900) {
+      stackAlpha = exponentialEaseOut.transform(((scrollOffset - 1500) / 400).clamp(0.0, 1.0));
     } else {
       stackAlpha = 1.0;
     }
@@ -85,9 +85,9 @@ class PhilosophyPageController implements ScrollObserver {
     cardStack.position = initialStackPos;
 
     final cards = cardStack.cards;
-    final peelStart = 2700.0;
-    final peelDuration = 300.0; // Slower, more graceful
-    final peelDelay = 200.0; // More spacious rhythm
+    final peelStart = 1950.0; // Compressed from 2700
+    final peelDuration = 250.0; // Compressed from 300
+    final peelDelay = 150.0; // Compressed from 200
 
     for (int i = 0; i < cards.length; i++) {
       final card = cards[i];
@@ -103,9 +103,9 @@ class PhilosophyPageController implements ScrollObserver {
 
       if (i == 0) {
         // Top Card - Smooth, minimal peel
-        if (scrollOffset < 2100) {
+        if (scrollOffset < 1500) {
           alpha = 0.0;
-        } else if (scrollOffset < 2700) {
+        } else if (scrollOffset < 1950) {
           alpha = stackAlpha;
         } else if (scrollOffset < myEnd) {
           // Peeling with smooth exponential curve

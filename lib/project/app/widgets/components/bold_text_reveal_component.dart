@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/interfaces/shine_provider.dart';
+import 'package:flutter_home_page/project/app/widgets/my_game.dart';
 
 class BoldTextRevealComponent extends TextComponent
     with HasGameReference, HasPaint
@@ -15,6 +16,7 @@ class BoldTextRevealComponent extends TextComponent
 
   double _fillProgress = 0.0;
   double _opacity = 1.0;
+  double _time = 0.0;
 
   BoldTextRevealComponent({
     required String text,
@@ -60,20 +62,26 @@ class BoldTextRevealComponent extends TextComponent
   }
 
   @override
+  void update(double dt) {
+    super.update(dt);
+    _time += dt;
+  }
+
+  @override
   void render(Canvas canvas) {
-    // Standard text rendering would use the painter with the shader.
-    // But we need to update uniforms BEFORE the text is painted.
-    // TextPaint holds a Paint object. We can update that shader.
+    if (opacity <= 0) return;
+
+    // Use same god ray position approach as FadeTextComponent (hero title)
+    // This makes bold text affected by god ray lighting like the hero title
 
     final dpr = game.canvasSize.x / game.size.x;
-    // Use toAbsoluteRect() to get the axis-aligned bounding box in World Space
-    // This handles anchor and transforms automatically.
-    final rect = toAbsoluteRect();
-    final physicalTopLeft = rect.topLeft.toVector2() * dpr;
-    // Use rect size to match
-    final physicalSize = rect.size.toVector2() * dpr;
 
-    // Metallic Shader Uniforms
+    // Translate everything to PHYSICAL coordinate space
+    final physicalTopLeft = absolutePositionOf(Vector2.zero()) * dpr;
+    final physicalSize = size * dpr;
+    final physicalLightPos = (game as MyGame).godRay.position * dpr;
+
+    // Metallic Shader Uniforms (same as hero title)
     // 0: uSize.x
     // 1: uSize.y
     // 2: uOffset.x
@@ -81,33 +89,20 @@ class BoldTextRevealComponent extends TextComponent
     // 4: uTime
     // 5,6,7: uBaseColor
     // 8: uOpacity
-    // 9,10: uLightPos
-
-    // Calculate Light Position (LOCAL COORDINATES)
-    // Shader now expects uLightPos relative to the component's TopLeft (0,0).
-    // Wipe from -50% width to +150% width.
-    final startX = -physicalSize.x * 0.5;
-    final endX = physicalSize.x * 1.5;
-
-    // Map fillProgress to Local X
-    final lightX = lerpDouble(startX, endX, _fillProgress) ?? 0.0;
-
-    // Center Vertically (Local Y = Height / 2)
-    final lightY = physicalSize.y / 2;
+    // 9,10: uLightPos (god ray position)
 
     shader
       ..setFloat(0, physicalSize.x)
       ..setFloat(1, physicalSize.y)
       ..setFloat(2, physicalTopLeft.x)
       ..setFloat(3, physicalTopLeft.y)
-      ..setFloat(4, _fullShineStrength) // REPURPOSED: uTime -> FullShine
-      ..setFloat(5, baseColor.r)
-      ..setFloat(6, baseColor.g)
-      ..setFloat(7, baseColor.b)
+      ..setFloat(4, _time) // Use time for animation like hero title
+      ..setFloat(5, baseColor.r / 255)
+      ..setFloat(6, baseColor.g / 255)
+      ..setFloat(7, baseColor.b / 255)
       ..setFloat(8, opacity)
-      ..setFloat(9, lightX)
-      ..setFloat(10, lightY);
-    // ..setFloat(11, _fullShineStrength); // REMOVED (Index Error)
+      ..setFloat(9, physicalLightPos.x)
+      ..setFloat(10, physicalLightPos.y);
 
     super.render(canvas);
   }
