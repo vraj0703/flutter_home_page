@@ -307,6 +307,7 @@ class ExperiencePageComponent extends PositionComponent
     _updateContent(forceUpdate: false, op: 0.0);
 
     // Force initial layout/opacity calculation for details to prevent flash
+    detailsComponent.opacity = 0.0; // Ensure parent opacity is 0
     detailsComponent.updateRotation(_currentRotation);
   }
 

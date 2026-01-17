@@ -133,6 +133,7 @@ class ExperienceDescriptionItem extends PositionComponent with HasPaint {
       )..layout(maxWidth: maxWidth);
 
       final lineComp = WrappedTextComponent(painter, maxWidth);
+      lineComp.opacity = _opacity; // Init correctly
       lineComp.position = Vector2(0, currentY); // Temp Y
       add(lineComp);
       _lines.add(lineComp);

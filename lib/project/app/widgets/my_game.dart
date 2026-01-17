@@ -16,7 +16,6 @@ import 'package:flutter_home_page/project/app/widgets/components/background_run_
 import 'components/god_ray.dart';
 import 'components/logo.dart';
 import 'components/logo_overlay.dart';
-import 'components/grid_component.dart';
 import 'components/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/system/scroll_system.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
@@ -59,7 +58,6 @@ class MyGame extends FlameGame
 
   BoldTextRevealComponent? boldTextReveal;
 
-  late final GridComponent gridComponent;
   RectangleComponent? _dimLayer;
 
   Vector2 _virtualLightPosition = Vector2.zero();
@@ -211,13 +209,6 @@ class MyGame extends FlameGame
     boldTextReveal!.priority = 26;
     boldTextReveal!.opacity = 0.0;
     await add(boldTextReveal!);
-
-    // Grid Component (Initially hidden/transparent handled by component)
-    gridComponent = GridComponent(
-      shader: metallicShader,
-      scrollOrchestrator: scrollOrchestrator,
-    );
-    await add(gridComponent);
 
     // Dim Layer (Overlay)
     _dimLayer = RectangleComponent(
@@ -505,9 +496,6 @@ class MyGame extends FlameGame
       ),
     );
 
-    // --- GRID COMPONENT ---
-    // Removed as per request
-    // gridComponent.opacity = 0.0;
 
     // --- PHILOSOPHY SECTION ---
     // ... (Philosophy Setup remains unchanged) ...
