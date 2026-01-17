@@ -1,6 +1,7 @@
 import 'package:flame/components.dart'; // Add this for Vector2
 import 'package:flutter_home_page/project/app/system/scroll_system.dart';
 import 'package:flutter_home_page/project/app/widgets/components/testimonial_page_component.dart';
+import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
 
 class TestimonialPageController implements ScrollObserver {
   final TestimonialPageComponent component;
@@ -53,22 +54,25 @@ class TestimonialPageController implements ScrollObserver {
   }
 
   void _handleVisibility(double scrollOffset) {
+    // Enhanced with ExponentialEaseOut for smooth fade
+    const exponentialEaseOut = ExponentialEaseOut();
     double opacity = 0.0;
 
-    // 1. Entrance (Fade In)
+    // 1. Entrance (Fade In) with ExponentialEaseOut
     if (scrollOffset < entranceStart) {
       opacity = 0.0;
     } else if (scrollOffset < entranceStart + 400) {
-      opacity = ((scrollOffset - entranceStart) / 400).clamp(0.0, 1.0);
+      final t = ((scrollOffset - entranceStart) / 400).clamp(0.0, 1.0);
+      opacity = exponentialEaseOut.transform(t);
     } else if (scrollOffset < exitStart) {
       opacity = 1.0;
     } else if (scrollOffset < exitEnd) {
-      // Exit Fade Out
+      // Exit Fade Out with ExponentialEaseOut
       final t = ((scrollOffset - exitStart) / (exitEnd - exitStart)).clamp(
         0.0,
         1.0,
       );
-      opacity = 1.0 - t;
+      opacity = 1.0 - exponentialEaseOut.transform(t);
     } else {
       opacity = 0.0;
     }
@@ -79,18 +83,10 @@ class TestimonialPageController implements ScrollObserver {
   void _handleExit(double scrollOffset) {
     if (!component.isLoaded) return;
 
-    // Parallax Slide Up
-    // We assume component.position is initially set to center.
-    // We want to slide it UP as it exits.
+    // Enhanced Exit with SpringCurve for natural physics
+    const springCurve = SpringCurve(mass: 1.0, stiffness: 160.0, damping: 13.0);
 
-    final initialPos = component.size / 2; // Assuming centered
-    // Actually TestimonialPageComponent centers itself in onLoad?
-    // No, PositionComponent usually has 0,0 unless set.
-    // MyGame adds it. Position should be handled there or here.
-
-    // Let's assume MyGame sets it to 0,0 and component handles internal layout relative to size.
-    // So sliding "up" means modifying Y.
-
+    // Parallax Slide Up with Spring Physics
     if (scrollOffset < exitStart) {
       component.position = Vector2.zero();
     } else if (scrollOffset < exitEnd) {
@@ -98,7 +94,8 @@ class TestimonialPageController implements ScrollObserver {
         0.0,
         1.0,
       );
-      component.position = Vector2(0, -1000 * t);
+      final curvedT = springCurve.transform(t);
+      component.position = Vector2(0, -1000 * curvedT);
     } else {
       component.position = Vector2(0, -1000);
     }

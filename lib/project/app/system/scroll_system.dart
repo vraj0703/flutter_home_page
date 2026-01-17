@@ -2,11 +2,27 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_home_page/project/app/interfaces/shine_provider.dart';
+import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
+import 'dart:ui' show lerpDouble;
 
 /// Manages the global scroll state and notifies observers.
 class ScrollSystem {
   double _scrollOffset = 0.0;
   final List<ScrollObserver> _observers = [];
+
+  // Velocity tracking for snap behavior
+  double _scrollVelocity = 0.0;
+  double _lastScrollOffset = 0.0;
+  double _lastUpdateTime = 0.0;
+  bool _isSnapping = false;
+  double _snapTarget = 0.0;
+
+  // Snap configuration
+  static const List<double> snapPoints = [500, 1500, 4200, 14800];
+  static const double snapZoneRadius = 50.0;
+  static const double snapVelocityThreshold = 50.0;
+  static const double snapSpeed = 8.0;
+  final SpringCurve _snapCurve = const SpringCurve(mass: 1.0, stiffness: 180.0, damping: 12.0);
 
   double get scrollOffset => _scrollOffset;
 
@@ -24,9 +40,67 @@ class ScrollSystem {
   }
 
   void onScroll(double delta) {
+    // If user scrolls during snap, cancel snap immediately
+    if (_isSnapping && delta.abs() > 5.0) {
+      _isSnapping = false;
+    }
+
     _scrollOffset += delta;
     if (_scrollOffset < 0) _scrollOffset = 0; // Clamp min
+
+    // Update velocity tracking
+    final currentTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
+    if (_lastUpdateTime > 0) {
+      final deltaTime = currentTime - _lastUpdateTime;
+      if (deltaTime > 0) {
+        final deltaOffset = _scrollOffset - _lastScrollOffset;
+        _scrollVelocity = deltaOffset / deltaTime;
+      }
+    }
+    _lastScrollOffset = _scrollOffset;
+    _lastUpdateTime = currentTime;
+
+    // Check for snap points
+    _checkSnapPoints();
+
     _notifyObservers();
+  }
+
+  /// Check if we should trigger snap to nearest point
+  void _checkSnapPoints() {
+    if (_isSnapping) return; // Already snapping
+
+    // Only snap if velocity is low
+    if (_scrollVelocity.abs() > snapVelocityThreshold) return;
+
+    // Check if we're in any snap zone
+    for (final snapPoint in snapPoints) {
+      final distance = (_scrollOffset - snapPoint).abs();
+      if (distance <= snapZoneRadius) {
+        // Trigger snap
+        _isSnapping = true;
+        _snapTarget = snapPoint;
+        break;
+      }
+    }
+  }
+
+  /// Update snap animation (called from game loop)
+  void updateSnap(double dt) {
+    if (!_isSnapping) return;
+
+    // Lerp toward snap target with spring curve
+    final distance = (_snapTarget - _scrollOffset).abs();
+    if (distance < 5.0) {
+      // Close enough, complete snap
+      _scrollOffset = _snapTarget;
+      _isSnapping = false;
+      _notifyObservers();
+    } else {
+      // Continue snapping
+      _scrollOffset = lerpDouble(_scrollOffset, _snapTarget, dt * snapSpeed) ?? _scrollOffset;
+      _notifyObservers();
+    }
   }
 
   void _notifyObservers() {

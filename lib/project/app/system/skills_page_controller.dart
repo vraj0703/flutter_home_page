@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/system/scroll_system.dart';
 import 'package:flutter_home_page/project/app/widgets/components/skills_keyboard_component.dart';
+import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
 
 class SkillsPageController implements ScrollObserver {
   final SkillsKeyboardComponent component;
@@ -19,32 +20,38 @@ class SkillsPageController implements ScrollObserver {
 
   @override
   void onScroll(double scrollOffset) {
+    // Enhanced with ElasticEaseOut for playful bounce entrance
+    // and SpringCurve for smooth exit
+    const elasticEaseOut = ElasticEaseOut(amplitude: 0.4, period: 0.3);
+    const springCurve = SpringCurve(mass: 0.9, stiffness: 170.0, damping: 12.0);
+    const exponentialEaseOut = ExponentialEaseOut();
+
     if (scrollOffset < entranceStart) {
       component.opacity = 0.0;
-      component.scale = Vector2.all(0.8);
+      component.scale = Vector2.all(0.7);
+      component.position = Vector2.zero();
     } else if (scrollOffset < entranceEnd) {
-      // Entrance Phase
+      // Entrance Phase with ElasticEaseOut for bouncy appearance
       final t = (scrollOffset - entranceStart) / (entranceEnd - entranceStart);
-      component.opacity = t;
-      component.scale = Vector2.all(0.8 + (0.2 * t)); // 0.8 -> 1.0
-      component.position = Vector2.zero(); // Centered (handled by parent?)
-      // Actually specific positioning might be needed if component isn't sized to screen.
-      // Assuming component.onLoad centers chassis relative to its size (screen size).
+      final curvedT = elasticEaseOut.transform(t);
+      component.opacity = curvedT.clamp(0.0, 1.0);
+      component.scale = Vector2.all(0.7 + (0.3 * curvedT.clamp(0.0, 1.0))); // 0.7 -> 1.0 with bounce
+      component.position = Vector2.zero();
     } else if (scrollOffset < interactEnd) {
       // Hold Phase
       component.opacity = 1.0;
       component.scale = Vector2.all(1.0);
-
-      // Interaction: Animate keys?
-      // We can pass scroll delta to component later.
+      component.position = Vector2.zero();
     } else if (scrollOffset < exitEnd) {
-      // Exit Phase
+      // Exit Phase with SpringCurve and elegant fade
       final t = (scrollOffset - interactEnd) / (exitEnd - interactEnd);
-      component.opacity = 1.0 - t;
-      // Slide Up
-      component.position = Vector2(0, -100 * t);
+      final curvedT = springCurve.transform(t);
+      component.opacity = 1.0 - exponentialEaseOut.transform(t);
+      // Slide Up with spring physics
+      component.position = Vector2(0, -100 * curvedT);
     } else {
       component.opacity = 0.0;
+      component.position = Vector2(0, -100);
     }
   }
 }

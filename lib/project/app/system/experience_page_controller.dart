@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/system/scroll_system.dart';
 import 'package:flutter_home_page/project/app/widgets/components/experience_page_component.dart';
+import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
 
 class ExperiencePageController implements ScrollObserver {
   final ExperiencePageComponent component;
@@ -33,19 +34,22 @@ class ExperiencePageController implements ScrollObserver {
   }
 
   void _handleVisibility(double scrollOffset) {
+    // Enhanced with ExponentialEaseOut for smooth, professional fade
+    const exponentialEaseOut = ExponentialEaseOut();
     double opacity = 0.0;
 
-    // 1. Entrance (Fade In)
+    // 1. Entrance (Fade In) with ExponentialEaseOut
     if (scrollOffset < entranceStart) {
       opacity = 0.0;
     } else if (scrollOffset < entranceStart + 400) {
-      opacity = ((scrollOffset - entranceStart) / 400).clamp(0.0, 1.0);
+      final t = ((scrollOffset - entranceStart) / 400).clamp(0.0, 1.0);
+      opacity = exponentialEaseOut.transform(t);
     } else if (scrollOffset < exitStart) {
       opacity = 1.0;
     } else if (scrollOffset < exitStart + 500) {
-      // Exit Fade Out
+      // Exit Fade Out with ExponentialEaseOut
       final t = ((scrollOffset - exitStart) / 500).clamp(0.0, 1.0);
-      opacity = 1.0 - t;
+      opacity = 1.0 - exponentialEaseOut.transform(t);
     } else {
       opacity = 0.0;
     }
@@ -73,24 +77,44 @@ class ExperiencePageController implements ScrollObserver {
   void _handleExit(double scrollOffset) {
     if (!component.isLoaded) return;
 
-    // Parallax Slide Up + Warp
+    // Enhanced Exit with SpringCurve and Scale Compression
+    const springCurve = SpringCurve(mass: 1.0, stiffness: 170.0, damping: 12.0);
+
+    // Parallax Slide Up + Warp + Scale Compression
     if (scrollOffset < exitStart) {
       component.position = component.initialPosition;
       component.setWarp(0.0);
+      // Reset scale (assuming component has scale property)
+      if (component.scale != Vector2.all(1.0)) {
+        component.scale = Vector2.all(1.0);
+      }
     } else if (scrollOffset < exitEnd) {
       // 0.0 to 1.0 progress
       final t = ((scrollOffset - exitStart) / (exitEnd - exitStart)).clamp(
         0.0,
         1.0,
       );
-      // Move up by 1000px
-      component.position = component.initialPosition + Vector2(0, -1000 * t);
+      final curvedT = springCurve.transform(t);
+
+      // Move up by 1000px with spring curve
+      component.position = component.initialPosition + Vector2(0, -1000 * curvedT);
+
       // Trigger Warp
       component.setWarp(t);
+
+      // Scale compression during exit (1.0 → 0.98 → 0.95)
+      double scale = 1.0;
+      if (t < 0.5) {
+        scale = 1.0 - (0.02 * (t / 0.5)); // 1.0 → 0.98
+      } else {
+        scale = 0.98 - (0.03 * ((t - 0.5) / 0.5)); // 0.98 → 0.95
+      }
+      component.scale = Vector2.all(scale);
     } else {
       // Final state
       component.position = component.initialPosition + Vector2(0, -1000);
       component.setWarp(1.0);
+      component.scale = Vector2.all(0.95);
     }
   }
 }

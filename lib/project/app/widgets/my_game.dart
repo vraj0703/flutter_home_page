@@ -32,6 +32,7 @@ import 'package:flutter_home_page/project/app/widgets/components/contact_page_co
 import 'package:flutter_home_page/project/app/system/contact_page_controller.dart';
 import 'package:flutter_home_page/project/app/widgets/components/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/system/skills_page_controller.dart';
+import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
 import 'package:flutter/material.dart' as material;
 
 class MyGame extends FlameGame
@@ -71,9 +72,14 @@ class MyGame extends FlameGame
   double _currentLogoScale = 3.0;
   Vector2 _baseLogoSize = Vector2.zero();
 
+  // Spring animation tracking for logo
+  double _logoPositionProgress = 0.0;
+  double _logoScaleProgress = 0.0;
+  final SpringCurve _logoSpringCurve = const SpringCurve(mass: 0.8, stiffness: 200.0, damping: 15.0);
+
   Vector2? _lastKnownPointerPosition;
 
-  final double smoothingSpeed = 8.0;
+  final double smoothingSpeed = 20.0;
   final double glowVerticalOffset = 10.0;
 
   late final Timer _inactivityTimer;
@@ -311,6 +317,10 @@ class MyGame extends FlameGame
     if (!isLoaded) return;
     final cursorPosition = _lastKnownPointerPosition ?? size / 2;
     followCursor(dt, cursorPosition);
+
+    // Update scroll snap system
+    scrollSystem.updateSnap(dt);
+
     stateProvider.sceneState().when(
       loading: (isSvgReady, isGameReady) {
         cinematicTitle.position = size / 2;
@@ -336,10 +346,33 @@ class MyGame extends FlameGame
   }
 
   void _animateLogo(double dt) {
-    logoComponent.position.lerp(_targetLogoPosition, dt * 5.0);
-    shadowScene.logoPosition.lerp(_targetLogoPosition, dt * 5.0);
-    _currentLogoScale =
-        lerpDouble(_currentLogoScale, _targetLogoScale, dt * 5.0) ?? 3.0;
+    // Spring-based animation with progress tracking
+    final positionDistance = (logoComponent.position - _targetLogoPosition).length;
+    final scaleDistance = (_currentLogoScale - _targetLogoScale).abs();
+
+    // Update progress for position
+    if (positionDistance > 2.0) {
+      _logoPositionProgress = (_logoPositionProgress + dt * 6.0).clamp(0.0, 1.0);
+      final curvedProgress = _logoSpringCurve.transform(_logoPositionProgress);
+      logoComponent.position.lerp(_targetLogoPosition, curvedProgress * dt * 10.0);
+      shadowScene.logoPosition.lerp(_targetLogoPosition, curvedProgress * dt * 10.0);
+    } else {
+      // Snap to target when close enough
+      logoComponent.position = _targetLogoPosition.clone();
+      shadowScene.logoPosition = _targetLogoPosition.clone();
+      _logoPositionProgress = 0.0;
+    }
+
+    // Update progress for scale
+    if (scaleDistance > 0.01) {
+      _logoScaleProgress = (_logoScaleProgress + dt * 6.0).clamp(0.0, 1.0);
+      final curvedProgress = _logoSpringCurve.transform(_logoScaleProgress);
+      _currentLogoScale = lerpDouble(_currentLogoScale, _targetLogoScale, curvedProgress * dt * 10.0) ?? 3.0;
+    } else {
+      // Snap to target when close enough
+      _currentLogoScale = _targetLogoScale;
+      _logoScaleProgress = 0.0;
+    }
 
     if (_baseLogoSize != Vector2.zero()) {
       final newSize = _baseLogoSize * _currentLogoScale;
@@ -356,8 +389,16 @@ class MyGame extends FlameGame
       _targetLightDirection = vectorFromCenter.normalized();
     }
     interactiveUI.cursorPosition = position - interactiveUI.position;
-    _virtualLightPosition.lerp(_targetLightPosition, smoothingSpeed * dt);
-    _lightDirection.lerp(_targetLightDirection, smoothingSpeed * dt);
+
+    // Dynamic interpolation based on distance for snappy response
+    final distance = (_targetLightPosition - _virtualLightPosition).length;
+    final speed = distance > 100 ? 22.0 : 18.0;
+    final rawT = speed * dt;
+    // Apply easing curve for smoother arrival
+    final easedT = Curves.easeOutQuad.transform(rawT.clamp(0.0, 1.0));
+
+    _virtualLightPosition.lerp(_targetLightPosition, easedT);
+    _lightDirection.lerp(_targetLightDirection, easedT);
     shadowScene.lightPosition = _virtualLightPosition;
     shadowScene.lightPosition = _virtualLightPosition;
     shadowScene.lightDirection = _lightDirection;
@@ -385,19 +426,20 @@ class MyGame extends FlameGame
     cinematicTitle.show(() {});
     cinematicSecondaryTitle.show(() {});
 
-    // 2. Bind Titles to Scroll System (Parallax Upwards)
-    // Bind Cinematic Title
+    // 2. Bind Titles to Scroll System (Parallax Upwards) with Spring Physics
+    // Bind Cinematic Title with SpringCurve
     scrollOrchestrator.addBinding(
       cinematicTitle,
       ParallaxScrollEffect(
         startScroll: 0,
-        endScroll: 1000,
+        endScroll: 800,
         initialPosition: cinematicTitle.position.clone(),
         endOffset: Vector2(0, -1000),
+        curve: const SpringCurve(mass: 1.0, stiffness: 180.0, damping: 12.0),
       ),
     );
 
-    // Title Fade Out (Ensure it's gone before Bold Text enters at 500)
+    // Title Fade Out with ExponentialEaseOut
     scrollOrchestrator.addBinding(
       cinematicTitle,
       OpacityScrollEffect(
@@ -405,10 +447,11 @@ class MyGame extends FlameGame
         endScroll: 500,
         startOpacity: 1.0,
         endOpacity: 0.0,
+        curve: const ExponentialEaseOut(),
       ),
     );
 
-    // Bind Secondary Title Position
+    // Bind Secondary Title Position with lighter spring (faster response)
     scrollOrchestrator.addBinding(
       cinematicSecondaryTitle,
       ParallaxScrollEffect(
@@ -416,10 +459,11 @@ class MyGame extends FlameGame
         endScroll: 1000,
         initialPosition: cinematicSecondaryTitle.position.clone(),
         endOffset: Vector2(0, -1000),
+        curve: const SpringCurve(mass: 0.8, stiffness: 200.0, damping: 10.0),
       ),
     );
 
-    // Bind Secondary Title Fade Out (Faster)
+    // Bind Secondary Title Fade Out with ExponentialEaseOut
     scrollOrchestrator.addBinding(
       cinematicSecondaryTitle,
       OpacityScrollEffect(
@@ -427,10 +471,11 @@ class MyGame extends FlameGame
         endScroll: 100,
         startOpacity: 1.0,
         endOpacity: 0.0,
+        curve: const ExponentialEaseOut(),
       ),
     );
 
-    // Bind LogoOverlay Fade Out (Interactive UI)
+    // Bind LogoOverlay Fade Out with ExponentialEaseOut
     scrollOrchestrator.addBinding(
       interactiveUI,
       OpacityScrollEffect(
@@ -438,10 +483,11 @@ class MyGame extends FlameGame
         endScroll: 100,
         startOpacity: 1.0,
         endOpacity: 0.0,
+        curve: const ExponentialEaseOut(),
       ),
     );
 
-    // Bind Dim Layer Fade In
+    // Bind Dim Layer Fade In with easeOutQuart
     scrollOrchestrator.addBinding(
       _dimLayer!,
       OpacityScrollEffect(
@@ -449,6 +495,7 @@ class MyGame extends FlameGame
         endScroll: 300,
         startOpacity: 0.0,
         endOpacity: 0.6,
+        curve: Curves.easeOutQuart,
       ),
     );
 
