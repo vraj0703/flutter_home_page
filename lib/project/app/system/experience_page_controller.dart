@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
-import 'package:flutter_home_page/project/app/system/scroll_system.dart';
 import 'package:flutter_home_page/project/app/widgets/components/experience_page_component.dart';
 import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
+import '../interfaces/scroll_observer.dart';
 
 class ExperiencePageController implements ScrollObserver {
   final ExperiencePageComponent component;
@@ -10,11 +10,9 @@ class ExperiencePageController implements ScrollObserver {
   final double interactionEnd;
   final double exitStart;
   final double exitEnd;
-
-  // Scroll Configuration - Compressed timing for faster scroll speed
-  static const double initEntranceStart = 3100.0; // Compressed from 4200
-  static const double initInteractionStart = 3400.0; // Compressed from 4600
-  static const double itemScrollHeight = 350.0; // Compressed from 500
+  static const double initEntranceStart = 2200.0;
+  static const double initInteractionStart = 2500.0;
+  static const double itemScrollHeight = 350.0;
   static const int itemCount = 5;
 
   ExperiencePageController({
@@ -34,11 +32,8 @@ class ExperiencePageController implements ScrollObserver {
   }
 
   void _handleVisibility(double scrollOffset) {
-    // Enhanced with ExponentialEaseOut for smooth, professional fade
     const exponentialEaseOut = ExponentialEaseOut();
     double opacity = 0.0;
-
-    // 1. Entrance (Fade In) with ExponentialEaseOut - Compressed timing
     if (scrollOffset < entranceStart) {
       opacity = 0.0;
     } else if (scrollOffset < entranceStart + 300) {
@@ -47,7 +42,6 @@ class ExperiencePageController implements ScrollObserver {
     } else if (scrollOffset < exitStart) {
       opacity = 1.0;
     } else if (scrollOffset < exitStart + 350) {
-      // Exit Fade Out with ExponentialEaseOut - Compressed timing
       final t = ((scrollOffset - exitStart) / 350).clamp(0.0, 1.0);
       opacity = 1.0 - exponentialEaseOut.transform(t);
     } else {
@@ -59,13 +53,11 @@ class ExperiencePageController implements ScrollObserver {
 
   void _handleInteraction(double scrollOffset) {
     if (scrollOffset < interactionStart) {
-      // Reset to initial state
       component.updateInteraction(0.0);
       return;
     }
 
     if (scrollOffset > interactionEnd) {
-      // Lock to final state
       component.updateInteraction(interactionEnd - interactionStart);
       return;
     }
@@ -77,32 +69,24 @@ class ExperiencePageController implements ScrollObserver {
   void _handleExit(double scrollOffset) {
     if (!component.isLoaded) return;
 
-    // Enhanced Exit with SpringCurve and Scale Compression
     const springCurve = SpringCurve(mass: 1.0, stiffness: 170.0, damping: 12.0);
-
-    // Parallax Slide Up + Warp + Scale Compression
     if (scrollOffset < exitStart) {
       component.position = component.initialPosition;
       component.setWarp(0.0);
-      // Reset scale (assuming component has scale property)
       if (component.scale != Vector2.all(1.0)) {
         component.scale = Vector2.all(1.0);
       }
     } else if (scrollOffset < exitEnd) {
-      // 0.0 to 1.0 progress
       final t = ((scrollOffset - exitStart) / (exitEnd - exitStart)).clamp(
         0.0,
         1.0,
       );
       final curvedT = springCurve.transform(t);
 
-      // Move up by 1000px with spring curve
-      component.position = component.initialPosition + Vector2(0, -1000 * curvedT);
+      component.position =
+          component.initialPosition + Vector2(0, -1000 * curvedT);
 
-      // Trigger Warp
       component.setWarp(t);
-
-      // Scale compression during exit (1.0 → 0.98 → 0.95)
       double scale = 1.0;
       if (t < 0.5) {
         scale = 1.0 - (0.02 * (t / 0.5)); // 1.0 → 0.98
@@ -111,7 +95,6 @@ class ExperiencePageController implements ScrollObserver {
       }
       component.scale = Vector2.all(scale);
     } else {
-      // Final state
       component.position = component.initialPosition + Vector2(0, -1000);
       component.setWarp(1.0);
       component.scale = Vector2.all(0.95);

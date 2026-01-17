@@ -14,17 +14,14 @@ class ExperiencePageComponent extends PositionComponent
   late OrbitalArcsComponent arcs;
   final List<SatelliteComponent> satellites = [];
 
-  // Text Components
   late TextComponent companyText;
   late TextComponent roleText;
   late TextComponent durationText;
-  late RectangleComponent connectorLine;
   late ExperienceDetailsComponent detailsComponent;
 
   int _currentIndex = 0;
   double _opacity = 0.0;
 
-  // Stored for parallax
   late Vector2 initialPosition;
 
   ExperiencePageComponent({super.size});
@@ -38,21 +35,18 @@ class ExperiencePageComponent extends PositionComponent
     _opacity = val;
     if (isLoaded) {
       arcs.opacity = val;
-      _updateSatellites(arcs.rotation); // Update opacity of satellites
+      _updateSatellites(arcs.rotation);
       _updateTextOpacity(val);
     }
   }
 
-  // Smoothing
   double _targetRotation = 0.0;
   double _currentRotation = 0.0;
 
-  // Warp
   double _warpScale = 1.0;
 
-  // Configuration
   static const double smoothingFactor = 5.0;
-  static const double orbitRadiusRatio = 0.65; // Relative to 80% screen height
+  static const double orbitRadiusRatio = 0.65;
   static const double activeThreshold = 0.35;
   static const double activeScale = 1.2;
   static const double inactiveScale = 0.8;
@@ -79,7 +73,6 @@ class ExperiencePageComponent extends PositionComponent
     super.update(dt);
     if (!isLoaded) return;
 
-    // Inertia / Smoothing (Lerp current to target)
     final double smoothing = smoothingFactor * dt;
     _currentRotation += (_targetRotation - _currentRotation) * smoothing;
 
@@ -92,7 +85,6 @@ class ExperiencePageComponent extends PositionComponent
     _updateSatellites(_currentRotation);
     detailsComponent.updateRotation(_currentRotation);
 
-    // Apply Warp Scale
     if (_warpScale != 1.0) {
       scale = Vector2.all(_warpScale);
       position = (size / 2) - ((size / 2) * _warpScale);
@@ -101,53 +93,29 @@ class ExperiencePageComponent extends PositionComponent
     }
   }
 
-  // Called by Controller
   void updateInteraction(double localScroll) {
     if (!isLoaded) return;
 
-    // Range: 0 to 2500 (5 items * 500)
     final index = (localScroll / 500).floor().clamp(0, data.length - 1);
-
-    // Rotation Calculation (Spin wheel) - Set Target - SNAP EFFECT
-    // New Scroll Per Item = 500.0
-    // Spacing = pi / 4
-    // We want to map scroll linearly to index, but CURVE the rotation within the index
-    // to create a magnetic snap sensation.
 
     final spacing = pi / 4;
     final double rawProgress = localScroll / 500.0;
     final int baseIndex = rawProgress.floor();
     final double t = rawProgress - baseIndex;
 
-    // Apply sigmoid-like curve for "Snap"
-    // flatten center (near 0.5? No, usually snap is at 0.0, 1.0)
-    // Wait, visual snap means it stays centered LONGER.
-    // So the curve should be steep between items and flat around the integer.
-    // Normal easeInOut is flat at 0 and 1, steep at 0.5.
-    // We want flat at 0.0 (item center) if localScroll is relative to item center?
-    // Here, index 0 is at scroll 0.
-    // So we want flat around integer values.
-    // If we use easeInOut on t (0->1), it's flat at start and end.
-    // Start (t=0) is Item N. End (t=1) is Item N+1.
-    // So standard Curves.easeInOut is perfect. It lingers at the integers.
-
     final double curvedT = Curves.easeOutQuart.transform(t);
     final double curvedProgress = baseIndex + curvedT;
 
-    // Map to rotation
     _targetRotation = -(curvedProgress * spacing);
 
     if (index != _currentIndex) {
       final bool isReverse = index < _currentIndex;
       _currentIndex = index;
       _updateContent(forceUpdate: true, op: _opacity, isReverse: isReverse);
-      _pulseNeedle();
     }
   }
 
   void setWarp(double progress) {
-    // progress 0.0 -> 1.0 (Exit Phase)
-    // Exponential Scale: 1.0 -> 8.0
     final t = progress.clamp(0.0, 1.0);
     _warpScale = 1.0 + (pow(t, 3) * (warpMaxScale - 1.0));
   }
@@ -156,25 +124,17 @@ class ExperiencePageComponent extends PositionComponent
     final center = Vector2(0, size.y / 2);
     final orbitRadius = (size.y * 1) * orbitRadiusRatio;
 
-    // Angle spacing: spread 5 items over e.g. 180 degrees or full circle?
     final spacing = pi / 4;
 
     for (int i = 0; i < satellites.length; i++) {
       final s = satellites[i];
-
-      // Positive i * spacing places subsequent items "Below" (Positive Angle = Clockwise/Down)
       final baseAngle = i * spacing;
-
-      // systemRotation is negative (Top-Bottom scroll moves angle Counter-Clockwise/Up)
       final currentAngle = baseAngle + systemRotation;
-
-      // Position
       final x = center.x + orbitRadius * cos(currentAngle);
       final y = center.y + orbitRadius * sin(currentAngle);
       s.position = Vector2(x, y);
-      s.angle = currentAngle + (pi / 2); // Tangential Tilt
+      s.angle = currentAngle + (pi / 2);
 
-      // Spatial Fade & Scale
       double diff = (currentAngle % (2 * pi));
       if (diff > pi) diff -= 2 * pi;
       if (diff < -pi) diff += 2 * pi;
@@ -197,30 +157,12 @@ class ExperiencePageComponent extends PositionComponent
     }
   }
 
-  void _pulseNeedle() {
-    // Trigger needle elastic pulse
-    connectorLine.add(
-      SequenceEffect([
-        ScaleEffect.to(
-          Vector2(1.0, 3.0),
-          EffectController(duration: 0.1, curve: Curves.easeOut),
-        ),
-        ScaleEffect.to(
-          Vector2(1.0, 1.0),
-          EffectController(duration: 0.4, curve: Curves.elasticOut),
-        ),
-      ]),
-    );
-  }
-
   @override
   Future<void> onLoad() async {
     initialPosition = position.clone();
 
-    // 1. Setup Visuals
     final halfHeight = size.y / 2;
 
-    // Left Arcs
     arcs = OrbitalArcsComponent(
       accentColor: const Color(0xFFC78E53),
       size: Vector2(size.x * 0.4, size.y), // Left 40%
@@ -228,7 +170,6 @@ class ExperiencePageComponent extends PositionComponent
     arcs.position = Vector2(0, 0); // Left aligned
     add(arcs);
 
-    // Create Satellites
     for (var node in data) {
       final s = SatelliteComponent(
         year: node.year,
@@ -239,22 +180,7 @@ class ExperiencePageComponent extends PositionComponent
       add(s);
     }
 
-    // Connector Line (Center-Left to Content)
-    connectorLine = RectangleComponent(
-      size: Vector2(60, 2),
-      paint: Paint()..color = const Color(0xFFC78E53),
-      position: Vector2(
-        size.y * 1.08,
-        halfHeight,
-      ), // Connect arc to text (Outermost Orbit)
-      anchor: Anchor.centerLeft,
-    );
-    //add(connectorLine);
-
-    // Right Content Area
-    final textX = size.x * 0.05; // Moved further Left to avoid collision
-
-    // Company (Small Label)
+    final textX = size.x * 0.05;
     companyText = TextComponent(
       text: data[0].company.toUpperCase(),
       textRenderer: TextPaint(
@@ -266,7 +192,6 @@ class ExperiencePageComponent extends PositionComponent
     );
     add(companyText);
 
-    // Role (Large Title)
     roleText = TextComponent(
       text: data[0].title,
       textRenderer: TextPaint(style: roleStyle),
@@ -274,7 +199,6 @@ class ExperiencePageComponent extends PositionComponent
     );
     add(roleText);
 
-    // Duration/Location (Subtext)
     durationText = TextComponent(
       text: "${data[0].duration} | ${data[0].location}",
       textRenderer: TextPaint(
@@ -286,36 +210,21 @@ class ExperiencePageComponent extends PositionComponent
     );
     add(durationText);
 
-    // Details Component (Right Side)
-    detailsComponent = ExperienceDetailsComponent(data: data)
-      ..size = size; // Full screen for orbit calculations
+    detailsComponent = ExperienceDetailsComponent(data: data)..size = size;
     add(detailsComponent);
-
-    // REMOVED yearText (replaced by Satellites)
-
-    // Initial State Check - Force everything hidden regardless of isLoaded flag
     _opacity = 0.0;
     arcs.opacity = 0.0;
 
-    // Force update satellites to invisible
     for (final s in satellites) {
       s.opacity = 0.0;
     }
-
-    // Force update text to invisible
-    connectorLine.paint.color = const Color(0xFFC78E53).withValues(alpha: 0.0);
     _updateContent(forceUpdate: false, op: 0.0);
-
-    // Force initial layout/opacity calculation for details to prevent flash
-    detailsComponent.opacity = 0.0; // Ensure parent opacity is 0
+    detailsComponent.opacity = 0.0;
     detailsComponent.updateRotation(_currentRotation);
   }
 
   void _updateTextOpacity(double parentOpacity) {
     if (!isLoaded) return;
-    connectorLine.paint.color = const Color(
-      0xFFC78E53,
-    ).withValues(alpha: parentOpacity);
     detailsComponent.opacity = parentOpacity;
     _updateContent(forceUpdate: false, op: parentOpacity);
   }
@@ -333,7 +242,6 @@ class ExperiencePageComponent extends PositionComponent
     final dim = Colors.white.withValues(alpha: 0.6 * alpha);
 
     if (forceUpdate) {
-      // Slide Up Logic
       final startOffset = 30.0 * (isReverse ? -1.0 : 1.0);
       final halfHeight = size.y / 2;
       final textX = size.x * 0.05;
@@ -348,6 +256,7 @@ class ExperiencePageComponent extends PositionComponent
           EffectController(duration: 0.4, curve: Curves.easeOut),
         ),
       );
+
       roleText.add(
         MoveToEffect(
           Vector2(textX, halfHeight - 10),
@@ -358,6 +267,7 @@ class ExperiencePageComponent extends PositionComponent
           ),
         ),
       );
+
       durationText.add(
         MoveToEffect(
           Vector2(textX, halfHeight + 60),
@@ -370,7 +280,6 @@ class ExperiencePageComponent extends PositionComponent
       );
     }
 
-    // Replay text renderer with new alpha
     companyText.text = item.company.toUpperCase();
     companyText.textRenderer = TextPaint(
       style: companyStyle.copyWith(color: dim),
@@ -385,10 +294,5 @@ class ExperiencePageComponent extends PositionComponent
     durationText.textRenderer = TextPaint(
       style: durationStyle.copyWith(color: dim),
     );
-
-    // Update Details
-    // detailsComponent.show(...) is removed, driven by rotation now
-    // But we might want to pulse or highlight?
-    // Rotation handles it.
   }
 }

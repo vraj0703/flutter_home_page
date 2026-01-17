@@ -1,6 +1,5 @@
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
-
-import 'scroll_system.dart';
+import '../interfaces/scroll_observer.dart';
 
 class UIOpacityObserver extends ScrollObserver {
   final StateProvider stateProvider;

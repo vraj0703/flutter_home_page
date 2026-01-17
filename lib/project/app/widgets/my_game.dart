@@ -9,6 +9,8 @@ import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
+import 'package:flutter_home_page/project/app/system/scroll_effects/opacity.dart';
+import 'package:flutter_home_page/project/app/system/scroll_effects/parallax.dart';
 import 'package:flutter_home_page/project/app/system/ui_opacity_observer.dart';
 import 'package:flutter_home_page/project/app/widgets/components/cinematic_title.dart';
 import 'package:flutter_home_page/project/app/widgets/components/cinematic_secondary_title.dart';
@@ -70,10 +72,13 @@ class MyGame extends FlameGame
   double _currentLogoScale = 3.0;
   Vector2 _baseLogoSize = Vector2.zero();
 
-  // Spring animation tracking for logo
   double _logoPositionProgress = 0.0;
   double _logoScaleProgress = 0.0;
-  final SpringCurve _logoSpringCurve = const SpringCurve(mass: 0.8, stiffness: 200.0, damping: 15.0);
+  final SpringCurve _logoSpringCurve = const SpringCurve(
+    mass: 0.8,
+    stiffness: 200.0,
+    damping: 15.0,
+  );
 
   Vector2? _lastKnownPointerPosition;
 
@@ -139,7 +144,7 @@ class MyGame extends FlameGame
       size: logoSize,
       position: size / 2,
     );
-    logoComponent.priority = 10; // Ensure it's drawn on top of the shadow
+    logoComponent.priority = 10;
     await add(logoComponent);
 
     godRay = GodRayComponent();
@@ -193,7 +198,6 @@ class MyGame extends FlameGame
     cinematicSecondaryTitle.priority = 24;
     add(cinematicSecondaryTitle);
 
-    // Use metallic shader for bold text to match hero title texture
     boldTextReveal = BoldTextRevealComponent(
       text: "Crafting Clarity from Chaos.",
       textStyle: material.TextStyle(
@@ -202,15 +206,14 @@ class MyGame extends FlameGame
         fontFamily: 'InconsolataNerd',
         letterSpacing: 2.0,
       ),
-      shader: metallicShader, // Changed from shineProgram to use same shader as hero title
-      baseColor: const Color(0xFFE3E4E5), // Match hero title base color
+      shader: metallicShader,
+      baseColor: const Color(0xFFE3E4E5),
       position: size / 2,
     );
     boldTextReveal!.priority = 26;
     boldTextReveal!.opacity = 0.0;
     await add(boldTextReveal!);
 
-    // Dim Layer (Overlay)
     _dimLayer = RectangleComponent(
       priority: 2,
       size: size,
@@ -227,13 +230,11 @@ class MyGame extends FlameGame
     if (!isLoaded) return;
     queuer.queue(event: const SceneEvent.onScroll());
 
-    // Always update global ScrollSystem to ensure continuity across state transitions
     final delta = info.scrollDelta.global.y;
     scrollSystem.onScroll(delta);
 
     stateProvider.sceneState().maybeWhen(
       menu: (uiOpacity) {
-        // Dispatch requested event based on delta (for other listeners if any)
         queuer.queue(event: SceneEvent.onScrollSequence(delta));
       },
       orElse: () {},
@@ -247,7 +248,6 @@ class MyGame extends FlameGame
   }
 
   void loadTitleBackground() {
-    // Fade in background shader
     backgroundRun.add(
       OpacityEffect.to(
         1.0,
@@ -281,7 +281,6 @@ class MyGame extends FlameGame
         cinematicSecondaryTitle.position = center + Vector2(0, 48);
       },
       menu: (uiOpacity) {
-        // Opacity handled by bindings, but we trigger layout update
         _updateMenuLayoutTargets();
       },
     );
@@ -306,7 +305,6 @@ class MyGame extends FlameGame
     final cursorPosition = _lastKnownPointerPosition ?? size / 2;
     followCursor(dt, cursorPosition);
 
-    // Update scroll snap system
     scrollSystem.updateSnap(dt);
 
     stateProvider.sceneState().when(
@@ -334,30 +332,41 @@ class MyGame extends FlameGame
   }
 
   void _animateLogo(double dt) {
-    // Spring-based animation with progress tracking
-    final positionDistance = (logoComponent.position - _targetLogoPosition).length;
+    final positionDistance =
+        (logoComponent.position - _targetLogoPosition).length;
     final scaleDistance = (_currentLogoScale - _targetLogoScale).abs();
 
-    // Update progress for position
     if (positionDistance > 2.0) {
-      _logoPositionProgress = (_logoPositionProgress + dt * 6.0).clamp(0.0, 1.0);
+      _logoPositionProgress = (_logoPositionProgress + dt * 6.0).clamp(
+        0.0,
+        1.0,
+      );
       final curvedProgress = _logoSpringCurve.transform(_logoPositionProgress);
-      logoComponent.position.lerp(_targetLogoPosition, curvedProgress * dt * 10.0);
-      shadowScene.logoPosition.lerp(_targetLogoPosition, curvedProgress * dt * 10.0);
+      logoComponent.position.lerp(
+        _targetLogoPosition,
+        curvedProgress * dt * 10.0,
+      );
+      shadowScene.logoPosition.lerp(
+        _targetLogoPosition,
+        curvedProgress * dt * 10.0,
+      );
     } else {
-      // Snap to target when close enough
       logoComponent.position = _targetLogoPosition.clone();
       shadowScene.logoPosition = _targetLogoPosition.clone();
       _logoPositionProgress = 0.0;
     }
 
-    // Update progress for scale
     if (scaleDistance > 0.01) {
       _logoScaleProgress = (_logoScaleProgress + dt * 6.0).clamp(0.0, 1.0);
       final curvedProgress = _logoSpringCurve.transform(_logoScaleProgress);
-      _currentLogoScale = lerpDouble(_currentLogoScale, _targetLogoScale, curvedProgress * dt * 10.0) ?? 3.0;
+      _currentLogoScale =
+          lerpDouble(
+            _currentLogoScale,
+            _targetLogoScale,
+            curvedProgress * dt * 10.0,
+          ) ??
+          3.0;
     } else {
-      // Snap to target when close enough
       _currentLogoScale = _targetLogoScale;
       _logoScaleProgress = 0.0;
     }
@@ -378,11 +387,9 @@ class MyGame extends FlameGame
     }
     interactiveUI.cursorPosition = position - interactiveUI.position;
 
-    // Dynamic interpolation based on distance for snappy response
     final distance = (_targetLightPosition - _virtualLightPosition).length;
     final speed = distance > 100 ? 22.0 : 18.0;
     final rawT = speed * dt;
-    // Apply easing curve for smoother arrival
     final easedT = Curves.easeOutQuad.transform(rawT.clamp(0.0, 1.0));
 
     _virtualLightPosition.lerp(_targetLightPosition, easedT);
@@ -406,16 +413,9 @@ class MyGame extends FlameGame
 
   void enterMenu() {
     _updateMenuLayoutTargets();
-
-    // Ensure clean scroll state
     scrollSystem.setScrollOffset(0.0);
-
-    // 1. Reset Title State if needed (ensure visible)
     cinematicTitle.show(() {});
     cinematicSecondaryTitle.show(() {});
-
-    // 2. Bind Titles to Scroll System (Parallax Upwards) with Spring Physics
-    // Bind Cinematic Title with SpringCurve
     scrollOrchestrator.addBinding(
       cinematicTitle,
       ParallaxScrollEffect(
@@ -427,7 +427,6 @@ class MyGame extends FlameGame
       ),
     );
 
-    // Title Fade Out with ExponentialEaseOut
     scrollOrchestrator.addBinding(
       cinematicTitle,
       OpacityScrollEffect(
@@ -439,7 +438,6 @@ class MyGame extends FlameGame
       ),
     );
 
-    // Bind Secondary Title Position with lighter spring (faster response)
     scrollOrchestrator.addBinding(
       cinematicSecondaryTitle,
       ParallaxScrollEffect(
@@ -451,7 +449,6 @@ class MyGame extends FlameGame
       ),
     );
 
-    // Bind Secondary Title Fade Out with ExponentialEaseOut
     scrollOrchestrator.addBinding(
       cinematicSecondaryTitle,
       OpacityScrollEffect(
@@ -463,7 +460,6 @@ class MyGame extends FlameGame
       ),
     );
 
-    // Bind LogoOverlay Fade Out with ExponentialEaseOut
     scrollOrchestrator.addBinding(
       interactiveUI,
       OpacityScrollEffect(
@@ -475,19 +471,17 @@ class MyGame extends FlameGame
       ),
     );
 
-    // Bind Dim Layer Fade In with easeOutQuart
     scrollOrchestrator.addBinding(
       _dimLayer!,
       OpacityScrollEffect(
-        startScroll: 0,
-        endScroll: 300,
+        startScroll: 1500,
+        endScroll: 2000,
         startOpacity: 0.0,
         endOpacity: 0.6,
         curve: Curves.easeOutQuart,
       ),
     );
 
-    // --- BOLD TEXT SEQUENCE ---
     scrollSystem.register(
       BoldTextController(
         component: boldTextReveal!,
@@ -496,9 +490,6 @@ class MyGame extends FlameGame
       ),
     );
 
-
-    // --- PHILOSOPHY SECTION ---
-    // ... (Philosophy Setup remains unchanged) ...
     final philosophyText = PhilosophyTextComponent(
       text: "My Philosophy",
       style: material.TextStyle(
@@ -508,6 +499,7 @@ class MyGame extends FlameGame
         color: material.Colors.white,
         letterSpacing: 1.5,
       ),
+      shader: metallicShader,
       anchor: Anchor.centerLeft,
       position: Vector2(size.x * 0.15, size.y / 2),
     );
@@ -535,37 +527,25 @@ class MyGame extends FlameGame
       ),
     );
 
-    // --- EXPERIENCE SECTION ---
-    // Starts after Philosophy text exit (4100) -> 4200 buffer
-
     final experiencePage = ExperiencePageComponent(size: size);
     experiencePage.priority = 25;
     add(experiencePage);
 
-    scrollSystem.register(
-      ExperiencePageController(
-        component: experiencePage,
-        entranceStart: 4200,
-        interactionStart: 4600,
-      ),
-    );
-
-    // Observe Scroll for UI Opacity (Down Arrow Sync)
+    scrollSystem.register(ExperiencePageController(component: experiencePage));
     scrollSystem.register(UIOpacityObserver(stateProvider: stateProvider));
 
-    // --- TESTIMONIALS SECTION ---
-    // Start ~7600
-    final testimonialPage = TestimonialPageComponent(size: size);
+    final testimonialPage = TestimonialPageComponent(
+      size: size,
+      shader: metallicShader,
+    );
     testimonialPage.priority = 25;
-    testimonialPage.opacity = 0.0; // Start hidden
+    testimonialPage.opacity = 0.0;
     add(testimonialPage);
 
     scrollSystem.register(
       TestimonialPageController(component: testimonialPage),
     );
 
-    // --- SKILLS KEYBOARD ---
-    // Start ~11600
     final skillsPage = SkillsKeyboardComponent(size: size);
     skillsPage.priority = 28; // Above Testimonials, Below Contact
     skillsPage.opacity = 0.0;
@@ -573,11 +553,12 @@ class MyGame extends FlameGame
 
     scrollSystem.register(SkillsPageController(component: skillsPage));
 
-    // --- CONTACT PAGE ---
-    // Starts ~14800 (Shifted)
-    final contactPage = ContactPageComponent(size: size);
-    contactPage.priority = 30; // On top of Testimonials
-    contactPage.position = Vector2(0, size.y); // Start hidden below
+    final contactPage = ContactPageComponent(
+      size: size,
+      shader: metallicShader,
+    );
+    contactPage.priority = 30;
+    contactPage.position = Vector2(0, size.y);
     add(contactPage);
 
     scrollSystem.register(

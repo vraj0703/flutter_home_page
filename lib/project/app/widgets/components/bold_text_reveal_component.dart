@@ -44,13 +44,6 @@ class BoldTextRevealComponent extends TextComponent
     _fillProgress = value;
   }
 
-  // Full Shine Strength logic
-  double _fullShineStrength = 0.0;
-
-  set fullShineStrength(double value) {
-    _fullShineStrength = value;
-  }
-
   // Opacity (HasPaint override, but we need to pass it to shader)
   @override
   double get opacity => _opacity;

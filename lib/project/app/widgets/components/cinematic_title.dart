@@ -93,18 +93,9 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
     double targetScale,
     VoidCallback onComplete,
   ) {
-    // 1. Remove conflicting effects from Parent (just in case)
     removeAll(children.query<Effect>());
-
-    // 2. Remove conflicting effects from Child
     _primaryTitle.removeAll(_primaryTitle.children.query<Effect>());
-
-    // 3. Calculate Local Target for the Child
-    // Global Target = ParentComp.position + ChildComp.position
-    // ChildComp.target = Global Target - ParentComp.position
     final localTarget = targetPos - position;
-
-    // 4. Move and Scale Child (_primaryTitle) directly
     _primaryTitle.add(
       MoveToEffect(
         localTarget,

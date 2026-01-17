@@ -124,6 +124,9 @@ flutter:
     - assets/fonts/trt_artnik.json
     - assets/audio/space_ambient.mp3
     - assets/images/logo.png
+    - assets/images/glass_keycap.png
+    - assets/images/glass_chassis.png
+    - assets/images/glass_texture.jpg
     - assets/vectors/down_arrow.svg
 
   shaders:

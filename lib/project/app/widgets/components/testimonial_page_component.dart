@@ -1,14 +1,17 @@
+import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/widgets/my_game.dart';
 import 'package:flutter_home_page/project/app/widgets/components/testimonial_carousel_component.dart';
 import 'package:flutter_home_page/project/app/models/testimonial_node.dart';
+import 'package:flutter_home_page/project/app/widgets/components/fade_text.dart';
 
 class TestimonialPageComponent extends PositionComponent
     with HasGameReference<MyGame>, HasPaint {
-  TestimonialPageComponent({super.size});
+  TestimonialPageComponent({super.size, required this.shader});
 
-  late TextComponent titleText;
+  final FragmentShader shader;
+  late FadeTextComponent titleText;
   late TestimonialCarouselComponent carousel;
   late RectangleComponent addButton;
 
@@ -20,12 +23,7 @@ class TestimonialPageComponent extends PositionComponent
     if (!isLoaded) return;
 
     // Title Opacity
-    final dimWhite = Colors.white.withValues(alpha: val);
-    titleText.textRenderer = TextPaint(
-      style: (titleText.textRenderer as TextPaint).style.copyWith(
-        color: dimWhite,
-      ),
-    );
+    titleText.opacity = val;
 
     // Children Opacity
     carousel.opacity = val;
@@ -44,22 +42,20 @@ class TestimonialPageComponent extends PositionComponent
   @override
   Future<void> onLoad() async {
     // Title
-    titleText = TextComponent(
+    titleText = FadeTextComponent(
       text: "TESTIMONIALS",
-      textRenderer: TextPaint(
-        style: TextStyle(
-          fontFamily: 'ModrntUrban',
-          fontSize: 48,
-          fontWeight: FontWeight.bold,
-          color: Colors.white.withValues(
-            alpha: opacity,
-          ), // Apply initial opacity
-          letterSpacing: 2.0,
-        ),
+      textStyle: TextStyle(
+        fontFamily: 'ModrntUrban',
+        fontSize: 48,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 2.0,
       ),
-      anchor: Anchor.topCenter,
-      position: Vector2(size.x / 2, size.y * 0.15),
+      shader: shader,
+      baseColor: const Color(0xFFCCCCCC),
     );
+    titleText.anchor = Anchor.topCenter;
+    titleText.position = Vector2(size.x / 2, size.y * 0.15);
+    titleText.opacity = opacity; // Ensure correct initial opacity
     add(titleText);
 
     // Carousel
@@ -93,8 +89,6 @@ class TestimonialPageComponent extends PositionComponent
     );
     addButton.add(btnLabel);
     add(addButton);
-
-    // Make button interactive? Ideally use TapUser implementation but simple is fine.
   }
 
   void updateScroll(double delta) {

@@ -33,13 +33,8 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
     if (val == super.opacity) return;
     super.opacity = val;
 
-    if (!isLoaded) return; // Prevent access before onLoad
-
-    // Propagate to chassis
+    if (!isLoaded) return;
     _chassis.paint.color = _chassis.paint.color.withValues(alpha: val);
-    // Side doesn't have a direct reference variable unless we stored it.
-    // Assuming it's the 2nd child. Or we find it.
-    // Better: Iterate all children.
     for (final child in children) {
       if (child is RectangleComponent) {
         child.paint.color = child.paint.color.withValues(alpha: val);
@@ -59,7 +54,6 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
 
   @override
   Future<void> onLoad() async {
-    // Chassis Dimensions
     final chassisWidth = size.x * 0.8;
     final chassisHeight = size.y * 0.5;
     final chassisPos = Vector2(
@@ -74,10 +68,8 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
       paint: Paint()
         ..color = const Color(
           0xFF111111,
-        ).withValues(alpha: opacity), // Apply initial opacity
+        ).withValues(alpha: opacity),
     );
-    // Add 3D depth to chassis?
-    // Maybe render a "side" manually or just a border.
     _chassis.paint.style = PaintingStyle.fill;
     add(_chassis);
 
@@ -88,17 +80,11 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
       paint: Paint()
         ..color = const Color(
           0xFF000000,
-        ).withValues(alpha: opacity), // Apply initial opacity
+        ).withValues(alpha: opacity),
       priority: -1, // Behind
     );
     add(_chassisSide);
 
-    // Keys Layout
-    // 60% Keyboard approx: ~14 keys wide.
-    // We have ~20 tools.
-    // Row 1: 6 keys
-    // Row 2: 7 keys
-    // Row 3: 6 keys
 
     final keySize = 60.0;
     final spacing = 15.0;
@@ -119,14 +105,11 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
           (chassisWidth - rowWidth) / 2 +
           rowOffsets[r]; // Center row
 
-      // Adjust for stagger if manual centering prefers looks over strict center
-      // Let's just center lines.
       startX = chassisPos.x + (chassisWidth - rowWidth) / 2;
 
       for (int k = 0; k < count; k++) {
         if (currentToolIndex >= tools.length) {
-          // Fill with "Enter" or decoration if run out
-          // Or just break
+
           break;
         }
 

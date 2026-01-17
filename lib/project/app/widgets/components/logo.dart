@@ -15,30 +15,21 @@ class LogoComponent extends PositionComponent {
     required Vector2 size,
     required Vector2 position,
   }) : super(size: size, position: position, anchor: Anchor.center) {
-    // Create a Paint object that uses the shader and tints the result
     _paint = Paint()
       ..shader = shader
-      ..colorFilter = ColorFilter.mode(
-        tintColor,
-        BlendMode.srcIn, // Apply tint to the shader's output
-      );
+      ..colorFilter = ColorFilter.mode(tintColor, BlendMode.srcIn);
   }
 
   @override
   void render(Canvas canvas) {
-    // Set the uniforms for our logo.frag shader
-    // Index 0: uSize (vec2)
-    // Sampler 0: uLogoTexture (sampler2D)
     shader
       ..setFloat(0, size.x)
       ..setFloat(1, size.y)
       ..setImageSampler(0, logoTexture);
 
-    // Draw a rectangle covering the component's size
     canvas.drawRect(Offset.zero & size.toSize(), _paint);
   }
 }
-
 
 class RayMarchingShadowComponent extends PositionComponent
     with HasGameReference<MyGame> {

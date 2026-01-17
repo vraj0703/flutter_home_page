@@ -7,7 +7,6 @@ class BackgroundRunComponent extends PositionComponent
   double _time = 0;
 
   BackgroundRunComponent({required this.shader, super.size, super.priority}) {
-    // Initialize opacity to 0 (hidden)
     opacity = 0.0;
   }
 
@@ -19,12 +18,7 @@ class BackgroundRunComponent extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    // accessing 'opacity' from HasPaint.
-    // If opacity is effectively 0, we can skip.
     if (opacity <= 0) return;
-
-    // Pass LOGICAL resolution. FlutterFragCoord returns logical pixels.
-    // Dividing by physical size made coordinates too small -> "Zoomed In" / Blurry.
     shader.setFloat(0, size.x); // uResolution.x
     shader.setFloat(1, size.y); // uResolution.y
     shader.setFloat(2, _time); // uTime

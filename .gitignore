@@ -46,3 +46,6 @@ build/
 .packages
 .pub-cache/
 .pub/
+
+# Agent Artifacts
+.agent/

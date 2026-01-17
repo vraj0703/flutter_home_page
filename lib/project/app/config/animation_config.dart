@@ -128,8 +128,6 @@ class AnimationConfig {
         return skillsEntrance;
       case AnimationType.fadeOut:
         return elegantFade;
-      default:
-        return elegantFade;
     }
   }
 }

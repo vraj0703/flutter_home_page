@@ -1,36 +1,39 @@
+import 'dart:ui';
 import 'package:flame/components.dart';
-import 'package:flame/effects.dart';
 import 'package:flutter/material.dart' as material;
+import 'package:flutter_home_page/project/app/widgets/components/fade_text.dart';
 
-class PhilosophyTextComponent extends TextComponent implements OpacityProvider {
-  double _opacity = 0.0;
-  final material.TextStyle _baseStyle;
+class PhilosophyTextComponent extends PositionComponent {
+  final String text;
+  final material.TextStyle style;
+  final FragmentShader shader;
+  late final FadeTextComponent _fadeText;
 
   PhilosophyTextComponent({
-    required String text,
-    required material.TextStyle style,
+    required this.text,
+    required this.style,
+    required this.shader,
     super.position,
     super.anchor,
-  }) : _baseStyle = style,
-       super(
-         text: text,
-         textRenderer: TextPaint(style: style),
-       );
+  });
 
   @override
-  double get opacity => _opacity;
+  Future<void> onLoad() async {
+    _fadeText = FadeTextComponent(
+      text: text,
+      textStyle: style,
+      shader: shader,
+      baseColor: const Color(0xFFE3E4E5),
+    );
+    _fadeText.anchor = Anchor.centerLeft;
+    add(_fadeText);
+  }
 
-  @override
+  double get opacity => _fadeText.opacity;
+
   set opacity(double value) {
-    _opacity = value;
-    // Update the TextRenderer to reflect new opacity
-    // We recreate the TextPaint with the alpha-adjusted color
-    final newColor =
-        _baseStyle.color?.withValues(alpha: _opacity) ??
-        material.Colors.white.withValues(alpha: _opacity);
-
-    // Efficiently update renderer only if changed?
-    // For now, simple reassignment is robust.
-    textRenderer = TextPaint(style: _baseStyle.copyWith(color: newColor));
+    if (isLoaded) {
+      _fadeText.opacity = value;
+    }
   }
 }

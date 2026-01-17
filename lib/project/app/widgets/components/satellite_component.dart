@@ -24,8 +24,6 @@ class SatelliteComponent extends PositionComponent with HasPaint {
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset.zero, 6, paint);
 
-    // Draw Year Text (Horizontal)
-    // Save canvas, rotate back by -angle to keep text horizontal
     canvas.save();
     canvas.rotate(-angle);
 
@@ -44,13 +42,10 @@ class SatelliteComponent extends PositionComponent with HasPaint {
     );
     textPainter.layout();
 
-    // Position "Between Inner and Middle Arc"
-    // Calculate Radial Offset
     final dist = 40.0;
     final dx = dist * sin(angle);
     final dy = dist * -cos(angle);
 
-    // Draw centered on calculated position
     textPainter.paint(
       canvas,
       Offset(dx - textPainter.width / 2, dy - textPainter.height / 2),
