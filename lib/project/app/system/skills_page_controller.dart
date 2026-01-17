@@ -20,22 +20,20 @@ class SkillsPageController implements ScrollObserver {
 
   @override
   void onScroll(double scrollOffset) {
-    // Enhanced with ElasticEaseOut for playful bounce entrance
-    // and SpringCurve for smooth exit
-    const elasticEaseOut = ElasticEaseOut(amplitude: 0.4, period: 0.3);
-    const springCurve = SpringCurve(mass: 0.9, stiffness: 170.0, damping: 12.0);
+    // Refined for minimal, futuristic feel - smooth glide, no bounce
     const exponentialEaseOut = ExponentialEaseOut();
+    const gentleSpring = SpringCurve(mass: 1.0, stiffness: 140.0, damping: 18.0);
 
     if (scrollOffset < entranceStart) {
       component.opacity = 0.0;
-      component.scale = Vector2.all(0.7);
+      component.scale = Vector2.all(0.9);
       component.position = Vector2.zero();
     } else if (scrollOffset < entranceEnd) {
-      // Entrance Phase with ElasticEaseOut for bouncy appearance
+      // Entrance Phase - Smooth, elegant scale-up
       final t = (scrollOffset - entranceStart) / (entranceEnd - entranceStart);
-      final curvedT = elasticEaseOut.transform(t);
-      component.opacity = curvedT.clamp(0.0, 1.0);
-      component.scale = Vector2.all(0.7 + (0.3 * curvedT.clamp(0.0, 1.0))); // 0.7 -> 1.0 with bounce
+      final curvedT = exponentialEaseOut.transform(t);
+      component.opacity = curvedT;
+      component.scale = Vector2.all(0.9 + (0.1 * curvedT)); // 0.9 -> 1.0 smooth
       component.position = Vector2.zero();
     } else if (scrollOffset < interactEnd) {
       // Hold Phase
@@ -43,15 +41,15 @@ class SkillsPageController implements ScrollObserver {
       component.scale = Vector2.all(1.0);
       component.position = Vector2.zero();
     } else if (scrollOffset < exitEnd) {
-      // Exit Phase with SpringCurve and elegant fade
+      // Exit Phase - Smooth fade and upward glide
       final t = (scrollOffset - interactEnd) / (exitEnd - interactEnd);
-      final curvedT = springCurve.transform(t);
+      final curvedT = gentleSpring.transform(t);
       component.opacity = 1.0 - exponentialEaseOut.transform(t);
-      // Slide Up with spring physics
-      component.position = Vector2(0, -100 * curvedT);
+      // Smooth upward glide
+      component.position = Vector2(0, -120 * curvedT);
     } else {
       component.opacity = 0.0;
-      component.position = Vector2(0, -100);
+      component.position = Vector2(0, -120);
     }
   }
 }

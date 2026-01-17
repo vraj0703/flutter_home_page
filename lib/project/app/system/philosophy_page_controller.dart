@@ -25,43 +25,40 @@ class PhilosophyPageController implements ScrollObserver {
   }
 
   void _handleText(double scrollOffset) {
-    // Enhanced with Anticipation Curve for Dramatic Entry
-    // 1. Fade In Phase (2200 -> 2500) with anticipation (slides in from slightly right)
-    // 2. Hold Phase (2500 -> 3800) - Extended for delays
-    // 3. Exit Phase (3800 -> 4100) - ElasticEaseOut bounce
+    // Refined for minimal, futuristic feel - smooth glide in/out
+    // Overlaps with bold text fade for smooth transition
+    // 1. Fade In Phase (2100 -> 2600) - Overlaps with bold text fade
+    // 2. Hold Phase (2600 -> 4000) - Extended for spacious feel
+    // 3. Exit Phase (4000 -> 4400) - Smooth fade to experience
 
-    const anticipationCurve = AnticipationCurve(anticipationStrength: 0.12);
-    const elasticEaseOut = ElasticEaseOut(amplitude: 0.4, period: 0.3);
+    const exponentialEaseOut = ExponentialEaseOut();
 
     double opacity = 0.0;
     Vector2 pos = initialTextPos.clone();
 
-    if (scrollOffset < 2200) {
+    if (scrollOffset < 2100) {
       opacity = 0.0;
-      pos = initialTextPos + Vector2(60, 0); // Start slightly right for anticipation
-    } else if (scrollOffset < 2500) {
-      // Fade In with Anticipation
-      final t = ((scrollOffset - 2200) / 300).clamp(0.0, 1.0);
-      opacity = t;
-      // Anticipation curve: pulls slightly more right, then settles left
-      final curvedT = anticipationCurve.transform(t);
-      pos = initialTextPos + Vector2(60 * (1.0 - curvedT), 0);
-    } else if (scrollOffset < 3800) {
-      // Hold Visible - STATIC
+      pos = initialTextPos;
+    } else if (scrollOffset < 2600) {
+      // Fade In - Simple, elegant entrance
+      final t = ((scrollOffset - 2100) / 500).clamp(0.0, 1.0);
+      opacity = exponentialEaseOut.transform(t);
+      pos = initialTextPos;
+    } else if (scrollOffset < 4000) {
+      // Hold Visible - Extended for breathing room
       opacity = 1.0;
       pos = initialTextPos;
-    } else if (scrollOffset < 4100) {
-      // Exit to RIGHT with ElasticEaseOut bounce
-      opacity = 1.0;
-
-      final t = ((scrollOffset - 3800) / 300).clamp(0.0, 1.0);
-      final curve = elasticEaseOut.transform(t);
-      // Move to Right
-      pos = initialTextPos + Vector2(0, -50) + Vector2(1000 * curve, 0);
+    } else if (scrollOffset < 4400) {
+      // Exit - Smooth fade with minimal upward drift
+      final t = ((scrollOffset - 4000) / 400).clamp(0.0, 1.0);
+      final curvedT = exponentialEaseOut.transform(t);
+      opacity = 1.0 - curvedT;
+      // Minimal upward float for space theme
+      pos = initialTextPos + Vector2(0, -40 * curvedT);
     } else {
       // Gone
       opacity = 0.0;
-      pos = initialTextPos + Vector2(1000, 0);
+      pos = initialTextPos + Vector2(0, -40);
     }
 
     component.opacity = opacity;
@@ -69,17 +66,17 @@ class PhilosophyPageController implements ScrollObserver {
   }
 
   void _handleStack(double scrollOffset) {
-    // Enhanced Card Peel with Dramatic Animation
-    // Anticipation curve for card peel, increased rotation, enhanced timing
-    const anticipationCurve = AnticipationCurve(anticipationStrength: 0.12);
-    const springCurve = SpringCurve(mass: 1.0, stiffness: 180.0, damping: 12.0);
+    // Refined for minimal theme - smooth, elegant card reveals
+    // Less dramatic, more graceful and spacious
+    const exponentialEaseOut = ExponentialEaseOut();
+    const gentleSpring = SpringCurve(mass: 0.8, stiffness: 140.0, damping: 16.0);
 
     // Stack Container Master Opacity
     double stackAlpha = 1.0;
-    if (scrollOffset < 2200) {
+    if (scrollOffset < 2100) {
       stackAlpha = 0.0;
-    } else if (scrollOffset < 2500) {
-      stackAlpha = ((scrollOffset - 2200) / 300).clamp(0.0, 1.0);
+    } else if (scrollOffset < 2600) {
+      stackAlpha = exponentialEaseOut.transform(((scrollOffset - 2100) / 500).clamp(0.0, 1.0));
     } else {
       stackAlpha = 1.0;
     }
@@ -88,9 +85,9 @@ class PhilosophyPageController implements ScrollObserver {
     cardStack.position = initialStackPos;
 
     final cards = cardStack.cards;
-    final peelStart = 2500.0;
-    final peelDuration = 200.0; // Reduced from 250 for snappier peel
-    final peelDelay = 150.0; // Increased from 100 for better rhythm
+    final peelStart = 2700.0;
+    final peelDuration = 300.0; // Slower, more graceful
+    final peelDelay = 200.0; // More spacious rhythm
 
     for (int i = 0; i < cards.length; i++) {
       final card = cards[i];
@@ -105,27 +102,27 @@ class PhilosophyPageController implements ScrollObserver {
       double scale = 1.0;
 
       if (i == 0) {
-        // Top Card with Dramatic Peel
-        if (scrollOffset < 2200) {
+        // Top Card - Smooth, minimal peel
+        if (scrollOffset < 2100) {
           alpha = 0.0;
-        } else if (scrollOffset < 2500) {
+        } else if (scrollOffset < 2700) {
           alpha = stackAlpha;
         } else if (scrollOffset < myEnd) {
-          // Peeling with AnticipationCurve
+          // Peeling with smooth exponential curve
           final t = ((scrollOffset - myStart) / peelDuration).clamp(0.0, 1.0);
-          final curvedT = anticipationCurve.transform(t);
-          // Card slightly moves toward user (scale up) before peeling away
-          lift = -300.0 * curvedT;
-          rotation = 0.35 * curvedT; // Increased from 0.2 for more dramatic tilt
+          final curvedT = exponentialEaseOut.transform(t);
+          // Gentle upward movement
+          lift = -350.0 * curvedT;
+          rotation = 0.15 * curvedT; // Minimal rotation for clean aesthetic
           alpha = 1.0 - t;
-          scale = 1.05 + (0.15 * curvedT); // Increased scale emphasis
+          scale = 1.0 + (0.05 * curvedT); // Subtle scale change
         } else {
           // Gone
           alpha = 0.0;
-          lift = -300.0;
+          lift = -350.0;
         }
       } else {
-        // Cards Below with SpringCurve Bounce
+        // Cards Below - Gentle spring reveal
         final prevStart = peelStart + ((i - 1) * (peelDuration + peelDelay));
         final prevEnd = prevStart + peelDuration;
 
@@ -133,34 +130,34 @@ class PhilosophyPageController implements ScrollObserver {
           // Hidden
           alpha = 0.0;
         } else if (scrollOffset < myStart) {
-          // Reset/Wait/Reveal with Spring Bounce
+          // Reset/Wait/Reveal with gentle spring
           if (scrollOffset < prevEnd) {
-            // Prev card is peeling, I am revealing with bounce
+            // Prev card is peeling, I am revealing smoothly
             final revealT = ((scrollOffset - prevStart) / peelDuration).clamp(
               0.0,
               1.0,
             );
-            alpha = revealT;
-            // SpringCurve for reveal creates subtle bounce effect
-            final curvedReveal = springCurve.transform(revealT);
-            scale = 0.95 + (0.05 * curvedReveal);
+            alpha = exponentialEaseOut.transform(revealT);
+            // Gentle spring for minimal bounce
+            final curvedReveal = gentleSpring.transform(revealT);
+            scale = 0.98 + (0.02 * curvedReveal);
           } else {
-            // Prev card finished peeling. I am waiting for my turn (Delay Gap)
+            // Prev card finished peeling. I am waiting for my turn
             alpha = 1.0;
             scale = 1.0;
           }
         } else if (scrollOffset < myEnd) {
-          // My Turn to Peel with AnticipationCurve
+          // My Turn to Peel - smooth and graceful
           final t = ((scrollOffset - myStart) / peelDuration).clamp(0.0, 1.0);
-          final curvedT = anticipationCurve.transform(t);
-          lift = -300.0 * curvedT;
-          rotation = 0.35 * curvedT * (i % 2 == 0 ? 1 : -1); // Increased rotation
+          final curvedT = exponentialEaseOut.transform(t);
+          lift = -350.0 * curvedT;
+          rotation = 0.15 * curvedT * (i % 2 == 0 ? 1 : -1); // Minimal rotation
           alpha = 1.0 - t;
-          scale = 1.05 + (0.15 * curvedT); // More dramatic scale
+          scale = 1.0 + (0.05 * curvedT); // Subtle scale
         } else {
           // Gone
           alpha = 0.0;
-          lift = -300.0;
+          lift = -350.0;
         }
       }
 

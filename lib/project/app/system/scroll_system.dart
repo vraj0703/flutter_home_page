@@ -17,11 +17,11 @@ class ScrollSystem {
   bool _isSnapping = false;
   double _snapTarget = 0.0;
 
-  // Snap configuration
-  static const List<double> snapPoints = [500, 1500, 4200, 14800];
-  static const double snapZoneRadius = 50.0;
-  static const double snapVelocityThreshold = 50.0;
-  static const double snapSpeed = 8.0;
+  // Snap configuration - Updated for refined timing
+  static const List<double> snapPoints = [500, 2300, 4400, 14800];
+  static const double snapZoneRadius = 60.0; // Slightly larger for smoother feel
+  static const double snapVelocityThreshold = 40.0; // Lower threshold for easier snap
+  static const double snapSpeed = 6.0; // Slower for more graceful snap
   final SpringCurve _snapCurve = const SpringCurve(mass: 1.0, stiffness: 180.0, damping: 12.0);
 
   double get scrollOffset => _scrollOffset;
