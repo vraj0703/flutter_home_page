@@ -17,23 +17,39 @@ class SectionProgressController implements ScrollObserver {
 
   @override
   void onScroll(double scrollOffset) {
-    int section = 0;
+    // Calculate continuous progress (0.0 to 5.0) based on scroll position
+    double progress = 0.0;
 
     if (scrollOffset < ScrollSequenceConfig.boldTextEntranceStart) {
-      section = 0; // Hero
+      // Hero section (0.0)
+      progress = 0.0;
     } else if (scrollOffset < ScrollSequenceConfig.philosophyStart) {
-      section = 1; // Bold Text
+      // Transition from Hero to Bold Text (0.0 -> 1.0)
+      final t = (scrollOffset - 0.0) / ScrollSequenceConfig.philosophyStart;
+      progress = t.clamp(0.0, 1.0);
     } else if (scrollOffset < ScrollSequenceConfig.workExpTitleEntranceStart) {
-      section = 2; // Philosophy
+      // Transition from Bold Text to Philosophy (1.0 -> 2.0)
+      final t = (scrollOffset - ScrollSequenceConfig.philosophyStart) /
+          (ScrollSequenceConfig.workExpTitleEntranceStart - ScrollSequenceConfig.philosophyStart);
+      progress = 1.0 + t.clamp(0.0, 1.0);
     } else if (scrollOffset < ScrollSequenceConfig.testimonialEntranceStart) {
-      section = 3; // Work Experience
+      // Transition from Philosophy to Work Experience (2.0 -> 3.0)
+      final t = (scrollOffset - ScrollSequenceConfig.workExpTitleEntranceStart) /
+          (ScrollSequenceConfig.testimonialEntranceStart - ScrollSequenceConfig.workExpTitleEntranceStart);
+      progress = 2.0 + t.clamp(0.0, 1.0);
     } else if (scrollOffset < ScrollSequenceConfig.contactEntranceStart) {
-      section = 4; // Testimonials + Skills
+      // Transition from Work Experience to Testimonials (3.0 -> 4.0)
+      final t = (scrollOffset - ScrollSequenceConfig.testimonialEntranceStart) /
+          (ScrollSequenceConfig.contactEntranceStart - ScrollSequenceConfig.testimonialEntranceStart);
+      progress = 3.0 + t.clamp(0.0, 1.0);
     } else {
-      section = 5; // Contact
+      // Transition from Testimonials to Contact (4.0 -> 5.0)
+      final t = (scrollOffset - ScrollSequenceConfig.contactEntranceStart) /
+          (ScrollSequenceConfig.contactEntranceDuration * 2);
+      progress = 4.0 + t.clamp(0.0, 1.0);
     }
 
-    component.setSection(section);
+    component.updateScrollProgress(progress);
 
     // Fade out during hero section and title, fade in as content starts
     // Stay visible throughout (contact is final section, no fade out)
