@@ -43,10 +43,10 @@ class SkillsPageController implements ScrollObserver {
       final t = (scrollOffset - interactEnd) / (exitEnd - interactEnd);
       final curvedT = gentleSpring.transform(t);
       component.opacity = 1.0 - exponentialEaseOut.transform(t);
-      component.position = Vector2(0, GameLayout.skillsExitY * curvedT);
+      component.position = GameLayout.skillsExitVector * curvedT;
     } else {
       component.opacity = 0.0;
-      component.position = Vector2(0, GameLayout.skillsExitY);
+      component.position = GameLayout.skillsExitVector;
     }
   }
 }

@@ -94,9 +94,9 @@ class TestimonialPageController implements ScrollObserver {
         1.0,
       );
       final curvedT = springCurve.transform(t);
-      component.position = Vector2(0, GameLayout.testiExitY * curvedT);
+      component.position = GameLayout.testiExitVector * curvedT;
     } else {
-      component.position = Vector2(0, GameLayout.testiExitY);
+      component.position = GameLayout.testiExitVector;
     }
   }
 }

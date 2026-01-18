@@ -96,7 +96,7 @@ class ExperiencePageController implements ScrollObserver {
       final curvedT = springCurve.transform(t);
 
       component.position =
-          component.initialPosition + Vector2(0, GameLayout.expExitY * curvedT);
+          component.initialPosition + (GameLayout.expExitVector * curvedT);
 
       component.setWarp(t);
       double scale = 1.0;
@@ -110,8 +110,8 @@ class ExperiencePageController implements ScrollObserver {
       }
       component.scale = Vector2.all(scale);
     } else {
-      component.position =
-          component.initialPosition + Vector2(0, GameLayout.expExitY);
+      // Fully exited
+      component.position = component.initialPosition + GameLayout.expExitVector;
       component.setWarp(1.0);
       component.scale = Vector2.all(GameLayout.expInitialScale);
     }

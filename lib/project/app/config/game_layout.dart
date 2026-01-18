@@ -209,6 +209,13 @@ class GameLayout {
   // Offsets
   static final Vector2 titleHeatDriftVector = Vector2(0, titleHeatDriftY);
   static final Vector2 philosophyStackLiftVector = Vector2(0, philStackLift);
+
+  // Exit Vectors (Scroll Controllers)
+  static final Vector2 testiExitVector = Vector2(0, testiExitY);
+  static final Vector2 skillsExitVector = Vector2(0, skillsExitY);
+  static final Vector2 philExitVector = Vector2(0, philExitY);
+  static final Vector2 expExitVector = Vector2(0, expExitY);
+  static final Vector2 parallaxEndVector = Vector2(0, standardParallaxY);
   static final Vector2 secTitleOffsetVector = Vector2(0, secTitleYOffset);
   static final Vector2 logoRemovingTargetVector = Vector2(
     logoRemovingTargetX,

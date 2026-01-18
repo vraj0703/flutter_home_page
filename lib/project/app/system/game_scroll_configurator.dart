@@ -39,7 +39,7 @@ class GameScrollConfigurator {
         startScroll: 0,
         endScroll: ScrollSequenceConfig.titleParallaxEnd,
         initialPosition: components.cinematicTitle.position.clone(),
-        endOffset: Vector2(0, GameLayout.standardParallaxY),
+        endOffset: GameLayout.parallaxEndVector,
         curve: GameCurves.defaultSpring,
       ),
     );
@@ -50,7 +50,7 @@ class GameScrollConfigurator {
         startScroll: 0,
         endScroll: ScrollSequenceConfig.secondaryTitleParallaxEnd,
         initialPosition: components.cinematicSecondaryTitle.position.clone(),
-        endOffset: Vector2(0, GameLayout.standardParallaxY),
+        endOffset: GameLayout.parallaxEndVector,
         curve: GameCurves.logoSpring,
       ),
     );

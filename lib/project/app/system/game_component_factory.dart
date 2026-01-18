@@ -113,7 +113,7 @@ class GameComponentFactory {
     cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
       text: GameStrings.secondaryTitle,
       shader: metallicShader,
-      position: size / 2 + Vector2(0, GameLayout.secTitleYOffset),
+      position: size / 2 + GameLayout.secTitleOffsetVector,
     );
     cinematicSecondaryTitle.priority = GameLayout.zSecondaryTitle;
 

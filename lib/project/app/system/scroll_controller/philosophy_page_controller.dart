@@ -55,11 +55,9 @@ class PhilosophyPageController implements ScrollObserver {
       final curvedT = exponentialEaseOut.transform(t);
       opacity = 1.0 - curvedT;
       opacity = 1.0 - curvedT;
-      pos = initialTextPos + Vector2(0, GameLayout.philExitY * curvedT);
+      pos = initialTextPos + (GameLayout.philExitVector * curvedT);
     } else {
-      // Gone
-      opacity = 0.0;
-      pos = initialTextPos + Vector2(0, GameLayout.philExitY);
+      pos = initialTextPos + GameLayout.philExitVector;
     }
 
     component.opacity = opacity;
@@ -98,7 +96,7 @@ class PhilosophyPageController implements ScrollObserver {
       final myEnd = myStart + peelDuration;
 
       // Default State
-      double lift = 0.0;
+      Vector2 liftVector = Vector2.zero();
       double rotation = 0.0;
       double alpha = 0.0;
       double scale = 1.0;
@@ -111,13 +109,13 @@ class PhilosophyPageController implements ScrollObserver {
         } else if (scrollOffset < myEnd) {
           final t = ((scrollOffset - myStart) / peelDuration).clamp(0.0, 1.0);
           final curvedT = exponentialEaseOut.transform(t);
-          lift = GameLayout.philStackLift * curvedT;
+          liftVector = GameLayout.philosophyStackLiftVector * curvedT;
           rotation = GameLayout.philStackRotation * curvedT;
           alpha = 1.0 - t;
           scale = 1.0 + ((GameLayout.philStackScaleMax - 1.0) * curvedT);
         } else {
           alpha = 0.0;
-          lift = GameLayout.philStackLift;
+          liftVector = GameLayout.philosophyStackLiftVector;
         }
       } else {
         final prevStart = peelStart + ((i - 1) * (peelDuration + peelDelay));
@@ -143,7 +141,7 @@ class PhilosophyPageController implements ScrollObserver {
         } else if (scrollOffset < myEnd) {
           final t = ((scrollOffset - myStart) / peelDuration).clamp(0.0, 1.0);
           final curvedT = exponentialEaseOut.transform(t);
-          lift = GameLayout.philStackLift * curvedT;
+          liftVector = GameLayout.philosophyStackLiftVector * curvedT;
           rotation =
               GameLayout.philStackRotation * curvedT * (i % 2 == 0 ? 1 : -1);
           alpha = 1.0 - t;
@@ -151,12 +149,12 @@ class PhilosophyPageController implements ScrollObserver {
         } else {
           // Gone
           alpha = 0.0;
-          lift = GameLayout.philStackLift;
+          liftVector = GameLayout.philosophyStackLiftVector;
         }
       }
 
       final center = cardStack.size / 2;
-      card.position = center + Vector2(0, lift);
+      card.position = center + liftVector;
       card.angle = rotation;
       card.scale = Vector2.all(scale);
       card.opacity = alpha;
