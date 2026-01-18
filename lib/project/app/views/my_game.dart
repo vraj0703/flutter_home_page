@@ -241,6 +241,7 @@ class MyGame extends FlameGame
         testimonialPage: _componentFactory.testimonialPage,
         skillsPage: _componentFactory.skillsPage,
         contactPage: _componentFactory.contactPage,
+        anchorRing: _componentFactory.anchorRing,
       ),
     );
   }
