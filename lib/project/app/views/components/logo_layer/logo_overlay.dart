@@ -4,10 +4,11 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
+import 'package:flutter_home_page/project/app/config/game_strings.dart';
+import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter/material.dart' as flutter;
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
-import 'package:flutter_home_page/project/app/config/game_assets.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 
 import 'bouncy_lines.dart';
@@ -47,15 +48,18 @@ class LogoOverlayComponent extends PositionComponent
 
   // OpacityProvider implementation
   double _opacity = 1.0;
+
   @override
   double get opacity => _opacity;
+
   @override
   set opacity(double value) {
     _opacity = value;
     _textComponent.textRenderer = TextPaint(
       style: flutter.TextStyle(
         fontSize: GameStyles.enterFontSize,
-        color: uiColor.withValues(alpha: _opacity), // Apply opacity
+        color: uiColor.withValues(alpha: _opacity),
+        // Apply opacity
         letterSpacing: GameStyles.enterLetterSpacing,
         fontWeight: FontWeight.w900,
         fontFamily: GameStyles.fontBroadway,

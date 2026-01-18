@@ -2,8 +2,9 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/text.dart';
-import 'package:flutter_home_page/project/app/config/game_assets.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/game_strings.dart';
+import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/views/components/wrapped_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/fade_text.dart';
 

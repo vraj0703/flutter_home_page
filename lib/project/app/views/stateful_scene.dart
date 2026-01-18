@@ -2,11 +2,12 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
-import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_strings.dart';
+import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'package:flutter_home_page/project/app/views/widgets/curtain_clipper.dart';
-import 'package:flutter_home_page/project/app/views/widgets/home_overlay.dart'; // Import overlay
+import 'package:flutter_home_page/project/app/views/widgets/home_overlay.dart';
 
 class StatefulScene extends StatefulWidget {
   final VoidCallback onClick;
@@ -97,8 +98,6 @@ class _StatefulSceneState extends State<StatefulScene>
   Widget build(BuildContext context) {
     return BlocConsumer<SceneBloc, SceneState>(
       listenWhen: (previous, current) {
-        // Only trigger listener if the state type changes (e.g. Title -> Menu).
-        // Ignore internal state updates like uiOpacity changes in Menu.
         return previous.runtimeType != current.runtimeType;
       },
       listener: (context, state) {
