@@ -205,7 +205,10 @@ class GameComponentFactory {
     testimonialPage.priority = GameLayout.zContent;
     testimonialPage.opacity = 0.0;
 
-    skillsPage = SkillsKeyboardComponent(size: size);
+    skillsPage = SkillsKeyboardComponent(
+      size: size,
+      metallicShader: metallicShader,
+    );
     skillsPage.priority = GameLayout.zSkills;
     skillsPage.opacity = 0.0;
 

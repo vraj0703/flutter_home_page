@@ -70,8 +70,9 @@ class GameLayout {
   static const double keyboardKeySize = 60.0;
   static const double keyboardKeySpacing = 15.0;
   static const double keyboardRowSpacing = 70.0;
-  static const double keyboardKeyDepth = 10.0;
+  static const double keyboardKeyDepth = 20.0;
   static const double keyboardKeyRadius = 8.0;
+  static const double keyboardHeroKeySize = 80.0;
 
   // --- Experience Details ---
   static const double expDescMaxWidth = 450.0;

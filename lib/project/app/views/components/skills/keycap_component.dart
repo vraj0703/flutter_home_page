@@ -1,13 +1,21 @@
+import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 
-class KeycapComponent extends PositionComponent with HasPaint {
+class KeycapComponent extends PositionComponent with HasPaint, HasGameReference {
   final String label;
+  final FragmentShader? shader;
+  final bool isHeroKey;
+  double _time = 0.0;
 
-  KeycapComponent({required this.label, required Vector2 size})
-    : super(size: size);
+  KeycapComponent({
+    required this.label,
+    required Vector2 size,
+    this.shader,
+  })  : isHeroKey = ["Flutter", "Dart", "Flame"].contains(label),
+        super(size: size);
 
   @override
   set opacity(double val) {
@@ -25,6 +33,12 @@ class KeycapComponent extends PositionComponent with HasPaint {
   }
 
   @override
+  void update(double dt) {
+    super.update(dt);
+    _time += dt;
+  }
+
+  @override
   void renderTree(Canvas canvas) {
     if (opacity == 0.0) return;
     super.renderTree(canvas);
@@ -34,8 +48,40 @@ class KeycapComponent extends PositionComponent with HasPaint {
   void render(Canvas canvas) {
     if (opacity == 0.0) return;
 
+    // Set shader uniforms for hero keys
+    if (isHeroKey && shader != null && hasGameRef) {
+      final dpr = game.canvasSize.x / game.size.x;
+      final physicalTopLeft = absolutePositionOf(Vector2.zero()) * dpr;
+      final physicalSize = size * dpr;
+      final physicalLightPos = game.godRay.position * dpr;
+
+      shader!
+        ..setFloat(0, physicalSize.x)
+        ..setFloat(1, physicalSize.y)
+        ..setFloat(2, physicalTopLeft.x)
+        ..setFloat(3, physicalTopLeft.y)
+        ..setFloat(4, _time)
+        ..setFloat(5, 0.9) // Bright silver base color
+        ..setFloat(6, 0.9)
+        ..setFloat(7, 0.95)
+        ..setFloat(8, opacity)
+        ..setFloat(9, physicalLightPos.x)
+        ..setFloat(10, physicalLightPos.y);
+    }
+
     final depth = GameLayout.keyboardKeyDepth;
     final radius = GameLayout.keyboardKeyRadius;
+
+    // Cast shadow on chassis
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(-2, depth + 2, size.x + 4, 3),
+        Radius.circular(radius),
+      ),
+      Paint()
+        ..color = Colors.black.withValues(alpha: opacity * 0.3)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0),
+    );
 
     // Side Face (Darker)
     final sideRect = RRect.fromRectAndRadius(
@@ -47,36 +93,53 @@ class KeycapComponent extends PositionComponent with HasPaint {
       Paint()..color = GameStyles.keySide.withValues(alpha: opacity),
     ); // Dark Side
 
-    // Top Face
+    // Top Face with gradient lighting
     final topRect = RRect.fromRectAndRadius(
       Rect.fromLTWH(0, 0, size.x, size.y),
       Radius.circular(radius),
     );
 
-    final isHighlighted = ["Flutter", "Dart", "Flame"].contains(label);
-    final color = isHighlighted ? GameStyles.keyHighlight : GameStyles.keyTop;
+    final color = isHeroKey ? GameStyles.keyHighlight : GameStyles.keyTop;
 
-    canvas.drawRRect(
-      topRect,
-      Paint()..color = color.withValues(alpha: opacity),
+    // Create gradient lighting for enhanced 3D effect
+    final topGradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        color.withValues(alpha: opacity * 1.0),
+        color.withValues(alpha: opacity * 0.7),
+      ],
     );
+
+    final rect = Rect.fromLTWH(0, 0, size.x, size.y);
+    final paint = Paint()..shader = topGradient.createShader(rect);
+
+    canvas.drawRRect(topRect, paint);
+
+    super.render(canvas);
   }
 
   @override
   Future<void> onLoad() async {
-    final isHighlighted = ["Flutter", "Dart", "Flame"].contains(label);
+    TextStyle textStyle = TextStyle(
+      fontFamily: GameStyles.fontInter,
+      fontSize: isHeroKey ? 12.0 : GameStyles.keyFontSize,
+      fontWeight: isHeroKey ? FontWeight.w900 : FontWeight.bold,
+      color: isHeroKey
+          ? const Color(0xFFFFD700)
+          : GameStyles.keyTextNormal,
+    );
+
+    // For hero keys: apply shader to foreground
+    if (isHeroKey && shader != null) {
+      textStyle = textStyle.copyWith(
+        foreground: Paint()..shader = shader,
+      );
+    }
+
     final queryText = TextComponent(
       text: label,
-      textRenderer: TextPaint(
-        style: TextStyle(
-          fontFamily: GameStyles.fontInter,
-          fontSize: GameStyles.keyFontSize,
-          fontWeight: FontWeight.bold,
-          color: isHighlighted
-              ? GameStyles.keyTextHighlight
-              : GameStyles.keyTextNormal,
-        ),
-      ),
+      textRenderer: TextPaint(style: textStyle),
     );
     queryText.anchor = Anchor.center;
     queryText.position = Vector2(size.x / 2, size.y / 2);

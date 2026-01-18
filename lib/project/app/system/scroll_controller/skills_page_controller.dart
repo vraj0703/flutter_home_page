@@ -34,11 +34,14 @@ class SkillsPageController implements ScrollObserver {
             ((1.0 - GameLayout.skillsInitialScale) * curvedT),
       );
       component.position = Vector2.zero();
+      // Trigger staggered entrance animation
+      component.setEntranceProgress(t);
     } else if (scrollOffset < interactEnd) {
       // Hold Phase
       component.opacity = 1.0;
       component.scale = Vector2.all(1.0);
       component.position = Vector2.zero();
+      component.setEntranceProgress(1.0); // Ensure all keys fully visible
     } else if (scrollOffset < exitEnd) {
       final t = (scrollOffset - interactEnd) / (exitEnd - interactEnd);
       final curvedT = gentleSpring.transform(t);
