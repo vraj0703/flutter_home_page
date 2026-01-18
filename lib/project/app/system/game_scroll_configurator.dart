@@ -9,6 +9,7 @@ import 'package:flutter_home_page/project/app/system/scroll_controller/bold_text
 import 'package:flutter_home_page/project/app/system/scroll_controller/contact_page_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll_controller/experience_page_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll_controller/philosophy_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll_controller/work_experience_title_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll_effects/opacity.dart';
 import 'package:flutter_home_page/project/app/system/scroll_effects/parallax.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
@@ -115,6 +116,14 @@ class GameScrollConfigurator {
         cardStack: components.cardStack,
         initialTextPos: components.philosophyText.position.clone(),
         initialStackPos: components.cardStack.position.clone(),
+      ),
+    );
+
+    scrollSystem.register(
+      WorkExperienceTitleController(
+        component: components.workExperienceTitle,
+        screenHeight: screenSize.y,
+        centerPosition: screenSize / 2,
       ),
     );
 

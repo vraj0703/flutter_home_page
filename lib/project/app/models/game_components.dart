@@ -9,6 +9,7 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/peelin
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
+import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
 
 class GameComponents {
   final CinematicTitleComponent cinematicTitle;
@@ -18,6 +19,7 @@ class GameComponents {
   final BoldTextRevealComponent boldTextReveal;
   final PhilosophyTextComponent philosophyText;
   final PeelingCardStackComponent cardStack;
+  final WorkExperienceTitleComponent workExperienceTitle;
   final ExperiencePageComponent experiencePage;
   final TestimonialPageComponent testimonialPage;
   final SkillsKeyboardComponent skillsPage;
@@ -31,6 +33,7 @@ class GameComponents {
     required this.boldTextReveal,
     required this.philosophyText,
     required this.cardStack,
+    required this.workExperienceTitle,
     required this.experiencePage,
     required this.testimonialPage,
     required this.skillsPage,

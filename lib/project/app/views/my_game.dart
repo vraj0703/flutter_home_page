@@ -236,6 +236,7 @@ class MyGame extends FlameGame
         boldTextReveal: _componentFactory.boldTextReveal,
         philosophyText: _componentFactory.philosophyText,
         cardStack: _componentFactory.cardStack,
+        workExperienceTitle: _componentFactory.workExperienceTitle,
         experiencePage: _componentFactory.experiencePage,
         testimonialPage: _componentFactory.testimonialPage,
         skillsPage: _componentFactory.skillsPage,

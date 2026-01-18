@@ -18,6 +18,7 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/peelin
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
+import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
@@ -36,6 +37,7 @@ class GameComponentFactory {
   late RectangleComponent dimLayer;
   late PhilosophyTextComponent philosophyText;
   late PeelingCardStackComponent cardStack;
+  late WorkExperienceTitleComponent workExperienceTitle;
   late ExperiencePageComponent experiencePage;
   late TestimonialPageComponent testimonialPage;
   late SkillsKeyboardComponent skillsPage;
@@ -168,6 +170,21 @@ class GameComponentFactory {
     cardStack.priority = GameLayout.zContent;
     cardStack.opacity = 0.0;
 
+    workExperienceTitle = WorkExperienceTitleComponent(
+      text: GameStrings.workExperienceTitle,
+      textStyle: material.TextStyle(
+        fontSize: 90,
+        fontWeight: material.FontWeight.bold,
+        fontFamily: GameStyles.fontModernUrban,
+        letterSpacing: 4.0,
+      ),
+      shader: metallicShader,
+      baseColor: GameStyles.boldTextBase,
+      position: size / 2 + Vector2(0, size.y), // Start below screen
+    );
+    workExperienceTitle.priority = GameLayout.zContent;
+    workExperienceTitle.opacity = 0.0;
+
     experiencePage = ExperiencePageComponent(size: size);
     experiencePage.priority = GameLayout.zContent;
 
@@ -200,6 +217,7 @@ class GameComponentFactory {
     dimLayer,
     philosophyText,
     cardStack,
+    workExperienceTitle,
     experiencePage,
     testimonialPage,
     skillsPage,
