@@ -4,21 +4,19 @@ import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 
 class GodRayComponent extends PositionComponent {
-  // --- Tweak these values to customize the sun's appearance ---
-
   // Layer 1: The hot, tight core
   final double coreSize = GameLayout.godRayCoreSize;
-  final Color coreColor = GameStyles.godRayCore; // White-hot
+  final Color coreColor = GameStyles.godRayCore;
   final double coreBlurSigma = GameLayout.godRayCoreBlur;
 
   // Layer 2: The vibrant inner halo
   final double innerGlowSize = GameLayout.godRayInnerSize;
-  final Color innerGlowColor = GameStyles.godRayInner; // Golden Yellow
+  final Color innerGlowColor = GameStyles.godRayInner;
   final double innerGlowBlurSigma = GameLayout.godRayInnerBlur;
 
   // Layer 3: The soft outer atmosphere
   final double outerGlowSize = GameLayout.godRayOuterSize;
-  final Color outerGlowColor = GameStyles.godRayOuter; // Dusty Orange
+  final Color outerGlowColor = GameStyles.godRayOuter;
   final double outerGlowBlurSigma = GameLayout.godRayOuterBlur;
 
   late final Paint _corePaint;
@@ -27,9 +25,6 @@ class GodRayComponent extends PositionComponent {
 
   GodRayComponent() {
     anchor = Anchor.center;
-    // It's more performant to create Paint objects once.
-    // The MaskFilter is what creates the beautiful blur effect.
-    // The sigma value controls the "spread" of the blur.
     _outerGlowPaint = Paint()
       ..color = outerGlowColor
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, outerGlowBlurSigma);
@@ -46,8 +41,6 @@ class GodRayComponent extends PositionComponent {
   @override
   void render(Canvas canvas) {
     super.render(canvas);
-    // We draw the layers from back to front (largest to smallest)
-    // to ensure they stack correctly.
     canvas.drawCircle(Offset.zero, outerGlowSize, _outerGlowPaint);
     canvas.drawCircle(Offset.zero, innerGlowSize, _innerGlowPaint);
     canvas.drawCircle(Offset.zero, coreSize, _corePaint);

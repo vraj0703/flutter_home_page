@@ -23,9 +23,12 @@ class FadeTextComponent extends TextComponent with HasPaint, HasGameReference {
              foreground: Paint()..shader = shader,
              shadows: [
                const Shadow(
-                 color: Colors.black45,
-                 blurRadius: 10,
-                 offset: Offset(2, 2),
+                 color: GameStyles.textShadowColor,
+                 blurRadius: GameStyles.textShadowBlur,
+                 offset: Offset(
+                   GameStyles.textShadowOffsetX,
+                   GameStyles.textShadowOffsetY,
+                 ),
                ),
              ],
            ),

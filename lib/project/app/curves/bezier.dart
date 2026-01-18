@@ -16,6 +16,8 @@ class BezierCurve extends Curve {
   });
 
   /// Material Design standard smooth curve
+  /// Material Design standard smooth curve
+  /// Material Design standard smooth curve
   factory BezierCurve.smooth() {
     return const BezierCurve(p1x: 0.4, p1y: 0.0, p2x: 0.2, p2y: 1.0);
   }

@@ -36,7 +36,6 @@ class BoldTextRevealComponent extends TextComponent
          ),
        );
 
-  // ShineProvider Implementation
   @override
   double get fillProgress => _fillProgress;
 
@@ -45,7 +44,6 @@ class BoldTextRevealComponent extends TextComponent
     _fillProgress = value;
   }
 
-  // Opacity (HasPaint override, but we need to pass it to shader)
   @override
   double get opacity => _opacity;
 

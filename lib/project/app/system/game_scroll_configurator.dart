@@ -1,8 +1,9 @@
 import 'package:flame/components.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
-import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/models/game_components.dart';
 import 'package:flutter_home_page/project/app/system/scroll_controller/bold_text_controller.dart';
@@ -39,8 +40,8 @@ class GameScrollConfigurator {
         startScroll: 0,
         endScroll: ScrollSequenceConfig.titleParallaxEnd,
         initialPosition: components.cinematicTitle.position.clone(),
-        endOffset: Vector2(0, -1000),
-        curve: const SpringCurve(mass: 1.0, stiffness: 180.0, damping: 12.0),
+        endOffset: Vector2(0, GameLayout.standardParallaxY),
+        curve: GameCurves.defaultSpring,
       ),
     );
 
@@ -50,8 +51,8 @@ class GameScrollConfigurator {
         startScroll: 0,
         endScroll: ScrollSequenceConfig.secondaryTitleParallaxEnd,
         initialPosition: components.cinematicSecondaryTitle.position.clone(),
-        endOffset: Vector2(0, -1000),
-        curve: const SpringCurve(mass: 0.8, stiffness: 200.0, damping: 10.0),
+        endOffset: Vector2(0, GameLayout.standardParallaxY),
+        curve: GameCurves.logoSpring,
       ),
     );
 
@@ -95,7 +96,7 @@ class GameScrollConfigurator {
         startScroll: ScrollSequenceConfig.dimLayerStart,
         endScroll: ScrollSequenceConfig.dimLayerEnd,
         startOpacity: 0.0,
-        endOpacity: 0.6,
+        endOpacity: ScrollSequenceConfig.dimLayerFinalAlpha,
         curve: Curves.easeOutQuart,
       ),
     );

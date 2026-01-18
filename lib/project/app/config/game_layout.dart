@@ -85,4 +85,98 @@ class GameLayout {
   static const double testiAuthorBtmMargin = 60.0;
   static const double testiRoleBtmMargin = 36.0;
   static const double testiCardRadius = 16.0;
+
+  // --- Scroll Driven Layouts ---
+
+  // Experience
+  static const double expExitY = -1000.0;
+  static const double expInitialScale = 0.95;
+  static const double expExitScale = 0.98;
+
+  static const double expOrbitRadiusRatio = 0.65;
+  static const double expActiveThreshold = 0.35;
+  static const double expActiveScale = 1.2;
+  static const double expInactiveScale = 0.8;
+  static const double expWarpMaxScale = 8.0;
+  // static const double expSatelliteSpacing = pi / 4; // pi requires dart:math, use literals or GamePysics? No, just use code logic or import. GameLayout usually no import.
+  // We will leave spacing to logic or use 0.785398 (pi/4).
+  static const double expSatelliteSpacing = 0.7854; // pi/4
+  static const double expTextAnimOffset = 30.0;
+
+  // --- Bouncing Arrow & Menu ---
+  static const double arrowShadowOffsetX = 0.0;
+  static const double arrowShadowOffsetY = 4.0;
+  static const double arrowSize = 30.0;
+  static const double arrowSpacing = 10.0;
+  static const double arrowBottomMargin = 60.0;
+
+  static const double menuMargin = 40.0;
+  static const double menuSize = 50.0;
+
+  // --- Orbital Arcs ---
+  static const double orbitalArcWidthOuter = 100.0;
+  // --- Z-Index (Priorities) ---
+  static const int zBackground = 1;
+  static const int zDimLayer = 2;
+  static const int zLogo = 10;
+  static const int zGodRay = 20;
+  static const int zSecondaryTitle = 24;
+  static const int zTitle = 25;
+  static const int zContent = 25; // Philosophy, Experience, Testimonials
+  static const int zBoldText = 26;
+  static const int zSkills = 28;
+  static const int zUI = 30;
+  static const int zContact = 30;
+
+  // --- Logo Animator Layout ---
+  static const double logoHeaderY = 60.0;
+  static const double logoMinScale = 0.25;
+  static const double logoStartX = 60.0;
+  static const double logoInitialScale = 3.0;
+  static const double logoRemovingScale = 0.3;
+  static const double logoRemovingTargetX = 36.0;
+  static const double logoRemovingTargetY = 36.0;
+
+  // --- Cursor System Layout ---
+  static const double cursorGlowOffset = 10.0;
+
+  // --- Factory / Composition Layout ---
+  static const double secTitleYOffset = 48.0;
+  static const double philosophyTextXRatio = 0.15;
+  static const double cardStackWidthRatio = 0.4;
+  static const double cardStackHeightRatio = 0.6;
+  static const double cardStackXRatio = 0.75;
+
+  // --- Parallax ---
+  static const double standardParallaxY = -1000.0;
+  static const double orbitalRadiusOuter = 1.0;
+  static const double orbitalRadiusMid = 0.8;
+  static const double orbitalRadiusInner = 0.65;
+  static const double orbitalArcWidthMid = 50.0; // Added default
+  static const double orbitalArcWidthInner = 25.0; // Added default
+
+  // --- Carousel Layout ---
+  static const double carouselCardWidth = 550.0;
+  static const double carouselSpacing = 50.0;
+  static const double carouselCenterYOffset = 100.0; // The -100 from center
+  static const double carouselOffscreenY = 400.0;
+
+  // --- Overlay Layout ---
+  static const double overlayTitleY = 0.15;
+  static const double overlayContentY = 0.5;
+  static const double overlayButtonY = 0.85;
+
+  // Philosophy
+  static const double philExitY = -40.0;
+  static const double philStackLift = -350.0;
+  static const double philStackRotation = 0.15;
+  static const double philStackScaleMax = 1.05;
+  static const double philStackScaleMin = 0.98;
+
+  // Skills
+  static const double skillsExitY = -120.0;
+  static const double skillsInitialScale = 0.9;
+
+  // Testimonials
+  static const double testiExitY = -1000.0;
 }

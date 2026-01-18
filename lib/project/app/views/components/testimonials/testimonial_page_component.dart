@@ -61,7 +61,7 @@ class TestimonialPageComponent extends PositionComponent
       size.x / 2,
       size.y * GameLayout.testimonialTitleRelY,
     );
-    titleText.opacity = opacity; // Ensure correct initial opacity
+    titleText.opacity = opacity;
     add(titleText);
 
     // Carousel
@@ -71,7 +71,7 @@ class TestimonialPageComponent extends PositionComponent
       size.y * GameLayout.testimonialCarouselRelY,
     );
     carousel.anchor = Anchor.center;
-    carousel.opacity = opacity; // Apply initial opacity
+    carousel.opacity = opacity;
     add(carousel);
 
     // Add Button
@@ -85,6 +85,7 @@ class TestimonialPageComponent extends PositionComponent
     );
     addButton.anchor = Anchor.center;
     addButton.opacity = opacity;
+
     // Add label to button
     final btnLabel = TextComponent(
       text: GameStrings.addTestimonialButton,

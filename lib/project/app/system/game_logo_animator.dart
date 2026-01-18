@@ -1,5 +1,8 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/game_physics.dart';
 import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.dart';
 
@@ -15,20 +18,16 @@ class LogoAnimationComponents {
 
 class GameLogoAnimator {
   Vector2 _targetLogoPosition = Vector2.zero();
-  double _targetLogoScale = 3.0;
-  double _currentLogoScale = 3.0;
+  double _targetLogoScale = GameLayout.logoInitialScale;
+  double _currentLogoScale = GameLayout.logoInitialScale;
   Vector2 _baseLogoSize = Vector2.zero();
 
   double _logoPositionProgress = 0.0;
   double _logoScaleProgress = 0.0;
 
-  final SpringCurve _logoSpringCurve = const SpringCurve(
-    mass: 0.8,
-    stiffness: 200.0,
-    damping: 15.0,
-  );
+  final SpringCurve _logoSpringCurve = GameCurves.logoSpring;
 
-  static const double headerY = 60.0;
+  static const double headerY = GameLayout.logoHeaderY;
 
   void initialize(Vector2 baseLogoSize, Vector2 initialPosition) {
     _baseLogoSize = baseLogoSize;
@@ -36,9 +35,9 @@ class GameLogoAnimator {
   }
 
   void updateMenuLayoutTargets(Vector2 screenSize) {
-    const double logoScale = 0.25;
+    const double logoScale = GameLayout.logoMinScale;
     final double logoW = _baseLogoSize.x * logoScale;
-    const double startX = 60.0;
+    const double startX = GameLayout.logoStartX;
     final double logoCX = startX + (logoW / 2);
 
     _targetLogoPosition = Vector2(logoCX, headerY);
@@ -55,9 +54,6 @@ class GameLogoAnimator {
   void snapToTarget(LogoAnimationComponents components, Vector2 center) {
     components.logoComponent.position = center;
     components.shadowScene.logoPosition = center;
-
-    // If we want to snap scale too, we can, but usually snap is for reset
-    // For now we just reset targets to center/defaults if needed, or update components directly
   }
 
   void update(double dt, LogoAnimationComponents components) {
@@ -66,18 +62,19 @@ class GameLogoAnimator {
     final scaleDistance = (_currentLogoScale - _targetLogoScale).abs();
 
     if (positionDistance > 2.0) {
-      _logoPositionProgress = (_logoPositionProgress + dt * 6.0).clamp(
-        0.0,
-        1.0,
-      );
+      _logoPositionProgress =
+          (_logoPositionProgress + dt * GamePhysics.logoProgressSpeed).clamp(
+            0.0,
+            1.0,
+          );
       final curvedProgress = _logoSpringCurve.transform(_logoPositionProgress);
       components.logoComponent.position.lerp(
         _targetLogoPosition,
-        curvedProgress * dt * 10.0,
+        curvedProgress * dt * GamePhysics.logoLerpSpeed,
       );
       components.shadowScene.logoPosition.lerp(
         _targetLogoPosition,
-        curvedProgress * dt * 10.0,
+        curvedProgress * dt * GamePhysics.logoLerpSpeed,
       );
     } else {
       components.logoComponent.position = _targetLogoPosition.clone();
@@ -86,15 +83,19 @@ class GameLogoAnimator {
     }
 
     if (scaleDistance > 0.01) {
-      _logoScaleProgress = (_logoScaleProgress + dt * 6.0).clamp(0.0, 1.0);
+      _logoScaleProgress =
+          (_logoScaleProgress + dt * GamePhysics.logoProgressSpeed).clamp(
+            0.0,
+            1.0,
+          );
       final curvedProgress = _logoSpringCurve.transform(_logoScaleProgress);
       _currentLogoScale =
           lerpDouble(
             _currentLogoScale,
             _targetLogoScale,
-            curvedProgress * dt * 10.0,
+            curvedProgress * dt * GamePhysics.logoLerpSpeed,
           ) ??
-          3.0;
+          GameLayout.logoInitialScale;
     } else {
       _currentLogoScale = _targetLogoScale;
       _logoScaleProgress = 0.0;

@@ -1,3 +1,6 @@
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/game_styles.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/models/game_components.dart';
 
 import 'components/god_ray.dart';
@@ -29,8 +32,6 @@ class MyGame extends FlameGame
   });
 
   late final Timer _inactivityTimer;
-  static const double inactivityTimeout = 5.0;
-  static const double uiFadeDuration = 0.5;
 
   final ScrollSystem scrollSystem = ScrollSystem();
   final ScrollOrchestrator scrollOrchestrator = ScrollOrchestrator();
@@ -44,7 +45,11 @@ class MyGame extends FlameGame
   Future<void> onLoad() async {
     await super.onLoad();
 
-    _inactivityTimer = Timer(inactivityTimeout, onTick: () {}, repeat: false);
+    _inactivityTimer = Timer(
+      ScrollSequenceConfig.inactivityTimeout,
+      onTick: () {},
+      repeat: false,
+    );
     _cursorSystem.initialize(size / 2);
 
     await _componentFactory.initializeComponents(
@@ -73,7 +78,7 @@ class MyGame extends FlameGame
   GodRayComponent get godRay => _componentFactory.godRay;
 
   @override
-  Color backgroundColor() => const Color(0xFFC78E53);
+  Color backgroundColor() => GameStyles.primaryBackground;
 
   @override
   void onScroll(PointerScrollInfo info) {
@@ -146,7 +151,7 @@ class MyGame extends FlameGame
   void _centerTitles(Vector2 center) {
     _componentFactory.cinematicTitle.position = center;
     _componentFactory.cinematicSecondaryTitle.position =
-        center + Vector2(0, 48);
+        center + Vector2(0, GameLayout.secTitleYOffset);
   }
 
   @override
@@ -180,13 +185,19 @@ class MyGame extends FlameGame
       loading: (isSvgReady, isGameReady) {
         _centerTitles(size / 2);
         _componentFactory.interactiveUI.inactivityOpacity +=
-            dt / uiFadeDuration;
+            dt / ScrollSequenceConfig.uiFadeDuration;
       },
       logo: () {
         _componentFactory.cinematicTitle.position = size / 2;
       },
       logoOverlayRemoving: () {
-        _logoAnimator.setTarget(position: Vector2(36, 36), scale: 0.3);
+        _logoAnimator.setTarget(
+          position: Vector2(
+            GameLayout.logoRemovingTargetX,
+            GameLayout.logoRemovingTargetY,
+          ),
+          scale: GameLayout.logoRemovingScale,
+        );
       },
       titleLoading: () {},
       title: () {},
@@ -201,7 +212,7 @@ class MyGame extends FlameGame
 
   void enterTitle() {
     Future.delayed(
-      const Duration(milliseconds: 500),
+      const Duration(milliseconds: ScrollSequenceConfig.enterTitleDelay),
       () => _componentFactory.cinematicTitle.show(
         () => _componentFactory.cinematicSecondaryTitle.show(
           () => queuer.queue(event: SceneEvent.titleLoaded()),

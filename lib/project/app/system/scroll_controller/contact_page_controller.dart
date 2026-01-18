@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
-import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import '../../interfaces/scroll_observer.dart';
 
@@ -26,12 +26,8 @@ class ContactPageController implements ScrollObserver {
 
   @override
   void onScroll(double scrollOffset) {
-    const entranceSpring = SpringCurve(
-      mass: 1.2,
-      stiffness: 150.0,
-      damping: 14.0,
-    );
-    const exitSpring = SpringCurve(mass: 1.0, stiffness: 160.0, damping: 12.0);
+    const entranceSpring = GameCurves.contactEntranceSpring;
+    const exitSpring = GameCurves.contactExitSpring;
     const exponentialEaseOut = ExponentialEaseOut();
 
     if (scrollOffset < initEntranceStart) {

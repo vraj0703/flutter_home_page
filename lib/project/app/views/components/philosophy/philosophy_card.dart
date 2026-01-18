@@ -47,8 +47,7 @@ class PhilosophyCard extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    // 1. Background (Glassmorphism handled in render)
-
+    // 1. Background
     if (data != null) {
       final padding = GameLayout.cardPadding;
 
@@ -184,22 +183,18 @@ class PhilosophyCard extends PositionComponent
     final alpha = _finalOpacity;
     if (alpha <= 0.01) return;
 
-    // --- GLASSMORPHISM CARD STYLE ---
-    // Matches Project Card: Radius 20, White 5% Fill, White 20% Stroke
-
     final rrect = RRect.fromRectAndRadius(
       size.toRect(),
       const Radius.circular(20),
     );
 
-    // Fill: White 5%
     canvas.drawRRect(
       rrect,
       Paint()
         ..color = GameStyles.cardFill.withValues(alpha: alpha)
         ..style = PaintingStyle.fill,
     );
-    // Stroke: White 20%
+
     canvas.drawRRect(
       rrect,
       Paint()
@@ -208,7 +203,6 @@ class PhilosophyCard extends PositionComponent
         ..strokeWidth = 1,
     );
 
-    // Slight Shadow for depth
     canvas.drawShadow(
       Path()..addRRect(rrect),
       GameStyles.cardShadow,

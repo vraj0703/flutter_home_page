@@ -12,7 +12,6 @@ class ProjectCard extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
-    // Glassmorphism look
     final rRect = RRect.fromRectAndRadius(
       size.toRect(),
       const Radius.circular(20),

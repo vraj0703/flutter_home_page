@@ -1,5 +1,6 @@
 import 'dart:ui' show lerpDouble;
 
+import 'package:flutter_home_page/project/app/config/game_physics.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import '../interfaces/scroll_observer.dart';
 
@@ -19,9 +20,9 @@ class ScrollSystem {
     ScrollSequenceConfig.philosophyEnd,
     ScrollSequenceConfig.skillsInteractEnd,
   ];
-  static const double snapZoneRadius = 60.0;
-  static const double snapVelocityThreshold = 40.0;
-  static const double snapSpeed = 6.0;
+  static const double snapZoneRadius = GamePhysics.snapZoneRadius;
+  static const double snapVelocityThreshold = GamePhysics.snapVelocityThreshold;
+  static const double snapSpeed = GamePhysics.snapSpeed;
 
   double get scrollOffset => _scrollOffset;
 
@@ -87,7 +88,7 @@ class ScrollSystem {
 
     // Lerp toward snap target with spring curve
     final distance = (_snapTarget - _scrollOffset).abs();
-    if (distance < 5.0) {
+    if (distance < GamePhysics.snapDistanceThreshold) {
       _scrollOffset = _snapTarget;
       _isSnapping = false;
       _notifyObservers();

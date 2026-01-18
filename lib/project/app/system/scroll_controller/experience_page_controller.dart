@@ -1,7 +1,8 @@
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
-import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/views/components/experience/experience_page_component.dart';
 import '../../interfaces/scroll_observer.dart';
 
@@ -39,13 +40,21 @@ class ExperiencePageController implements ScrollObserver {
     double opacity = 0.0;
     if (scrollOffset < entranceStart) {
       opacity = 0.0;
-    } else if (scrollOffset < entranceStart + 300) {
-      final t = ((scrollOffset - entranceStart) / 300).clamp(0.0, 1.0);
+    } else if (scrollOffset <
+        entranceStart + ScrollSequenceConfig.experienceFadeOffset) {
+      final t =
+          ((scrollOffset - entranceStart) /
+                  ScrollSequenceConfig.experienceFadeOffset)
+              .clamp(0.0, 1.0);
       opacity = exponentialEaseOut.transform(t);
     } else if (scrollOffset < exitStart) {
       opacity = 1.0;
-    } else if (scrollOffset < exitStart + 350) {
-      final t = ((scrollOffset - exitStart) / 350).clamp(0.0, 1.0);
+    } else if (scrollOffset <
+        exitStart + ScrollSequenceConfig.experienceExitFadeOffset) {
+      final t =
+          ((scrollOffset - exitStart) /
+                  ScrollSequenceConfig.experienceExitFadeOffset)
+              .clamp(0.0, 1.0);
       opacity = 1.0 - exponentialEaseOut.transform(t);
     } else {
       opacity = 0.0;
@@ -72,7 +81,7 @@ class ExperiencePageController implements ScrollObserver {
   void _handleExit(double scrollOffset) {
     if (!component.isLoaded) return;
 
-    const springCurve = SpringCurve(mass: 1.0, stiffness: 170.0, damping: 12.0);
+    const springCurve = GameCurves.expExitSpring;
     if (scrollOffset < exitStart) {
       component.position = component.initialPosition;
       component.setWarp(0.0);
@@ -87,20 +96,24 @@ class ExperiencePageController implements ScrollObserver {
       final curvedT = springCurve.transform(t);
 
       component.position =
-          component.initialPosition + Vector2(0, -1000 * curvedT);
+          component.initialPosition + Vector2(0, GameLayout.expExitY * curvedT);
 
       component.setWarp(t);
       double scale = 1.0;
       if (t < 0.5) {
-        scale = 1.0 - (0.02 * (t / 0.5)); // 1.0 → 0.98
+        scale = 1.0 - ((1.0 - GameLayout.expExitScale) * (t / 0.5));
       } else {
-        scale = 0.98 - (0.03 * ((t - 0.5) / 0.5)); // 0.98 → 0.95
+        scale =
+            GameLayout.expExitScale -
+            ((GameLayout.expExitScale - GameLayout.expInitialScale) *
+                ((t - 0.5) / 0.5));
       }
       component.scale = Vector2.all(scale);
     } else {
-      component.position = component.initialPosition + Vector2(0, -1000);
+      component.position =
+          component.initialPosition + Vector2(0, GameLayout.expExitY);
       component.setWarp(1.0);
-      component.scale = Vector2.all(0.95);
+      component.scale = Vector2.all(GameLayout.expInitialScale);
     }
   }
 }

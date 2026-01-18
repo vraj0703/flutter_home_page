@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
+import 'package:flutter_home_page/project/app/config/game_styles.dart';
 
 class BackgroundRunComponent extends PositionComponent
     with HasGameReference, HasPaint {
@@ -31,7 +32,7 @@ class BackgroundRunComponent extends PositionComponent
       // Use saveLayer to apply transparency to the shader output
       canvas.saveLayer(
         size.toRect(),
-        Paint()..color = Color.fromRGBO(0, 0, 0, opacity),
+        Paint()..color = GameStyles.dimLayer.withValues(alpha: opacity),
       );
       canvas.drawRect(size.toRect(), shaderPaint);
       canvas.restore();

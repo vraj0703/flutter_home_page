@@ -1,6 +1,8 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 import 'card.dart';
@@ -8,16 +10,14 @@ import 'card.dart';
 class ProjectCarouselComponent extends PositionComponent
     with HasGameReference<MyGame> {
   late PositionComponent _horizontalMover;
-  final double cardWidth = 550;
-  final double spacing = 50;
+  final double cardWidth = GameLayout.carouselCardWidth;
+  final double spacing = GameLayout.carouselSpacing;
 
   @override
   Future<void> onLoad() async {
     priority = 80;
     _horizontalMover = PositionComponent();
     add(_horizontalMover);
-
-    // Position cards inside horizontal mover
     for (int i = 0; i < 5; i++) {
       _horizontalMover.add(
         ProjectCard(
@@ -28,37 +28,44 @@ class ProjectCarouselComponent extends PositionComponent
       );
     }
     // Start HIDDEN below screen
-    position = Vector2(game.size.x / 2 - cardWidth / 2, game.size.y + 400);
+    position = Vector2(
+      game.size.x / 2 - cardWidth / 2,
+      game.size.y + GameLayout.carouselOffscreenY,
+    );
   }
 
   void enter({bool reverse = false}) {
-    // Target Y: Centered (game.size.y / 2 - 100) or wherever needed.
-    // Let's align with the previous target.
-    final targetY = game.size.y / 2 - 100;
+    final targetY = game.size.y / 2 - GameLayout.carouselCenterYOffset;
 
     if (reverse) {
-      // Coming from Contact (Tab 2) -> Enter from Top
-      position.y = -400;
+      position.y = -GameLayout.carouselOffscreenY;
     } else {
-      // Coming from Timeline (Tab 0) -> Enter from Bottom
-      position.y = game.size.y + 400;
+      position.y = game.size.y + GameLayout.carouselOffscreenY;
     }
 
     add(
       MoveToEffect(
         Vector2(position.x, targetY),
-        EffectController(duration: 0.8, curve: Curves.easeOut),
+        EffectController(
+          duration: ScrollSequenceConfig.carouselEnterDuration,
+          curve: Curves.easeOut,
+        ),
       ),
     );
   }
 
   void exit({bool reverse = false}) {
-    final targetY = reverse ? game.size.y + 400.0 : -400.0;
+    final targetY = reverse
+        ? game.size.y + GameLayout.carouselOffscreenY
+        : -GameLayout.carouselOffscreenY;
 
     add(
       MoveToEffect(
         Vector2(position.x, targetY),
-        EffectController(duration: 0.6, curve: Curves.easeIn),
+        EffectController(
+          duration: ScrollSequenceConfig.carouselExitDuration,
+          curve: Curves.easeIn,
+        ),
       ),
     );
   }
@@ -85,13 +92,15 @@ class ProjectCarouselComponent extends PositionComponent
     _horizontalMover.position.x = newX;
   }
 
-  // Keep scrollTo for potentially programmatic navigation, or remove if unused.
   void scrollTo(int index) {
     double targetX = -index * (cardWidth + spacing);
     _horizontalMover.add(
       MoveToEffect(
         Vector2(targetX, 0),
-        EffectController(duration: 0.7, curve: Curves.easeInOutCubic),
+        EffectController(
+          duration: ScrollSequenceConfig.carouselScrollDuration,
+          curve: Curves.easeInOutCubic,
+        ),
       ),
     );
   }

@@ -10,6 +10,8 @@ import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter/material.dart' as flutter;
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/game_physics.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 
 import 'bouncy_lines.dart';
 
@@ -66,8 +68,11 @@ class LogoOverlayComponent extends PositionComponent
         shadows: [
           Shadow(
             color: GameStyles.logoOverlayShadow.withValues(alpha: _opacity),
-            offset: const Offset(2.0, 2.0),
-            blurRadius: 10.0,
+            offset: const Offset(
+              GameStyles.logoOverlayShadowOffsetX,
+              GameStyles.logoOverlayShadowOffsetY,
+            ),
+            blurRadius: GameStyles.logoOverlayShadowBlur,
           ),
         ],
       ),
@@ -94,7 +99,8 @@ class LogoOverlayComponent extends PositionComponent
   Vector2 gameSize = Vector2.zero();
 
   double _textAnimationProgress = 0.0;
-  final double _textAnimationSpeed = 2; // Controls speed of typing/deleting
+  final double _textAnimationSpeed =
+      GamePhysics.logoOverlayTextAnimSpeed; // Controls speed of typing/deleting
 
   LogoOverlayComponent({required this.stateProvider, required this.queuer});
 
@@ -121,8 +127,11 @@ class LogoOverlayComponent extends PositionComponent
           shadows: [
             Shadow(
               color: GameStyles.logoOverlayShadow, // Shadow color with opacity
-              offset: const Offset(2.0, 2.0), // X and Y displacement
-              blurRadius: 10.0, // Blur radius of the shadow
+              offset: const Offset(
+                GameStyles.logoOverlayShadowOffsetX,
+                GameStyles.logoOverlayShadowOffsetY,
+              ),
+              blurRadius: GameStyles.logoOverlayShadowBlur,
             ),
           ],
         ),
@@ -152,10 +161,22 @@ class LogoOverlayComponent extends PositionComponent
 
   void _updateInteractiveState(double dt) {
     var sceneProgress = stateProvider.revealProgress();
-    var opacity = ((sceneProgress - 0.2) / 0.8).clamp(0.0, 1.0);
+
+    // Reveal Fade Calculation
+    const double start = ScrollSequenceConfig.logoOverlayRevealStart;
+    const double range = 1.0 - start;
+    var opacity = ((sceneProgress - start) / range).clamp(0.0, 1.0);
+
     if (opacity == 0.0) return;
 
-    final textProgress = ((sceneProgress - 0.5) / 0.5).clamp(0.0, 1.0);
+    // Text Reveal Calculation
+    const double textStart = ScrollSequenceConfig.logoOverlayTextStart;
+    const double textRange = 1.0 - textStart;
+    final textProgress = ((sceneProgress - textStart) / textRange).clamp(
+      0.0,
+      1.0,
+    );
+
     final charCount = (_fullText.length * textProgress).floor();
     _textComponent.text = _fullText.substring(0, charCount);
 
@@ -214,7 +235,11 @@ class LogoOverlayComponent extends PositionComponent
   void render(Canvas canvas) {
     super.render(canvas);
     var sceneProgress = stateProvider.revealProgress();
-    final revealFade = ((sceneProgress - 0.2) / 0.8).clamp(0.0, 1.0);
+
+    const double start = ScrollSequenceConfig.logoOverlayRevealStart;
+    const double range = 1.0 - start;
+    final revealFade = ((sceneProgress - start) / range).clamp(0.0, 1.0);
+
     if (revealFade <= 0.0) {
       return; // Exit early if not yet visible.
     }
@@ -234,7 +259,14 @@ class LogoOverlayComponent extends PositionComponent
 
   void _renderBouncyLines(Canvas canvas) {
     var sceneProgress = stateProvider.revealProgress();
-    final lineFade = ((sceneProgress - 0.4) / 0.4).clamp(0.0, 1.0);
+
+    // Line Fade
+    // Line Fade
+    const double lineStart = ScrollSequenceConfig.logoOverlayLinesStart;
+
+    // Original: ((sceneProgress - 0.4) / 0.4) -> range 0.4.
+    // ScrollSequenceConfig.logoOverlayLinesStart is 0.4.
+    final lineFade = ((sceneProgress - lineStart) / 0.4).clamp(0.0, 1.0);
     final combinedOpacity = lineFade * _opacity; // Combine with scroll opacity
 
     if (combinedOpacity > 0.0) {

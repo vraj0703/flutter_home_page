@@ -10,6 +10,11 @@ class ScrollSequenceConfig {
   static const int sceneRevealDuration = 2000;
   static const int loadingBlinkDuration = 600;
   static const int arrowBounceDuration = 1500;
+  static const int enterTitleDelay = 500;
+
+  // --- Global UI Timings ---
+  static const double inactivityTimeout = 5.0;
+  static const double uiFadeDuration = 0.5;
 
   // --- 1. Bold Text Section (0 - 1700) ---
   // Entrance: 400 -> 900
@@ -69,6 +74,8 @@ class ScrollSequenceConfig {
   static double get experienceExitStart => experienceInteractionEnd; // 5750
   static double get experienceExitEnd => experienceExitStart + 350.0; // 6100
 
+  static const double experienceScrollDivisor = 500.0;
+
   // --- 4. Testimonials (6300 - 10500) ---
   // Wait 200px after Experience (6100 -> 6300)
   static const double testimonialEntranceStart = 6300.0;
@@ -97,9 +104,33 @@ class ScrollSequenceConfig {
   static const double contactHoldDuration = 1000.0;
   static const double contactExitDuration = 600.0;
 
-  static double get contactVisibleStart =>
+  static const double contactVisibleStart =
       contactEntranceStart + contactEntranceDuration;
-  static double get contactExitStart =>
+  static const double contactExitStart =
       contactVisibleStart + contactHoldDuration;
-  static double get contactExitEnd => contactExitStart + contactExitDuration;
+  static const double contactExitEnd = contactExitStart + contactExitDuration;
+
+  // --- Scroll Transition offsets ---
+  static const double experienceFadeOffset = 300.0;
+  static const double experienceExitFadeOffset = 350.0;
+
+  static const double philosophyTransitionOffset = 400.0;
+
+  static const double testimonialFadeOffset = 300.0;
+  // --- UI Config ---
+  static const double uiFadeDistance = 100.0;
+  static const double dimLayerFinalAlpha = 0.6;
+
+  // --- Logo Overlay Scene Progress Thresholds --- (Not scroll based, but sequence based)
+  static const double logoOverlayRevealStart = 0.2;
+  static const double logoOverlayLinesStart = 0.4;
+  static const double logoOverlayTextStart = 0.5;
+
+  // --- Carousel Timing ---
+  static const double carouselEnterDuration = 0.8;
+  static const double carouselExitDuration = 0.6;
+  static const double carouselScrollDuration = 0.7;
+  static const double testimonialExitDuration = 400.0;
+
+  static const double boldTextDriftOffset = 50.0;
 }

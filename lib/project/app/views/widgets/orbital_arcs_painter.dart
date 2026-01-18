@@ -1,6 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/game_styles.dart';
 
 class OrbitalArcsPainter extends CustomPainter {
   final double rotation;
@@ -22,12 +24,17 @@ class OrbitalArcsPainter extends CustomPainter {
 
     // 1. Outer Arc (Darkest) - 0.8x Speed
     final paint1 = Paint()
-      ..color = Colors.white.withValues(alpha: 0.05 * opacity)
+      ..color = Colors.white.withValues(
+        alpha: GameStyles.orbitalArcAlphaOuter * opacity,
+      )
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 100
+      ..strokeWidth = GameLayout.orbitalArcWidthOuter
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
 
-    final rect1 = Rect.fromCircle(center: center, radius: maxRadius);
+    final rect1 = Rect.fromCircle(
+      center: center,
+      radius: maxRadius * GameLayout.orbitalRadiusOuter,
+    );
     final outerAngle = rotation * 0.8;
 
     canvas.save();
@@ -39,32 +46,50 @@ class OrbitalArcsPainter extends CustomPainter {
 
     // 2. Middle Arc (Medium) - 1.0x
     final paint2 = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08 * opacity)
+      ..color = Colors.white.withValues(
+        alpha: GameStyles.orbitalArcAlphaMid * opacity,
+      )
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 60;
+      ..strokeWidth = GameLayout.orbitalArcWidthMid;
 
-    canvas.drawCircle(center, maxRadius * 0.8, paint2);
+    canvas.drawCircle(center, maxRadius * GameLayout.orbitalRadiusMid, paint2);
 
     // 3. Inner Arc (Lighter/Active Track) - 1.2x
     final innerAngle = rotation * 1.2;
 
     final paint3 = Paint()
-      ..shader = SweepGradient(
-        colors: [
-          Colors.white.withValues(alpha: 0.0),
-          Colors.white.withValues(alpha: 0.2 * opacity),
-          accentColor.withValues(alpha: 0.5 * opacity),
-          Colors.white.withValues(alpha: 0.2 * opacity),
-          Colors.white.withValues(alpha: 0.0),
-        ],
-        startAngle: 0.0,
-        endAngle: 2 * pi,
-        transform: GradientRotation(innerAngle - (pi / 2)),
-      ).createShader(Rect.fromCircle(center: center, radius: maxRadius * 0.65))
+      ..shader =
+          SweepGradient(
+            colors: [
+              Colors.white.withValues(alpha: 0.0),
+              Colors.white.withValues(
+                alpha: GameStyles.orbitalArcAlphaInnerBg * opacity,
+              ),
+              accentColor.withValues(
+                alpha: GameStyles.orbitalArcAlphaInner * opacity,
+              ),
+              Colors.white.withValues(
+                alpha: GameStyles.orbitalArcAlphaInnerBg * opacity,
+              ),
+              Colors.white.withValues(alpha: 0.0),
+            ],
+            startAngle: 0.0,
+            endAngle: 2 * pi,
+            transform: GradientRotation(innerAngle - (pi / 2)),
+          ).createShader(
+            Rect.fromCircle(
+              center: center,
+              radius: maxRadius * GameLayout.orbitalRadiusInner,
+            ),
+          )
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..strokeWidth = GameLayout.orbitalArcWidthInner;
 
-    canvas.drawCircle(center, maxRadius * 0.65, paint3);
+    canvas.drawCircle(
+      center,
+      maxRadius * GameLayout.orbitalRadiusInner,
+      paint3,
+    );
   }
 
   @override

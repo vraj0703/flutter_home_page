@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/game_styles.dart';
 
 class BouncingArrow extends StatelessWidget {
   final Animation<double> bounceAnimation;
@@ -26,15 +28,23 @@ class BouncingArrow extends StatelessWidget {
                 children: [
                   // --- LAYER 1: THE SHADOW ---
                   Transform.translate(
-                    offset: const Offset(0, 4), // Push shadow slightly down
+                    offset: const Offset(
+                      GameLayout.arrowShadowOffsetX,
+                      GameLayout.arrowShadowOffsetY,
+                    ),
                     child: ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                      imageFilter: ImageFilter.blur(
+                        sigmaX: GameStyles.arrowShadowBlur,
+                        sigmaY: GameStyles.arrowShadowBlur,
+                      ),
                       child: SvgPicture(
                         BlocProvider.of<SceneBloc>(context).downArrowLoader,
-                        width: 30,
-                        height: 30,
+                        width: GameLayout.arrowSize,
+                        height: GameLayout.arrowSize,
                         colorFilter: ColorFilter.mode(
-                          Colors.black.withValues(alpha: 0.7), // Shadow intensity
+                          Colors.black.withValues(
+                            alpha: 0.7,
+                          ), // Shadow intensity - kept logical or move to styles? 0.7 is common shadow.
                           BlendMode.srcIn,
                         ),
                       ),
@@ -44,17 +54,17 @@ class BouncingArrow extends StatelessWidget {
                   // --- LAYER 2: THE SILVER ARROW ---
                   SvgPicture(
                     BlocProvider.of<SceneBloc>(context).downArrowLoader,
-                    width: 30,
-                    height: 30,
+                    width: GameLayout.arrowSize,
+                    height: GameLayout.arrowSize,
                     colorFilter: const ColorFilter.mode(
-                      Color(0xFFC0C0C0), // Brushed Silver
+                      GameStyles.arrowColor,
                       BlendMode.srcIn,
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: GameLayout.arrowSpacing),
             ],
           ),
         );

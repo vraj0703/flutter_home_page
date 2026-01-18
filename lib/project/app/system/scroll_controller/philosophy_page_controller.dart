@@ -2,8 +2,9 @@ import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
-import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import '../../interfaces/scroll_observer.dart';
 
 class PhilosophyPageController implements ScrollObserver {
@@ -53,11 +54,12 @@ class PhilosophyPageController implements ScrollObserver {
               .clamp(0.0, 1.0);
       final curvedT = exponentialEaseOut.transform(t);
       opacity = 1.0 - curvedT;
-      pos = initialTextPos + Vector2(0, -40 * curvedT);
+      opacity = 1.0 - curvedT;
+      pos = initialTextPos + Vector2(0, GameLayout.philExitY * curvedT);
     } else {
       // Gone
       opacity = 0.0;
-      pos = initialTextPos + Vector2(0, -40);
+      pos = initialTextPos + Vector2(0, GameLayout.philExitY);
     }
 
     component.opacity = opacity;
@@ -66,18 +68,16 @@ class PhilosophyPageController implements ScrollObserver {
 
   void _handleStack(double scrollOffset) {
     const exponentialEaseOut = ExponentialEaseOut();
-    const gentleSpring = SpringCurve(
-      mass: 0.8,
-      stiffness: 140.0,
-      damping: 16.0,
-    );
+    const gentleSpring = GameCurves.philosophySpring;
 
     double stackAlpha = 1.0;
-    if (scrollOffset < 1500) {
+    if (scrollOffset < ScrollSequenceConfig.dimLayerStart) {
       stackAlpha = 0.0;
-    } else if (scrollOffset < 1900) {
+    } else if (scrollOffset < ScrollSequenceConfig.philosophyStart) {
       stackAlpha = exponentialEaseOut.transform(
-        ((scrollOffset - 1500) / 400).clamp(0.0, 1.0),
+        ((scrollOffset - ScrollSequenceConfig.dimLayerStart) /
+                ScrollSequenceConfig.philosophyTransitionOffset)
+            .clamp(0.0, 1.0),
       );
     } else {
       stackAlpha = 1.0;
@@ -104,20 +104,20 @@ class PhilosophyPageController implements ScrollObserver {
       double scale = 1.0;
 
       if (i == 0) {
-        if (scrollOffset < 1500) {
+        if (scrollOffset < ScrollSequenceConfig.dimLayerStart) {
           alpha = 0.0;
-        } else if (scrollOffset < 1950) {
+        } else if (scrollOffset < ScrollSequenceConfig.philosophyPeelStart) {
           alpha = stackAlpha;
         } else if (scrollOffset < myEnd) {
           final t = ((scrollOffset - myStart) / peelDuration).clamp(0.0, 1.0);
           final curvedT = exponentialEaseOut.transform(t);
-          lift = -350.0 * curvedT;
-          rotation = 0.15 * curvedT;
+          lift = GameLayout.philStackLift * curvedT;
+          rotation = GameLayout.philStackRotation * curvedT;
           alpha = 1.0 - t;
-          scale = 1.0 + (0.05 * curvedT);
+          scale = 1.0 + ((GameLayout.philStackScaleMax - 1.0) * curvedT);
         } else {
           alpha = 0.0;
-          lift = -350.0;
+          lift = GameLayout.philStackLift;
         }
       } else {
         final prevStart = peelStart + ((i - 1) * (peelDuration + peelDelay));
@@ -133,7 +133,9 @@ class PhilosophyPageController implements ScrollObserver {
             );
             alpha = exponentialEaseOut.transform(revealT);
             final curvedReveal = gentleSpring.transform(revealT);
-            scale = 0.98 + (0.02 * curvedReveal);
+            scale =
+                GameLayout.philStackScaleMin +
+                ((1.0 - GameLayout.philStackScaleMin) * curvedReveal);
           } else {
             alpha = 1.0;
             scale = 1.0;
@@ -141,14 +143,15 @@ class PhilosophyPageController implements ScrollObserver {
         } else if (scrollOffset < myEnd) {
           final t = ((scrollOffset - myStart) / peelDuration).clamp(0.0, 1.0);
           final curvedT = exponentialEaseOut.transform(t);
-          lift = -350.0 * curvedT;
-          rotation = 0.15 * curvedT * (i % 2 == 0 ? 1 : -1);
+          lift = GameLayout.philStackLift * curvedT;
+          rotation =
+              GameLayout.philStackRotation * curvedT * (i % 2 == 0 ? 1 : -1);
           alpha = 1.0 - t;
-          scale = 1.0 + (0.05 * curvedT);
+          scale = 1.0 + ((GameLayout.philStackScaleMax - 1.0) * curvedT);
         } else {
           // Gone
           alpha = 0.0;
-          lift = -350.0;
+          lift = GameLayout.philStackLift;
         }
       }
 

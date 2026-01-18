@@ -45,7 +45,7 @@ class BoldTextController implements ScrollObserver {
     } else if (scrollOffset < driftEnd) {
       // Drifting
       final t = ((scrollOffset - driftStart) / driftDuration).clamp(0.0, 1.0);
-      offsetX = 0.0 + (50 * t);
+      offsetX = 0.0 + (ScrollSequenceConfig.boldTextDriftOffset * t);
     } else {
       // Exit Phase
       final t = ((scrollOffset - driftEnd) / (scrollEnd - driftEnd)).clamp(
@@ -53,7 +53,8 @@ class BoldTextController implements ScrollObserver {
         1.0,
       );
       final curvedT = Curves.easeInCubic.transform(t);
-      offsetX = 50 + (screenWidth * curvedT);
+      offsetX =
+          ScrollSequenceConfig.boldTextDriftOffset + (screenWidth * curvedT);
     }
 
     component.position = centerPosition + Vector2(offsetX, offsetY);

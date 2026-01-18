@@ -24,7 +24,9 @@ class TestimonialCard extends PositionComponent with HasPaint {
   }
 
   void _updateTextOpacity() {
-    final dimFactor = 0.5 + (0.5 * _highlight);
+    final dimFactor =
+        GameStyles.testiDimFactorBase +
+        (GameStyles.testiDimFactorBase * _highlight);
     final combined = opacity * dimFactor;
 
     quoteText.opacity = combined;
@@ -37,9 +39,7 @@ class TestimonialCard extends PositionComponent with HasPaint {
 
     roleText.textRenderer = TextPaint(
       style: (roleText.textRenderer as TextPaint).style.copyWith(
-        color: Colors.white.withValues(
-          alpha: 0.6 * combined,
-        ), // Keep relative hierarchy
+        color: Colors.white.withValues(alpha: 0.6 * combined),
       ),
     );
   }
@@ -59,18 +59,22 @@ class TestimonialCard extends PositionComponent with HasPaint {
     canvas.drawRRect(
       rrect,
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.05 * finalAlpha)
+        ..color = Colors.white.withValues(
+          alpha: GameStyles.testiFillAlpha * finalAlpha,
+        )
         ..style = PaintingStyle.fill,
     );
 
-    final borderAlpha = 0.1 + (0.4 * _highlight);
+    final borderAlpha =
+        GameStyles.testiBorderAlphaBase +
+        ((0.5 - GameStyles.testiBorderAlphaBase) * _highlight);
 
     canvas.drawRRect(
       rrect,
       Paint()
         ..color = Colors.white.withValues(alpha: borderAlpha * alpha)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1 + (1.0 * _highlight),
+        ..strokeWidth = GameStyles.testiBorderWidth + (1.0 * _highlight),
     );
   }
 
@@ -85,7 +89,7 @@ class TestimonialCard extends PositionComponent with HasPaint {
             fontFamily: GameStyles.fontInter,
             fontSize: GameStyles.testiQuoteFontSize,
             fontStyle: FontStyle.italic,
-            color: Colors.white.withValues(alpha: 0.9),
+            color: Colors.white.withValues(alpha: GameStyles.testiQuoteAlpha),
           ),
         ),
         textDirection: TextDirection.ltr,

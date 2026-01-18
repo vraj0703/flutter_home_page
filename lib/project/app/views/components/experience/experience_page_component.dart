@@ -4,6 +4,9 @@ import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
+import 'package:flutter_home_page/project/app/config/game_physics.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
+import 'package:flutter_home_page/project/app/config/game_data.dart';
 import 'package:flutter_home_page/project/app/models/experience_node.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
@@ -20,6 +23,8 @@ class ExperiencePageComponent extends PositionComponent
   late TextComponent roleText;
   late TextComponent durationText;
   late ExperienceDetailsComponent detailsComponent;
+
+  final List<ExperienceNode> data = GameData.experienceNodes;
 
   int _currentIndex = 0;
   double _opacity = 0.0;
@@ -45,15 +50,6 @@ class ExperiencePageComponent extends PositionComponent
   double _currentRotation = 0.0;
   double _warpScale = 1.0;
 
-  static const double smoothingFactor = 5.0;
-  static const double orbitRadiusRatio = 0.65;
-  static const double activeThreshold = 0.35;
-  static const double activeScale = 1.2;
-  static const double inactiveScale = 0.8;
-  static const double activeOpacity = 1.0;
-  static const double inactiveOpacity = 0.2;
-  static const double warpMaxScale = 8.0;
-
   final companyStyle = TextStyle(
     fontFamily: GameStyles.fontInter,
     fontSize: GameStyles.companyFontSize,
@@ -76,7 +72,7 @@ class ExperiencePageComponent extends PositionComponent
     super.update(dt);
     if (!isLoaded) return;
 
-    final double smoothing = smoothingFactor * dt;
+    final double smoothing = GamePhysics.expSmoothing * dt;
     _currentRotation += (_targetRotation - _currentRotation) * smoothing;
 
     if ((_targetRotation - _currentRotation).abs() < 0.001) {
@@ -99,10 +95,13 @@ class ExperiencePageComponent extends PositionComponent
   void updateInteraction(double localScroll) {
     if (!isLoaded) return;
 
-    final index = (localScroll / 500).floor().clamp(0, data.length - 1);
+    final index = (localScroll / ScrollSequenceConfig.experienceScrollDivisor)
+        .floor()
+        .clamp(0, data.length - 1);
 
-    final spacing = pi / 4;
-    final double rawProgress = localScroll / 500.0;
+    final spacing = GameLayout.expSatelliteSpacing;
+    final double rawProgress =
+        localScroll / ScrollSequenceConfig.experienceScrollDivisor;
     final int baseIndex = rawProgress.floor();
     final double t = rawProgress - baseIndex;
 
@@ -120,14 +119,14 @@ class ExperiencePageComponent extends PositionComponent
 
   void setWarp(double progress) {
     final t = progress.clamp(0.0, 1.0);
-    _warpScale = 1.0 + (pow(t, 3) * (warpMaxScale - 1.0));
+    _warpScale = 1.0 + (pow(t, 3) * (GameLayout.expWarpMaxScale - 1.0));
   }
 
   void _updateSatellites(double systemRotation) {
     final center = Vector2(0, size.y / 2);
-    final orbitRadius = (size.y * 1) * orbitRadiusRatio;
+    final orbitRadius = (size.y * 1) * GameLayout.expOrbitRadiusRatio;
 
-    final spacing = pi / 4;
+    final spacing = GameLayout.expSatelliteSpacing;
 
     for (int i = 0; i < satellites.length; i++) {
       final s = satellites[i];
@@ -145,17 +144,20 @@ class ExperiencePageComponent extends PositionComponent
       final dist = diff.abs();
       final globalFade = _opacity;
 
-      if (dist < activeThreshold) {
-        final t = 1.0 - (dist / activeThreshold);
+      if (dist < GameLayout.expActiveThreshold) {
+        final t = 1.0 - (dist / GameLayout.expActiveThreshold);
         s.scale = Vector2.all(
-          inactiveScale + ((activeScale - inactiveScale) * t),
+          GameLayout.expInactiveScale +
+              ((GameLayout.expActiveScale - GameLayout.expInactiveScale) * t),
         );
         s.opacity =
-            (inactiveOpacity + ((activeOpacity - inactiveOpacity) * t)) *
+            (GameStyles.expInactiveOpacity +
+                ((GameStyles.expActiveOpacity - GameStyles.expInactiveOpacity) *
+                    t)) *
             globalFade;
       } else {
-        s.scale = Vector2.all(inactiveScale);
-        s.opacity = inactiveOpacity * globalFade;
+        s.scale = Vector2.all(GameLayout.expInactiveScale);
+        s.opacity = GameStyles.expInactiveOpacity * globalFade;
       }
     }
   }
@@ -248,7 +250,8 @@ class ExperiencePageComponent extends PositionComponent
     final dim = Colors.white.withValues(alpha: 0.6 * alpha);
 
     if (forceUpdate) {
-      final startOffset = 30.0 * (isReverse ? -1.0 : 1.0);
+      final startOffset =
+          GameLayout.expTextAnimOffset * (isReverse ? -1.0 : 1.0);
       final halfHeight = size.y / 2;
       final textX = size.x * 0.05;
 

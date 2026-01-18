@@ -3,6 +3,7 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart'
     show Colors, TextStyle, FontWeight, Curves;
+import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import '../fade_text.dart';
 
 class CinematicSecondaryTitleComponent extends PositionComponent
@@ -30,9 +31,9 @@ class CinematicSecondaryTitleComponent extends PositionComponent
   @override
   Future<void> onLoad() async {
     const style = TextStyle(
-      fontSize: 14, // Smaller scale
+      fontSize: GameStyles.secondaryTitleFontSize,
       fontWeight: FontWeight.w400,
-      letterSpacing: 4, // High spacing
+      letterSpacing: GameStyles.secondaryTitleSpacing,
       color: Colors.white,
     );
 
@@ -41,7 +42,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
             text: text,
             textStyle: style,
             shader: shader,
-            baseColor: const Color(0xFFAAB0B5), // Muted Silver/Grey
+            baseColor: GameStyles.secondaryTitleColor,
             anchor: Anchor.center,
             priority: 1,
           )
@@ -59,7 +60,10 @@ class CinematicSecondaryTitleComponent extends PositionComponent
       SequenceEffect([
         OpacityEffect.to(
           1.0,
-          EffectController(duration: 4, curve: Curves.easeOut),
+          EffectController(
+            duration: GameStyles.secTitleAnimDuration,
+            curve: Curves.easeOut,
+          ),
         ),
       ]),
     );

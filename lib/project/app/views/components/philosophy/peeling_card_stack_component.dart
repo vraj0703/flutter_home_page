@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
@@ -34,9 +35,9 @@ class PeelingCardStackComponent extends PositionComponent
     this.isEmptyStack = false,
     super.position,
     super.size,
-    this.entranceStart = 1600,
-    this.entranceEnd = 1800,
-    this.peelStart = 1800,
+    this.entranceStart = ScrollSequenceConfig.philosophyStart,
+    this.entranceEnd = ScrollSequenceConfig.philosophyFadeInEnd,
+    this.peelStart = ScrollSequenceConfig.philosophyPeelStart,
   });
 
   @override

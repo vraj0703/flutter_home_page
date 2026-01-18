@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 class GameStyles {
   // Colors
   static const Color primaryBackground = Color(0xFFC78E53);
-  static const Color accentGold = Color(
-    0xFFC78E53,
-  ); // Same as background for now, used in buttons
+  static const Color accentGold = Color(0xFFC78E53);
 
   static const Color boldTextBase = Color(0xFFE3E4E5);
   static const Color philosophyText = Colors.white;
@@ -59,7 +57,7 @@ class GameStyles {
   // Fonts
   static const String fontInconsolata = 'InconsolataNerd';
   static const String fontModernUrban = 'ModrntUrban';
-  static const String fontInter = 'Inter'; // Added Inter
+  static const String fontInter = 'Inter';
   static const String fontBroadway = 'Broadway';
 
   // Text Sizes
@@ -95,4 +93,46 @@ class GameStyles {
   // Text Spacing
   static const double loadingLetterSpacing = 12.0;
   static const double enterLetterSpacing = 10.0;
+
+  // --- Animation Durations (Sec) ---
+  static const double secTitleAnimDuration = 4.0;
+  static const double secTitleHideDuration = 0.5;
+
+  // --- Experience Styles ---
+  static const double expActiveOpacity = 1.0;
+  static const double expInactiveOpacity = 0.2;
+
+  // --- Secondary Title Styles ---
+  static const double secondaryTitleFontSize = 14.0;
+  static const double secondaryTitleSpacing = 4.0;
+  static const Color secondaryTitleColor = Color(0xFFAAB0B5);
+
+  // --- Testimonial Styles ---
+  static const double testiDimFactorBase = 0.5;
+  static const double testiFillAlpha = 0.05;
+  static const double testiBorderAlphaBase = 0.1;
+  static const double testiQuoteAlpha = 0.9;
+  static const double testiBorderWidth = 1.0;
+
+  // --- Arrow & Menu Styles ---
+  static const double arrowShadowBlur = 4.0;
+  static const Color arrowColor = Color(0xFFC0C0C0);
+  static const double menuBorderAlpha = 0.3;
+
+  // --- Orbital Arcs Styles ---
+  static const double orbitalArcAlphaOuter = 0.05;
+  static const double orbitalArcAlphaMid = 0.08;
+  static const double orbitalArcAlphaInner = 0.5;
+  static const double orbitalArcAlphaInnerBg = 0.2;
+
+  // --- Logo Overlay ---
+  static const double logoOverlayShadowBlur = 10.0;
+  static const double logoOverlayShadowOffsetX = 2.0;
+  static const double logoOverlayShadowOffsetY = 2.0;
+
+  // --- Default Text Shadow ---
+  static const Color textShadowColor = Colors.black45;
+  static const double textShadowBlur = 10.0;
+  static const double textShadowOffsetX = 2.0;
+  static const double textShadowOffsetY = 2.0;
 }

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_strings.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
@@ -58,7 +59,7 @@ class GameComponentFactory {
     final backgroundShader = await _loadShader(GameAssets.backgroundShader);
 
     // 2. Logo Layer
-    final startZoom = 3.0;
+    final startZoom = GameLayout.logoInitialScale;
     final baseLogoSize = Vector2(
       logoImage.width.toDouble(),
       logoImage.height.toDouble(),
@@ -80,10 +81,10 @@ class GameComponentFactory {
       size: logoSize,
       position: size / 2,
     );
-    logoComponent.priority = 10;
+    logoComponent.priority = GameLayout.zLogo;
 
     godRay = GodRayComponent();
-    godRay.priority = 20;
+    godRay.priority = GameLayout.zGodRay;
     godRay.position = size / 2;
 
     // 3. Interactive UI
@@ -92,14 +93,14 @@ class GameComponentFactory {
       queuer: queuer,
     );
     interactiveUI.position = size / 2;
-    interactiveUI.priority = 30;
+    interactiveUI.priority = GameLayout.zUI;
     interactiveUI.gameSize = size;
 
     // 4. Background & Titles
     backgroundRun = BackgroundRunComponent(
       shader: backgroundShader,
       size: size,
-      priority: 1,
+      priority: GameLayout.zBackground,
     );
 
     cinematicTitle = CinematicTitleComponent(
@@ -107,14 +108,14 @@ class GameComponentFactory {
       shader: metallicShader,
       position: size / 2,
     );
-    cinematicTitle.priority = 25;
+    cinematicTitle.priority = GameLayout.zTitle;
 
     cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
       text: GameStrings.secondaryTitle,
       shader: metallicShader,
-      position: size / 2 + Vector2(0, 48),
+      position: size / 2 + Vector2(0, GameLayout.secTitleYOffset),
     );
-    cinematicSecondaryTitle.priority = 24;
+    cinematicSecondaryTitle.priority = GameLayout.zSecondaryTitle;
 
     boldTextReveal = BoldTextRevealComponent(
       text: GameStrings.boldText,
@@ -128,11 +129,11 @@ class GameComponentFactory {
       baseColor: GameStyles.boldTextBase,
       position: size / 2,
     );
-    boldTextReveal.priority = 26;
+    boldTextReveal.priority = GameLayout.zBoldText;
     boldTextReveal.opacity = 0.0;
 
     dimLayer = RectangleComponent(
-      priority: 2,
+      priority: GameLayout.zDimLayer,
       size: size,
       paint: Paint()..color = GameStyles.dimLayer.withValues(alpha: 0.0),
     );
@@ -149,37 +150,40 @@ class GameComponentFactory {
       ),
       shader: metallicShader,
       anchor: Anchor.centerLeft,
-      position: Vector2(size.x * 0.15, size.y / 2),
+      position: Vector2(size.x * GameLayout.philosophyTextXRatio, size.y / 2),
     );
-    philosophyText.priority = 25;
+    philosophyText.priority = GameLayout.zContent;
     philosophyText.opacity = 0.0;
 
     cardStack = PeelingCardStackComponent(
       scrollOrchestrator: scrollOrchestrator,
       cardsData: cardData,
-      size: Vector2(size.x * 0.4, size.y * 0.6),
-      position: Vector2(size.x * 0.75, size.y / 2),
+      size: Vector2(
+        size.x * GameLayout.cardStackWidthRatio,
+        size.y * GameLayout.cardStackHeightRatio,
+      ),
+      position: Vector2(size.x * GameLayout.cardStackXRatio, size.y / 2),
     );
     cardStack.anchor = Anchor.center;
-    cardStack.priority = 25;
+    cardStack.priority = GameLayout.zContent;
     cardStack.opacity = 0.0;
 
     experiencePage = ExperiencePageComponent(size: size);
-    experiencePage.priority = 25;
+    experiencePage.priority = GameLayout.zContent;
 
     testimonialPage = TestimonialPageComponent(
       size: size,
       shader: metallicShader,
     );
-    testimonialPage.priority = 25;
+    testimonialPage.priority = GameLayout.zContent;
     testimonialPage.opacity = 0.0;
 
     skillsPage = SkillsKeyboardComponent(size: size);
-    skillsPage.priority = 28;
+    skillsPage.priority = GameLayout.zSkills;
     skillsPage.opacity = 0.0;
 
     contactPage = ContactPageComponent(size: size, shader: metallicShader);
-    contactPage.priority = 30;
+    contactPage.priority = GameLayout.zContact;
     contactPage.position = Vector2(0, size.y);
   }
 

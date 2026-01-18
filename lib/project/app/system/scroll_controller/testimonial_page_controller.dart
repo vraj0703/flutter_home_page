@@ -2,8 +2,9 @@ import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
-import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 
 class TestimonialPageController implements ScrollObserver {
   final TestimonialPageComponent component;
@@ -17,7 +18,8 @@ class TestimonialPageController implements ScrollObserver {
       ScrollSequenceConfig.testimonialInteractionStart;
   static const double visibleDuration =
       ScrollSequenceConfig.testimonialVisibleDuration;
-  static const double exitDuration = 400.0;
+  static const double exitDuration =
+      ScrollSequenceConfig.testimonialExitDuration;
 
   final double interactionStart;
   final double interactionEnd;
@@ -57,8 +59,12 @@ class TestimonialPageController implements ScrollObserver {
 
     if (scrollOffset < entranceStart) {
       opacity = 0.0;
-    } else if (scrollOffset < entranceStart + 300) {
-      final t = ((scrollOffset - entranceStart) / 300).clamp(0.0, 1.0);
+    } else if (scrollOffset <
+        entranceStart + ScrollSequenceConfig.testimonialFadeOffset) {
+      final t =
+          ((scrollOffset - entranceStart) /
+                  ScrollSequenceConfig.testimonialFadeOffset)
+              .clamp(0.0, 1.0);
       opacity = exponentialEaseOut.transform(t);
     } else if (scrollOffset < exitStart) {
       opacity = 1.0;
@@ -78,7 +84,7 @@ class TestimonialPageController implements ScrollObserver {
   void _handleExit(double scrollOffset) {
     if (!component.isLoaded) return;
 
-    const springCurve = SpringCurve(mass: 1.0, stiffness: 160.0, damping: 13.0);
+    const springCurve = GameCurves.testimonialExitSpring;
 
     if (scrollOffset < exitStart) {
       component.position = Vector2.zero();
@@ -88,9 +94,9 @@ class TestimonialPageController implements ScrollObserver {
         1.0,
       );
       final curvedT = springCurve.transform(t);
-      component.position = Vector2(0, -1000 * curvedT);
+      component.position = Vector2(0, GameLayout.testiExitY * curvedT);
     } else {
-      component.position = Vector2(0, -1000);
+      component.position = Vector2(0, GameLayout.testiExitY);
     }
   }
 }

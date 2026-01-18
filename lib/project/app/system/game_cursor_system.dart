@@ -1,6 +1,8 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/animation.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/game_physics.dart';
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';
@@ -26,7 +28,7 @@ class GameCursorSystem {
   Vector2 _targetLightDirection = Vector2.zero();
   Vector2? _lastKnownPointerPosition;
 
-  final double glowVerticalOffset = 10.0;
+  final double glowVerticalOffset = GameLayout.cursorGlowOffset;
 
   void initialize(Vector2 center) {
     _targetLightPosition = center;
@@ -55,7 +57,9 @@ class GameCursorSystem {
 
     // Calculate smoothing
     final distance = (_targetLightPosition - _virtualLightPosition).length;
-    final speed = distance > 100 ? 22.0 : 18.0;
+    final speed = distance > 100
+        ? GamePhysics.cursorSmoothSpeedFar
+        : GamePhysics.cursorSmoothSpeedNear;
     final rawT = speed * dt;
     final easedT = Curves.easeOutQuad.transform(rawT.clamp(0.0, 1.0));
 
