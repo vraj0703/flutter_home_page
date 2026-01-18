@@ -106,4 +106,6 @@ class TestimonialPageComponent extends PositionComponent
       carousel.updateScroll(delta);
     }
   }
+
+  bool get allTestimonialsFocused => isLoaded && carousel.allFocused;
 }

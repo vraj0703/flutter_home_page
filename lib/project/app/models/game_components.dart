@@ -10,9 +10,7 @@ import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_o
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/section_progress_indicator.dart';
-import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
-import 'package:flutter_home_page/project/app/views/components/transition_breadcrumb.dart';
 import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
 
 class GameComponents {
@@ -28,10 +26,8 @@ class GameComponents {
   final WorkExperienceTitleComponent workExperienceTitle;
   final ExperiencePageComponent experiencePage;
   final TestimonialPageComponent testimonialPage;
-  final SkillsKeyboardComponent skillsPage;
   final ContactPageComponent contactPage;
   final SectionProgressIndicator progressIndicator;
-  final TransitionBreadcrumb breadcrumb;
 
   GameComponents({
     required this.cinematicTitle,
@@ -46,9 +42,7 @@ class GameComponents {
     required this.workExperienceTitle,
     required this.experiencePage,
     required this.testimonialPage,
-    required this.skillsPage,
     required this.contactPage,
     required this.progressIndicator,
-    required this.breadcrumb,
   });
 }

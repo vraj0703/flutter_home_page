@@ -25,28 +25,22 @@ class BreadcrumbController implements ScrollObserver {
       final t = (scrollOffset - 3400) / 200.0;
       opacity = (t * (1.0 - t) * 4).clamp(0.0, 1.0);
     }
-    // Experience details transition
-    else if (scrollOffset >= 4600 && scrollOffset < 4900) {
+    // Experience details transition (shifted +550)
+    else if (scrollOffset >= 5150 && scrollOffset < 5450) {
       text = "Experience ↓";
-      final t = (scrollOffset - 4600) / 200.0;
+      final t = (scrollOffset - 5150) / 200.0;
       opacity = (t * (1.0 - t) * 4).clamp(0.0, 1.0);
     }
-    // Testimonials transition
-    else if (scrollOffset >= 7000 && scrollOffset < 7400) {
+    // Testimonials transition (shifted +550)
+    else if (scrollOffset >= 7550 && scrollOffset < 7950) {
       text = "Testimonials ↓";
-      final t = (scrollOffset - 7000) / 200.0;
+      final t = (scrollOffset - 7550) / 200.0;
       opacity = (t * (1.0 - t) * 4).clamp(0.0, 1.0);
     }
-    // Skills transition
-    else if (scrollOffset >= 11000 && scrollOffset < 11400) {
-      text = "Skills ↓";
-      final t = (scrollOffset - 11000) / 200.0;
-      opacity = (t * (1.0 - t) * 4).clamp(0.0, 1.0);
-    }
-    // Contact transition
-    else if (scrollOffset >= 13100 && scrollOffset < 13500) {
+    // Contact transition (shifted +550)
+    else if (scrollOffset >= 11550 && scrollOffset < 11950) {
       text = "Contact ↓";
-      final t = (scrollOffset - 13100) / 200.0;
+      final t = (scrollOffset - 11550) / 200.0;
       opacity = (t * (1.0 - t) * 4).clamp(0.0, 1.0);
     }
 

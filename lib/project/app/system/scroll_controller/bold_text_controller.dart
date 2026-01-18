@@ -58,12 +58,12 @@ class BoldTextController implements ScrollObserver {
       offsetX = 0.0 + (ScrollSequenceConfig.boldTextDriftOffset * t);
       offsetY = 0;
     } else {
-      // Exit Phase - Spring physics with upward float (planning.md spec)
+      // Exit Phase - Smooth exponential easeOut for continuous motion
       final t = ((scrollOffset - driftEnd) / (scrollEnd - driftEnd)).clamp(
         0.0,
         1.0,
       );
-      final curvedT = springExit.transform(t);
+      final curvedT = exponentialEaseOut.transform(t);
       offsetX =
           ScrollSequenceConfig.boldTextDriftOffset + (screenWidth * curvedT);
       // Add upward drift during exit for lighter feel

@@ -86,9 +86,17 @@ class TestimonialPageController implements ScrollObserver {
 
     const springCurve = GameCurves.testimonialExitSpring;
 
+    // Only allow exit if all testimonials have been focused
     if (scrollOffset < exitStart) {
       component.position = Vector2.zero();
     } else if (scrollOffset < exitEnd) {
+      // Check if all testimonials have been focused before allowing exit
+      if (!component.allTestimonialsFocused) {
+        // Hold at center until all are focused
+        component.position = Vector2.zero();
+        return;
+      }
+
       final t = ((scrollOffset - exitStart) / (exitEnd - exitStart)).clamp(
         0.0,
         1.0,

@@ -18,9 +18,7 @@ import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/section_progress_indicator.dart';
-import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
-import 'package:flutter_home_page/project/app/views/components/transition_breadcrumb.dart';
 import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
@@ -44,10 +42,8 @@ class GameComponentFactory {
   late WorkExperienceTitleComponent workExperienceTitle;
   late ExperiencePageComponent experiencePage;
   late TestimonialPageComponent testimonialPage;
-  late SkillsKeyboardComponent skillsPage;
   late ContactPageComponent contactPage;
   late SectionProgressIndicator progressIndicator;
-  late TransitionBreadcrumb breadcrumb;
 
   late FragmentShader metallicShader;
 
@@ -205,13 +201,6 @@ class GameComponentFactory {
     testimonialPage.priority = GameLayout.zContent;
     testimonialPage.opacity = 0.0;
 
-    skillsPage = SkillsKeyboardComponent(
-      size: size,
-      metallicShader: metallicShader,
-    );
-    skillsPage.priority = GameLayout.zSkills;
-    skillsPage.opacity = 0.0;
-
     contactPage = ContactPageComponent(size: size, shader: metallicShader);
     contactPage.priority = GameLayout.zContact;
     contactPage.position = Vector2(0, size.y);
@@ -221,12 +210,6 @@ class GameComponentFactory {
     progressIndicator.position = Vector2(size.x - 30, size.y / 2);
     progressIndicator.priority = GameLayout.zLogoOverlay; // High priority
     progressIndicator.opacity = 0.0; // Starts hidden
-
-    // Transition Breadcrumb (center bottom)
-    breadcrumb = TransitionBreadcrumb();
-    breadcrumb.position = Vector2(size.x / 2, size.y - 80);
-    breadcrumb.priority = GameLayout.zLogoOverlay; // High priority
-    breadcrumb.opacity = 0.0; // Starts hidden
   }
 
   // Get all components for easy addition
@@ -246,10 +229,8 @@ class GameComponentFactory {
     workExperienceTitle,
     experiencePage,
     testimonialPage,
-    skillsPage,
     contactPage,
     progressIndicator,
-    breadcrumb,
   ];
 
   // Helper loading methods

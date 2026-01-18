@@ -180,29 +180,25 @@ class PhilosophyCard extends PositionComponent
 
     final rrect = RRect.fromRectAndRadius(
       size.toRect(),
-      const Radius.circular(20),
+      const Radius.circular(16),
     );
 
+    // Match testimonial card fill alpha
     canvas.drawRRect(
       rrect,
       Paint()
-        ..color = GameStyles.cardFill.withValues(alpha: alpha)
+        ..color = Colors.white.withValues(alpha: GameStyles.testiFillAlpha * alpha)
         ..style = PaintingStyle.fill,
     );
 
+    // Match testimonial card border with subtle highlight effect
+    final borderAlpha = GameStyles.testiBorderAlphaBase * alpha;
     canvas.drawRRect(
       rrect,
       Paint()
-        ..color = GameStyles.cardStroke.withValues(alpha: alpha)
+        ..color = Colors.white.withValues(alpha: borderAlpha)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
-    );
-
-    canvas.drawShadow(
-      Path()..addRRect(rrect),
-      GameStyles.cardShadow,
-      15.0,
-      true,
+        ..strokeWidth = GameStyles.testiBorderWidth,
     );
   }
 }

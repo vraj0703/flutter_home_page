@@ -9,6 +9,7 @@ class TestimonialCarouselComponent extends PositionComponent with HasPaint {
   final List<TestimonialNode> data;
   final List<TestimonialCard> _cards = [];
   final List<double> _baseXPositions = [];
+  final Set<int> _focusedCards = {};
 
   @override
   set opacity(double val) {
@@ -18,6 +19,8 @@ class TestimonialCarouselComponent extends PositionComponent with HasPaint {
       card.opacity = val;
     }
   }
+
+  bool get allFocused => _focusedCards.length >= data.length;
 
   TestimonialCarouselComponent({required this.data});
 
@@ -62,6 +65,11 @@ class TestimonialCarouselComponent extends PositionComponent with HasPaint {
         t = 1.0 - (dist / centerThreshold);
         // Apply easing to the time
         t = GameCurves.standardEase.transform(t);
+
+        // Track cards that receive significant focus
+        if (t > 0.8) {
+          _focusedCards.add(i);
+        }
       }
 
       final targetScale = 1.0 + (0.15 * t);

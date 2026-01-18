@@ -18,8 +18,8 @@ class SectionProgressIndicator extends PositionComponent with HasPaint{
 
   static const _springCurve = SpringCurve(
     mass: 0.8,
-    stiffness: 180.0,
-    damping: 12.0,
+    stiffness: 240.0,
+    damping: 8.0,
   );
 
   SectionProgressIndicator() {
@@ -58,16 +58,16 @@ class SectionProgressIndicator extends PositionComponent with HasPaint{
       final center = Offset(0, y);
 
       if (i == _targetSection && _transitionProgress < 1.0) {
-        // Transitioning to this dot
+        // Transitioning to this dot - bouncy scale increase
         final curvedT = _springCurve.transform(_transitionProgress);
-        final size = dotSize * (1.0 + (0.5 * (1.0 - curvedT.abs())));
+        final size = dotSize * (1.0 + (1.0 * (1.0 - curvedT.abs())));
         final color = Color.lerp(inactiveColor, activeColor, curvedT)!;
         final paint = Paint()..color = color;
         canvas.drawCircle(center, size / 2, paint);
       } else if (i == _currentSection && _transitionProgress < 1.0) {
-        // Transitioning away from this dot
+        // Transitioning away from this dot - bouncy scale decrease
         final curvedT = _springCurve.transform(_transitionProgress);
-        final size = dotSize * (1.0 + (0.5 * curvedT));
+        final size = dotSize * (1.0 + (1.0 * curvedT));
         final color = Color.lerp(activeColor, inactiveColor, curvedT)!;
         final paint = Paint()..color = color;
         canvas.drawCircle(center, size / 2, paint);

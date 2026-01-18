@@ -60,7 +60,7 @@ class ExperiencePageComponent extends PositionComponent
 
   final roleStyle = TextStyle(
     fontFamily: GameStyles.fontModernUrban,
-    fontSize: GameStyles.roleFontSize,
+    fontSize: GameStyles.philosophyFontSize,
     fontWeight: FontWeight.bold,
   );
 

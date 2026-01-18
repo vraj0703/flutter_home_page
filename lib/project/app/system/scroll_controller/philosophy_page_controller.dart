@@ -32,10 +32,12 @@ class PhilosophyPageController implements ScrollObserver {
     const exponentialEaseOut = ExponentialEaseOut();
 
     double opacity = 0.0;
+    double scale = 0.0;
     Vector2 pos = initialTextPos.clone();
 
     if (scrollOffset < ScrollSequenceConfig.philosophyStart) {
       opacity = 0.0;
+      scale = 0.0;
       pos = initialTextPos;
     } else if (scrollOffset < ScrollSequenceConfig.philosophyFadeInEnd) {
       final t =
@@ -44,9 +46,12 @@ class PhilosophyPageController implements ScrollObserver {
                       ScrollSequenceConfig.philosophyStart))
               .clamp(0.0, 1.0);
       opacity = exponentialEaseOut.transform(t);
+      // Zoom in from 0.5 to 1.0
+      scale = 0.5 + (0.5 * exponentialEaseOut.transform(t));
       pos = initialTextPos;
     } else if (scrollOffset < ScrollSequenceConfig.philosophyExitStart) {
       opacity = 1.0;
+      scale = 1.0;
       pos = initialTextPos;
     } else if (scrollOffset < ScrollSequenceConfig.philosophyEnd) {
       final t =
@@ -56,13 +61,15 @@ class PhilosophyPageController implements ScrollObserver {
               .clamp(0.0, 1.0);
       final curvedT = exponentialEaseOut.transform(t);
       opacity = 1.0 - curvedT;
-      opacity = 1.0 - curvedT;
+      scale = 1.0;
       pos = initialTextPos + (GameLayout.philExitVector * curvedT);
     } else {
+      scale = 1.0;
       pos = initialTextPos + GameLayout.philExitVector;
     }
 
     component.opacity = opacity;
+    component.scale = Vector2.all(scale);
     component.position = pos;
   }
 
@@ -70,14 +77,16 @@ class PhilosophyPageController implements ScrollObserver {
     const exponentialEaseOut = ExponentialEaseOut();
     const gentleSpring = GameCurves.philosophySpring;
 
-    double stackAlpha = 1.0;
-    if (scrollOffset < ScrollSequenceConfig.dimLayerStart) {
+    // Start card after text is fully visible (philosophyFadeInEnd)
+    double stackAlpha = 0.0;
+    const cardDelayAfterText = 200.0; // 200px delay after text appears
+    final cardStartScroll = ScrollSequenceConfig.philosophyFadeInEnd + cardDelayAfterText;
+
+    if (scrollOffset < cardStartScroll) {
       stackAlpha = 0.0;
-    } else if (scrollOffset < ScrollSequenceConfig.philosophyStart) {
+    } else if (scrollOffset < cardStartScroll + 300.0) {
       stackAlpha = exponentialEaseOut.transform(
-        ((scrollOffset - ScrollSequenceConfig.dimLayerStart) /
-                ScrollSequenceConfig.philosophyTransitionOffset)
-            .clamp(0.0, 1.0),
+        ((scrollOffset - cardStartScroll) / 300.0).clamp(0.0, 1.0),
       );
     } else {
       stackAlpha = 1.0;

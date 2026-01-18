@@ -89,102 +89,85 @@ class ScrollSequenceConfig {
   // --- Transition Gap: Philosophy -> Work Experience (3500 - 3600) ---
   static const double philosophyToWorkExpGap = 100.0;
 
-  // --- 2.5. Work Experience Title Section (3600 - 4650) ---
-  // Full page parallax entrance and exit, NO overlaps
+  // --- 2.5. Work Experience Title Section (3600 - 5200) ---
+  // Full page parallax entrance and exit with extended timing
   static const double workExpTitleEntranceStart = 3600.0;
   static const double workExpTitleEntranceDuration =
-      400.0; // Longer for smooth parallax
+      600.0; // Extended for smoother parallax
   static double get workExpTitleEntranceEnd =>
-      workExpTitleEntranceStart + workExpTitleEntranceDuration; // 4000
+      workExpTitleEntranceStart + workExpTitleEntranceDuration; // 4200
 
-  static const double workExpTitleHoldStart = 4000.0;
-  static const double workExpTitleHoldDuration = 300.0; // Extended for emphasis
+  static const double workExpTitleHoldStart = 4200.0;
+  static const double workExpTitleHoldDuration = 500.0; // More time to appreciate
   static double get workExpTitleHoldEnd =>
-      workExpTitleHoldStart + workExpTitleHoldDuration; // 4300
+      workExpTitleHoldStart + workExpTitleHoldDuration; // 4700
 
-  static const double workExpTitleExitStart = 4300.0;
+  static const double workExpTitleExitStart = 4700.0;
   static const double workExpTitleExitDuration =
-      350.0; // Longer for smooth parallax
+      500.0; // Extended for smoother parallax
   static double get workExpTitleExitEnd =>
-      workExpTitleExitStart + workExpTitleExitDuration; // 4650
+      workExpTitleExitStart + workExpTitleExitDuration; // 5200
 
-  // --- Transition Gap: Work Experience -> Experience Section (4650 - 4750) ---
+  // --- Transition Gap: Work Experience -> Experience Section (5200 - 5300) ---
   static const double workExpToExperienceGap = 100.0;
 
-  // --- 3. Experience Section (4750 - 7100) ---
+  // --- 3. Experience Section (5300 - 7650) ---
   // Clean entrance AFTER work exp title fully exits
-  static const double experienceEntranceStart = 4750.0;
+  static const double experienceEntranceStart = 5300.0;
   static const double experienceEntranceDuration = 300.0;
 
   static double get experienceEntranceEnd =>
-      experienceEntranceStart + experienceEntranceDuration; // 5050
+      experienceEntranceStart + experienceEntranceDuration; // 5600
   static const double experienceInteractionStart =
-      5050.0; // Starts after entrance completes
+      5600.0; // Starts after entrance completes
   // Length based on content (5 items * 350 = 1750)
   static const double experienceInteractionDuration = 1750.0;
 
   static double get experienceInteractionEnd =>
-      experienceInteractionStart + experienceInteractionDuration; // 6800
-  static double get experienceExitStart => experienceInteractionEnd; // 6800
+      experienceInteractionStart + experienceInteractionDuration; // 7350
+  static double get experienceExitStart => experienceInteractionEnd; // 7350
   static const double experienceExitDuration = 300.0;
 
   static double get experienceExitEnd =>
-      experienceExitStart + experienceExitDuration; // 7100
+      experienceExitStart + experienceExitDuration; // 7650
 
   static const double experienceScrollDivisor = 500.0;
 
-  // --- Transition Gap: Experience -> Testimonials (7100 - 7200) ---
+  // --- Transition Gap: Experience -> Testimonials (7650 - 7750) ---
   static const double experienceToTestimonialGap = 100.0;
 
-  // --- 4. Testimonials (7200 - 11100) ---
+  // --- 4. Testimonials (7750 - 11650) ---
   // Clean entrance after experience fully exits
-  static const double testimonialEntranceStart = 7200.0;
+  static const double testimonialEntranceStart = 7750.0;
   static const double testimonialEntranceDuration = 300.0;
 
   static double get testimonialEntranceEnd =>
-      testimonialEntranceStart + testimonialEntranceDuration; // 7500
+      testimonialEntranceStart + testimonialEntranceDuration; // 8050
   static const double testimonialInteractionStart =
-      7500.0; // Start interaction after entrance
+      8050.0; // Start interaction after entrance
   static const double testimonialVisibleDuration =
       3200.0; // Compressed slightly
   static double get testimonialInteractionEnd =>
-      testimonialInteractionStart + testimonialVisibleDuration; // 10700
-  static double get testimonialExitStart => testimonialInteractionEnd; // 10700
+      testimonialInteractionStart + testimonialVisibleDuration; // 11250
+  static double get testimonialExitStart => testimonialInteractionEnd; // 11250
   static const double testimonialExitDuration = 400.0;
 
   static double get testimonialExitEnd =>
-      testimonialExitStart + testimonialExitDuration; // 11100
+      testimonialExitStart + testimonialExitDuration; // 11650
 
-  // --- Transition Gap: Testimonials -> Skills (11100 - 11200) ---
-  static const double testimonialToSkillsGap = 100.0;
+  // --- Transition Gap: Testimonials -> Contact (11650 - 11750) ---
+  static const double testimonialToContactGap = 100.0;
 
-  // --- 5. Skills (11200 - 13200) ---
-  // Clean entrance after testimonials fully exit
-  static const double skillsEntranceStart = 11200.0;
-  static const double skillsEntranceDuration = 400.0;
-  static double skillsEntranceEnd =
-      skillsEntranceStart + skillsEntranceDuration; // 11600
-  static const double skillsInteractEnd =
-      12800.0; // Hold -> 11600 + 1200 = 12800
-  static const double skillsExitDuration = 400.0;
-
-  static double skillsExitEnd = skillsInteractEnd + skillsExitDuration; // 13200
-
-  // --- Transition Gap: Skills -> Contact (13200 - 13300) ---
-  static const double skillsToContactGap = 100.0;
-
-  // --- 6. Contact (13300+) ---
-  // Clean entrance after skills fully exit
-  static const double contactEntranceStart = 13300.0;
+  // --- 5. Contact (11750+) - FINAL SECTION ---
+  // Clean entrance after testimonials fully exit, stays visible (no exit)
+  static const double contactEntranceStart = 11750.0;
   static const double contactEntranceDuration = 600.0;
-  static const double contactHoldDuration = 1000.0;
-  static const double contactExitDuration = 600.0;
+  static const double contactHoldDuration = 2000.0; // Extended hold
 
   static const double contactVisibleStart =
       contactEntranceStart + contactEntranceDuration;
-  static const double contactExitStart =
-      contactVisibleStart + contactHoldDuration;
-  static const double contactExitEnd = contactExitStart + contactExitDuration;
+  // No exit - contact stays visible as final section
+  static const double maxScrollOffset = contactVisibleStart + contactHoldDuration; // ~14350
 
   // --- Scroll Transition offsets ---
   static const double experienceFadeOffset = 300.0;
