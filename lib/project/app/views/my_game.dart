@@ -6,6 +6,7 @@ import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
+import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
@@ -33,7 +34,7 @@ import 'package:flutter_home_page/project/app/views/components/contact/contact_p
 import 'package:flutter_home_page/project/app/system/contact_page_controller.dart';
 import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/system/skills_page_controller.dart';
-import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
+import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter/material.dart' as material;
 
 class MyGame extends FlameGame

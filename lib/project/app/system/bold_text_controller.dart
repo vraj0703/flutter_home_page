@@ -1,9 +1,9 @@
 import 'package:flame/components.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
-import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
 
 class BoldTextController implements ScrollObserver {
   final BoldTextRevealComponent component;
