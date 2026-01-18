@@ -1,7 +1,5 @@
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
-import 'package:flutter_home_page/project/app/curves/anticipation.dart';
-import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/config/game_curves.dart';

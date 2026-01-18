@@ -71,8 +71,8 @@ class GodRayController implements ScrollObserver {
       component.currentInnerColor = _heroInner;
       component.currentOuterColor = _heroOuter;
       component.sizeMultiplier = 1.0;
-    } else if (scrollOffset < ScrollSequenceConfig.contactExitEnd) {
-      // Contact section - celebration bloom
+    } else {
+      // Contact section (final section) - celebration bloom
       final t = (scrollOffset - ScrollSequenceConfig.contactEntranceStart) /
           ScrollSequenceConfig.contactEntranceDuration;
 
@@ -86,11 +86,6 @@ class GodRayController implements ScrollObserver {
 
       component.currentInnerColor = _contactInner;
       component.currentOuterColor = _contactOuter;
-    } else {
-      // After contact section
-      component.currentInnerColor = _contactInner;
-      component.currentOuterColor = _contactOuter;
-      component.sizeMultiplier = 1.5;
     }
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
-import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/curves/spring_curve.dart';

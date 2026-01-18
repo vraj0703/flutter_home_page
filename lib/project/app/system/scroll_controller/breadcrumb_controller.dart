@@ -1,5 +1,4 @@
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
-import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/views/components/transition_breadcrumb.dart';
 
 class BreadcrumbController implements ScrollObserver {

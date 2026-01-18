@@ -12,22 +12,15 @@ class ContactPageController implements ScrollObserver {
       ScrollSequenceConfig.contactEntranceStart;
   static const double entranceDuration =
       ScrollSequenceConfig.contactEntranceDuration;
-  static const double holdDuration = ScrollSequenceConfig.contactHoldDuration;
-  static const double exitDuration = ScrollSequenceConfig.contactExitDuration;
 
   final double visibleStart;
-  final double exitStart;
-  final double exitEnd;
 
   ContactPageController({required this.component, required this.screenHeight})
-    : visibleStart = ScrollSequenceConfig.contactVisibleStart,
-      exitStart = ScrollSequenceConfig.contactExitStart,
-      exitEnd = ScrollSequenceConfig.contactExitEnd;
+    : visibleStart = ScrollSequenceConfig.contactVisibleStart;
 
   @override
   void onScroll(double scrollOffset) {
     const entranceSpring = GameCurves.contactEntranceSpring;
-    const exitSpring = GameCurves.contactExitSpring;
     const exponentialEaseOut = ExponentialEaseOut();
 
     if (scrollOffset < initEntranceStart) {
@@ -41,21 +34,10 @@ class ContactPageController implements ScrollObserver {
       component.position = Vector2(0, y);
 
       component.opacity = exponentialEaseOut.transform(t);
-    } else if (scrollOffset < exitStart) {
+    } else {
+      // Contact stays visible as final section
       component.position = Vector2.zero();
       component.opacity = 1.0;
-    } else if (scrollOffset < exitEnd) {
-      final t = (scrollOffset - exitStart) / exitDuration;
-      final curvedT = exitSpring.transform(t);
-
-      final y = -screenHeight * curvedT;
-      component.position = Vector2(0, y);
-
-      component.opacity = 1.0 - exponentialEaseOut.transform(t);
-    } else {
-      // Gone above
-      component.position = Vector2(0, -screenHeight);
-      component.opacity = 0.0;
     }
   }
 }

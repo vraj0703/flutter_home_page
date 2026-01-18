@@ -33,13 +33,10 @@ class BackgroundTintController implements ScrollObserver {
       final t = (scrollOffset - ScrollSequenceConfig.experienceExitEnd) /
           (ScrollSequenceConfig.contactEntranceStart - ScrollSequenceConfig.experienceExitEnd);
       component.currentTint = Color.lerp(_workExpTint, _heroTint, t.clamp(0.0, 1.0))!;
-    } else if (scrollOffset < ScrollSequenceConfig.contactExitEnd) {
-      // Contact section - pure gold tint
+    } else {
+      // Contact section (final section) - pure gold tint
       final t = (scrollOffset - ScrollSequenceConfig.contactEntranceStart) / 200.0;
       component.currentTint = Color.lerp(_heroTint, _contactTint, t.clamp(0.0, 1.0))!;
-    } else {
-      // After contact section
-      component.currentTint = _contactTint;
     }
   }
 }

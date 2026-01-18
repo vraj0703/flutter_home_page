@@ -36,17 +36,14 @@ class SectionProgressController implements ScrollObserver {
     component.setSection(section);
 
     // Fade out during hero section and title, fade in as content starts
+    // Stay visible throughout (contact is final section, no fade out)
     if (scrollOffset < 200) {
       component.opacity = 0.0;
     } else if (scrollOffset < 400) {
       final t = (scrollOffset - 200) / 200.0;
       component.opacity = t;
-    } else if (scrollOffset < ScrollSequenceConfig.contactExitEnd) {
-      component.opacity = 1.0;
     } else {
-      // Fade out at the end
-      final t = (scrollOffset - ScrollSequenceConfig.contactExitEnd) / 200.0;
-      component.opacity = (1.0 - t).clamp(0.0, 1.0);
+      component.opacity = 1.0;
     }
   }
 }
