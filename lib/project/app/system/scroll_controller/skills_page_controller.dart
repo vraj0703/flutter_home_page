@@ -10,9 +10,9 @@ class SkillsPageController implements ScrollObserver {
   final SkillsKeyboardComponent component;
 
   static const double entranceStart = ScrollSequenceConfig.skillsEntranceStart;
-  static const double entranceEnd = ScrollSequenceConfig.skillsEntranceEnd;
+  static double entranceEnd = ScrollSequenceConfig.skillsEntranceEnd;
   static const double interactEnd = ScrollSequenceConfig.skillsInteractEnd;
-  static const double exitEnd = ScrollSequenceConfig.skillsExitEnd;
+  static double exitEnd = ScrollSequenceConfig.skillsExitEnd;
 
   SkillsPageController({required this.component});
 

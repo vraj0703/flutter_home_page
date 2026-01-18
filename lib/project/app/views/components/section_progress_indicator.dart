@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 
-class SectionProgressIndicator extends PositionComponent {
+class SectionProgressIndicator extends PositionComponent with HasPaint{
   static const int totalSections = 6;
   static const double dotSize = 8.0;
   static const double dotSpacing = 20.0;

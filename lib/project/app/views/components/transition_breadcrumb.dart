@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart' as material;
 
-class TransitionBreadcrumb extends TextComponent {
+class TransitionBreadcrumb extends TextComponent with HasPaint{
   String breadcrumbText = "";
 
   TransitionBreadcrumb()
