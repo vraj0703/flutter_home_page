@@ -13,10 +13,17 @@ class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallb
   static const Color activeColor = Color(0xFFFFC107); // Gold
   static const Color dropletColor = Color(0xFFFFD700); // Bright gold droplet
 
-  double _scrollProgress = 0.0; // Continuous scroll progress (0.0 to totalSections-1)
-  double _previousScrollProgress = 0.0; // Track previous position
-  double _scrollVelocity = 0.0; // Scroll velocity for squash/stretch
-  double _velocityDecay = 0.0; // Smooth velocity decay
+  // Spring physics parameters
+  static const double snapThreshold = 0.3; // Distance to trigger snap to dot
+  static const double springStiffness = 180.0; // Base spring strength
+  static const double springDamping = 12.0; // Base damping
+  static const double snapStiffness = 250.0; // Stronger for snapping
+  static const double snapDamping = 15.0; // More damped for quick settle
+
+  double _targetProgress = 0.0; // Target position from scroll
+  double _currentProgress = 0.0; // Spring-animated actual position
+  double _progressVelocity = 0.0; // Spring velocity
+  double _velocityDecay = 0.0; // Smooth velocity decay for visuals
 
   final Paint _inactivePaint = Paint()..color = inactiveColor;
   final Paint _activePaint = Paint()..color = activeColor;
@@ -33,22 +40,41 @@ class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallb
 
   // Update with continuous scroll progress instead of discrete section
   void updateScrollProgress(double progress) {
-    final newProgress = progress.clamp(0.0, totalSections - 1.0);
-
-    // Calculate velocity from position change
-    final delta = newProgress - _scrollProgress;
-    _scrollVelocity = delta;
-
-    _previousScrollProgress = _scrollProgress;
-    _scrollProgress = newProgress;
+    _targetProgress = progress.clamp(0.0, totalSections - 1.0);
   }
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    // Smooth velocity decay for inertia effect
-    _velocityDecay = _velocityDecay * 0.85 + _scrollVelocity * 0.15;
+    // Check if we should snap to a dot (magnetic effect)
+    double snapTarget = _targetProgress;
+    bool isSnapping = false;
+
+    for (int i = 0; i < totalSections; i++) {
+      final distanceToDot = (_targetProgress - i).abs();
+      if (distanceToDot < snapThreshold) {
+        snapTarget = i.toDouble();
+        isSnapping = true;
+        break;
+      }
+    }
+
+    // Use different spring parameters for snapping (stronger, more damped)
+    final stiffness = isSnapping ? snapStiffness : springStiffness;
+    final damping = isSnapping ? snapDamping : springDamping;
+
+    // Spring physics simulation
+    final displacement = snapTarget - _currentProgress;
+    final springForce = stiffness * displacement;
+    final dampingForce = damping * _progressVelocity;
+    final acceleration = springForce - dampingForce;
+
+    _progressVelocity += acceleration * dt;
+    _currentProgress += _progressVelocity * dt;
+
+    // Update squash/stretch velocity from spring velocity for visual deformation
+    _velocityDecay = _velocityDecay * 0.85 + _progressVelocity * 0.15;
   }
 
   @override
@@ -62,8 +88,8 @@ class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallb
       final y = i * dotSpacing - (totalHeight / 2);
       final center = Offset(0, y);
 
-      // Calculate proximity to current scroll position
-      final distanceFromProgress = (_scrollProgress - i).abs();
+      // Calculate proximity to spring-animated position
+      final distanceFromProgress = (_currentProgress - i).abs();
 
       // Dots closer to current position are more active
       if (distanceFromProgress < 0.5) {
@@ -77,8 +103,8 @@ class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallb
       }
     }
 
-    // Draw water droplet at continuous position
-    final dropletY = (_scrollProgress * dotSpacing) - (totalHeight / 2);
+    // Draw water droplet at spring-animated position
+    final dropletY = (_currentProgress * dotSpacing) - (totalHeight / 2);
     final dropletCenter = Offset(0, dropletY);
 
     // Velocity-based squash/stretch (scroll-controlled deformation)

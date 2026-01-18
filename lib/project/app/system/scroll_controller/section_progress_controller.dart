@@ -51,15 +51,26 @@ class SectionProgressController implements ScrollObserver {
 
     component.updateScrollProgress(progress);
 
-    // Fade out during hero section and title, fade in as content starts
+    // Fade in after title animation finishes, similar to bouncy arrow
     // Stay visible throughout (contact is final section, no fade out)
-    if (scrollOffset < 200) {
+    if (scrollOffset < ScrollSequenceConfig.titleParallaxEnd) {
+      // Hidden during title animation
       component.opacity = 0.0;
-    } else if (scrollOffset < 400) {
-      final t = (scrollOffset - 200) / 200.0;
-      component.opacity = t;
+    } else if (scrollOffset < ScrollSequenceConfig.boldTextEntranceEnd) {
+      // Ease in during bold text entrance (800 -> 900)
+      final fadeStart = ScrollSequenceConfig.titleParallaxEnd;
+      final fadeEnd = ScrollSequenceConfig.boldTextEntranceEnd;
+      final t = ((scrollOffset - fadeStart) / (fadeEnd - fadeStart)).clamp(0.0, 1.0);
+      // Apply ease-out curve for smooth appearance
+      final easedT = _easeOut(t);
+      component.opacity = easedT;
     } else {
       component.opacity = 1.0;
     }
+  }
+
+  // Simple ease-out curve for smooth fade-in
+  double _easeOut(double t) {
+    return 1.0 - ((1.0 - t) * (1.0 - t));
   }
 }
