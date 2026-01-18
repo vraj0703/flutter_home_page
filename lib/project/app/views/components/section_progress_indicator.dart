@@ -14,7 +14,9 @@ class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallb
   static const Color dropletColor = Color(0xFFFFD700); // Bright gold droplet
 
   double _scrollProgress = 0.0; // Continuous scroll progress (0.0 to totalSections-1)
-  double _animationTime = 0.0; // For idle animation
+  double _previousScrollProgress = 0.0; // Track previous position
+  double _scrollVelocity = 0.0; // Scroll velocity for squash/stretch
+  double _velocityDecay = 0.0; // Smooth velocity decay
 
   final Paint _inactivePaint = Paint()..color = inactiveColor;
   final Paint _activePaint = Paint()..color = activeColor;
@@ -31,13 +33,22 @@ class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallb
 
   // Update with continuous scroll progress instead of discrete section
   void updateScrollProgress(double progress) {
-    _scrollProgress = progress.clamp(0.0, totalSections - 1.0);
+    final newProgress = progress.clamp(0.0, totalSections - 1.0);
+
+    // Calculate velocity from position change
+    final delta = newProgress - _scrollProgress;
+    _scrollVelocity = delta;
+
+    _previousScrollProgress = _scrollProgress;
+    _scrollProgress = newProgress;
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    _animationTime += dt;
+
+    // Smooth velocity decay for inertia effect
+    _velocityDecay = _velocityDecay * 0.85 + _scrollVelocity * 0.15;
   }
 
   @override
@@ -70,28 +81,43 @@ class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallb
     final dropletY = (_scrollProgress * dotSpacing) - (totalHeight / 2);
     final dropletCenter = Offset(0, dropletY);
 
-    // Breathing animation for droplet
-    final breathe = math.sin(_animationTime * 3.0) * 0.15 + 1.0;
-    final currentDropletSize = dropletSize * breathe;
+    // Velocity-based squash/stretch (scroll-controlled deformation)
+    final velocityMagnitude = _velocityDecay.abs().clamp(0.0, 0.5);
+    final stretchFactor = 1.0 + (velocityMagnitude * 3.0); // Vertical stretch when moving
+    final squeezeFactor = 1.0 - (velocityMagnitude * 0.5); // Horizontal compression when moving
 
-    // Draw droplet glow (outer)
+    final dropletWidth = dropletSize * squeezeFactor;
+    final dropletHeight = dropletSize * stretchFactor;
+
+    // Draw droplet glow (outer) - oval shape when moving
     final glowPaint = Paint()
       ..color = dropletColor.withOpacity(0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
-    canvas.drawCircle(dropletCenter, currentDropletSize / 2 + 3, glowPaint);
+    final glowRect = Rect.fromCenter(
+      center: dropletCenter,
+      width: dropletWidth + 6,
+      height: dropletHeight + 6,
+    );
+    canvas.drawOval(glowRect, glowPaint);
 
-    // Draw droplet core
-    canvas.drawCircle(dropletCenter, currentDropletSize / 2, _dropletPaint);
+    // Draw droplet core - oval shape when moving
+    final coreRect = Rect.fromCenter(
+      center: dropletCenter,
+      width: dropletWidth,
+      height: dropletHeight,
+    );
+    canvas.drawOval(coreRect, _dropletPaint);
 
     // Draw highlight on droplet (water effect)
     final highlightPaint = Paint()
       ..color = Colors.white.withOpacity(0.6);
-    final highlightOffset = Offset(-currentDropletSize * 0.15, -currentDropletSize * 0.15);
-    canvas.drawCircle(
-      dropletCenter + highlightOffset,
-      currentDropletSize * 0.25,
-      highlightPaint,
+    final highlightOffset = Offset(-dropletWidth * 0.15, -dropletHeight * 0.15);
+    final highlightRect = Rect.fromCenter(
+      center: dropletCenter + highlightOffset,
+      width: dropletWidth * 0.25,
+      height: dropletHeight * 0.25,
     );
+    canvas.drawOval(highlightRect, highlightPaint);
   }
 
   @override
