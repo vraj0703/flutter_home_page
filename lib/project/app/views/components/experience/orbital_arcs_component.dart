@@ -16,7 +16,6 @@ class OrbitalArcsComponent extends PositionComponent with HasPaint {
 
   @override
   void render(Canvas canvas) {
-    // Custom paint logic
     final painter = OrbitalArcsPainter(
       rotation: rotation,
       accentColor: accentColor,

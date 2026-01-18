@@ -49,7 +49,7 @@ class PeelingCardStackComponent extends PositionComponent
       activeData = cardsData;
     }
 
-    final cardSize = Vector2(GameLayout.cardWidth, GameLayout.cardHeight);
+    final cardSize = GameLayout.cardSize;
     final centerPos = size / 2;
 
     for (int i = activeData.length - 1; i >= 0; i--) {

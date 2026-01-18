@@ -20,16 +20,13 @@ class BackgroundRunComponent extends PositionComponent
   @override
   void render(Canvas canvas) {
     if (opacity <= 0) return;
-    shader.setFloat(0, size.x); // uResolution.x
-    shader.setFloat(1, size.y); // uResolution.y
-    shader.setFloat(2, _time); // uTime
+    shader.setFloat(0, size.x);
+    shader.setFloat(1, size.y);
+    shader.setFloat(2, _time);
 
-    // We use a local paint for drawing the shader,
-    // but we use the opacity from HasPaint to control visibility.
     final shaderPaint = Paint()..shader = shader;
 
     if (opacity < 1.0) {
-      // Use saveLayer to apply transparency to the shader output
       canvas.saveLayer(
         size.toRect(),
         Paint()..color = GameStyles.dimLayer.withValues(alpha: opacity),

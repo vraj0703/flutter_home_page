@@ -24,19 +24,17 @@ class TestimonialCarouselComponent extends PositionComponent with HasPaint {
   @override
   Future<void> onLoad() async {
     double startX = 0;
-    final cardWidth = GameLayout.testiCardWidth;
-    final cardHeight = GameLayout.testiCardHeight;
     final spacing = GameLayout.testiCardSpacing;
-    startX = -cardWidth / 2;
+    startX = -GameLayout.testiCardWidth / 2;
 
     for (var i = 0; i < data.length; i++) {
       final node = data[i];
-      final card = TestimonialCard(
-        node: node,
-        size: Vector2(cardWidth, cardHeight),
-      );
+      final card = TestimonialCard(node: node, size: GameLayout.testiCardSize);
 
-      final baseX = startX + (i * (cardWidth + spacing)) + (cardWidth / 2);
+      final baseX =
+          startX +
+              (i * (GameLayout.testiCardWidth + spacing)) +
+              (GameLayout.testiCardWidth / 2);
       _baseXPositions.add(baseX);
 
       card.position = Vector2(baseX, 0);

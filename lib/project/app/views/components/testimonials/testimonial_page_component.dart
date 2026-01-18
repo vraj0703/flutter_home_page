@@ -76,10 +76,7 @@ class TestimonialPageComponent extends PositionComponent
 
     // Add Button
     addButton = RectangleComponent(
-      size: Vector2(
-        GameLayout.testimonialButtonW,
-        GameLayout.testimonialButtonH,
-      ),
+      size: GameLayout.testimonialButtonSize,
       paint: Paint()..color = GameStyles.accentGold,
       position: Vector2(size.x / 2, size.y * GameLayout.testimonialButtonRelY),
     );

@@ -121,8 +121,8 @@ class MyGame extends FlameGame
       logo: () {
         _snapLogoToCenter(center);
         _centerTitles(center);
-        _componentFactory.interactiveUI.position = center;
-        _componentFactory.interactiveUI.gameSize = size;
+        _componentFactory.logoOverlay.position = center;
+        _componentFactory.logoOverlay.gameSize = size;
       },
       logoOverlayRemoving: () {},
       titleLoading: () {
@@ -152,7 +152,7 @@ class MyGame extends FlameGame
   void _centerTitles(Vector2 center) {
     _componentFactory.cinematicTitle.position = center;
     _componentFactory.cinematicSecondaryTitle.position =
-        center + Vector2(0, GameLayout.secTitleYOffset);
+        center + GameLayout.secTitleOffsetVector;
   }
 
   @override
@@ -167,7 +167,7 @@ class MyGame extends FlameGame
       CursorDependentComponents(
         godRay: _componentFactory.godRay,
         shadowScene: _componentFactory.shadowScene,
-        interactiveUI: _componentFactory.interactiveUI,
+        interactiveUI: _componentFactory.logoOverlay,
         logoComponent: _componentFactory.logoComponent,
       ),
     );
@@ -185,7 +185,7 @@ class MyGame extends FlameGame
     stateProvider.sceneState().when(
       loading: (isSvgReady, isGameReady) {
         _centerTitles(size / 2);
-        _componentFactory.interactiveUI.inactivityOpacity +=
+        _componentFactory.logoOverlay.inactivityOpacity +=
             dt / ScrollSequenceConfig.uiFadeDuration;
       },
       logo: () {
@@ -193,10 +193,7 @@ class MyGame extends FlameGame
       },
       logoOverlayRemoving: () {
         _logoAnimator.setTarget(
-          position: Vector2(
-            GameLayout.logoRemovingTargetX,
-            GameLayout.logoRemovingTargetY,
-          ),
+          position: GameLayout.logoRemovingTargetVector,
           scale: GameLayout.logoRemovingScale,
         );
       },
@@ -213,7 +210,7 @@ class MyGame extends FlameGame
 
   void enterTitle() {
     Future.delayed(
-      const Duration(milliseconds: ScrollSequenceConfig.enterTitleDelay),
+      ScrollSequenceConfig.enterTitleDelayDuration,
       () => _componentFactory.cinematicTitle.show(
         () => _componentFactory.cinematicSecondaryTitle.show(
           () => queuer.queue(event: SceneEvent.titleLoaded()),
@@ -234,7 +231,7 @@ class MyGame extends FlameGame
       components: GameComponents(
         cinematicTitle: _componentFactory.cinematicTitle,
         cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
-        interactiveUI: _componentFactory.interactiveUI,
+        interactiveUI: _componentFactory.logoOverlay,
         dimLayer: _componentFactory.dimLayer,
         boldTextReveal: _componentFactory.boldTextReveal,
         philosophyText: _componentFactory.philosophyText,

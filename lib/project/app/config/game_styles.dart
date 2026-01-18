@@ -144,4 +144,39 @@ class GameStyles {
   static const double textShadowBlur = 10.0;
   static const double textShadowOffsetX = 2.0;
   static const double textShadowOffsetY = 2.0;
+
+  // --- Text Styles ---
+  static const TextStyle philosophyIconStyle = TextStyle(
+    fontSize: cardIconVisibleSize,
+    fontFamily: fontModernUrban,
+  );
+
+  static const TextStyle philosophyTitleStyle = TextStyle(
+    fontFamily: fontModernUrban,
+    fontSize: cardTitleVisibleSize,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+  );
+
+  static const TextStyle philosophyDescStyle = TextStyle(
+    fontFamily: fontModernUrban,
+    fontSize: cardDescVisibleSize,
+    color: cardDesc,
+    height: 1.4,
+  );
+
+  static const TextStyle cinematicPrimaryStyle = TextStyle(
+    fontSize: primaryTitleFontSize,
+    letterSpacing: primaryTitleLetterSpacing,
+    fontWeight: FontWeight.w500,
+    fontFamily: fontModernUrban,
+  );
+
+  static const TextStyle experienceDescStyle = TextStyle(
+    fontFamily: fontInter,
+    fontSize: expDescFontSize,
+    color: Colors.white,
+    height: 1.4,
+    fontWeight: FontWeight.w500,
+  );
 }

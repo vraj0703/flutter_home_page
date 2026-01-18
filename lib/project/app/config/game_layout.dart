@@ -1,3 +1,5 @@
+import 'package:flame/components.dart';
+
 class GameLayout {
   // --- Global ---
   static const double iconSize = 45.0;
@@ -100,8 +102,6 @@ class GameLayout {
   static const double expActiveScale = 1.2;
   static const double expInactiveScale = 0.8;
   static const double expWarpMaxScale = 8.0;
-  // static const double expSatelliteSpacing = pi / 4; // pi requires dart:math, use literals or GamePysics? No, just use code logic or import. GameLayout usually no import.
-  // We will leave spacing to logic or use 0.785398 (pi/4).
   static const double expSatelliteSpacing = 0.7854; // pi/4
   static const double expTextAnimOffset = 30.0;
 
@@ -117,6 +117,7 @@ class GameLayout {
 
   // --- Orbital Arcs ---
   static const double orbitalArcWidthOuter = 100.0;
+
   // --- Z-Index (Priorities) ---
   static const int zBackground = 1;
   static const int zDimLayer = 2;
@@ -127,7 +128,7 @@ class GameLayout {
   static const int zContent = 25; // Philosophy, Experience, Testimonials
   static const int zBoldText = 26;
   static const int zSkills = 28;
-  static const int zUI = 30;
+  static const int zLogoOverlay = 30;
   static const int zContact = 30;
 
   // --- Logo Animator Layout ---
@@ -186,4 +187,46 @@ class GameLayout {
   static const double keyboardChassisShadowOffset = 10.0;
   static const double keyboardStartYOffset = 60.0;
   static const List<double> keyboardRowOffsets = [0.0, 30.0, 45.0, 0.0];
+
+  // --- Vector Definitions ---
+  static final Vector2 scaleOne = Vector2.all(1.0);
+  static final Vector2 scaleZero = Vector2.zero();
+
+  // Sizes
+  static final Vector2 cardSize = Vector2(cardWidth, cardHeight);
+  static final Vector2 contactButtonSize = Vector2(
+    contactButtonW,
+    contactButtonH,
+  );
+  static final Vector2 testimonialButtonSize = Vector2(
+    testimonialButtonW,
+    testimonialButtonH,
+  );
+  static final Vector2 testiCardSize = Vector2(testiCardWidth, testiCardHeight);
+  static final Vector2 menuSizeVector = Vector2.all(menuSize);
+  static final Vector2 arrowSizeVector = Vector2.all(arrowSize);
+
+  // Offsets
+  static final Vector2 titleHeatDriftVector = Vector2(0, titleHeatDriftY);
+  static final Vector2 philosophyStackLiftVector = Vector2(0, philStackLift);
+  static final Vector2 secTitleOffsetVector = Vector2(0, secTitleYOffset);
+  static final Vector2 logoRemovingTargetVector = Vector2(
+    logoRemovingTargetX,
+    logoRemovingTargetY,
+  );
+
+  // Philosophy Card Vectors
+  static final Vector2 cardPaddingVector = Vector2.all(cardPadding);
+  static final Vector2 cardTitlePosVector = Vector2(
+    cardPadding,
+    cardPadding + cardTitleOffset,
+  );
+  static final Vector2 cardDividerPosVector = Vector2(
+    cardPadding,
+    cardPadding + cardDividerOffset,
+  );
+  static final Vector2 cardDescPosVector = Vector2(
+    cardPadding,
+    cardPadding + cardDescOffset,
+  );
 }

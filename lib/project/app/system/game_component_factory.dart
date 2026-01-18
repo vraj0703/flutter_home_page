@@ -28,7 +28,7 @@ class GameComponentFactory {
   late RayMarchingShadowComponent shadowScene;
   late LogoComponent logoComponent;
   late GodRayComponent godRay;
-  late LogoOverlayComponent interactiveUI;
+  late LogoOverlayComponent logoOverlay;
   late BackgroundRunComponent backgroundRun;
   late CinematicTitleComponent cinematicTitle;
   late CinematicSecondaryTitleComponent cinematicSecondaryTitle;
@@ -87,14 +87,14 @@ class GameComponentFactory {
     godRay.priority = GameLayout.zGodRay;
     godRay.position = size / 2;
 
-    // 3. Interactive UI
-    interactiveUI = LogoOverlayComponent(
+    // 3. Logo Overlay
+    logoOverlay = LogoOverlayComponent(
       stateProvider: stateProvider,
       queuer: queuer,
     );
-    interactiveUI.position = size / 2;
-    interactiveUI.priority = GameLayout.zUI;
-    interactiveUI.gameSize = size;
+    logoOverlay.position = size / 2;
+    logoOverlay.priority = GameLayout.zLogoOverlay;
+    logoOverlay.gameSize = size;
 
     // 4. Background & Titles
     backgroundRun = BackgroundRunComponent(
@@ -192,7 +192,7 @@ class GameComponentFactory {
     shadowScene,
     logoComponent,
     godRay,
-    interactiveUI,
+    logoOverlay,
     backgroundRun,
     cinematicTitle,
     cinematicSecondaryTitle,

@@ -42,10 +42,8 @@ class LogoOverlayComponent extends PositionComponent
   final String _fullText = GameStrings.enterText;
   final Color uiColor = GameStyles.logoOverlayUi;
 
-  final double startThickness =
-      GameLayout.logoOverlayStartThickness; // Thickness near the center
-  final double endThickness =
-      GameLayout.logoOverlayEndThickness; // Thickness at the far end
+  final double startThickness = GameLayout.logoOverlayStartThickness;
+  final double endThickness = GameLayout.logoOverlayEndThickness;
   double inactivityOpacity = 1.0;
 
   // OpacityProvider implementation
@@ -99,8 +97,7 @@ class LogoOverlayComponent extends PositionComponent
   Vector2 gameSize = Vector2.zero();
 
   double _textAnimationProgress = 0.0;
-  final double _textAnimationSpeed =
-      GamePhysics.logoOverlayTextAnimSpeed; // Controls speed of typing/deleting
+  final double _textAnimationSpeed = GamePhysics.logoOverlayTextAnimSpeed;
 
   LogoOverlayComponent({required this.stateProvider, required this.queuer});
 
@@ -126,7 +123,7 @@ class LogoOverlayComponent extends PositionComponent
           fontFamily: GameStyles.fontBroadway,
           shadows: [
             Shadow(
-              color: GameStyles.logoOverlayShadow, // Shadow color with opacity
+              color: GameStyles.logoOverlayShadow,
               offset: const Offset(
                 GameStyles.logoOverlayShadowOffsetX,
                 GameStyles.logoOverlayShadowOffsetY,
@@ -137,7 +134,7 @@ class LogoOverlayComponent extends PositionComponent
         ),
       ),
       anchor: Anchor.center,
-      position: size / 2, // Positioned at the center of this component
+      position: size / 2,
     );
     add(_textComponent);
   }
@@ -241,7 +238,7 @@ class LogoOverlayComponent extends PositionComponent
     final revealFade = ((sceneProgress - start) / range).clamp(0.0, 1.0);
 
     if (revealFade <= 0.0) {
-      return; // Exit early if not yet visible.
+      return;
     }
     stateProvider.sceneState().when(
       loading: (isSvgReady, isGameReady) {},
@@ -260,14 +257,10 @@ class LogoOverlayComponent extends PositionComponent
   void _renderBouncyLines(Canvas canvas) {
     var sceneProgress = stateProvider.revealProgress();
 
-    // Line Fade
-    // Line Fade
     const double lineStart = ScrollSequenceConfig.logoOverlayLinesStart;
 
-    // Original: ((sceneProgress - 0.4) / 0.4) -> range 0.4.
-    // ScrollSequenceConfig.logoOverlayLinesStart is 0.4.
     final lineFade = ((sceneProgress - lineStart) / 0.4).clamp(0.0, 1.0);
-    final combinedOpacity = lineFade * _opacity; // Combine with scroll opacity
+    final combinedOpacity = lineFade * _opacity;
 
     if (combinedOpacity > 0.0) {
       _materialPaint.color = flutter.Colors.white.withValues(
@@ -320,7 +313,6 @@ class LogoOverlayComponent extends PositionComponent
     final scaledLength = length * line.scale;
     final center = Vector2.zero();
 
-    // The logic is split based on orientation, but it's all in one place.
     if (orientation == _LineOrientation.horizontal) {
       final startX = line.currentPosition + gap;
       final endX = startX + (gap > 0 ? scaledLength : -scaledLength);

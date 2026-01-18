@@ -24,7 +24,18 @@ class ScrollSequenceConfig {
   // --- Global UI Timings ---
   static const double inactivityTimeout = 5.0;
   static const double uiFadeDuration = 0.5;
+  static const int uiFadeDurationMs = 500;
 
+  // --- Duration Objects ---
+  static const Duration enterTitleDelayDuration = Duration(
+    milliseconds: enterTitleDelay,
+  );
+  static const Duration uiFadeDurationObj = Duration(
+    milliseconds: uiFadeDurationMs,
+  );
+  static const Duration sceneFadeDurationObj = Duration(
+    milliseconds: sceneFadeDurationMs,
+  );
   // --- 1. Bold Text Section (0 - 1700) ---
   // Entrance: 400 -> 900
   static const double boldTextEntranceStart = 400.0;

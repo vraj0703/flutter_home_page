@@ -44,7 +44,7 @@ class BouncingArrow extends StatelessWidget {
                         colorFilter: ColorFilter.mode(
                           Colors.black.withValues(
                             alpha: 0.7,
-                          ), // Shadow intensity - kept logical or move to styles? 0.7 is common shadow.
+                          ),
                           BlendMode.srcIn,
                         ),
                       ),

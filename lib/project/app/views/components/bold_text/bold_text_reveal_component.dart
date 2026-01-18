@@ -23,9 +23,9 @@ class BoldTextRevealComponent extends TextComponent
     required String text,
     required TextStyle textStyle,
     required this.shader,
-    this.baseColor = GameStyles.boldRevealBase, // Dark Grey
-    this.shineColor = GameStyles.boldRevealShine, // White
-    this.edgeColor = GameStyles.boldRevealEdge, // Gold default
+    this.baseColor = GameStyles.boldRevealBase,
+    this.shineColor = GameStyles.boldRevealShine,
+    this.edgeColor = GameStyles.boldRevealEdge,
     super.position,
     super.anchor = Anchor.center,
     super.priority,

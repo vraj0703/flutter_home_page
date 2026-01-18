@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:flutter/material.dart' show TextStyle, FontWeight;
+
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_curves.dart';
@@ -25,12 +25,7 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
   @override
   Future<void> onLoad() async {
     // --- 1. Initialize Primary Title ("VISHAL RAJ") ---
-    const primaryStyle = TextStyle(
-      fontSize: GameStyles.primaryTitleFontSize,
-      letterSpacing: GameStyles.primaryTitleLetterSpacing,
-      fontWeight: FontWeight.w500,
-      fontFamily: GameStyles.fontModernUrban,
-    );
+    const primaryStyle = GameStyles.cinematicPrimaryStyle;
 
     _primaryTitle =
         FadeTextComponent(
@@ -75,7 +70,7 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
       SequenceEffect([
         WaitEffect(ScrollSequenceConfig.titleRevealDelay),
         ScaleEffect.to(
-          Vector2(1, 1),
+          GameLayout.scaleOne,
           EffectController(
             duration: ScrollSequenceConfig.titleAnimDuration,
             curve: GameCurves.titleScale,
@@ -91,7 +86,7 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
       SequenceEffect([
         WaitEffect(1),
         MoveByEffect(
-          Vector2(0, GameLayout.titleHeatDriftY), // Subtle upward "heat" drift
+          GameLayout.titleHeatDriftVector, // Subtle upward "heat" drift
           EffectController(
             duration: ScrollSequenceConfig.titleAnimDuration,
             curve: GameCurves.titleDrift,

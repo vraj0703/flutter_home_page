@@ -54,13 +54,8 @@ class PhilosophyCard extends PositionComponent
       // 2. Icon (Emoji)
       iconComp = TextComponent(
         text: data!.icon,
-        textRenderer: TextPaint(
-          style: const TextStyle(
-            fontSize: GameStyles.cardIconVisibleSize,
-            fontFamily: GameStyles.fontModernUrban,
-          ),
-        ),
-        position: Vector2(padding, padding),
+        textRenderer: TextPaint(style: GameStyles.philosophyIconStyle),
+        position: GameLayout.cardPaddingVector,
       );
       add(iconComp);
 
@@ -75,13 +70,13 @@ class PhilosophyCard extends PositionComponent
             color: Colors.white,
           ),
         ),
-        position: Vector2(padding, padding + GameLayout.cardTitleOffset),
+        position: GameLayout.cardTitlePosVector,
       );
       add(titleComp);
 
       // 4. Divider
       dividerComp = RectangleComponent(
-        position: Vector2(padding, padding + GameLayout.cardDividerOffset),
+        position: GameLayout.cardDividerPosVector,
         size: Vector2(size.x - (padding * 2), 1),
         paint: Paint()..color = GameStyles.cardDivider,
       );
@@ -103,7 +98,7 @@ class PhilosophyCard extends PositionComponent
             height: 1.4,
           ),
         ),
-        position: Vector2(padding, padding + GameLayout.cardDescOffset),
+        position: GameLayout.cardDescPosVector,
       );
       add(descComp);
     }

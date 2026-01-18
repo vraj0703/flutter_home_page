@@ -15,6 +15,7 @@ class GameStrings {
 
   static const String loadingText = 'L O A D I N G';
   static const String enterText = 'ENTER';
+  static const String bullet = "•";
 
   static const List<String> skillKeys = [
     "Flutter",

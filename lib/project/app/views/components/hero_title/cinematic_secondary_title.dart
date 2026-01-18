@@ -3,6 +3,7 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart' show Colors, TextStyle, FontWeight;
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/utils/wait_effect.dart';
 import '../fade_text.dart';
@@ -74,7 +75,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
     _textComponent.add(
       SequenceEffect([
         ScaleEffect.to(
-          Vector2(1, 1),
+          GameLayout.scaleOne,
           EffectController(duration: 4, curve: GameCurves.titleScale),
           onComplete: showComplete,
         ),

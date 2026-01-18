@@ -36,7 +36,6 @@ class ContactPageComponent extends PositionComponent
       baseColor: GameStyles.silverText,
     );
     _titleText.anchor = Anchor.centerLeft;
-    // Note: Found duplicate position assignment in original code, simplifying to intended design
     _titleText.position = Vector2(
       leftColX,
       size.y * GameLayout.contactTitleRelY,
@@ -93,8 +92,7 @@ class ContactPageComponent extends PositionComponent
       Vector2(rightColX, formY),
       contentWidth,
     );
-    formY +=
-        180; // Keeping this spacing as it seems specific for the message box area
+    formY += 180;
 
     _sendButton = RectangleComponent(
       size: Vector2(GameLayout.contactButtonW, GameLayout.contactButtonH),
