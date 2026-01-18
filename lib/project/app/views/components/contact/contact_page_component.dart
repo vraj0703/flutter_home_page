@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/text.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/views/components/wrapped_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/fade_text.dart';
 
@@ -18,35 +20,37 @@ class ContactPageComponent extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    final leftColX = size.x * 0.12;
-    final rightColX = size.x * 0.58;
-    final contentWidth = size.x * 0.32;
+    final leftColX = size.x * GameLayout.contactLeftColRelX;
+    final rightColX = size.x * GameLayout.contactRightColRelX;
+    final contentWidth = size.x * GameLayout.contactContentRelW;
 
     _titleText = FadeTextComponent(
-      text: "CONTACT",
+      text: GameStrings.contactTitle,
       textStyle: TextStyle(
-        fontFamily: 'ModrntUrban',
-        fontSize: 110,
+        fontFamily: GameStyles.fontModernUrban,
+        fontSize: GameStyles.contactTitleFontSize,
         fontWeight: FontWeight.bold,
       ),
       shader: shader,
-      baseColor: const Color(0xFFCCCCCC), // Silver
+      baseColor: GameStyles.silverText,
     );
-    _titleText.position = Vector2(leftColX, size.y * 0.22);
     _titleText.anchor = Anchor.centerLeft;
-    _titleText.position = Vector2(leftColX, size.y * 0.18 + 55);
+    // Note: Found duplicate position assignment in original code, simplifying to intended design
+    _titleText.position = Vector2(
+      leftColX,
+      size.y * GameLayout.contactTitleRelY,
+    );
     add(_titleText);
 
-    // Description - More spacing from title
+    // Description
     _descriptionText = WrappedTextComponent(
       TextPainter(
         text: const TextSpan(
-          text:
-              "If you're curious to know more about what you saw, I invite you to contact me or follow me on social media.",
+          text: GameStrings.contactDescription,
           style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 18,
-            color: Colors.white70,
+            fontFamily: GameStyles.fontInter,
+            fontSize: GameStyles.contactDescriptionFontSize,
+            color: GameStyles.white70,
             height: 1.8,
           ),
         ),
@@ -54,45 +58,61 @@ class ContactPageComponent extends PositionComponent
       ),
       contentWidth,
     );
-    _descriptionText.position = Vector2(leftColX, size.y * 0.48);
+    _descriptionText.position = Vector2(
+      leftColX,
+      size.y * GameLayout.contactDescRelY,
+    );
     add(_descriptionText);
 
-    final iconY = size.y * 0.72;
+    final iconY = size.y * GameLayout.contactIconRelY;
+    final iconGap = 70.0;
     _addSocialIcon(Icons.email, Vector2(leftColX, iconY));
-    _addSocialIcon(Icons.camera_alt, Vector2(leftColX + 70, iconY));
-    _addSocialIcon(Icons.link, Vector2(leftColX + 140, iconY));
-    double formY = size.y * 0.30;
-    final formSpacing = 120.0;
+    _addSocialIcon(Icons.camera_alt, Vector2(leftColX + iconGap, iconY));
+    _addSocialIcon(Icons.link, Vector2(leftColX + (iconGap * 2), iconY));
 
-    _addFormField("Name", Vector2(rightColX, formY), contentWidth);
-    formY += formSpacing;
-
-    _addFormField("Email", Vector2(rightColX, formY), contentWidth);
-    formY += formSpacing;
+    double formY = size.y * GameLayout.contactFormRelY;
+    final formSpacing = GameLayout.contactFormSpacing;
 
     _addFormField(
-      "How can I help you?",
+      GameStrings.contactNameLabel,
       Vector2(rightColX, formY),
       contentWidth,
     );
-    formY += 180;
+    formY += formSpacing;
+
+    _addFormField(
+      GameStrings.contactEmailLabel,
+      Vector2(rightColX, formY),
+      contentWidth,
+    );
+    formY += formSpacing;
+
+    _addFormField(
+      GameStrings.contactMessageLabel,
+      Vector2(rightColX, formY),
+      contentWidth,
+    );
+    formY +=
+        180; // Keeping this spacing as it seems specific for the message box area
 
     _sendButton = RectangleComponent(
-      size: Vector2(180, 55),
+      size: Vector2(GameLayout.contactButtonW, GameLayout.contactButtonH),
       paint: Paint()..color = Colors.white,
-      position: Vector2(rightColX + contentWidth - 180, formY),
+      position: Vector2(
+        rightColX + contentWidth - GameLayout.contactButtonW,
+        formY,
+      ),
     );
     add(_sendButton);
 
     _sendButtonText = TextComponent(
-      text: "SEND",
+      text: GameStrings.contactSendButton,
       textRenderer: TextPaint(
         style: const TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 16,
-
+          fontFamily: GameStyles.fontInter,
+          fontSize: GameStyles.buttonFontSize,
           fontWeight: FontWeight.bold,
-          color: Colors.black,
+          color: GameStyles.black,
           letterSpacing: 2.0,
         ),
       ),
@@ -106,7 +126,7 @@ class ContactPageComponent extends PositionComponent
     final box =
         RectangleComponent(
             position: pos,
-            size: Vector2(45, 45),
+            size: Vector2(GameLayout.iconSize, GameLayout.iconSize),
             paint: Paint()..color = Colors.white,
           )
           ..paint.style = PaintingStyle.stroke
@@ -119,8 +139,8 @@ class ContactPageComponent extends PositionComponent
       text: label,
       textRenderer: TextPaint(
         style: const TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 15,
+          fontFamily: GameStyles.fontInter,
+          fontSize: GameStyles.formLabelFontSize,
           color: Colors.white,
           letterSpacing: 0.5,
         ),
@@ -132,7 +152,7 @@ class ContactPageComponent extends PositionComponent
     final line = RectangleComponent(
       position: Vector2(pos.x, pos.y + 40),
       size: Vector2(width, 1),
-      paint: Paint()..color = Colors.white54,
+      paint: Paint()..color = GameStyles.white54,
     );
     add(line);
   }

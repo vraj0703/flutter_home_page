@@ -22,49 +22,72 @@ class BoldTextController implements ScrollObserver {
     double offsetX = -screenWidth;
     double offsetY = 0;
 
-    if (scrollOffset < 400) {
+    // Constants
+    const entranceStart = ScrollSequenceConfig.boldTextEntranceStart;
+    const entranceDuration = ScrollSequenceConfig.boldTextEntranceDuration;
+    final entranceEnd = ScrollSequenceConfig.boldTextEntranceEnd;
+    const driftStart = ScrollSequenceConfig.boldTextDriftStart;
+    const driftDuration = ScrollSequenceConfig.boldTextDriftDuration;
+    final driftEnd = ScrollSequenceConfig.boldTextDriftEnd;
+    const scrollEnd = ScrollSequenceConfig.boldTextEnd;
+
+    // Movement Logic
+    if (scrollOffset < entranceStart) {
       offsetX = -screenWidth;
-    } else if (scrollOffset < 900) {
-      final t = ((scrollOffset - 400) / 500).clamp(0.0, 1.0);
+    } else if (scrollOffset < entranceEnd) {
+      // Entrance
+      final t = ((scrollOffset - entranceStart) / entranceDuration).clamp(
+        0.0,
+        1.0,
+      );
       final curvedT = exponentialEaseOut.transform(t);
       offsetX = -screenWidth + (screenWidth * curvedT);
-      offsetY = 0;
-    } else if (scrollOffset < 1400) {
-      final t = ((scrollOffset - 900) / 500).clamp(0.0, 1.0);
+    } else if (scrollOffset < driftEnd) {
+      // Drifting
+      final t = ((scrollOffset - driftStart) / driftDuration).clamp(0.0, 1.0);
       offsetX = 0.0 + (50 * t);
-      offsetY = 0;
     } else {
       // Exit Phase
-      final t =
-          ((scrollOffset - 1400) / (ScrollSequenceConfig.boldTextEnd - 1400))
-              .clamp(0.0, 1.0);
+      final t = ((scrollOffset - driftEnd) / (scrollEnd - driftEnd)).clamp(
+        0.0,
+        1.0,
+      );
       final curvedT = Curves.easeInCubic.transform(t);
       offsetX = 50 + (screenWidth * curvedT);
-      offsetY = 0;
     }
-    component.position = centerPosition + Vector2(offsetX, offsetY);
-    double opacity = 0.0;
 
-    if (scrollOffset < 500) {
+    component.position = centerPosition + Vector2(offsetX, offsetY);
+
+    // Opacity Logic
+    double opacity = 0.0;
+    const fadeInStart = ScrollSequenceConfig.boldTextFadeInStart;
+    const fadeInDuration = ScrollSequenceConfig.boldTextFadeInDuration;
+    final fadeInEnd = ScrollSequenceConfig.boldTextFadeInEnd;
+    const fadeOutRegion = ScrollSequenceConfig.boldTextFadeOutRegion;
+
+    if (scrollOffset < fadeInStart) {
       opacity = 0.0;
-    } else if (scrollOffset < 750) {
-      final t = ((scrollOffset - 500) / 250).clamp(0.0, 1.0);
+    } else if (scrollOffset < fadeInEnd) {
+      final t = ((scrollOffset - fadeInStart) / fadeInDuration).clamp(0.0, 1.0);
       opacity = exponentialEaseOut.transform(t);
-    } else if (scrollOffset < ScrollSequenceConfig.boldTextEnd - 200) {
+    } else if (scrollOffset < scrollEnd - fadeOutRegion) {
       opacity = 1.0;
     } else {
-      final t =
-          ((scrollOffset - (ScrollSequenceConfig.boldTextEnd - 200)) / 200)
-              .clamp(0.0, 1.0);
+      final t = ((scrollOffset - (scrollEnd - fadeOutRegion)) / fadeOutRegion)
+          .clamp(0.0, 1.0);
       opacity = 1.0 - exponentialEaseOut.transform(t);
     }
     component.opacity = opacity;
 
+    // Shine Logic
     double shine = 0.0;
-    if (scrollOffset >= 1050 && scrollOffset < 1400) {
-      shine = ((scrollOffset - 1050) / 350).clamp(0.0, 1.0);
+    const shineStart = ScrollSequenceConfig.boldTextShineStart;
+    const shineDuration = ScrollSequenceConfig.boldTextShineDuration;
+
+    if (scrollOffset >= shineStart && scrollOffset < driftEnd) {
+      shine = ((scrollOffset - shineStart) / shineDuration).clamp(0.0, 1.0);
       shine = exponentialEaseOut.transform(shine);
-    } else if (scrollOffset >= 1400) {
+    } else if (scrollOffset >= driftEnd) {
       shine = 1.0;
     }
     component.fillProgress = shine;

@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart' as material;
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
@@ -48,13 +49,11 @@ class GameComponentFactory {
     required material.Color Function() backgroundColorCallback,
   }) async {
     // 1. Shaders & Images
-    final logoImage = await _loadImage('logo.png');
-    metallicShader = await _loadShader('assets/shaders/metallic_text.frag');
-    final godRaysShader = await _loadShader('assets/shaders/god_rays.frag');
-    final logoShader = await _loadShader('assets/shaders/logo.frag');
-    final backgroundShader = await _loadShader(
-      'assets/shaders/background_run_v2.frag',
-    );
+    final logoImage = await _loadImage(GameAssets.logo);
+    metallicShader = await _loadShader(GameAssets.metallicShader);
+    final godRaysShader = await _loadShader(GameAssets.godRaysShader);
+    final logoShader = await _loadShader(GameAssets.logoShader);
+    final backgroundShader = await _loadShader(GameAssets.backgroundShader);
 
     // 2. Logo Layer
     final startZoom = 3.0;
@@ -102,29 +101,29 @@ class GameComponentFactory {
     );
 
     cinematicTitle = CinematicTitleComponent(
-      primaryText: "VISHAL RAJ",
+      primaryText: GameStrings.primaryTitle,
       shader: metallicShader,
       position: size / 2,
     );
     cinematicTitle.priority = 25;
 
     cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
-      text: "Welcome to my space",
+      text: GameStrings.secondaryTitle,
       shader: metallicShader,
       position: size / 2 + Vector2(0, 48),
     );
     cinematicSecondaryTitle.priority = 24;
 
     boldTextReveal = BoldTextRevealComponent(
-      text: "Crafting Clarity from Chaos.",
+      text: GameStrings.boldText,
       textStyle: material.TextStyle(
-        fontSize: 80,
-        fontWeight: FontWeight.w500,
-        fontFamily: 'InconsolataNerd',
+        fontSize: GameStyles.titleFontSize,
+        fontWeight: material.FontWeight.w500,
+        fontFamily: GameStyles.fontInconsolata,
         letterSpacing: 2.0,
       ),
       shader: metallicShader,
-      baseColor: const material.Color(0xFFE3E4E5),
+      baseColor: GameStyles.boldTextBase,
       position: size / 2,
     );
     boldTextReveal.priority = 26;
@@ -133,18 +132,17 @@ class GameComponentFactory {
     dimLayer = RectangleComponent(
       priority: 2,
       size: size,
-      paint: Paint()
-        ..color = const material.Color(0xFF000000).withValues(alpha: 0.0),
+      paint: Paint()..color = GameStyles.dimLayer.withValues(alpha: 0.0),
     );
 
     // 5. Scrollable Pages
     philosophyText = PhilosophyTextComponent(
-      text: "My Philosophy",
+      text: GameStrings.philosophyTitle,
       style: material.TextStyle(
-        fontFamily: 'ModrntUrban',
-        fontSize: 40,
-        fontWeight: FontWeight.bold,
-        color: material.Colors.white,
+        fontFamily: GameStyles.fontModernUrban,
+        fontSize: GameStyles.philosophyFontSize,
+        fontWeight: material.FontWeight.bold,
+        color: GameStyles.philosophyText,
         letterSpacing: 1.5,
       ),
       shader: metallicShader,

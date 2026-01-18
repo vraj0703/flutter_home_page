@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_carousel_component.dart';
 import 'package:flutter_home_page/project/app/models/testimonial_node.dart';
@@ -43,43 +45,52 @@ class TestimonialPageComponent extends PositionComponent
   Future<void> onLoad() async {
     // Title
     titleText = FadeTextComponent(
-      text: "TESTIMONIALS",
+      text: GameStrings.testimonialsTitle,
       textStyle: TextStyle(
-        fontFamily: 'ModrntUrban',
-        fontSize: 48,
+        fontFamily: GameStyles.fontModernUrban,
+        fontSize: GameStyles.testimonialTitleFontSize,
         fontWeight: FontWeight.bold,
         letterSpacing: 2.0,
       ),
       shader: shader,
-      baseColor: const Color(0xFFCCCCCC),
+      baseColor: GameStyles.silverText,
     );
     titleText.anchor = Anchor.topCenter;
-    titleText.position = Vector2(size.x / 2, size.y * 0.15);
+    titleText.position = Vector2(
+      size.x / 2,
+      size.y * GameLayout.testimonialTitleRelY,
+    );
     titleText.opacity = opacity; // Ensure correct initial opacity
     add(titleText);
 
     // Carousel
     carousel = TestimonialCarouselComponent(data: testimonialData);
-    carousel.position = Vector2(size.x / 2, size.y * 0.5);
+    carousel.position = Vector2(
+      size.x / 2,
+      size.y * GameLayout.testimonialCarouselRelY,
+    );
     carousel.anchor = Anchor.center;
     carousel.opacity = opacity; // Apply initial opacity
     add(carousel);
 
     // Add Button
     addButton = RectangleComponent(
-      size: Vector2(200, 50),
-      paint: Paint()..color = const Color(0xFFC78E53),
-      position: Vector2(size.x / 2, size.y * 0.85),
-      anchor: Anchor.center,
+      size: Vector2(
+        GameLayout.testimonialButtonW,
+        GameLayout.testimonialButtonH,
+      ),
+      paint: Paint()..color = GameStyles.accentGold,
+      position: Vector2(size.x / 2, size.y * GameLayout.testimonialButtonRelY),
     );
+    addButton.anchor = Anchor.center;
     addButton.opacity = opacity;
     // Add label to button
     final btnLabel = TextComponent(
-      text: "Add Testimonial",
+      text: GameStrings.addTestimonialButton,
       textRenderer: TextPaint(
         style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 14,
+          fontFamily: GameStyles.fontInter,
+          fontSize: GameStyles.buttonFontSize,
           fontWeight: FontWeight.bold,
           color: Colors.black.withValues(alpha: opacity),
         ),

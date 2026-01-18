@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
 import 'package:flutter_home_page/project/app/interfaces/shine_provider.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
@@ -22,9 +23,9 @@ class BoldTextRevealComponent extends TextComponent
     required String text,
     required TextStyle textStyle,
     required this.shader,
-    this.baseColor = const Color(0xFF444444), // Dark Grey
-    this.shineColor = const Color(0xFFFFFFFF), // White
-    this.edgeColor = const Color(0xFFFFC107), // Gold default
+    this.baseColor = GameStyles.boldRevealBase, // Dark Grey
+    this.shineColor = GameStyles.boldRevealShine, // White
+    this.edgeColor = GameStyles.boldRevealEdge, // Gold default
     super.position,
     super.anchor = Anchor.center,
     super.priority,

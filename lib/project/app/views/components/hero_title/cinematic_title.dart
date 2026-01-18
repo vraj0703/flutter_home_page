@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart' show TextStyle, FontWeight, Curves;
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
 import 'package:flutter_home_page/project/app/utils/wait_effect.dart';
 
 import '../fade_text.dart';
@@ -22,10 +23,10 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
   Future<void> onLoad() async {
     // --- 1. Initialize Primary Title ("VISHAL RAJ") ---
     const primaryStyle = TextStyle(
-      fontSize: 54,
+      fontSize: GameStyles.primaryTitleFontSize,
       letterSpacing: 28,
       fontWeight: FontWeight.w500,
-      fontFamily: 'ModrntUrban',
+      fontFamily: GameStyles.fontModernUrban,
     );
 
     _primaryTitle =
@@ -33,7 +34,7 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
             text: primaryText.toUpperCase(),
             textStyle: primaryStyle,
             shader: shader,
-            baseColor: const Color(0xFFE3E4E5),
+            baseColor: GameStyles.boldTextBase,
             // Gold/Copper
             anchor: Anchor.center,
             priority: 8,

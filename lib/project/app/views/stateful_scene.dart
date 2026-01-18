@@ -2,6 +2,8 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'package:flutter_home_page/project/app/views/widgets/curtain_clipper.dart';
 import 'package:flutter_home_page/project/app/views/widgets/home_overlay.dart'; // Import overlay
@@ -32,13 +34,17 @@ class _StatefulSceneState extends State<StatefulScene>
     // Controller for the "LOADING" text's blinking effect.
     _blinkingController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(
+        milliseconds: ScrollSequenceConfig.loadingBlinkDuration,
+      ),
     )..repeat(reverse: true);
 
     // This controller drives the curtain opening and the in-game animations.
     _revealController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(
+        milliseconds: ScrollSequenceConfig.sceneRevealDuration,
+      ),
     );
 
     // Link the controller to our global notifier.
@@ -54,7 +60,9 @@ class _StatefulSceneState extends State<StatefulScene>
     // 1. Setup the Bounce Animation
     _downArrowBounceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(
+        milliseconds: ScrollSequenceConfig.arrowBounceDuration,
+      ),
     )..repeat(reverse: true); // Continuous loop
 
     // 2. Define the vertical offset (bounces 15 pixels down)
@@ -149,7 +157,9 @@ class _StatefulSceneState extends State<StatefulScene>
                 begin: state is Loading ? 0.0 : _blinkingController.value,
                 end: state is Loading ? 1.0 : 0.0,
               ),
-              duration: const Duration(milliseconds: 600),
+              duration: const Duration(
+                milliseconds: ScrollSequenceConfig.loadingBlinkDuration,
+              ),
               curve: Curves.linearToEaseOut,
               // Decelerates for a smoother "exit" feel
               builder: (context, value, child) {
@@ -161,13 +171,13 @@ class _StatefulSceneState extends State<StatefulScene>
                 key: ValueKey('loading'),
                 opacity: _blinkingController,
                 child: const Text(
-                  'L O A D I N G',
+                  GameStrings.loadingText,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 40,
-                    letterSpacing: 12,
+                    fontSize: GameStyles.loadingFontSize,
+                    letterSpacing: GameStyles.loadingLetterSpacing,
                     fontWeight: FontWeight.w500,
-                    fontFamily: "Broadway",
+                    fontFamily: GameStyles.fontBroadway,
                   ),
                 ),
               ),

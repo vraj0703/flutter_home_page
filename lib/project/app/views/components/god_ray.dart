@@ -1,23 +1,25 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 
 class GodRayComponent extends PositionComponent {
   // --- Tweak these values to customize the sun's appearance ---
 
   // Layer 1: The hot, tight core
-  final double coreSize = 0.0;
-  final Color coreColor = const Color(0xFFFFFFFF); // White-hot
-  final double coreBlurSigma = 2.0;
+  final double coreSize = GameLayout.godRayCoreSize;
+  final Color coreColor = GameStyles.godRayCore; // White-hot
+  final double coreBlurSigma = GameLayout.godRayCoreBlur;
 
   // Layer 2: The vibrant inner halo
-  final double innerGlowSize = 24.0;
-  final Color innerGlowColor = const Color(0xAAFFE082); // Golden Yellow
-  final double innerGlowBlurSigma = 15.0;
+  final double innerGlowSize = GameLayout.godRayInnerSize;
+  final Color innerGlowColor = GameStyles.godRayInner; // Golden Yellow
+  final double innerGlowBlurSigma = GameLayout.godRayInnerBlur;
 
   // Layer 3: The soft outer atmosphere
-  final double outerGlowSize = 64.0;
-  final Color outerGlowColor = const Color(0xAAE68A4D); // Dusty Orange
-  final double outerGlowBlurSigma = 35.0;
+  final double outerGlowSize = GameLayout.godRayOuterSize;
+  final Color outerGlowColor = GameStyles.godRayOuter; // Dusty Orange
+  final double outerGlowBlurSigma = GameLayout.godRayOuterBlur;
 
   late final Paint _corePaint;
   late final Paint _innerGlowPaint;

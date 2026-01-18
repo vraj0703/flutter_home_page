@@ -2,6 +2,8 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
@@ -45,19 +47,18 @@ class PhilosophyCard extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    // 1. Background (Glassmorphism handled in render, but we can add a simple dark overlay)
-    // Actually render() does the heavy lifting for the glass look.
+    // 1. Background (Glassmorphism handled in render)
 
     if (data != null) {
-      final padding = 32.0;
+      final padding = GameLayout.cardPadding;
 
       // 2. Icon (Emoji)
       iconComp = TextComponent(
         text: data!.icon,
         textRenderer: TextPaint(
           style: const TextStyle(
-            fontSize: 48, // Large Emoji
-            fontFamily: 'ModrntUrban', // Fallback
+            fontSize: GameStyles.cardIconVisibleSize,
+            fontFamily: GameStyles.fontModernUrban,
           ),
         ),
         position: Vector2(padding, padding),
@@ -69,41 +70,41 @@ class PhilosophyCard extends PositionComponent
         text: data!.title,
         textRenderer: TextPaint(
           style: TextStyle(
-            fontFamily: 'ModrntUrban',
-            fontSize: 64,
+            fontFamily: GameStyles.fontModernUrban,
+            fontSize: GameStyles.cardTitleVisibleSize,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
-        position: Vector2(padding, padding + 60),
+        position: Vector2(padding, padding + GameLayout.cardTitleOffset),
       );
       add(titleComp);
 
       // 4. Divider
       dividerComp = RectangleComponent(
-        position: Vector2(padding, padding + 60 + 32),
+        position: Vector2(padding, padding + GameLayout.cardDividerOffset),
         size: Vector2(size.x - (padding * 2), 1),
-        paint: Paint()..color = Colors.white.withValues(alpha: 0.2),
+        paint: Paint()..color = GameStyles.cardDivider,
       );
       add(dividerComp);
 
-      // 5. Description (Using TextComponent with manual wrap to avoid TextBoxComponent issues)
+      // 5. Description
       final wrappedDesc = _wordWrap(
         data!.description,
-        80,
-      ); // Approx 45 chars per line for 500px width
+        GameLayout.cardDescWrapLimit,
+      );
 
       descComp = TextComponent(
         text: wrappedDesc,
         textRenderer: TextPaint(
           style: TextStyle(
-            fontFamily: 'ModrntUrban',
-            fontSize: 32,
-            color: Colors.white.withValues(alpha: 0.8),
+            fontFamily: GameStyles.fontModernUrban,
+            fontSize: GameStyles.cardDescVisibleSize,
+            color: GameStyles.cardDesc,
             height: 1.4,
           ),
         ),
-        position: Vector2(padding, padding + 60 + 32 + 20),
+        position: Vector2(padding, padding + GameLayout.cardDescOffset),
       );
       add(descComp);
     }
@@ -133,13 +134,11 @@ class PhilosophyCard extends PositionComponent
   }
 
   void _updateVisuals() {
-    // Check removed to allow onLoad usage
     final alpha = _finalOpacity;
 
     if (data != null) {
-      // Toggle visibility to avoid unnecessary rendering calls if invisible
       if (alpha <= 0.01) {
-        iconComp.scale = Vector2.zero(); // effectively hide
+        iconComp.scale = Vector2.zero();
         titleComp.scale = Vector2.zero();
         dividerComp.scale = Vector2.zero();
         descComp.scale = Vector2.zero();
@@ -152,28 +151,28 @@ class PhilosophyCard extends PositionComponent
 
       iconComp.textRenderer = TextPaint(
         style: TextStyle(
-          fontSize: 42,
-          fontFamily: 'ModrntUrban',
+          fontSize: GameStyles.cardIconVisibleSize,
+          fontFamily: GameStyles.fontModernUrban,
           color: Colors.white.withValues(alpha: alpha),
         ),
       );
 
       titleComp.textRenderer = TextPaint(
         style: TextStyle(
-          fontFamily: 'ModrntUrban',
-          fontSize: 22,
+          fontFamily: GameStyles.fontModernUrban,
+          fontSize: GameStyles.cardTitleVisibleSize,
           fontWeight: FontWeight.bold,
           color: data!.accentColor.withValues(alpha: alpha),
         ),
       );
 
-      dividerComp.paint.color = Colors.white.withValues(alpha: 0.2 * alpha);
+      dividerComp.paint.color = GameStyles.cardDivider.withValues(alpha: alpha);
 
       descComp.textRenderer = TextPaint(
         style: TextStyle(
-          fontFamily: 'ModrntUrban',
-          fontSize: 15,
-          color: Colors.white.withValues(alpha: 0.8 * alpha),
+          fontFamily: GameStyles.fontModernUrban,
+          fontSize: GameStyles.cardDescVisibleSize,
+          color: GameStyles.cardDesc.withValues(alpha: alpha),
           height: 1.4,
         ),
       );
@@ -197,19 +196,24 @@ class PhilosophyCard extends PositionComponent
     canvas.drawRRect(
       rrect,
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.05 * alpha)
+        ..color = GameStyles.cardFill.withValues(alpha: alpha)
         ..style = PaintingStyle.fill,
     );
     // Stroke: White 20%
     canvas.drawRRect(
       rrect,
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.2 * alpha)
+        ..color = GameStyles.cardStroke.withValues(alpha: alpha)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1,
     );
 
     // Slight Shadow for depth
-    canvas.drawShadow(Path()..addRRect(rrect), Colors.black, 15.0, true);
+    canvas.drawShadow(
+      Path()..addRRect(rrect),
+      GameStyles.cardShadow,
+      15.0,
+      true,
+    );
   }
 }

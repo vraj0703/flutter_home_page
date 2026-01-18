@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart' as material;
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
 import 'package:flutter_home_page/project/app/views/components/fade_text.dart';
 
 class PhilosophyTextComponent extends PositionComponent with HasPaint {
@@ -23,7 +24,7 @@ class PhilosophyTextComponent extends PositionComponent with HasPaint {
       text: text,
       textStyle: style,
       shader: shader,
-      baseColor: const Color(0xFFE3E4E5),
+      baseColor: GameStyles.boldTextBase,
     );
     _fadeText.anchor = Anchor.centerLeft;
     _fadeText.opacity = 0.0; // Explicitly hide child on load

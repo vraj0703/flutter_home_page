@@ -7,6 +7,8 @@ import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter/material.dart' as flutter;
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 
 import 'bouncy_lines.dart';
 
@@ -23,22 +25,24 @@ class LogoOverlayComponent extends PositionComponent
 
   // --- Configuration ---
   final double ratio = 1;
-  final double outerRadius = 135.0;
-  final double innerRadius = 95.0;
+  final double outerRadius = GameLayout.logoOverlayOuterRadius;
+  final double innerRadius = GameLayout.logoOverlayInnerRadius;
 
-  final double horizontalLineLength = 80.0;
-  final double horizontalLineGap = 120.0;
-  final double horizontalThreshold = 300.0;
+  final double horizontalLineLength = GameLayout.logoOverlayHLineLength;
+  final double horizontalLineGap = GameLayout.logoOverlayHLineGap;
+  final double horizontalThreshold = GameLayout.logoOverlayHThreshold;
 
-  final double verticalLineLength = 70.0;
-  final double verticalLineGap = 120.0;
-  final double verticalThreshold = 150.0;
+  final double verticalLineLength = GameLayout.logoOverlayVLineLength;
+  final double verticalLineGap = GameLayout.logoOverlayVLineGap;
+  final double verticalThreshold = GameLayout.logoOverlayVThreshold;
 
-  final String _fullText = 'ENTER';
-  final Color uiColor = const Color(0xFF9A482F);
+  final String _fullText = GameStrings.enterText;
+  final Color uiColor = GameStyles.logoOverlayUi;
 
-  final double startThickness = 3.0; // Thickness near the center
-  final double endThickness = 0.5; // Thickness at the far end
+  final double startThickness =
+      GameLayout.logoOverlayStartThickness; // Thickness near the center
+  final double endThickness =
+      GameLayout.logoOverlayEndThickness; // Thickness at the far end
   double inactivityOpacity = 1.0;
 
   // OpacityProvider implementation
@@ -50,14 +54,14 @@ class LogoOverlayComponent extends PositionComponent
     _opacity = value;
     _textComponent.textRenderer = TextPaint(
       style: flutter.TextStyle(
-        fontSize: 15.0,
+        fontSize: GameStyles.enterFontSize,
         color: uiColor.withValues(alpha: _opacity), // Apply opacity
-        letterSpacing: 10.0,
+        letterSpacing: GameStyles.enterLetterSpacing,
         fontWeight: FontWeight.w900,
-        fontFamily: 'Broadway',
+        fontFamily: GameStyles.fontBroadway,
         shadows: [
           Shadow(
-            color: const Color(0xFFD6A65F).withValues(alpha: _opacity),
+            color: GameStyles.logoOverlayShadow.withValues(alpha: _opacity),
             offset: const Offset(2.0, 2.0),
             blurRadius: 10.0,
           ),
@@ -66,20 +70,8 @@ class LogoOverlayComponent extends PositionComponent
     );
   }
 
-  final List<Color> glassyColors = [
-    const Color.fromRGBO(214, 166, 95, 0.2), // Faint Edge Highlight
-    const Color.fromRGBO(169, 95, 59, 0.05), // Darker transparent part
-    const Color.fromRGBO(154, 72, 47, 0.7), // Sharp Central Highlight
-    const Color.fromRGBO(169, 95, 59, 0.05), // Darker transparent part
-    const Color.fromRGBO(214, 166, 95, 0.2), // Faint Edge Highlight
-  ];
-  final List<double> glassyStops = [
-    0.0, // Start edge
-    0.4, // Start of central highlight
-    0.5, // Peak of highlight
-    0.6, // End of central highlight
-    1.0, // End edge
-  ];
+  final List<Color> glassyColors = GameStyles.glassyColors;
+  final List<double> glassyStops = GameStyles.glassyStops;
 
   final BouncyLine _rightLine = BouncyLine();
   final BouncyLine _leftLine = BouncyLine();
@@ -117,14 +109,14 @@ class LogoOverlayComponent extends PositionComponent
       text: '',
       textRenderer: TextPaint(
         style: flutter.TextStyle(
-          fontSize: 15.0,
+          fontSize: GameStyles.enterFontSize,
           color: uiColor,
-          letterSpacing: 10.0,
+          letterSpacing: GameStyles.enterLetterSpacing,
           fontWeight: FontWeight.w900,
-          fontFamily: 'Broadway',
+          fontFamily: GameStyles.fontBroadway,
           shadows: [
             Shadow(
-              color: const Color(0xFFD6A65F), // Shadow color with opacity
+              color: GameStyles.logoOverlayShadow, // Shadow color with opacity
               offset: const Offset(2.0, 2.0), // X and Y displacement
               blurRadius: 10.0, // Blur radius of the shadow
             ),

@@ -1,32 +1,14 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 
 class SkillsKeyboardComponent extends PositionComponent with HasPaint {
   SkillsKeyboardComponent({super.size});
 
   late RectangleComponent _chassis;
   // Tools list - "Keys"
-  final List<String> tools = [
-    "Flutter",
-    "Dart",
-    "Flame",
-    "Firebase",
-    "Git",
-    "Figma",
-    "Block",
-    "Provider",
-    "Riverpod",
-    "Clean Arch",
-    "CI/CD",
-    "Jira",
-    "Agile",
-    "SOLID",
-    "REST API",
-    "GraphQL",
-    "Python",
-    "C++",
-    "GLSL",
-  ];
+  final List<String> tools = GameStrings.skillKeys;
 
   @override
   set opacity(double val) {
@@ -54,8 +36,8 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
 
   @override
   Future<void> onLoad() async {
-    final chassisWidth = size.x * 0.8;
-    final chassisHeight = size.y * 0.5;
+    final chassisWidth = size.x * GameLayout.keyboardChassisWidthRatio;
+    final chassisHeight = size.y * GameLayout.keyboardChassisHeightRatio;
     final chassisPos = Vector2(
       (size.x - chassisWidth) / 2,
       (size.y - chassisHeight) / 2,
@@ -66,9 +48,7 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
       position: chassisPos,
       size: Vector2(chassisWidth, chassisHeight),
       paint: Paint()
-        ..color = const Color(
-          0xFF111111,
-        ).withValues(alpha: opacity),
+        ..color = GameStyles.keyboardChassis.withValues(alpha: opacity),
     );
     _chassis.paint.style = PaintingStyle.fill;
     add(_chassis);
@@ -78,21 +58,18 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
       position: Vector2(chassisPos.x, chassisPos.y + 10), // Shifted down
       size: Vector2(chassisWidth, chassisHeight),
       paint: Paint()
-        ..color = const Color(
-          0xFF000000,
-        ).withValues(alpha: opacity),
+        ..color = GameStyles.keyboardChassisSide.withValues(alpha: opacity),
       priority: -1, // Behind
     );
     add(_chassisSide);
 
-
-    final keySize = 60.0;
-    final spacing = 15.0;
-    final rowSpacing = 70.0;
+    final keySize = GameLayout.keyboardKeySize;
+    final spacing = GameLayout.keyboardKeySpacing;
+    final rowSpacing = GameLayout.keyboardRowSpacing;
 
     // Calculate layout
     int currentToolIndex = 0;
-    final rows = [6, 7, 7, 5]; // number of keys per row
+    final rows = [6, 7, 7, 5]; // number of keys per row (structural, kept here)
     final rowOffsets = [0.0, 30.0, 45.0, 0.0]; // Stagger
 
     double startY = chassisPos.y + 60;
@@ -105,11 +82,8 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
           (chassisWidth - rowWidth) / 2 +
           rowOffsets[r]; // Center row
 
-      startX = chassisPos.x + (chassisWidth - rowWidth) / 2;
-
       for (int k = 0; k < count; k++) {
         if (currentToolIndex >= tools.length) {
-
           break;
         }
 
@@ -163,8 +137,8 @@ class KeycapComponent extends PositionComponent with HasPaint {
     if (opacity == 0.0) return; // Optimization
 
     // 3D Effect
-    final depth = 10.0;
-    final radius = 8.0;
+    final depth = GameLayout.keyboardKeyDepth;
+    final radius = GameLayout.keyboardKeyRadius;
 
     // Side Face (Darker)
     final sideRect = RRect.fromRectAndRadius(
@@ -173,7 +147,7 @@ class KeycapComponent extends PositionComponent with HasPaint {
     );
     canvas.drawRRect(
       sideRect,
-      Paint()..color = const Color(0xFF1A1A1A).withValues(alpha: opacity),
+      Paint()..color = GameStyles.keySide.withValues(alpha: opacity),
     ); // Dark Side
 
     // Top Face
@@ -185,9 +159,7 @@ class KeycapComponent extends PositionComponent with HasPaint {
     final isHighlighted = ["Flutter", "Dart", "Flame"].contains(label);
 
     // Dark Theme: Normal = Dark Grey (#262626), Highlight = White (#FFFFFF)
-    final color = isHighlighted
-        ? const Color(0xFFFFFFFF)
-        : const Color(0xFF262626);
+    final color = isHighlighted ? GameStyles.keyHighlight : GameStyles.keyTop;
 
     canvas.drawRRect(
       topRect,
@@ -203,12 +175,14 @@ class KeycapComponent extends PositionComponent with HasPaint {
       text: label,
       textRenderer: TextPaint(
         style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 10,
+          fontFamily: GameStyles.fontInter,
+          fontSize: GameStyles.keyFontSize,
           fontWeight: FontWeight.bold,
           // Highlight (White Key) -> Black Text
           // Normal (Dark Key) -> White Text
-          color: isHighlighted ? Colors.black : Colors.white,
+          color: isHighlighted
+              ? GameStyles.keyTextHighlight
+              : GameStyles.keyTextNormal,
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 class FadeTextComponent extends TextComponent with HasPaint, HasGameReference {
@@ -13,24 +14,24 @@ class FadeTextComponent extends TextComponent with HasPaint, HasGameReference {
     required super.text,
     required TextStyle textStyle,
     required this.shader,
-    this.baseColor = const Color(0xFFF0F0F2),
+    this.baseColor = GameStyles.fadeTextDefault,
     super.position,
     super.anchor,
     super.priority,
   }) : super(
-    textRenderer: TextPaint(
-      style: textStyle.copyWith(
-        foreground: Paint()..shader = shader,
-        shadows: [
-          const Shadow(
-            color: Colors.black45,
-            blurRadius: 10,
-            offset: Offset(2, 2),
-          ),
-        ],
-      ),
-    ),
-  );
+         textRenderer: TextPaint(
+           style: textStyle.copyWith(
+             foreground: Paint()..shader = shader,
+             shadows: [
+               const Shadow(
+                 color: Colors.black45,
+                 blurRadius: 10,
+                 offset: Offset(2, 2),
+               ),
+             ],
+           ),
+         ),
+       );
 
   @override
   void update(double dt) {

@@ -1,8 +1,48 @@
 class ScrollSequenceConfig {
+  // --- 0. Intro / Title Section ---
+  static const double titleParallaxEnd = 800.0;
+  static const double secondaryTitleParallaxEnd = 1000.0;
+  static const double titleFadeEnd = 500.0;
+  static const double secondaryTitleFadeEnd = 100.0;
+  static const double uiFadeEnd = 100.0;
+
+  // --- Intro Animation Durations (ms) ---
+  static const int sceneRevealDuration = 2000;
+  static const int loadingBlinkDuration = 600;
+  static const int arrowBounceDuration = 1500;
+
   // --- 1. Bold Text Section (0 - 1700) ---
-  // Exits to Right
+  // Entrance: 400 -> 900
+  static const double boldTextEntranceStart = 400.0;
+  static const double boldTextEntranceDuration = 500.0;
+  static double get boldTextEntranceEnd =>
+      boldTextEntranceStart + boldTextEntranceDuration; // 900
+
+  // Drift: 900 -> 1400
+  static const double boldTextDriftStart = 900.0; // Matches entrance end
+  static const double boldTextDriftDuration = 500.0;
+  static double get boldTextDriftEnd =>
+      boldTextDriftStart + boldTextDriftDuration; // 1400
+
+  // Fade In: 500 -> 750
+  static const double boldTextFadeInStart = 500.0;
+  static const double boldTextFadeInDuration = 250.0;
+  static double get boldTextFadeInEnd =>
+      boldTextFadeInStart + boldTextFadeInDuration; // 750
+
+  // Shine: 1050 -> 1400
+  static const double boldTextShineStart = 1050.0;
+  static const double boldTextShineDuration = 350.0;
+
+  // Exit
   static const double boldTextStart = 0.0;
   static const double boldTextEnd = 1700.0;
+  static const double boldTextFadeOutRegion =
+      200.0; // How far from end to start fading out
+
+  // --- Dim Layer (1500 - 2000) ---
+  static const double dimLayerStart = 1500.0;
+  static const double dimLayerEnd = 2000.0;
 
   // --- 2. Philosophy Section (1900 - 3500) ---
   // Wait 200px after Bold Text (1700 -> 1900)

@@ -1,6 +1,8 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import '../wrapped_text_component.dart';
 
 class ExperienceDescriptionItem extends PositionComponent with HasPaint {
@@ -27,14 +29,14 @@ class ExperienceDescriptionItem extends PositionComponent with HasPaint {
     // Create static layout of text
     // No animations, just the content
     double currentY = 0;
-    const double maxWidth = 450;
+    const double maxWidth = GameLayout.expDescMaxWidth;
 
     for (final text in description) {
       final textSpan = TextSpan(
         text: "•  $text",
         style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 14,
+          fontFamily: GameStyles.fontInter,
+          fontSize: GameStyles.expDescFontSize,
           // Increased size
           color: Colors.white,
           height: 1.4,

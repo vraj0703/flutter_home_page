@@ -1,8 +1,12 @@
+import 'package:flutter_home_page/project/app/config/game_physics.dart';
+
 class BouncyLine {
   // --- Physics Configuration ---
-  final double stiffness = 500.0; // How "strong" the spring is
-  final double damping = 70.0; // How quickly it stops bouncing
-  final double mass = 20.0; // The "weight" of the line
+  final double stiffness =
+      GamePhysics.bouncyLineStiffness; // How "strong" the spring is
+  final double damping =
+      GamePhysics.bouncyLineDamping; // How quickly it stops bouncing
+  final double mass = GamePhysics.bouncyLineMass; // The "weight" of the line
 
   // --- State ---
   double currentPosition = 0.0;
@@ -11,8 +15,10 @@ class BouncyLine {
 
   // --- Size Animation ---
   double scale = 1.0;
-  final double maxScale = 2; // How big it gets when moving fast
-  final double scaleSpeed = 15.0; // How fast it scales
+  final double maxScale =
+      GamePhysics.bouncyLineMaxScale; // How big it gets when moving fast
+  final double scaleSpeed =
+      GamePhysics.bouncyLineScaleSpeed; // How fast it scales
 
   void update(double dt) {
     // --- Spring Physics Calculation ---
@@ -25,7 +31,11 @@ class BouncyLine {
 
     // --- Scale Animation Calculation ---
     final double targetScale =
-        1.0 + (velocity.abs() / 150.0).clamp(0, maxScale - 1.0);
+        1.0 +
+        (velocity.abs() / GamePhysics.bouncyLineVelocityScaleFactor).clamp(
+          0,
+          maxScale - 1.0,
+        );
     scale = scale + (targetScale - scale) * scaleSpeed * dt;
   }
 }

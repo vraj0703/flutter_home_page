@@ -1,5 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/models/testimonial_node.dart';
 import '../wrapped_text_component.dart';
 
@@ -50,7 +52,10 @@ class TestimonialCard extends PositionComponent with HasPaint {
     final highlightFactor = 0.4 + (0.6 * _highlight);
     final finalAlpha = alpha * highlightFactor;
 
-    final rrect = RRect.fromRectAndRadius(size.toRect(), Radius.circular(16));
+    final rrect = RRect.fromRectAndRadius(
+      size.toRect(),
+      Radius.circular(GameLayout.testiCardRadius),
+    );
     canvas.drawRRect(
       rrect,
       Paint()
@@ -77,17 +82,20 @@ class TestimonialCard extends PositionComponent with HasPaint {
         text: TextSpan(
           text: '"${node.quote}"',
           style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 16,
+            fontFamily: GameStyles.fontInter,
+            fontSize: GameStyles.testiQuoteFontSize,
             fontStyle: FontStyle.italic,
             color: Colors.white.withValues(alpha: 0.9),
           ),
         ),
         textDirection: TextDirection.ltr,
       ),
-      size.x - 48,
+      size.x - (GameLayout.testiCardPadding * 2),
     );
-    quoteText.position = Vector2(24, 24);
+    quoteText.position = Vector2(
+      GameLayout.testiCardPadding,
+      GameLayout.testiCardPadding,
+    );
     add(quoteText);
 
     // Author
@@ -95,13 +103,16 @@ class TestimonialCard extends PositionComponent with HasPaint {
       text: node.name,
       textRenderer: TextPaint(
         style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 14,
+          fontFamily: GameStyles.fontInter,
+          fontSize: GameStyles.testiAuthorFontSize,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
       ),
-      position: Vector2(24, size.y - 60),
+      position: Vector2(
+        GameLayout.testiCardPadding,
+        size.y - GameLayout.testiAuthorBtmMargin,
+      ),
     );
     add(authorText);
 
@@ -110,12 +121,15 @@ class TestimonialCard extends PositionComponent with HasPaint {
       text: "${node.role}, ${node.company}",
       textRenderer: TextPaint(
         style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 12,
+          fontFamily: GameStyles.fontInter,
+          fontSize: GameStyles.testiRoleFontSize,
           color: Colors.white.withValues(alpha: 0.6),
         ),
       ),
-      position: Vector2(24, size.y - 36),
+      position: Vector2(
+        GameLayout.testiCardPadding,
+        size.y - GameLayout.testiRoleBtmMargin,
+      ),
     );
     add(roleText);
 

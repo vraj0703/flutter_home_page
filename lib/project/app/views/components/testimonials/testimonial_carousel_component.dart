@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/models/testimonial_node.dart';
 
 import 'testimonial_card.dart';
@@ -23,9 +24,9 @@ class TestimonialCarouselComponent extends PositionComponent with HasPaint {
   @override
   Future<void> onLoad() async {
     double startX = 0;
-    final cardWidth = 400.0;
-    final cardHeight = 250.0;
-    final spacing = 40.0;
+    final cardWidth = GameLayout.testiCardWidth;
+    final cardHeight = GameLayout.testiCardHeight;
+    final spacing = GameLayout.testiCardSpacing;
     startX = -cardWidth / 2;
 
     for (var i = 0; i < data.length; i++) {
@@ -50,7 +51,7 @@ class TestimonialCarouselComponent extends PositionComponent with HasPaint {
 
   void updateScroll(double delta) {
     final offset = -delta * 0.7;
-    final centerThreshold = 300.0;
+    final centerThreshold = GameLayout.testiCarouselThreshold;
 
     for (int i = 0; i < _cards.length; i++) {
       final card = _cards[i];

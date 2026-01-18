@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flame/components.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/models/experience_node.dart';
 import 'experience_description_item.dart';
 
@@ -36,7 +37,7 @@ class ExperienceDetailsComponent extends PositionComponent with HasPaint {
   void updateRotation(double systemRotation) {
     final center = Vector2(0, size.y / 2);
 
-    final orbitRadius = size.y * 1;
+    final orbitRadius = size.y * GameLayout.expOrbitRadiusMultiplier;
 
     for (int i = 0; i < _items.length; i++) {
       final item = _items[i];

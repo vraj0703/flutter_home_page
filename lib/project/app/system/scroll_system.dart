@@ -14,7 +14,7 @@ class ScrollSystem {
   double _snapTarget = 0.0;
 
   static const List<double> snapPoints = [
-    500, // Bold Text Early Hold
+    ScrollSequenceConfig.boldTextFadeInStart, // 500
     ScrollSequenceConfig.boldTextEnd,
     ScrollSequenceConfig.philosophyEnd,
     ScrollSequenceConfig.skillsInteractEnd,

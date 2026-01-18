@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
@@ -36,7 +37,7 @@ class GameScrollConfigurator {
       components.cinematicTitle,
       ParallaxScrollEffect(
         startScroll: 0,
-        endScroll: 800,
+        endScroll: ScrollSequenceConfig.titleParallaxEnd,
         initialPosition: components.cinematicTitle.position.clone(),
         endOffset: Vector2(0, -1000),
         curve: const SpringCurve(mass: 1.0, stiffness: 180.0, damping: 12.0),
@@ -47,7 +48,7 @@ class GameScrollConfigurator {
       components.cinematicSecondaryTitle,
       ParallaxScrollEffect(
         startScroll: 0,
-        endScroll: 1000,
+        endScroll: ScrollSequenceConfig.secondaryTitleParallaxEnd,
         initialPosition: components.cinematicSecondaryTitle.position.clone(),
         endOffset: Vector2(0, -1000),
         curve: const SpringCurve(mass: 0.8, stiffness: 200.0, damping: 10.0),
@@ -59,7 +60,7 @@ class GameScrollConfigurator {
       components.cinematicTitle,
       OpacityScrollEffect(
         startScroll: 0,
-        endScroll: 500,
+        endScroll: ScrollSequenceConfig.titleFadeEnd,
         startOpacity: 1.0,
         endOpacity: 0.0,
         curve: const ExponentialEaseOut(),
@@ -70,7 +71,7 @@ class GameScrollConfigurator {
       components.cinematicSecondaryTitle,
       OpacityScrollEffect(
         startScroll: 0,
-        endScroll: 100,
+        endScroll: ScrollSequenceConfig.secondaryTitleFadeEnd,
         startOpacity: 1.0,
         endOpacity: 0.0,
         curve: const ExponentialEaseOut(),
@@ -81,7 +82,7 @@ class GameScrollConfigurator {
       components.interactiveUI,
       OpacityScrollEffect(
         startScroll: 0,
-        endScroll: 100,
+        endScroll: ScrollSequenceConfig.uiFadeEnd,
         startOpacity: 1.0,
         endOpacity: 0.0,
         curve: const ExponentialEaseOut(),
@@ -91,8 +92,8 @@ class GameScrollConfigurator {
     scrollOrchestrator.addBinding(
       components.dimLayer,
       OpacityScrollEffect(
-        startScroll: 1500,
-        endScroll: 2000,
+        startScroll: ScrollSequenceConfig.dimLayerStart,
+        endScroll: ScrollSequenceConfig.dimLayerEnd,
         startOpacity: 0.0,
         endOpacity: 0.6,
         curve: Curves.easeOutQuart,

@@ -2,6 +2,8 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/models/experience_node.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
@@ -53,18 +55,21 @@ class ExperiencePageComponent extends PositionComponent
   static const double warpMaxScale = 8.0;
 
   final companyStyle = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 12,
+    fontFamily: GameStyles.fontInter,
+    fontSize: GameStyles.companyFontSize,
     letterSpacing: 1.5,
   );
 
   final roleStyle = TextStyle(
-    fontFamily: 'ModrntUrban',
-    fontSize: 32,
+    fontFamily: GameStyles.fontModernUrban,
+    fontSize: GameStyles.roleFontSize,
     fontWeight: FontWeight.bold,
   );
 
-  final durationStyle = TextStyle(fontFamily: 'Inter', fontSize: 14);
+  final durationStyle = TextStyle(
+    fontFamily: GameStyles.fontInter,
+    fontSize: GameStyles.durationFontSize,
+  );
 
   @override
   void update(double dt) {
@@ -162,8 +167,11 @@ class ExperiencePageComponent extends PositionComponent
     final halfHeight = size.y / 2;
 
     arcs = OrbitalArcsComponent(
-      accentColor: const Color(0xFFC78E53),
-      size: Vector2(size.x * 0.4, size.y), // Left 40%
+      accentColor: GameStyles.accentGold,
+      size: Vector2(
+        size.x * GameLayout.experienceOrbitRelW,
+        size.y,
+      ), // Left 40%
     );
     arcs.position = Vector2(0, 0); // Left aligned
     add(arcs);
@@ -171,14 +179,14 @@ class ExperiencePageComponent extends PositionComponent
     for (var node in data) {
       final s = SatelliteComponent(
         year: node.year,
-        color: const Color(0xFFC78E53),
+        color: GameStyles.accentGold,
       );
       s.anchor = Anchor.center;
       satellites.add(s);
       add(s);
     }
 
-    final textX = size.x * 0.05;
+    final textX = size.x * GameLayout.experienceTextRelX;
     companyText = TextComponent(
       text: data[0].company.toUpperCase(),
       textRenderer: TextPaint(

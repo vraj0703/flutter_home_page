@@ -1,4 +1,5 @@
 import 'package:flame/components.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
@@ -47,7 +48,7 @@ class PeelingCardStackComponent extends PositionComponent
       activeData = cardsData;
     }
 
-    final cardSize = Vector2(550, 250);
+    final cardSize = Vector2(GameLayout.cardWidth, GameLayout.cardHeight);
     final centerPos = size / 2;
 
     for (int i = activeData.length - 1; i >= 0; i--) {
