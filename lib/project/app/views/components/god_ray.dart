@@ -4,20 +4,24 @@ import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 
 class GodRayComponent extends PositionComponent {
-  // Layer 1: The hot, tight core
-  final double coreSize = GameLayout.godRayCoreSize;
-  final Color coreColor = GameStyles.godRayCore;
-  final double coreBlurSigma = GameLayout.godRayCoreBlur;
+  // Base sizes (multiplied by current scale multiplier)
+  final double baseCoreSize = GameLayout.godRayCoreSize;
+  final double baseCoreBlurSigma = GameLayout.godRayCoreBlur;
+  final double baseInnerGlowSize = GameLayout.godRayInnerSize;
+  final double baseInnerGlowBlurSigma = GameLayout.godRayInnerBlur;
+  final double baseOuterGlowSize = GameLayout.godRayOuterSize;
+  final double baseOuterGlowBlurSigma = GameLayout.godRayOuterBlur;
 
-  // Layer 2: The vibrant inner halo
-  final double innerGlowSize = GameLayout.godRayInnerSize;
-  final Color innerGlowColor = GameStyles.godRayInner;
-  final double innerGlowBlurSigma = GameLayout.godRayInnerBlur;
+  // Default colors
+  final Color defaultCoreColor = GameStyles.godRayCore;
+  final Color defaultInnerColor = GameStyles.godRayInner;
+  final Color defaultOuterColor = GameStyles.godRayOuter;
 
-  // Layer 3: The soft outer atmosphere
-  final double outerGlowSize = GameLayout.godRayOuterSize;
-  final Color outerGlowColor = GameStyles.godRayOuter;
-  final double outerGlowBlurSigma = GameLayout.godRayOuterBlur;
+  // Dynamic state (updated by controller)
+  double sizeMultiplier = 1.0;
+  Color currentCoreColor = GameStyles.godRayCore;
+  Color currentInnerColor = GameStyles.godRayInner;
+  Color currentOuterColor = GameStyles.godRayOuter;
 
   late final Paint _corePaint;
   late final Paint _innerGlowPaint;
@@ -26,23 +30,34 @@ class GodRayComponent extends PositionComponent {
   GodRayComponent() {
     anchor = Anchor.center;
     _outerGlowPaint = Paint()
-      ..color = outerGlowColor
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, outerGlowBlurSigma);
+      ..color = defaultOuterColor
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, baseOuterGlowBlurSigma);
 
     _innerGlowPaint = Paint()
-      ..color = innerGlowColor
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, innerGlowBlurSigma);
+      ..color = defaultInnerColor
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, baseInnerGlowBlurSigma);
 
     _corePaint = Paint()
-      ..color = coreColor
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, coreBlurSigma);
+      ..color = defaultCoreColor
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, baseCoreBlurSigma);
   }
 
   @override
   void render(Canvas canvas) {
     super.render(canvas);
-    canvas.drawCircle(Offset.zero, outerGlowSize, _outerGlowPaint);
-    canvas.drawCircle(Offset.zero, innerGlowSize, _innerGlowPaint);
+
+    // Update paint colors
+    _outerGlowPaint.color = currentOuterColor;
+    _innerGlowPaint.color = currentInnerColor;
+    _corePaint.color = currentCoreColor;
+
+    // Draw with current size multiplier
+    final coreSize = baseCoreSize * sizeMultiplier;
+    final innerSize = baseInnerGlowSize * sizeMultiplier;
+    final outerSize = baseOuterGlowSize * sizeMultiplier;
+
+    canvas.drawCircle(Offset.zero, outerSize, _outerGlowPaint);
+    canvas.drawCircle(Offset.zero, innerSize, _innerGlowPaint);
     canvas.drawCircle(Offset.zero, coreSize, _corePaint);
   }
 }

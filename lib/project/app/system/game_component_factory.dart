@@ -6,6 +6,7 @@ import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_strings.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
+import 'package:flutter_home_page/project/app/views/components/background/background_tint_component.dart';
 import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/experience/experience_page_component.dart';
@@ -16,8 +17,10 @@ import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_o
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
+import 'package:flutter_home_page/project/app/views/components/section_progress_indicator.dart';
 import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
+import 'package:flutter_home_page/project/app/views/components/transition_breadcrumb.dart';
 import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
@@ -31,6 +34,7 @@ class GameComponentFactory {
   late GodRayComponent godRay;
   late LogoOverlayComponent logoOverlay;
   late BackgroundRunComponent backgroundRun;
+  late BackgroundTintComponent backgroundTint;
   late CinematicTitleComponent cinematicTitle;
   late CinematicSecondaryTitleComponent cinematicSecondaryTitle;
   late BoldTextRevealComponent boldTextReveal;
@@ -42,6 +46,8 @@ class GameComponentFactory {
   late TestimonialPageComponent testimonialPage;
   late SkillsKeyboardComponent skillsPage;
   late ContactPageComponent contactPage;
+  late SectionProgressIndicator progressIndicator;
+  late TransitionBreadcrumb breadcrumb;
 
   late FragmentShader metallicShader;
 
@@ -104,6 +110,10 @@ class GameComponentFactory {
       size: size,
       priority: GameLayout.zBackground,
     );
+
+    backgroundTint = BackgroundTintComponent();
+    backgroundTint.size = size;
+    backgroundTint.priority = GameLayout.zBackground + 1; // Just above background
 
     cinematicTitle = CinematicTitleComponent(
       primaryText: GameStrings.primaryTitle,
@@ -202,6 +212,18 @@ class GameComponentFactory {
     contactPage = ContactPageComponent(size: size, shader: metallicShader);
     contactPage.priority = GameLayout.zContact;
     contactPage.position = Vector2(0, size.y);
+
+    // Section Progress Indicator (top right)
+    progressIndicator = SectionProgressIndicator();
+    progressIndicator.position = Vector2(size.x - 30, size.y / 2);
+    progressIndicator.priority = GameLayout.zLogoOverlay; // High priority
+    progressIndicator.opacity = 0.0; // Starts hidden
+
+    // Transition Breadcrumb (center bottom)
+    breadcrumb = TransitionBreadcrumb();
+    breadcrumb.position = Vector2(size.x / 2, size.y - 80);
+    breadcrumb.priority = GameLayout.zLogoOverlay; // High priority
+    breadcrumb.opacity = 0.0; // Starts hidden
   }
 
   // Get all components for easy addition
@@ -211,6 +233,7 @@ class GameComponentFactory {
     godRay,
     logoOverlay,
     backgroundRun,
+    backgroundTint,
     cinematicTitle,
     cinematicSecondaryTitle,
     boldTextReveal,
@@ -222,6 +245,8 @@ class GameComponentFactory {
     testimonialPage,
     skillsPage,
     contactPage,
+    progressIndicator,
+    breadcrumb,
   ];
 
   // Helper loading methods

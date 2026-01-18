@@ -182,6 +182,12 @@ class MyGame extends FlameGame
 
     scrollSystem.updateSnap(dt);
 
+    // Update god ray pulse animation
+    final godRayController = _scrollConfigurator.godRayController;
+    if (godRayController != null) {
+      godRayController.updatePulse(dt, scrollSystem.currentScrollOffset);
+    }
+
     stateProvider.sceneState().when(
       loading: (isSvgReady, isGameReady) {
         _centerTitles(size / 2);
@@ -233,6 +239,8 @@ class MyGame extends FlameGame
         cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
         interactiveUI: _componentFactory.logoOverlay,
         dimLayer: _componentFactory.dimLayer,
+        godRay: _componentFactory.godRay,
+        backgroundTint: _componentFactory.backgroundTint,
         boldTextReveal: _componentFactory.boldTextReveal,
         philosophyText: _componentFactory.philosophyText,
         cardStack: _componentFactory.cardStack,
@@ -241,6 +249,8 @@ class MyGame extends FlameGame
         testimonialPage: _componentFactory.testimonialPage,
         skillsPage: _componentFactory.skillsPage,
         contactPage: _componentFactory.contactPage,
+        progressIndicator: _componentFactory.progressIndicator,
+        breadcrumb: _componentFactory.breadcrumb,
       ),
     );
   }

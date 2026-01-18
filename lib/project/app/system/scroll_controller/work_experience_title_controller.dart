@@ -49,6 +49,7 @@ class WorkExperienceTitleController implements ScrollObserver {
     double yOffset = 0.0;
     double opacity = 0.0;
     double scale = 1.0;
+    double rotation = 0.0; // Subtle rotation wobble
 
     if (scrollOffset < entranceStart) {
       // Before entrance: hidden FAR below (full page parallax distance)
@@ -71,6 +72,9 @@ class WorkExperienceTitleController implements ScrollObserver {
 
       // Scale: 0.9 → 1.0 for depth and parallax effect
       scale = 0.9 + (0.1 * exponentialEaseOut.transform(t));
+
+      // Subtle rotation wobble during entrance (±0.5° = ±0.0087 radians)
+      rotation = 0.0087 * math.sin(t * math.pi * 3) * (1.0 - t);
     } else if (scrollOffset < holdEnd) {
       // Phase 2: HOLD - Stay at center with subtle pulse
       yOffset = 0.0;
@@ -107,5 +111,6 @@ class WorkExperienceTitleController implements ScrollObserver {
     component.position = centerPosition + Vector2(0, yOffset);
     component.opacity = opacity;
     component.scale = Vector2.all(scale);
+    component.angle = rotation;
   }
 }
