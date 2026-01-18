@@ -1,10 +1,10 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_home_page/project/app/widgets/my_game.dart';
-import 'package:flutter_home_page/project/app/widgets/components/testimonial_carousel_component.dart';
+import 'package:flutter_home_page/project/app/views/my_game.dart';
+import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_carousel_component.dart';
 import 'package:flutter_home_page/project/app/models/testimonial_node.dart';
-import 'package:flutter_home_page/project/app/widgets/components/fade_text.dart';
+import 'package:flutter_home_page/project/app/views/components/fade_text.dart';
 
 class TestimonialPageComponent extends PositionComponent
     with HasGameReference<MyGame>, HasPaint {

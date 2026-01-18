@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
-import 'package:flutter_home_page/project/app/widgets/my_game.dart';
+import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 class LogoComponent extends PositionComponent {
   final FragmentShader shader;

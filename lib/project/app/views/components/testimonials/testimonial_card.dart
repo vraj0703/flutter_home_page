@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/models/testimonial_node.dart';
-import 'wrapped_text_component.dart';
+import '../wrapped_text_component.dart';
 
 class TestimonialCard extends PositionComponent with HasPaint {
   final TestimonialNode node;

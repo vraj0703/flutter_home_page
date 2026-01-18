@@ -3,7 +3,7 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/models/experience_node.dart';
-import 'package:flutter_home_page/project/app/widgets/my_game.dart';
+import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 import 'orbital_arcs_component.dart';
 import 'satellite_component.dart';
@@ -30,7 +30,6 @@ class ExperiencePageComponent extends PositionComponent
   double get opacity => _opacity;
 
   @override
-  @override
   set opacity(double val) {
     _opacity = val;
     if (isLoaded) {
@@ -42,7 +41,6 @@ class ExperiencePageComponent extends PositionComponent
 
   double _targetRotation = 0.0;
   double _currentRotation = 0.0;
-
   double _warpScale = 1.0;
 
   static const double smoothingFactor = 5.0;

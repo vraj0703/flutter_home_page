@@ -1,25 +1,27 @@
 import 'package:flame/components.dart';
-import 'package:flutter_home_page/project/app/widgets/components/contact_page_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
 import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import '../interfaces/scroll_observer.dart';
 
 class ContactPageController implements ScrollObserver {
   final ContactPageComponent component;
   final double screenHeight;
-  static const double initEntranceStart = 10800.0;
-  static const double entranceDuration = 600.0;
-  static const double holdDuration = 1000.0;
-  static const double exitDuration = 600.0;
+  static const double initEntranceStart =
+      ScrollSequenceConfig.contactEntranceStart;
+  static const double entranceDuration =
+      ScrollSequenceConfig.contactEntranceDuration;
+  static const double holdDuration = ScrollSequenceConfig.contactHoldDuration;
+  static const double exitDuration = ScrollSequenceConfig.contactExitDuration;
 
   final double visibleStart;
   final double exitStart;
   final double exitEnd;
 
   ContactPageController({required this.component, required this.screenHeight})
-    : visibleStart = initEntranceStart + entranceDuration,
-      exitStart = initEntranceStart + entranceDuration + holdDuration,
-      exitEnd =
-          initEntranceStart + entranceDuration + holdDuration + exitDuration;
+    : visibleStart = ScrollSequenceConfig.contactVisibleStart,
+      exitStart = ScrollSequenceConfig.contactExitStart,
+      exitEnd = ScrollSequenceConfig.contactExitEnd;
 
   @override
   void onScroll(double scrollOffset) {

@@ -1,6 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_home_page/project/app/widgets/widgets/orbital_arcs_painter.dart';
+import 'package:flutter_home_page/project/app/views/widgets/orbital_arcs_painter.dart';
 
 class OrbitalArcsComponent extends PositionComponent with HasPaint {
   double rotation = 0.0;

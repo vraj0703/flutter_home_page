@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
-import 'package:flutter_home_page/project/app/widgets/components/experience_page_component.dart';
 import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
+import 'package:flutter_home_page/project/app/views/components/experience/experience_page_component.dart';
 import '../interfaces/scroll_observer.dart';
 
 class ExperiencePageController implements ScrollObserver {
@@ -10,8 +11,10 @@ class ExperiencePageController implements ScrollObserver {
   final double interactionEnd;
   final double exitStart;
   final double exitEnd;
-  static const double initEntranceStart = 2200.0;
-  static const double initInteractionStart = 2500.0;
+  static const double initEntranceStart =
+      ScrollSequenceConfig.experienceEntranceStart;
+  static const double initInteractionStart =
+      ScrollSequenceConfig.experienceInteractionStart;
   static const double itemScrollHeight = 350.0;
   static const int itemCount = 5;
 
@@ -19,10 +22,9 @@ class ExperiencePageController implements ScrollObserver {
     required this.component,
     this.entranceStart = initEntranceStart,
     this.interactionStart = initInteractionStart,
-  }) : interactionEnd = interactionStart + (itemCount * itemScrollHeight),
-       exitStart = interactionStart + (itemCount * itemScrollHeight),
-       exitEnd =
-           interactionStart + (itemCount * itemScrollHeight) + itemScrollHeight;
+  }) : interactionEnd = ScrollSequenceConfig.experienceInteractionEnd,
+       exitStart = ScrollSequenceConfig.experienceExitStart,
+       exitEnd = ScrollSequenceConfig.experienceExitEnd;
 
   @override
   void onScroll(double scrollOffset) {

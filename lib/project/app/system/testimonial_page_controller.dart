@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
-import 'package:flutter_home_page/project/app/widgets/components/testimonial_page_component.dart';
+import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import '../interfaces/scroll_observer.dart';
 
 class TestimonialPageController implements ScrollObserver {
@@ -9,9 +10,12 @@ class TestimonialPageController implements ScrollObserver {
   final double exitStart;
   final double exitEnd;
 
-  static const double initEntranceStart = 4600.0;
-  static const double initInteractionStart = 4900.0;
-  static const double visibleDuration = 3500.0;
+  static const double initEntranceStart =
+      ScrollSequenceConfig.testimonialEntranceStart;
+  static const double initInteractionStart =
+      ScrollSequenceConfig.testimonialInteractionStart;
+  static const double visibleDuration =
+      ScrollSequenceConfig.testimonialVisibleDuration;
   static const double exitDuration = 400.0;
 
   final double interactionStart;
@@ -21,9 +25,9 @@ class TestimonialPageController implements ScrollObserver {
     required this.component,
     this.entranceStart = initEntranceStart,
   }) : interactionStart = initInteractionStart,
-       interactionEnd = initInteractionStart + visibleDuration,
-       exitStart = initInteractionStart + visibleDuration,
-       exitEnd = initInteractionStart + visibleDuration + exitDuration;
+       interactionEnd = ScrollSequenceConfig.testimonialInteractionEnd,
+       exitStart = ScrollSequenceConfig.testimonialExitStart,
+       exitEnd = ScrollSequenceConfig.testimonialExitEnd;
 
   @override
   void onScroll(double scrollOffset) {

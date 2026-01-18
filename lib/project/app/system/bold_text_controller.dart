@@ -1,7 +1,8 @@
 import 'package:flame/components.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
-import 'package:flutter_home_page/project/app/widgets/components/bold_text_reveal_component.dart';
+import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
 
 class BoldTextController implements ScrollObserver {
@@ -33,7 +34,10 @@ class BoldTextController implements ScrollObserver {
       offsetX = 0.0 + (50 * t);
       offsetY = 0;
     } else {
-      final t = ((scrollOffset - 1400) / 300).clamp(0.0, 1.0);
+      // Exit Phase
+      final t =
+          ((scrollOffset - 1400) / (ScrollSequenceConfig.boldTextEnd - 1400))
+              .clamp(0.0, 1.0);
       final curvedT = Curves.easeInCubic.transform(t);
       offsetX = 50 + (screenWidth * curvedT);
       offsetY = 0;
@@ -46,10 +50,12 @@ class BoldTextController implements ScrollObserver {
     } else if (scrollOffset < 750) {
       final t = ((scrollOffset - 500) / 250).clamp(0.0, 1.0);
       opacity = exponentialEaseOut.transform(t);
-    } else if (scrollOffset < 1500) {
+    } else if (scrollOffset < ScrollSequenceConfig.boldTextEnd - 200) {
       opacity = 1.0;
     } else {
-      final t = ((scrollOffset - 1500) / 200).clamp(0.0, 1.0);
+      final t =
+          ((scrollOffset - (ScrollSequenceConfig.boldTextEnd - 200)) / 200)
+              .clamp(0.0, 1.0);
       opacity = 1.0 - exponentialEaseOut.transform(t);
     }
     component.opacity = opacity;

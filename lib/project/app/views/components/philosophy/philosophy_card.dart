@@ -3,7 +3,7 @@ import 'package:flame/effects.dart';
 import 'package:flame/text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
-import 'package:flutter_home_page/project/app/widgets/my_game.dart';
+import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 class PhilosophyCard extends PositionComponent
     with HasPaint, HasGameReference<MyGame>

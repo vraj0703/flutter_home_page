@@ -2,9 +2,9 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
-import 'package:flutter_home_page/project/app/widgets/my_game.dart';
-import 'package:flutter_home_page/project/app/widgets/widgets/curtain_clipper.dart';
-import 'package:flutter_home_page/project/app/widgets/widgets/home_overlay.dart'; // Import overlay
+import 'package:flutter_home_page/project/app/views/my_game.dart';
+import 'package:flutter_home_page/project/app/views/widgets/curtain_clipper.dart';
+import 'package:flutter_home_page/project/app/views/widgets/home_overlay.dart'; // Import overlay
 
 class StatefulScene extends StatefulWidget {
   final VoidCallback onClick;

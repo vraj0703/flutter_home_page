@@ -1,7 +1,8 @@
 import 'package:flame/components.dart';
-import 'package:flutter_home_page/project/app/widgets/components/philosophy_text_component.dart';
-import 'package:flutter_home_page/project/app/widgets/components/peeling_card_stack_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import '../interfaces/scroll_observer.dart';
 
 class PhilosophyPageController implements ScrollObserver {
@@ -29,18 +30,26 @@ class PhilosophyPageController implements ScrollObserver {
     double opacity = 0.0;
     Vector2 pos = initialTextPos.clone();
 
-    if (scrollOffset < 1500) {
+    if (scrollOffset < ScrollSequenceConfig.philosophyStart) {
       opacity = 0.0;
       pos = initialTextPos;
-    } else if (scrollOffset < 1900) {
-      final t = ((scrollOffset - 1500) / 400).clamp(0.0, 1.0);
+    } else if (scrollOffset < ScrollSequenceConfig.philosophyFadeInEnd) {
+      final t =
+          ((scrollOffset - ScrollSequenceConfig.philosophyStart) /
+                  (ScrollSequenceConfig.philosophyFadeInEnd -
+                      ScrollSequenceConfig.philosophyStart))
+              .clamp(0.0, 1.0);
       opacity = exponentialEaseOut.transform(t);
       pos = initialTextPos;
-    } else if (scrollOffset < 2800) {
+    } else if (scrollOffset < ScrollSequenceConfig.philosophyExitStart) {
       opacity = 1.0;
       pos = initialTextPos;
-    } else if (scrollOffset < 3100) {
-      final t = ((scrollOffset - 2800) / 300).clamp(0.0, 1.0);
+    } else if (scrollOffset < ScrollSequenceConfig.philosophyEnd) {
+      final t =
+          ((scrollOffset - ScrollSequenceConfig.philosophyExitStart) /
+                  (ScrollSequenceConfig.philosophyEnd -
+                      ScrollSequenceConfig.philosophyExitStart))
+              .clamp(0.0, 1.0);
       final curvedT = exponentialEaseOut.transform(t);
       opacity = 1.0 - curvedT;
       pos = initialTextPos + Vector2(0, -40 * curvedT);
@@ -77,9 +86,9 @@ class PhilosophyPageController implements ScrollObserver {
     cardStack.position = initialStackPos;
 
     final cards = cardStack.cards;
-    final peelStart = 1950.0;
-    final peelDuration = 250.0;
-    final peelDelay = 150.0;
+    final peelStart = ScrollSequenceConfig.philosophyPeelStart;
+    final peelDuration = ScrollSequenceConfig.philosophyPeelDuration;
+    final peelDelay = ScrollSequenceConfig.philosophyPeelDelay;
 
     for (int i = 0; i < cards.length; i++) {
       final card = cards[i];

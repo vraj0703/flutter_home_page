@@ -4,7 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/interfaces/shine_provider.dart';
-import 'package:flutter_home_page/project/app/widgets/my_game.dart';
+import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 class BoldTextRevealComponent extends TextComponent
     with HasGameReference, HasPaint

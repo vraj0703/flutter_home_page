@@ -1,5 +1,6 @@
 import 'dart:ui' show lerpDouble;
 
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import '../interfaces/scroll_observer.dart';
 
 /// Manages the global scroll state and notifies observers.
@@ -12,7 +13,12 @@ class ScrollSystem {
   bool _isSnapping = false;
   double _snapTarget = 0.0;
 
-  static const List<double> snapPoints = [500, 1700, 3100, 10400];
+  static const List<double> snapPoints = [
+    500, // Bold Text Early Hold
+    ScrollSequenceConfig.boldTextEnd,
+    ScrollSequenceConfig.philosophyEnd,
+    ScrollSequenceConfig.skillsInteractEnd,
+  ];
   static const double snapZoneRadius = 60.0;
   static const double snapVelocityThreshold = 40.0;
   static const double snapSpeed = 6.0;

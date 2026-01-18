@@ -12,26 +12,26 @@ import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/system/scroll_effects/opacity.dart';
 import 'package:flutter_home_page/project/app/system/scroll_effects/parallax.dart';
 import 'package:flutter_home_page/project/app/system/ui_opacity_observer.dart';
-import 'package:flutter_home_page/project/app/widgets/components/cinematic_title.dart';
-import 'package:flutter_home_page/project/app/widgets/components/cinematic_secondary_title.dart';
-import 'package:flutter_home_page/project/app/widgets/components/background_run_component.dart';
+import 'package:flutter_home_page/project/app/views/components/experience/experience_page_component.dart';
+import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_title.dart';
+import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_secondary_title.dart';
+import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 import 'components/god_ray.dart';
-import 'components/logo.dart';
-import 'components/logo_overlay.dart';
-import 'components/bold_text_reveal_component.dart';
+import 'components/logo_layer/logo.dart';
+import 'components/logo_layer/logo_overlay.dart';
+import 'components/bold_text/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/system/scroll_system.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/system/bold_text_controller.dart';
 import 'package:flutter_home_page/project/app/system/philosophy_page_controller.dart';
-import 'package:flutter_home_page/project/app/widgets/components/philosophy_text_component.dart';
-import 'package:flutter_home_page/project/app/widgets/components/peeling_card_stack_component.dart';
-import 'package:flutter_home_page/project/app/widgets/components/experience_page_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/system/experience_page_controller.dart';
-import 'package:flutter_home_page/project/app/widgets/components/testimonial_page_component.dart';
+import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 import 'package:flutter_home_page/project/app/system/testimonial_page_controller.dart';
-import 'package:flutter_home_page/project/app/widgets/components/contact_page_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
 import 'package:flutter_home_page/project/app/system/contact_page_controller.dart';
-import 'package:flutter_home_page/project/app/widgets/components/skills_keyboard_component.dart';
+import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/system/skills_page_controller.dart';
 import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
 import 'package:flutter/material.dart' as material;
@@ -59,6 +59,12 @@ class MyGame extends FlameGame
   late CinematicSecondaryTitleComponent cinematicSecondaryTitle;
 
   BoldTextRevealComponent? boldTextReveal;
+  PhilosophyTextComponent? philosophyText;
+  PeelingCardStackComponent? cardStack;
+  ExperiencePageComponent? experiencePage;
+  TestimonialPageComponent? testimonialPage;
+  SkillsKeyboardComponent? skillsPage;
+  ContactPageComponent? contactPage;
 
   RectangleComponent? _dimLayer;
 
@@ -99,7 +105,6 @@ class MyGame extends FlameGame
     final center = size / 2;
 
     _inactivityTimer = Timer(inactivityTimeout, onTick: () {}, repeat: false);
-
     _targetLightPosition = center;
     _virtualLightPosition = center.clone();
     _targetLightDirection = Vector2(0, -1)..normalize();
@@ -108,9 +113,14 @@ class MyGame extends FlameGame
     await loadLogoLayer();
     await loadLayerLineAndStart();
     await loadLayerName();
+    await loadDimLayer();
+    await loadPhilosophyPage();
+    await loadExperiencePage();
+    await loadTestimonialPage();
+    await loadSkillsPage();
+    await loadContactPage();
 
     queuer.queue(event: const SceneEvent.gameReady());
-
     scrollSystem.register(scrollOrchestrator);
   }
 
@@ -213,13 +223,6 @@ class MyGame extends FlameGame
     boldTextReveal!.priority = 26;
     boldTextReveal!.opacity = 0.0;
     await add(boldTextReveal!);
-
-    _dimLayer = RectangleComponent(
-      priority: 2,
-      size: size,
-      paint: Paint()..color = const Color(0xFF000000).withValues(alpha: 0.0),
-    );
-    await add(_dimLayer!);
   }
 
   @override
@@ -459,7 +462,6 @@ class MyGame extends FlameGame
         curve: const ExponentialEaseOut(),
       ),
     );
-
     scrollOrchestrator.addBinding(
       interactiveUI,
       OpacityScrollEffect(
@@ -470,7 +472,6 @@ class MyGame extends FlameGame
         curve: const ExponentialEaseOut(),
       ),
     );
-
     scrollOrchestrator.addBinding(
       _dimLayer!,
       OpacityScrollEffect(
@@ -481,7 +482,6 @@ class MyGame extends FlameGame
         curve: Curves.easeOutQuart,
       ),
     );
-
     scrollSystem.register(
       BoldTextController(
         component: boldTextReveal!,
@@ -489,8 +489,38 @@ class MyGame extends FlameGame
         centerPosition: size / 2,
       ),
     );
+    scrollSystem.register(
+      PhilosophyPageController(
+        component: philosophyText!,
+        cardStack: cardStack!,
+        initialTextPos: philosophyText!.position.clone(),
+        initialStackPos: cardStack!.position.clone(),
+      ),
+    );
+    scrollSystem.register(ExperiencePageController(component: experiencePage!));
+    scrollSystem.register(UIOpacityObserver(stateProvider: stateProvider));
+    scrollSystem.register(
+      TestimonialPageController(component: testimonialPage!),
+    );
+    scrollSystem.register(SkillsPageController(component: skillsPage!));
+    scrollSystem.register(
+      ContactPageController(component: contactPage!, screenHeight: size.y),
+    );
+  }
 
-    final philosophyText = PhilosophyTextComponent(
+  @override
+  void onPointerMove(PointerMoveEvent event) {
+    _lastKnownPointerPosition = event.localPosition;
+  }
+
+  Future<void> loadExperiencePage() async {
+    experiencePage = ExperiencePageComponent(size: size);
+    experiencePage!.priority = 25;
+    add(experiencePage!);
+  }
+
+  Future<void> loadPhilosophyPage() async {
+    philosophyText = PhilosophyTextComponent(
       text: "My Philosophy",
       style: material.TextStyle(
         fontFamily: 'ModrntUrban',
@@ -503,71 +533,52 @@ class MyGame extends FlameGame
       anchor: Anchor.centerLeft,
       position: Vector2(size.x * 0.15, size.y / 2),
     );
-    philosophyText.priority = 25;
-    philosophyText.opacity = 0.0;
-    add(philosophyText);
+    philosophyText!.priority = 25;
+    philosophyText!.opacity = 0.0;
+    await add(philosophyText!);
 
-    final cardStack = PeelingCardStackComponent(
+    cardStack = PeelingCardStackComponent(
       scrollOrchestrator: scrollOrchestrator,
       cardsData: cardData,
       size: Vector2(size.x * 0.4, size.y * 0.6),
       position: Vector2(size.x * 0.75, size.y / 2),
     );
-    cardStack.anchor = Anchor.center;
-    cardStack.priority = 25;
-    cardStack.opacity = 0.0;
-    add(cardStack);
-
-    scrollSystem.register(
-      PhilosophyPageController(
-        component: philosophyText,
-        cardStack: cardStack,
-        initialTextPos: philosophyText.position.clone(),
-        initialStackPos: cardStack.position.clone(),
-      ),
-    );
-
-    final experiencePage = ExperiencePageComponent(size: size);
-    experiencePage.priority = 25;
-    add(experiencePage);
-
-    scrollSystem.register(ExperiencePageController(component: experiencePage));
-    scrollSystem.register(UIOpacityObserver(stateProvider: stateProvider));
-
-    final testimonialPage = TestimonialPageComponent(
-      size: size,
-      shader: metallicShader,
-    );
-    testimonialPage.priority = 25;
-    testimonialPage.opacity = 0.0;
-    add(testimonialPage);
-
-    scrollSystem.register(
-      TestimonialPageController(component: testimonialPage),
-    );
-
-    final skillsPage = SkillsKeyboardComponent(size: size);
-    skillsPage.priority = 28; // Above Testimonials, Below Contact
-    skillsPage.opacity = 0.0;
-    add(skillsPage);
-
-    scrollSystem.register(SkillsPageController(component: skillsPage));
-
-    final contactPage = ContactPageComponent(
-      size: size,
-      shader: metallicShader,
-    );
-    contactPage.priority = 30;
-    contactPage.position = Vector2(0, size.y);
-    add(contactPage);
-
-    scrollSystem.register(
-      ContactPageController(component: contactPage, screenHeight: size.y),
-    );
+    cardStack!.anchor = Anchor.center;
+    cardStack!.priority = 25;
+    cardStack!.opacity = 0.0;
+    await add(cardStack!);
   }
 
-  @override
-  void onPointerMove(PointerMoveEvent event) {
-    _lastKnownPointerPosition = event.localPosition;
+  Future<void> loadTestimonialPage() async {
+    testimonialPage = TestimonialPageComponent(
+      size: size,
+      shader: metallicShader,
+    );
+    testimonialPage!.priority = 25;
+    testimonialPage!.opacity = 0.0;
+    add(testimonialPage!);
+  }
+
+  Future<void> loadSkillsPage() async {
+    skillsPage = SkillsKeyboardComponent(size: size);
+    skillsPage!.priority = 28; // Above Testimonials, Below Contact
+    skillsPage!.opacity = 0.0;
+    add(skillsPage!);
+  }
+
+  Future<void> loadContactPage() async {
+    contactPage = ContactPageComponent(size: size, shader: metallicShader);
+    contactPage!.priority = 30;
+    contactPage!.position = Vector2(0, size.y);
+    add(contactPage!);
+  }
+
+  Future<void> loadDimLayer() async {
+    _dimLayer = RectangleComponent(
+      priority: 2,
+      size: size,
+      paint: Paint()..color = const Color(0xFF000000).withValues(alpha: 0.0),
+    );
+    await add(_dimLayer!);
   }
 }

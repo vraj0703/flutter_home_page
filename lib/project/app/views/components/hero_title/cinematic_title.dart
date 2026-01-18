@@ -4,7 +4,7 @@ import 'package:flame/effects.dart';
 import 'package:flutter/material.dart' show TextStyle, FontWeight, Curves;
 import 'package:flutter_home_page/project/app/utils/wait_effect.dart';
 
-import 'fade_text.dart';
+import '../fade_text.dart';
 
 class CinematicTitleComponent extends PositionComponent with HasGameReference {
   final String primaryText;

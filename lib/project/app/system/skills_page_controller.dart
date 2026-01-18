@@ -1,15 +1,16 @@
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
-import 'package:flutter_home_page/project/app/widgets/components/skills_keyboard_component.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
+import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/curves/custom_curves.dart';
 
 class SkillsPageController implements ScrollObserver {
   final SkillsKeyboardComponent component;
 
-  static const double entranceStart = 8600.0;
-  static const double entranceEnd = 9000.0;
-  static const double interactEnd = 10400.0;
-  static const double exitEnd = 10800.0;
+  static const double entranceStart = ScrollSequenceConfig.skillsEntranceStart;
+  static const double entranceEnd = ScrollSequenceConfig.skillsEntranceEnd;
+  static const double interactEnd = ScrollSequenceConfig.skillsInteractEnd;
+  static const double exitEnd = ScrollSequenceConfig.skillsExitEnd;
 
   SkillsPageController({required this.component});
 

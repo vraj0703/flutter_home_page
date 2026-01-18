@@ -3,7 +3,7 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart'
     show Colors, TextStyle, FontWeight, Curves;
-import 'fade_text.dart';
+import '../fade_text.dart';
 
 class CinematicSecondaryTitleComponent extends PositionComponent
     with HasGameReference

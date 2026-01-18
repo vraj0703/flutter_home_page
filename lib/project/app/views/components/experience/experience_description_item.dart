@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
-import 'wrapped_text_component.dart';
+import '../wrapped_text_component.dart';
 
 class ExperienceDescriptionItem extends PositionComponent with HasPaint {
   final List<String> description;
