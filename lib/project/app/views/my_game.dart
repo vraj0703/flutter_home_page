@@ -1,3 +1,5 @@
+import 'package:flutter_home_page/project/app/models/game_components.dart';
+
 import 'components/god_ray.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
