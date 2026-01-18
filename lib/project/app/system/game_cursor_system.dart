@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flutter/animation.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_physics.dart';
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.dart';
@@ -61,7 +61,7 @@ class GameCursorSystem {
         ? GamePhysics.cursorSmoothSpeedFar
         : GamePhysics.cursorSmoothSpeedNear;
     final rawT = speed * dt;
-    final easedT = Curves.easeOutQuad.transform(rawT.clamp(0.0, 1.0));
+    final easedT = GameCurves.standardEase.transform(rawT.clamp(0.0, 1.0));
 
     // Apply Lerp
     _virtualLightPosition.lerp(_targetLightPosition, easedT);

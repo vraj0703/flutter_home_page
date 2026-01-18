@@ -160,4 +160,18 @@ class GameCurves {
   // Standard Flutter Curves alias
   static const Curve standardEase = Curves.easeOutQuad;
   static const Curve standardLinear = Curves.linear;
+
+  // Semantic Curves
+  static const Curve arrowBounce = Curves.easeInOutQuad;
+  static const Curve loadingBlink = Curves.linearToEaseOut;
+
+  static const Curve titleEntry = Curves.easeOut;
+  static const Curve titleScale = Curves.fastLinearToSlowEaseIn;
+  static const Curve titleDrift = Curves.easeInCubic;
+  static const Curve tabTransition = Curves.easeInOutCubic;
+
+  static const Curve backgroundFade = Curves.easeInOut;
+  static const Curve smoothDecel = Curves.easeOutQuart;
+  static const Curve carouselIn = Curves.easeIn;
+  static const Curve standardReveal = Curves.easeOut;
 }

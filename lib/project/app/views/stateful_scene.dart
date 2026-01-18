@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/config/game_strings.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'package:flutter_home_page/project/app/views/widgets/curtain_clipper.dart';
@@ -36,7 +37,7 @@ class _StatefulSceneState extends State<StatefulScene>
     _blinkingController = AnimationController(
       vsync: this,
       duration: const Duration(
-        milliseconds: ScrollSequenceConfig.loadingBlinkDuration,
+        milliseconds: ScrollSequenceConfig.sceneFadeDurationMs,
       ),
     )..repeat(reverse: true);
 
@@ -70,7 +71,7 @@ class _StatefulSceneState extends State<StatefulScene>
     _downArrowBounceAnimation = Tween<double>(begin: 0, end: 15).animate(
       CurvedAnimation(
         parent: _downArrowBounceController,
-        curve: Curves.easeInOutQuad, // Smooth "floating" motion
+        curve: GameCurves.arrowBounce, // Smooth "floating" motion
       ),
     );
 
@@ -159,7 +160,7 @@ class _StatefulSceneState extends State<StatefulScene>
               duration: const Duration(
                 milliseconds: ScrollSequenceConfig.loadingBlinkDuration,
               ),
-              curve: Curves.linearToEaseOut,
+              curve: GameCurves.loadingBlink,
               // Decelerates for a smoother "exit" feel
               builder: (context, value, child) {
                 return IgnorePointer(

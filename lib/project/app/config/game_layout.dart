@@ -50,6 +50,8 @@ class GameLayout {
   static const double logoOverlayStartThickness = 3.0;
   static const double logoOverlayEndThickness = 0.5;
 
+  static const double titleHeatDriftY = -20.0;
+
   // --- Philosophy Card ---
   static const double cardPadding = 32.0;
   static const double cardTitleOffset = 60.0;
@@ -179,4 +181,9 @@ class GameLayout {
 
   // Testimonials
   static const double testiExitY = -1000.0;
+
+  // Sequence offsets
+  static const double keyboardChassisShadowOffset = 10.0;
+  static const double keyboardStartYOffset = 60.0;
+  static const List<double> keyboardRowOffsets = [0.0, 30.0, 45.0, 0.0];
 }

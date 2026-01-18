@@ -97,7 +97,7 @@ class GameScrollConfigurator {
         endScroll: ScrollSequenceConfig.dimLayerEnd,
         startOpacity: 0.0,
         endOpacity: ScrollSequenceConfig.dimLayerFinalAlpha,
-        curve: Curves.easeOutQuart,
+        curve: GameCurves.smoothDecel,
       ),
     );
 

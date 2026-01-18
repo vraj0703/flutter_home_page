@@ -1,8 +1,11 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:flutter/material.dart' show TextStyle, FontWeight, Curves;
+import 'package:flutter/material.dart' show TextStyle, FontWeight;
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/utils/wait_effect.dart';
 
 import '../fade_text.dart';
@@ -24,7 +27,7 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
     // --- 1. Initialize Primary Title ("VISHAL RAJ") ---
     const primaryStyle = TextStyle(
       fontSize: GameStyles.primaryTitleFontSize,
-      letterSpacing: 28,
+      letterSpacing: GameStyles.primaryTitleLetterSpacing,
       fontWeight: FontWeight.w500,
       fontFamily: GameStyles.fontModernUrban,
     );
@@ -57,20 +60,26 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
     // Primary reveal
     _primaryTitle.add(
       SequenceEffect([
-        WaitEffect(.7),
+        WaitEffect(ScrollSequenceConfig.titleRevealDelay),
         OpacityEffect.to(
           1.0,
-          EffectController(duration: 4, curve: Curves.easeOut),
+          EffectController(
+            duration: ScrollSequenceConfig.titleAnimDuration,
+            curve: GameCurves.titleEntry,
+          ),
         ),
       ]),
     );
 
     _primaryTitle.add(
       SequenceEffect([
-        WaitEffect(.7),
+        WaitEffect(ScrollSequenceConfig.titleRevealDelay),
         ScaleEffect.to(
           Vector2(1, 1),
-          EffectController(duration: 4, curve: Curves.fastLinearToSlowEaseIn),
+          EffectController(
+            duration: ScrollSequenceConfig.titleAnimDuration,
+            curve: GameCurves.titleScale,
+          ),
           onComplete: () {
             showComplete();
           },
@@ -82,8 +91,11 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
       SequenceEffect([
         WaitEffect(1),
         MoveByEffect(
-          Vector2(0, -20), // Subtle upward "heat" drift
-          EffectController(duration: 4, curve: Curves.easeInCubic),
+          Vector2(0, GameLayout.titleHeatDriftY), // Subtle upward "heat" drift
+          EffectController(
+            duration: ScrollSequenceConfig.titleAnimDuration,
+            curve: GameCurves.titleDrift,
+          ),
         ),
       ]),
     );
@@ -100,7 +112,10 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
     _primaryTitle.add(
       MoveToEffect(
         localTarget,
-        EffectController(duration: 1.0, curve: Curves.easeInOutCubic),
+        EffectController(
+          duration: ScrollSequenceConfig.titleMoveDuration,
+          curve: GameCurves.tabTransition,
+        ),
       ),
     );
 
@@ -109,7 +124,7 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
         Vector2.all(targetScale),
         EffectController(
           duration: 1.0,
-          curve: Curves.easeInOutCubic,
+          curve: GameCurves.tabTransition,
           onMax: onComplete,
         ),
       ),

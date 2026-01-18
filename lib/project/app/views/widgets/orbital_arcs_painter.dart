@@ -61,17 +61,17 @@ class OrbitalArcsPainter extends CustomPainter {
       ..shader =
           SweepGradient(
             colors: [
-              Colors.white.withValues(alpha: 0.0),
-              Colors.white.withValues(
+              GameStyles.orbitalArcBaseColor.withValues(alpha: 0.0),
+              GameStyles.orbitalArcBaseColor.withValues(
                 alpha: GameStyles.orbitalArcAlphaInnerBg * opacity,
               ),
               accentColor.withValues(
                 alpha: GameStyles.orbitalArcAlphaInner * opacity,
               ),
-              Colors.white.withValues(
+              GameStyles.orbitalArcBaseColor.withValues(
                 alpha: GameStyles.orbitalArcAlphaInnerBg * opacity,
               ),
-              Colors.white.withValues(alpha: 0.0),
+              GameStyles.orbitalArcBaseColor.withValues(alpha: 0.0),
             ],
             startAngle: 0.0,
             endAngle: 2 * pi,

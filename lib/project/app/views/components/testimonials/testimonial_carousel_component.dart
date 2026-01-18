@@ -1,5 +1,5 @@
 import 'package:flame/components.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/models/testimonial_node.dart';
 
@@ -62,7 +62,8 @@ class TestimonialCarouselComponent extends PositionComponent with HasPaint {
 
       if (dist < centerThreshold) {
         t = 1.0 - (dist / centerThreshold);
-        t = Curves.easeOutQuad.transform(t);
+        // Apply easing to the time
+        t = GameCurves.standardEase.transform(t);
       }
 
       final targetScale = 1.0 + (0.15 * t);

@@ -1,3 +1,4 @@
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
@@ -106,7 +107,7 @@ class MyGame extends FlameGame
     _componentFactory.backgroundRun.add(
       OpacityEffect.to(
         1.0,
-        EffectController(duration: 2.0, curve: Curves.easeInOut),
+        EffectController(duration: 2.0, curve: GameCurves.backgroundFade),
       ),
     );
   }

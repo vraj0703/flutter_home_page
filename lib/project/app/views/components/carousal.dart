@@ -1,6 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
@@ -48,23 +48,25 @@ class ProjectCarouselComponent extends PositionComponent
         Vector2(position.x, targetY),
         EffectController(
           duration: ScrollSequenceConfig.carouselEnterDuration,
-          curve: Curves.easeOut,
+          curve: GameCurves.standardReveal,
         ),
       ),
     );
   }
 
   void exit({bool reverse = false}) {
-    final targetY = reverse
-        ? game.size.y + GameLayout.carouselOffscreenY
-        : -GameLayout.carouselOffscreenY;
+    // Reverse logic if needed, or consistent exit
+    double targetY = game.size.y + GameLayout.carouselOffscreenY;
+    if (reverse) {
+      targetY = -GameLayout.carouselOffscreenY;
+    }
 
     add(
       MoveToEffect(
         Vector2(position.x, targetY),
         EffectController(
           duration: ScrollSequenceConfig.carouselExitDuration,
-          curve: Curves.easeIn,
+          curve: GameCurves.carouselIn,
         ),
       ),
     );
@@ -99,7 +101,7 @@ class ProjectCarouselComponent extends PositionComponent
         Vector2(targetX, 0),
         EffectController(
           duration: ScrollSequenceConfig.carouselScrollDuration,
-          curve: Curves.easeInOutCubic,
+          curve: GameCurves.tabTransition,
         ),
       ),
     );

@@ -127,7 +127,7 @@ class TestimonialCard extends PositionComponent with HasPaint {
         style: TextStyle(
           fontFamily: GameStyles.fontInter,
           fontSize: GameStyles.testiRoleFontSize,
-          color: Colors.white.withValues(alpha: 0.6),
+          color: GameStyles.white.withValues(alpha: 0.6),
         ),
       ),
       position: Vector2(

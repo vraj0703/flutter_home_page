@@ -1,9 +1,10 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:flutter/material.dart'
-    show Colors, TextStyle, FontWeight, Curves;
+import 'package:flutter/material.dart' show Colors, TextStyle, FontWeight;
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
+import 'package:flutter_home_page/project/app/utils/wait_effect.dart';
 import '../fade_text.dart';
 
 class CinematicSecondaryTitleComponent extends PositionComponent
@@ -58,11 +59,12 @@ class CinematicSecondaryTitleComponent extends PositionComponent
     // Animate Opacity
     _textComponent.add(
       SequenceEffect([
+        WaitEffect(2.5),
         OpacityEffect.to(
           1.0,
           EffectController(
             duration: GameStyles.secTitleAnimDuration,
-            curve: Curves.easeOut,
+            curve: GameCurves.titleEntry,
           ),
         ),
       ]),
@@ -73,7 +75,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
       SequenceEffect([
         ScaleEffect.to(
           Vector2(1, 1),
-          EffectController(duration: 4, curve: Curves.fastLinearToSlowEaseIn),
+          EffectController(duration: 4, curve: GameCurves.titleScale),
           onComplete: showComplete,
         ),
       ]),
@@ -84,7 +86,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
     _textComponent.add(
       OpacityEffect.to(
         0.0,
-        EffectController(duration: 0.5, curve: Curves.easeOut),
+        EffectController(duration: 0.5, curve: GameCurves.titleEntry),
       ),
     );
   }

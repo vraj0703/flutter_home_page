@@ -93,6 +93,7 @@ class GameStyles {
   // Text Spacing
   static const double loadingLetterSpacing = 12.0;
   static const double enterLetterSpacing = 10.0;
+  static const double primaryTitleLetterSpacing = 28.0;
 
   // --- Animation Durations (Sec) ---
   static const double secTitleAnimDuration = 4.0;
@@ -106,6 +107,10 @@ class GameStyles {
   static const double secondaryTitleFontSize = 14.0;
   static const double secondaryTitleSpacing = 4.0;
   static const Color secondaryTitleColor = Color(0xFFAAB0B5);
+  static const double testimonialTitleSpacing = 2.0;
+
+  static const Color uiBlack = Colors.black;
+  static const Color white = Colors.white;
 
   // --- Testimonial Styles ---
   static const double testiDimFactorBase = 0.5;
@@ -122,6 +127,10 @@ class GameStyles {
   // --- Orbital Arcs Styles ---
   static const double orbitalArcAlphaOuter = 0.05;
   static const double orbitalArcAlphaMid = 0.08;
+  static const double orbitalArcAlpha = 0.1;
+  static const double orbitalArcShineAlpha = 0.3;
+  static const double orbitalArcTailAlpha = 0.0;
+  static const Color orbitalArcBaseColor = Colors.white;
   static const double orbitalArcAlphaInner = 0.5;
   static const double orbitalArcAlphaInnerBg = 0.2;
 

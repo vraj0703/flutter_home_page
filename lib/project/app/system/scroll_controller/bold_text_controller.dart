@@ -1,8 +1,8 @@
 import 'package:flame/components.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 
 class BoldTextController implements ScrollObserver {
@@ -52,7 +52,7 @@ class BoldTextController implements ScrollObserver {
         0.0,
         1.0,
       );
-      final curvedT = Curves.easeInCubic.transform(t);
+      final curvedT = GameCurves.titleDrift.transform(t);
       offsetX =
           ScrollSequenceConfig.boldTextDriftOffset + (screenWidth * curvedT);
     }

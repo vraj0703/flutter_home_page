@@ -12,6 +12,15 @@ class ScrollSequenceConfig {
   static const int arrowBounceDuration = 1500;
   static const int enterTitleDelay = 500;
 
+  static const int sceneFadeDurationMs = 500;
+  static const int sceneLoadingBlinkDurationMs = 1000;
+  static const int sceneArrowBounceDurationMs = 1500;
+  static const int sceneArrowFadeDurationMs = 300;
+
+  static const double titleRevealDelay = 1.0;
+  static const double titleAnimDuration = 4.0;
+  static const double titleMoveDuration = 1.0;
+
   // --- Global UI Timings ---
   static const double inactivityTimeout = 5.0;
   static const double uiFadeDuration = 0.5;

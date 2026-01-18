@@ -1,7 +1,9 @@
 import 'dart:math';
+
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Colors, TextStyle, FontWeight;
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/game_physics.dart';
@@ -103,9 +105,13 @@ class ExperiencePageComponent extends PositionComponent
     final double rawProgress =
         localScroll / ScrollSequenceConfig.experienceScrollDivisor;
     final int baseIndex = rawProgress.floor();
-    final double t = rawProgress - baseIndex;
+    double applySmoothing(double t) {
+      if (t <= 0 || t >= 1) return t;
+      final double curvedT = GameCurves.smoothDecel.transform(t);
+      return curvedT;
+    }
 
-    final double curvedT = Curves.easeOutQuart.transform(t);
+    final double curvedT = applySmoothing(rawProgress - baseIndex);
     final double curvedProgress = baseIndex + curvedT;
 
     _targetRotation = -(curvedProgress * spacing);
@@ -262,7 +268,7 @@ class ExperiencePageComponent extends PositionComponent
       companyText.add(
         MoveToEffect(
           Vector2(textX, halfHeight - 40),
-          EffectController(duration: 0.4, curve: Curves.easeOut),
+          EffectController(duration: 0.4, curve: GameCurves.standardReveal),
         ),
       );
 
@@ -271,7 +277,7 @@ class ExperiencePageComponent extends PositionComponent
           Vector2(textX, halfHeight - 10),
           EffectController(
             duration: 0.4,
-            curve: Curves.easeOut,
+            curve: GameCurves.standardReveal,
             startDelay: 0.1,
           ),
         ),
@@ -282,7 +288,7 @@ class ExperiencePageComponent extends PositionComponent
           Vector2(textX, halfHeight + 60),
           EffectController(
             duration: 0.4,
-            curve: Curves.easeOut,
+            curve: GameCurves.standardReveal,
             startDelay: 0.2,
           ),
         ),

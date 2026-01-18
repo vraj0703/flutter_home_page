@@ -1,6 +1,6 @@
 import 'package:flame/components.dart';
-import 'package:flutter/animation.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_home_page/project/app/config/game_curves.dart';
 
 /// Base class for scroll-driven effects.
 abstract class ScrollEffect<T extends PositionComponent> {
@@ -11,7 +11,7 @@ abstract class ScrollEffect<T extends PositionComponent> {
   ScrollEffect({
     required this.startScroll,
     required this.endScroll,
-    this.curve = Curves.linear,
+    this.curve = GameCurves.standardLinear,
   });
 
   /// Applies the effect to the component based on current global scrollOffset.

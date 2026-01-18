@@ -57,7 +57,10 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
 
     // Chassis Border/Side
     _chassisSide = RectangleComponent(
-      position: Vector2(chassisPos.x, chassisPos.y + 10), // Shifted down
+      position: Vector2(
+        chassisPos.x,
+        chassisPos.y + GameLayout.keyboardChassisShadowOffset,
+      ), // Shifted down
       size: Vector2(chassisWidth, chassisHeight),
       paint: Paint()
         ..color = GameStyles.keyboardChassisSide.withValues(alpha: opacity),
@@ -71,9 +74,8 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
 
     int currentToolIndex = 0;
     final rows = [6, 7, 7, 5];
-    final rowOffsets = [0.0, 30.0, 45.0, 0.0]; // Stagger
-
-    double startY = chassisPos.y + 60;
+    final rowOffsets = GameLayout.keyboardRowOffsets; // Stagger
+    double startY = chassisPos.y + GameLayout.keyboardStartYOffset;
 
     for (int r = 0; r < rows.length; r++) {
       final count = rows[r];
