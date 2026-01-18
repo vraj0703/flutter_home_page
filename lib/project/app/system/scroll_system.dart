@@ -21,7 +21,6 @@ class ScrollSystem {
     ScrollSequenceConfig.workExpTitleHoldStart, // Snap to work exp title hold
     ScrollSequenceConfig.experienceInteractionStart,
     ScrollSequenceConfig.testimonialInteractionStart,
-    ScrollSequenceConfig.skillsInteractEnd,
   ];
   static const double snapZoneRadius = GamePhysics.snapZoneRadius;
   static const double snapVelocityThreshold = GamePhysics.snapVelocityThreshold;

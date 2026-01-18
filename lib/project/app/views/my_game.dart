@@ -247,10 +247,8 @@ class MyGame extends FlameGame
         workExperienceTitle: _componentFactory.workExperienceTitle,
         experiencePage: _componentFactory.experiencePage,
         testimonialPage: _componentFactory.testimonialPage,
-        skillsPage: _componentFactory.skillsPage,
         contactPage: _componentFactory.contactPage,
         progressIndicator: _componentFactory.progressIndicator,
-        breadcrumb: _componentFactory.breadcrumb,
       ),
     );
   }
