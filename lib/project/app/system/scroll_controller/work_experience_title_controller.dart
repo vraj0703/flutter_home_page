@@ -7,20 +7,21 @@ import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
 
-/// Controls the "Work Experience" title scroll animation:
-/// Phase 1: Rise from bottom with spring physics (3300-3650)
-/// Phase 2: Hold at center with subtle pulse (3650-3900)
-/// Phase 3: Ascend to top with fade out (3900-4100)
+/// Controls the "Work Experience" title with FULL PAGE PARALLAX:
+/// Phase 1: Rise from far below with parallax (3600-4000)
+/// Phase 2: Hold at center with subtle pulse (4000-4300)
+/// Phase 3: Ascend far above with parallax (4300-4650)
+/// NO OVERLAPS - Clean transitions before and after
 class WorkExperienceTitleController implements ScrollObserver {
   final WorkExperienceTitleComponent component;
   final double screenHeight;
   final Vector2 centerPosition;
 
-  // Curves for natural motion
+  // Smooth curves for fluid motion
   static const springCurve = SpringCurve(
-    mass: 0.9,
-    stiffness: 160.0,
-    damping: 14.0,
+    mass: 1.0,
+    stiffness: 140.0,
+    damping: 15.0,
   );
   static const exponentialEaseOut = ExponentialEaseOut();
 
@@ -45,34 +46,31 @@ class WorkExperienceTitleController implements ScrollObserver {
     const exitDuration = ScrollSequenceConfig.workExpTitleExitDuration;
     final exitEnd = ScrollSequenceConfig.workExpTitleExitEnd;
 
-    // Calculate text height estimate for positioning
-    const textHeightEstimate = 100.0;
-
     double yOffset = 0.0;
     double opacity = 0.0;
     double scale = 1.0;
 
     if (scrollOffset < entranceStart) {
-      // Before entrance: hidden below
-      yOffset = screenHeight + 200;
+      // Before entrance: hidden FAR below (full page parallax distance)
+      yOffset = screenHeight * 1.5; // Start 1.5x screen height below
       opacity = 0.0;
-      scale = 0.95;
+      scale = 0.9; // Start smaller
     } else if (scrollOffset < entranceEnd) {
-      // Phase 1: ENTRANCE - Rise from bottom with spring physics
+      // Phase 1: ENTRANCE - Full page parallax from far below
       final t = ((scrollOffset - entranceStart) / entranceDuration).clamp(
         0.0,
         1.0,
       );
       final curvedT = springCurve.transform(t);
 
-      // Position: bottom → center
-      yOffset = (screenHeight + 200) * (1.0 - curvedT);
+      // Position: Far below → center (full page parallax)
+      yOffset = (screenHeight * 1.5) * (1.0 - curvedT);
 
       // Opacity: fade in smoothly
       opacity = exponentialEaseOut.transform(t);
 
-      // Scale: 0.95 → 1.0 for depth
-      scale = 0.95 + (0.05 * exponentialEaseOut.transform(t));
+      // Scale: 0.9 → 1.0 for depth and parallax effect
+      scale = 0.9 + (0.1 * exponentialEaseOut.transform(t));
     } else if (scrollOffset < holdEnd) {
       // Phase 2: HOLD - Stay at center with subtle pulse
       yOffset = 0.0;
@@ -86,28 +84,23 @@ class WorkExperienceTitleController implements ScrollObserver {
       component.applyPulse(holdProgress);
       scale = component.scale.x; // Use the pulse scale
     } else if (scrollOffset < exitEnd) {
-      // Phase 3: EXIT - Ascend to top with acceleration
+      // Phase 3: EXIT - Full page parallax to far above
       final t = ((scrollOffset - exitStart) / exitDuration).clamp(0.0, 1.0);
-      final curvedT = exponentialEaseOut.transform(t);
+      final curvedT = springCurve.transform(t);
 
-      // Position: center → top
-      yOffset = -(textHeightEstimate + 300) * curvedT;
+      // Position: center → far above (full page parallax)
+      yOffset = -(screenHeight * 1.5) * curvedT;
 
-      // Opacity: fade out in last portion
-      if (t < 0.5) {
-        opacity = 1.0;
-      } else {
-        final fadeT = ((t - 0.5) / 0.5).clamp(0.0, 1.0);
-        opacity = 1.0 - exponentialEaseOut.transform(fadeT);
-      }
+      // Opacity: fade out smoothly
+      opacity = 1.0 - exponentialEaseOut.transform(t);
 
-      // Scale: subtle increase 1.0 → 1.05 (moving toward viewer)
-      scale = 1.0 + (0.05 * curvedT);
+      // Scale: 1.0 → 1.1 (moving toward viewer then away)
+      scale = 1.0 + (0.1 * curvedT);
     } else {
-      // After exit: hidden above
-      yOffset = -(textHeightEstimate + 300);
+      // After exit: hidden FAR above
+      yOffset = -(screenHeight * 1.5);
       opacity = 0.0;
-      scale = 1.05;
+      scale = 1.1;
     }
 
     // Apply transformations

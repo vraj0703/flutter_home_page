@@ -18,7 +18,9 @@ class ScrollSystem {
     ScrollSequenceConfig.boldTextFadeInStart,
     ScrollSequenceConfig.boldTextEnd,
     ScrollSequenceConfig.philosophyEnd,
-    ScrollSequenceConfig.workExpTitleHoldStart,
+    ScrollSequenceConfig.workExpTitleHoldStart, // Snap to work exp title hold
+    ScrollSequenceConfig.experienceInteractionStart,
+    ScrollSequenceConfig.testimonialInteractionStart,
     ScrollSequenceConfig.skillsInteractEnd,
   ];
   static const double snapZoneRadius = GamePhysics.snapZoneRadius;
