@@ -36,22 +36,26 @@ class ScrollSequenceConfig {
   static const Duration sceneFadeDurationObj = Duration(
     milliseconds: sceneFadeDurationMs,
   );
+
   // --- 1. Bold Text Section (0 - 1700) ---
   // Entrance: 400 -> 900
   static const double boldTextEntranceStart = 400.0;
   static const double boldTextEntranceDuration = 500.0;
+
   static double get boldTextEntranceEnd =>
       boldTextEntranceStart + boldTextEntranceDuration; // 900
 
   // Drift: 900 -> 1400
   static const double boldTextDriftStart = 900.0; // Matches entrance end
   static const double boldTextDriftDuration = 500.0;
+
   static double get boldTextDriftEnd =>
       boldTextDriftStart + boldTextDriftDuration; // 1400
 
   // Fade In: 500 -> 750
   static const double boldTextFadeInStart = 500.0;
   static const double boldTextFadeInDuration = 250.0;
+
   static double get boldTextFadeInEnd =>
       boldTextFadeInStart + boldTextFadeInDuration; // 750
 
@@ -88,7 +92,8 @@ class ScrollSequenceConfig {
   // --- 2.5. Work Experience Title Section (3600 - 4650) ---
   // Full page parallax entrance and exit, NO overlaps
   static const double workExpTitleEntranceStart = 3600.0;
-  static const double workExpTitleEntranceDuration = 400.0; // Longer for smooth parallax
+  static const double workExpTitleEntranceDuration =
+      400.0; // Longer for smooth parallax
   static double get workExpTitleEntranceEnd =>
       workExpTitleEntranceStart + workExpTitleEntranceDuration; // 4000
 
@@ -98,7 +103,8 @@ class ScrollSequenceConfig {
       workExpTitleHoldStart + workExpTitleHoldDuration; // 4300
 
   static const double workExpTitleExitStart = 4300.0;
-  static const double workExpTitleExitDuration = 350.0; // Longer for smooth parallax
+  static const double workExpTitleExitDuration =
+      350.0; // Longer for smooth parallax
   static double get workExpTitleExitEnd =>
       workExpTitleExitStart + workExpTitleExitDuration; // 4650
 
@@ -109,16 +115,19 @@ class ScrollSequenceConfig {
   // Clean entrance AFTER work exp title fully exits
   static const double experienceEntranceStart = 4750.0;
   static const double experienceEntranceDuration = 300.0;
+
   static double get experienceEntranceEnd =>
       experienceEntranceStart + experienceEntranceDuration; // 5050
   static const double experienceInteractionStart =
       5050.0; // Starts after entrance completes
   // Length based on content (5 items * 350 = 1750)
   static const double experienceInteractionDuration = 1750.0;
+
   static double get experienceInteractionEnd =>
       experienceInteractionStart + experienceInteractionDuration; // 6800
   static double get experienceExitStart => experienceInteractionEnd; // 6800
   static const double experienceExitDuration = 300.0;
+
   static double get experienceExitEnd =>
       experienceExitStart + experienceExitDuration; // 7100
 
@@ -131,15 +140,18 @@ class ScrollSequenceConfig {
   // Clean entrance after experience fully exits
   static const double testimonialEntranceStart = 7200.0;
   static const double testimonialEntranceDuration = 300.0;
+
   static double get testimonialEntranceEnd =>
       testimonialEntranceStart + testimonialEntranceDuration; // 7500
   static const double testimonialInteractionStart =
       7500.0; // Start interaction after entrance
-  static const double testimonialVisibleDuration = 3200.0; // Compressed slightly
+  static const double testimonialVisibleDuration =
+      3200.0; // Compressed slightly
   static double get testimonialInteractionEnd =>
       testimonialInteractionStart + testimonialVisibleDuration; // 10700
   static double get testimonialExitStart => testimonialInteractionEnd; // 10700
   static const double testimonialExitDuration = 400.0;
+
   static double get testimonialExitEnd =>
       testimonialExitStart + testimonialExitDuration; // 11100
 
@@ -150,12 +162,13 @@ class ScrollSequenceConfig {
   // Clean entrance after testimonials fully exit
   static const double skillsEntranceStart = 11200.0;
   static const double skillsEntranceDuration = 400.0;
-  static double get skillsEntranceEnd =>
+  static double skillsEntranceEnd =
       skillsEntranceStart + skillsEntranceDuration; // 11600
   static const double skillsInteractEnd =
       12800.0; // Hold -> 11600 + 1200 = 12800
   static const double skillsExitDuration = 400.0;
-  static double get skillsExitEnd => skillsInteractEnd + skillsExitDuration; // 13200
+
+  static double skillsExitEnd = skillsInteractEnd + skillsExitDuration; // 13200
 
   // --- Transition Gap: Skills -> Contact (13200 - 13300) ---
   static const double skillsToContactGap = 100.0;
@@ -180,6 +193,7 @@ class ScrollSequenceConfig {
   static const double philosophyTransitionOffset = 400.0;
 
   static const double testimonialFadeOffset = 300.0;
+
   // --- UI Config ---
   static const double uiFadeDistance = 100.0;
   static const double dimLayerFinalAlpha = 0.6;
@@ -193,7 +207,6 @@ class ScrollSequenceConfig {
   static const double carouselEnterDuration = 0.8;
   static const double carouselExitDuration = 0.6;
   static const double carouselScrollDuration = 0.7;
-  static const double testimonialExitDuration = 400.0;
 
   static const double boldTextDriftOffset = 50.0;
 }

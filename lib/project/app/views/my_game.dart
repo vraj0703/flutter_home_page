@@ -185,7 +185,7 @@ class MyGame extends FlameGame
     // Update god ray pulse animation
     final godRayController = _scrollConfigurator.godRayController;
     if (godRayController != null) {
-      godRayController.updatePulse(dt, scrollSystem.currentScrollOffset);
+      godRayController.updatePulse(dt, scrollSystem.scrollOffset);
     }
 
     stateProvider.sceneState().when(
@@ -217,9 +217,9 @@ class MyGame extends FlameGame
   void enterTitle() {
     Future.delayed(
       ScrollSequenceConfig.enterTitleDelayDuration,
-      () => _componentFactory.cinematicTitle.show(
-        () => _componentFactory.cinematicSecondaryTitle.show(
-          () => queuer.queue(event: SceneEvent.titleLoaded()),
+          () => _componentFactory.cinematicTitle.show(
+            () => _componentFactory.cinematicSecondaryTitle.show(
+              () => queuer.queue(event: SceneEvent.titleLoaded()),
         ),
       ),
     );
