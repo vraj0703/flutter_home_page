@@ -1,5 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
+import 'package:flutter_home_page/project/app/curves/anticipation.dart';
+import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/config/game_curves.dart';
@@ -142,10 +144,12 @@ class PhilosophyPageController implements ScrollObserver {
           final t = ((scrollOffset - myStart) / peelDuration).clamp(0.0, 1.0);
           final curvedT = exponentialEaseOut.transform(t);
           liftVector = GameLayout.philosophyStackLiftVector * curvedT;
+          // More dramatic rotation (0.2 → 0.35 for planning.md spec)
           rotation =
-              GameLayout.philStackRotation * curvedT * (i % 2 == 0 ? 1 : -1);
+              (GameLayout.philStackRotation * 1.75) * curvedT * (i % 2 == 0 ? 1 : -1);
           alpha = 1.0 - t;
-          scale = 1.0 + ((GameLayout.philStackScaleMax - 1.0) * curvedT);
+          // More dramatic scale change (planning.md: 1.05+0.15t instead of 1.0+0.1t)
+          scale = 1.05 + (0.15 * curvedT);
         } else {
           // Gone
           alpha = 0.0;

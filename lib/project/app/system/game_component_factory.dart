@@ -5,7 +5,6 @@ import 'package:flutter_home_page/project/app/config/game_assets.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_strings.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
-import 'package:flutter_home_page/project/app/config/anchor_config.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
@@ -20,7 +19,6 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/philos
 import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
-import 'package:flutter_home_page/project/app/views/components/anchor/anchor_ring_component.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
@@ -44,7 +42,6 @@ class GameComponentFactory {
   late TestimonialPageComponent testimonialPage;
   late SkillsKeyboardComponent skillsPage;
   late ContactPageComponent contactPage;
-  late AnchorRingComponent anchorRing;
 
   late FragmentShader metallicShader;
 
@@ -205,12 +202,6 @@ class GameComponentFactory {
     contactPage = ContactPageComponent(size: size, shader: metallicShader);
     contactPage.priority = GameLayout.zContact;
     contactPage.position = Vector2(0, size.y);
-
-    // 7. Orbital Anchor Ring
-    anchorRing = AnchorRingComponent(
-      position: size / 2,
-      priority: AnchorConfig.zIndex,
-    );
   }
 
   // Get all components for easy addition
@@ -231,7 +222,6 @@ class GameComponentFactory {
     testimonialPage,
     skillsPage,
     contactPage,
-    anchorRing,
   ];
 
   // Helper loading methods

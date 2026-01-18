@@ -10,7 +10,6 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/philos
 import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
-import 'package:flutter_home_page/project/app/views/components/anchor/anchor_ring_component.dart';
 
 class GameComponents {
   final CinematicTitleComponent cinematicTitle;
@@ -25,7 +24,6 @@ class GameComponents {
   final TestimonialPageComponent testimonialPage;
   final SkillsKeyboardComponent skillsPage;
   final ContactPageComponent contactPage;
-  final AnchorRingComponent anchorRing;
 
   GameComponents({
     required this.cinematicTitle,
@@ -40,6 +38,5 @@ class GameComponents {
     required this.testimonialPage,
     required this.skillsPage,
     required this.contactPage,
-    required this.anchorRing,
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
+import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/config/game_curves.dart';
@@ -19,6 +20,13 @@ class BoldTextController implements ScrollObserver {
   @override
   void onScroll(double scrollOffset) {
     const exponentialEaseOut = ExponentialEaseOut();
+    // Spring physics for exit animation (subtle overshoot)
+    const springExit = SpringCurve(
+      mass: 1.0,
+      stiffness: 160.0,
+      damping: 13.0,
+    );
+
     double offsetX = -screenWidth;
     double offsetY = 0;
 
@@ -34,27 +42,32 @@ class BoldTextController implements ScrollObserver {
     // Movement Logic
     if (scrollOffset < entranceStart) {
       offsetX = -screenWidth;
+      offsetY = 0;
     } else if (scrollOffset < entranceEnd) {
-      // Entrance
+      // Entrance - Smooth ease-out (motion.zajno principle)
       final t = ((scrollOffset - entranceStart) / entranceDuration).clamp(
         0.0,
         1.0,
       );
       final curvedT = exponentialEaseOut.transform(t);
       offsetX = -screenWidth + (screenWidth * curvedT);
+      offsetY = 0;
     } else if (scrollOffset < driftEnd) {
-      // Drifting
+      // Drifting - Gentle horizontal drift
       final t = ((scrollOffset - driftStart) / driftDuration).clamp(0.0, 1.0);
       offsetX = 0.0 + (ScrollSequenceConfig.boldTextDriftOffset * t);
+      offsetY = 0;
     } else {
-      // Exit Phase
+      // Exit Phase - Spring physics with upward float (planning.md spec)
       final t = ((scrollOffset - driftEnd) / (scrollEnd - driftEnd)).clamp(
         0.0,
         1.0,
       );
-      final curvedT = GameCurves.titleDrift.transform(t);
+      final curvedT = springExit.transform(t);
       offsetX =
           ScrollSequenceConfig.boldTextDriftOffset + (screenWidth * curvedT);
+      // Add upward drift during exit for lighter feel
+      offsetY = -50.0 * curvedT;
     }
 
     component.position = centerPosition + Vector2(offsetX, offsetY);
