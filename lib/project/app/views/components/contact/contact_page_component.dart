@@ -143,13 +143,12 @@ class ContactPageComponent extends PositionComponent
     super.opacity = val;
     for (final child in children) {
       if (child is TextComponent) {
-        child.textRenderer = TextPaint(
-          style: (child.textRenderer as TextPaint).style.copyWith(
-            color: (child.textRenderer as TextPaint).style.color!.withValues(
-              alpha: val,
-            ),
-          ),
-        );
+        final style = (child.textRenderer as TextPaint).style;
+        if (style.color != null) {
+          child.textRenderer = TextPaint(
+            style: style.copyWith(color: style.color!.withValues(alpha: val)),
+          );
+        }
       } else if (child is RectangleComponent) {
         child.paint.color = child.paint.color.withValues(alpha: val);
         for (final c in child.children) {

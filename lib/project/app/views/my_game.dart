@@ -6,13 +6,8 @@ import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
-import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
-import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
-import 'package:flutter_home_page/project/app/system/scroll_effects/opacity.dart';
-import 'package:flutter_home_page/project/app/system/scroll_effects/parallax.dart';
-import 'package:flutter_home_page/project/app/system/ui_opacity_observer.dart';
 import 'package:flutter_home_page/project/app/views/components/experience/experience_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_title.dart';
 import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_secondary_title.dart';
@@ -23,19 +18,14 @@ import 'components/logo_layer/logo_overlay.dart';
 import 'components/bold_text/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/system/scroll_system.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
-import 'package:flutter_home_page/project/app/system/bold_text_controller.dart';
-import 'package:flutter_home_page/project/app/system/philosophy_page_controller.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
-import 'package:flutter_home_page/project/app/system/experience_page_controller.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
-import 'package:flutter_home_page/project/app/system/testimonial_page_controller.dart';
 import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
-import 'package:flutter_home_page/project/app/system/contact_page_controller.dart';
 import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
-import 'package:flutter_home_page/project/app/system/skills_page_controller.dart';
 import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
-import 'package:flutter/material.dart' as material;
+import 'package:flutter_home_page/project/app/system/game_component_factory.dart';
+import 'package:flutter_home_page/project/app/system/game_scroll_configurator.dart';
 
 class MyGame extends FlameGame
     with PointerMoveCallbacks, TapCallbacks, ScrollDetector {
@@ -100,6 +90,9 @@ class MyGame extends FlameGame
   final ScrollSystem scrollSystem = ScrollSystem();
   final ScrollOrchestrator scrollOrchestrator = ScrollOrchestrator();
 
+  final GameComponentFactory _componentFactory = GameComponentFactory();
+  final GameScrollConfigurator _scrollConfigurator = GameScrollConfigurator();
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
@@ -111,119 +104,108 @@ class MyGame extends FlameGame
     _targetLightDirection = Vector2(0, -1)..normalize();
     _lightDirection = _targetLightDirection.clone();
 
-    await loadLogoLayer();
-    await loadLayerLineAndStart();
-    await loadLayerName();
-    await loadDimLayer();
-    await loadPhilosophyPage();
-    await loadExperiencePage();
-    await loadTestimonialPage();
-    await loadSkillsPage();
-    await loadContactPage();
+    await _initializeComponents();
 
     queuer.queue(event: const SceneEvent.gameReady());
     scrollSystem.register(scrollOrchestrator);
   }
 
-  Future<void> loadLogoLayer() async {
-    final sprite = await Sprite.load('logo.png');
-    final Image image = sprite.image;
-    double zoom = 3;
-    _baseLogoSize = Vector2(image.width.toDouble(), image.height.toDouble());
-    Vector2 logoSize = _baseLogoSize * zoom;
+  Future<void> _initializeComponents() async {
+    // 1. Logo Layer
+    final logoImage = await _componentFactory.loadImage('logo.png');
+    final startZoom = 3.0;
+    _baseLogoSize = Vector2(
+      logoImage.width.toDouble(),
+      logoImage.height.toDouble(),
+    );
+    final logoSize = _baseLogoSize * startZoom;
+    final bgColor = backgroundColor();
 
-    final program = await FragmentProgram.fromAsset(
-      'assets/shaders/god_rays.frag',
-    );
-    final shader = program.fragmentShader();
-    final logoProgram = await FragmentProgram.fromAsset(
-      'assets/shaders/logo.frag',
-    );
-    shadowScene = RayMarchingShadowComponent(
-      fragmentShader: shader,
-      logoImage: image,
+    shadowScene = await _componentFactory.createShadowScene(
+      size: size,
+      logoImage: logoImage,
       logoSize: logoSize,
     );
-    shadowScene.logoPosition = size / 2;
     await add(shadowScene);
 
-    final bgColor = backgroundColor();
-    logoComponent = LogoComponent(
-      shader: logoProgram.fragmentShader(),
-      logoTexture: image,
+    logoComponent = await _componentFactory.createLogoComponent(
+      size: size,
+      logoImage: logoImage,
+      logoSize: logoSize,
       tintColor: bgColor,
-      size: logoSize,
-      position: size / 2,
     );
-    logoComponent.priority = 10;
     await add(logoComponent);
 
-    godRay = GodRayComponent();
-    godRay.priority = 20;
-    godRay.position = size / 2;
+    godRay = _componentFactory.createGodRay(size);
     await add(godRay);
-  }
 
-  Future<void> loadLayerLineAndStart() async {
-    interactiveUI = LogoOverlayComponent(
+    // 2. Interactive UI
+    interactiveUI = _componentFactory.createInteractiveUI(
+      size: size,
       stateProvider: stateProvider,
       queuer: queuer,
     );
-    interactiveUI.position = size / 2;
-    interactiveUI.priority = 30;
-    interactiveUI.gameSize = size;
-    interactiveUI.gameSize = size;
     await add(interactiveUI);
-  }
 
-  Future<void> loadLayerName() async {
-    final backgroundProgram = await FragmentProgram.fromAsset(
-      'assets/shaders/background_run_v2.frag',
-    );
-
-    backgroundRun = BackgroundRunComponent(
-      shader: backgroundProgram.fragmentShader(),
-      size: size,
-      priority: 1,
-    );
+    // 3. Background & Titles
+    backgroundRun = await _componentFactory.createBackgroundRun(size);
     await add(backgroundRun);
 
-    final metallicTextProgram = await FragmentProgram.fromAsset(
+    metallicShader = await _componentFactory.loadShader(
       'assets/shaders/metallic_text.frag',
     );
-    metallicShader = metallicTextProgram.fragmentShader();
 
-    cinematicTitle = CinematicTitleComponent(
-      primaryText: "VISHAL RAJ",
+    cinematicTitle = _componentFactory.createCinematicTitle(
+      size: size,
       shader: metallicShader,
-      position: size / 2,
     );
-    cinematicTitle.priority = 25;
-    add(cinematicTitle);
+    await add(cinematicTitle);
 
-    cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
-      text: "Welcome to my space",
+    cinematicSecondaryTitle = _componentFactory.createCinematicSecondaryTitle(
+      size: size,
       shader: metallicShader,
-      position: size / 2 + Vector2(0, 48),
     );
-    cinematicSecondaryTitle.priority = 24;
-    add(cinematicSecondaryTitle);
+    await add(cinematicSecondaryTitle);
 
-    boldTextReveal = BoldTextRevealComponent(
-      text: "Crafting Clarity from Chaos.",
-      textStyle: material.TextStyle(
-        fontSize: 80,
-        fontWeight: FontWeight.w500,
-        fontFamily: 'InconsolataNerd',
-        letterSpacing: 2.0,
-      ),
+    boldTextReveal = _componentFactory.createBoldTextReveal(
+      size: size,
       shader: metallicShader,
-      baseColor: const Color(0xFFE3E4E5),
-      position: size / 2,
     );
-    boldTextReveal!.priority = 26;
-    boldTextReveal!.opacity = 0.0;
     await add(boldTextReveal!);
+
+    _dimLayer = _componentFactory.createDimLayer(size);
+    await add(_dimLayer!);
+
+    // 4. Scrollable Pages
+    philosophyText = _componentFactory.createPhilosophyText(
+      size: size,
+      shader: metallicShader,
+    );
+    await add(philosophyText!);
+
+    cardStack = _componentFactory.createCardStack(
+      size: size,
+      scrollOrchestrator: scrollOrchestrator,
+    );
+    await add(cardStack!);
+
+    experiencePage = _componentFactory.createExperiencePage(size);
+    await add(experiencePage!);
+
+    testimonialPage = _componentFactory.createTestimonialPage(
+      size: size,
+      shader: metallicShader,
+    );
+    await add(testimonialPage!);
+
+    skillsPage = _componentFactory.createSkillsPage(size);
+    await add(skillsPage!);
+
+    contactPage = _componentFactory.createContactPage(
+      size: size,
+      shader: metallicShader,
+    );
+    await add(contactPage!);
   }
 
   @override
@@ -417,169 +399,31 @@ class MyGame extends FlameGame
 
   void enterMenu() {
     _updateMenuLayoutTargets();
-    scrollSystem.setScrollOffset(0.0);
-    cinematicTitle.show(() {});
-    cinematicSecondaryTitle.show(() {});
-    scrollOrchestrator.addBinding(
-      cinematicTitle,
-      ParallaxScrollEffect(
-        startScroll: 0,
-        endScroll: 800,
-        initialPosition: cinematicTitle.position.clone(),
-        endOffset: Vector2(0, -1000),
-        curve: const SpringCurve(mass: 1.0, stiffness: 180.0, damping: 12.0),
-      ),
-    );
 
-    scrollOrchestrator.addBinding(
-      cinematicTitle,
-      OpacityScrollEffect(
-        startScroll: 0,
-        endScroll: 500,
-        startOpacity: 1.0,
-        endOpacity: 0.0,
-        curve: const ExponentialEaseOut(),
-      ),
-    );
-
-    scrollOrchestrator.addBinding(
-      cinematicSecondaryTitle,
-      ParallaxScrollEffect(
-        startScroll: 0,
-        endScroll: 1000,
-        initialPosition: cinematicSecondaryTitle.position.clone(),
-        endOffset: Vector2(0, -1000),
-        curve: const SpringCurve(mass: 0.8, stiffness: 200.0, damping: 10.0),
-      ),
-    );
-
-    scrollOrchestrator.addBinding(
-      cinematicSecondaryTitle,
-      OpacityScrollEffect(
-        startScroll: 0,
-        endScroll: 100,
-        startOpacity: 1.0,
-        endOpacity: 0.0,
-        curve: const ExponentialEaseOut(),
-      ),
-    );
-    scrollOrchestrator.addBinding(
-      interactiveUI,
-      OpacityScrollEffect(
-        startScroll: 0,
-        endScroll: 100,
-        startOpacity: 1.0,
-        endOpacity: 0.0,
-        curve: const ExponentialEaseOut(),
-      ),
-    );
-    scrollOrchestrator.addBinding(
-      _dimLayer!,
-      OpacityScrollEffect(
-        startScroll: 1500,
-        endScroll: 2000,
-        startOpacity: 0.0,
-        endOpacity: 0.6,
-        curve: Curves.easeOutQuart,
-      ),
-    );
-    scrollSystem.register(
-      BoldTextController(
-        component: boldTextReveal!,
-        screenWidth: size.x,
-        centerPosition: size / 2,
-      ),
-    );
-    scrollSystem.register(
-      PhilosophyPageController(
-        component: philosophyText!,
+    // Delegate to ScrollConfigurator
+    _scrollConfigurator.configureScroll(
+      scrollOrchestrator: scrollOrchestrator,
+      scrollSystem: scrollSystem,
+      screenSize: size,
+      stateProvider: stateProvider,
+      components: GameComponents(
+        cinematicTitle: cinematicTitle,
+        cinematicSecondaryTitle: cinematicSecondaryTitle,
+        interactiveUI: interactiveUI,
+        dimLayer: _dimLayer!,
+        boldTextReveal: boldTextReveal!,
+        philosophyText: philosophyText!,
         cardStack: cardStack!,
-        initialTextPos: philosophyText!.position.clone(),
-        initialStackPos: cardStack!.position.clone(),
+        experiencePage: experiencePage!,
+        testimonialPage: testimonialPage!,
+        skillsPage: skillsPage!,
+        contactPage: contactPage!,
       ),
-    );
-    scrollSystem.register(ExperiencePageController(component: experiencePage!));
-    scrollSystem.register(UIOpacityObserver(stateProvider: stateProvider));
-    scrollSystem.register(
-      TestimonialPageController(component: testimonialPage!),
-    );
-    scrollSystem.register(SkillsPageController(component: skillsPage!));
-    scrollSystem.register(
-      ContactPageController(component: contactPage!, screenHeight: size.y),
     );
   }
 
   @override
   void onPointerMove(PointerMoveEvent event) {
     _lastKnownPointerPosition = event.localPosition;
-  }
-
-  Future<void> loadExperiencePage() async {
-    experiencePage = ExperiencePageComponent(size: size);
-    experiencePage!.priority = 25;
-    add(experiencePage!);
-  }
-
-  Future<void> loadPhilosophyPage() async {
-    philosophyText = PhilosophyTextComponent(
-      text: "My Philosophy",
-      style: material.TextStyle(
-        fontFamily: 'ModrntUrban',
-        fontSize: 40,
-        fontWeight: FontWeight.bold,
-        color: material.Colors.white,
-        letterSpacing: 1.5,
-      ),
-      shader: metallicShader,
-      anchor: Anchor.centerLeft,
-      position: Vector2(size.x * 0.15, size.y / 2),
-    );
-    philosophyText!.priority = 25;
-    philosophyText!.opacity = 0.0;
-    await add(philosophyText!);
-
-    cardStack = PeelingCardStackComponent(
-      scrollOrchestrator: scrollOrchestrator,
-      cardsData: cardData,
-      size: Vector2(size.x * 0.4, size.y * 0.6),
-      position: Vector2(size.x * 0.75, size.y / 2),
-    );
-    cardStack!.anchor = Anchor.center;
-    cardStack!.priority = 25;
-    cardStack!.opacity = 0.0;
-    await add(cardStack!);
-  }
-
-  Future<void> loadTestimonialPage() async {
-    testimonialPage = TestimonialPageComponent(
-      size: size,
-      shader: metallicShader,
-    );
-    testimonialPage!.priority = 25;
-    testimonialPage!.opacity = 0.0;
-    add(testimonialPage!);
-  }
-
-  Future<void> loadSkillsPage() async {
-    skillsPage = SkillsKeyboardComponent(size: size);
-    skillsPage!.priority = 28; // Above Testimonials, Below Contact
-    skillsPage!.opacity = 0.0;
-    add(skillsPage!);
-  }
-
-  Future<void> loadContactPage() async {
-    contactPage = ContactPageComponent(size: size, shader: metallicShader);
-    contactPage!.priority = 30;
-    contactPage!.position = Vector2(0, size.y);
-    add(contactPage!);
-  }
-
-  Future<void> loadDimLayer() async {
-    _dimLayer = RectangleComponent(
-      priority: 2,
-      size: size,
-      paint: Paint()..color = const Color(0xFF000000).withValues(alpha: 0.0),
-    );
-    await add(_dimLayer!);
   }
 }
