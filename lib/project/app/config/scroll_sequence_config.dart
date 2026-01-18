@@ -192,4 +192,14 @@ class ScrollSequenceConfig {
   static const double carouselScrollDuration = 0.7;
 
   static const double boldTextDriftOffset = 50.0;
+
+  // --- Section Jump Targets (for progress indicator clicks) ---
+  static const List<double> sectionJumpTargets = [
+    0.0, // Section 0: Hero
+    boldTextEntranceStart, // Section 1: Bold Text
+    philosophyStart, // Section 2: Philosophy
+    workExpTitleEntranceStart, // Section 3: Work Experience
+    testimonialInteractionStart, // Section 4: Testimonials
+    contactEntranceStart, // Section 5: Contact
+  ];
 }

@@ -54,6 +54,7 @@ class GameComponentFactory {
     required Queuer queuer,
     required ScrollOrchestrator scrollOrchestrator,
     required material.Color Function() backgroundColorCallback,
+    void Function(int section)? onSectionTap,
   }) async {
     // 1. Shaders & Images
     final logoImage = await _loadImage(GameAssets.logo);
@@ -206,7 +207,7 @@ class GameComponentFactory {
     contactPage.position = Vector2(0, size.y);
 
     // Section Progress Indicator (top right)
-    progressIndicator = SectionProgressIndicator();
+    progressIndicator = SectionProgressIndicator(onSectionTap: onSectionTap);
     progressIndicator.position = Vector2(size.x - 30, size.y / 2);
     progressIndicator.priority = GameLayout.zLogoOverlay; // High priority
     progressIndicator.opacity = 0.0; // Starts hidden

@@ -59,6 +59,7 @@ class MyGame extends FlameGame
       queuer: queuer,
       scrollOrchestrator: scrollOrchestrator,
       backgroundColorCallback: backgroundColor,
+      onSectionTap: _handleSectionTap,
     );
 
     // Add all components to scene
@@ -77,6 +78,15 @@ class MyGame extends FlameGame
 
   // Compatibility getter for components accessing godRay via game reference
   GodRayComponent get godRay => _componentFactory.godRay;
+
+  // Handle section progress indicator taps
+  void _handleSectionTap(int section) {
+    if (!isLoaded) return;
+    if (section < 0 || section >= ScrollSequenceConfig.sectionJumpTargets.length) return;
+
+    final targetScroll = ScrollSequenceConfig.sectionJumpTargets[section];
+    scrollSystem.setScrollOffset(targetScroll);
+  }
 
   @override
   Color backgroundColor() => GameStyles.primaryBackground;

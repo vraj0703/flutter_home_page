@@ -1,11 +1,13 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 
-class SectionProgressIndicator extends PositionComponent with HasPaint{
+class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallbacks {
   static const int totalSections = 6;
   static const double dotSize = 8.0;
   static const double dotSpacing = 20.0;
+  static const double hitAreaRadius = 15.0; // Larger tap area
   static const Color inactiveColor = Color(0x40FFFFFF); // White 25%
   static const Color activeColor = Color(0xFFFFC107); // Gold
 
@@ -16,13 +18,16 @@ class SectionProgressIndicator extends PositionComponent with HasPaint{
   final Paint _inactivePaint = Paint()..color = inactiveColor;
   final Paint _activePaint = Paint()..color = activeColor;
 
+  // Callback when a section is tapped
+  void Function(int section)? onSectionTap;
+
   static const _springCurve = SpringCurve(
     mass: 0.8,
     stiffness: 240.0,
     damping: 8.0,
   );
 
-  SectionProgressIndicator() {
+  SectionProgressIndicator({this.onSectionTap}) {
     anchor = Anchor.topRight;
   }
 
@@ -77,6 +82,28 @@ class SectionProgressIndicator extends PositionComponent with HasPaint{
       } else {
         // Inactive dot
         canvas.drawCircle(center, dotSize / 2, _inactivePaint);
+      }
+    }
+  }
+
+  @override
+  void onTapDown(TapDownEvent event) {
+    // Convert tap position to local coordinates
+    final localPos = event.localPosition;
+
+    // Calculate which dot was tapped
+    final totalHeight = (totalSections - 1) * dotSpacing;
+
+    for (int i = 0; i < totalSections; i++) {
+      final y = i * dotSpacing - (totalHeight / 2);
+      final dotCenter = Offset(0, y);
+
+      // Check if tap is within hit area of this dot
+      final distance = (localPos - dotCenter).distance;
+      if (distance <= hitAreaRadius) {
+        // Notify callback
+        onSectionTap?.call(i);
+        break;
       }
     }
   }
