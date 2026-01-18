@@ -1,9 +1,9 @@
 import 'package:flame/components.dart';
+import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
+import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
-import '../curves/exponential_ease_out.dart';
-import '../interfaces/scroll_observer.dart';
 
 class TestimonialPageController implements ScrollObserver {
   final TestimonialPageComponent component;

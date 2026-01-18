@@ -4,7 +4,7 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/philos
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
-import '../interfaces/scroll_observer.dart';
+import '../../interfaces/scroll_observer.dart';
 
 class PhilosophyPageController implements ScrollObserver {
   final PhilosophyTextComponent component;

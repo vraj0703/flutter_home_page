@@ -15,112 +15,107 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/philos
 import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
-import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart'; // Needed for CardStack
+import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 
 class GameComponentFactory {
-  Future<FragmentShader> loadShader(String path) async {
-    final program = await FragmentProgram.fromAsset(path);
-    return program.fragmentShader();
-  }
+  // Fields to store component instances
+  late RayMarchingShadowComponent shadowScene;
+  late LogoComponent logoComponent;
+  late GodRayComponent godRay;
+  late LogoOverlayComponent interactiveUI;
+  late BackgroundRunComponent backgroundRun;
+  late CinematicTitleComponent cinematicTitle;
+  late CinematicSecondaryTitleComponent cinematicSecondaryTitle;
+  late BoldTextRevealComponent boldTextReveal;
+  late RectangleComponent dimLayer;
+  late PhilosophyTextComponent philosophyText;
+  late PeelingCardStackComponent cardStack;
+  late ExperiencePageComponent experiencePage;
+  late TestimonialPageComponent testimonialPage;
+  late SkillsKeyboardComponent skillsPage;
+  late ContactPageComponent contactPage;
 
-  Future<Image> loadImage(String path) async {
-    final sprite = await Sprite.load(path);
-    return sprite.image;
-  }
+  late FragmentShader metallicShader;
 
-  Future<RayMarchingShadowComponent> createShadowScene({
+  // Initialize all components
+  Future<void> initializeComponents({
     required Vector2 size,
-    required Image logoImage,
-    required Vector2 logoSize,
+    required StateProvider stateProvider,
+    required Queuer queuer,
+    required ScrollOrchestrator scrollOrchestrator,
+    required material.Color Function() backgroundColorCallback,
   }) async {
-    final shader = await loadShader('assets/shaders/god_rays.frag');
-    final component = RayMarchingShadowComponent(
-      fragmentShader: shader,
+    // 1. Shaders & Images
+    final logoImage = await _loadImage('logo.png');
+    metallicShader = await _loadShader('assets/shaders/metallic_text.frag');
+    final godRaysShader = await _loadShader('assets/shaders/god_rays.frag');
+    final logoShader = await _loadShader('assets/shaders/logo.frag');
+    final backgroundShader = await _loadShader(
+      'assets/shaders/background_run_v2.frag',
+    );
+
+    // 2. Logo Layer
+    final startZoom = 3.0;
+    final baseLogoSize = Vector2(
+      logoImage.width.toDouble(),
+      logoImage.height.toDouble(),
+    );
+    final logoSize = baseLogoSize * startZoom;
+    final tintColor = backgroundColorCallback();
+
+    shadowScene = RayMarchingShadowComponent(
+      fragmentShader: godRaysShader,
       logoImage: logoImage,
       logoSize: logoSize,
     );
-    component.logoPosition = size / 2;
-    return component;
-  }
+    shadowScene.logoPosition = size / 2;
 
-  Future<LogoComponent> createLogoComponent({
-    required Vector2 size,
-    required Image logoImage,
-    required Vector2 logoSize,
-    required Color tintColor,
-  }) async {
-    final shader = await loadShader('assets/shaders/logo.frag');
-    final component = LogoComponent(
-      shader: shader,
+    logoComponent = LogoComponent(
+      shader: logoShader,
       logoTexture: logoImage,
       tintColor: tintColor,
       size: logoSize,
       position: size / 2,
     );
-    component.priority = 10;
-    return component;
-  }
+    logoComponent.priority = 10;
 
-  GodRayComponent createGodRay(Vector2 size) {
-    final component = GodRayComponent();
-    component.priority = 20;
-    component.position = size / 2;
-    return component;
-  }
+    godRay = GodRayComponent();
+    godRay.priority = 20;
+    godRay.position = size / 2;
 
-  LogoOverlayComponent createInteractiveUI({
-    required Vector2 size,
-    required StateProvider stateProvider,
-    required Queuer queuer,
-  }) {
-    final component = LogoOverlayComponent(
+    // 3. Interactive UI
+    interactiveUI = LogoOverlayComponent(
       stateProvider: stateProvider,
       queuer: queuer,
     );
-    component.position = size / 2;
-    component.priority = 30;
-    component.gameSize = size;
-    return component;
-  }
+    interactiveUI.position = size / 2;
+    interactiveUI.priority = 30;
+    interactiveUI.gameSize = size;
 
-  Future<BackgroundRunComponent> createBackgroundRun(Vector2 size) async {
-    final shader = await loadShader('assets/shaders/background_run_v2.frag');
-    return BackgroundRunComponent(shader: shader, size: size, priority: 1);
-  }
+    // 4. Background & Titles
+    backgroundRun = BackgroundRunComponent(
+      shader: backgroundShader,
+      size: size,
+      priority: 1,
+    );
 
-  CinematicTitleComponent createCinematicTitle({
-    required Vector2 size,
-    required FragmentShader shader,
-  }) {
-    final component = CinematicTitleComponent(
+    cinematicTitle = CinematicTitleComponent(
       primaryText: "VISHAL RAJ",
-      shader: shader,
+      shader: metallicShader,
       position: size / 2,
     );
-    component.priority = 25;
-    return component;
-  }
+    cinematicTitle.priority = 25;
 
-  CinematicSecondaryTitleComponent createCinematicSecondaryTitle({
-    required Vector2 size,
-    required FragmentShader shader,
-  }) {
-    final component = CinematicSecondaryTitleComponent(
+    cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
       text: "Welcome to my space",
-      shader: shader,
+      shader: metallicShader,
       position: size / 2 + Vector2(0, 48),
     );
-    component.priority = 24;
-    return component;
-  }
+    cinematicSecondaryTitle.priority = 24;
 
-  BoldTextRevealComponent createBoldTextReveal({
-    required Vector2 size,
-    required FragmentShader shader,
-  }) {
-    final component = BoldTextRevealComponent(
+    boldTextReveal = BoldTextRevealComponent(
       text: "Crafting Clarity from Chaos.",
       textStyle: material.TextStyle(
         fontSize: 80,
@@ -128,28 +123,22 @@ class GameComponentFactory {
         fontFamily: 'InconsolataNerd',
         letterSpacing: 2.0,
       ),
-      shader: shader,
-      baseColor: const Color(0xFFE3E4E5),
+      shader: metallicShader,
+      baseColor: const material.Color(0xFFE3E4E5),
       position: size / 2,
     );
-    component.priority = 26;
-    component.opacity = 0.0;
-    return component;
-  }
+    boldTextReveal.priority = 26;
+    boldTextReveal.opacity = 0.0;
 
-  RectangleComponent createDimLayer(Vector2 size) {
-    return RectangleComponent(
+    dimLayer = RectangleComponent(
       priority: 2,
       size: size,
-      paint: Paint()..color = const Color(0xFF000000).withValues(alpha: 0.0),
+      paint: Paint()
+        ..color = const material.Color(0xFF000000).withValues(alpha: 0.0),
     );
-  }
 
-  PhilosophyTextComponent createPhilosophyText({
-    required Vector2 size,
-    required FragmentShader shader,
-  }) {
-    final component = PhilosophyTextComponent(
+    // 5. Scrollable Pages
+    philosophyText = PhilosophyTextComponent(
       text: "My Philosophy",
       style: material.TextStyle(
         fontFamily: 'ModrntUrban',
@@ -158,61 +147,69 @@ class GameComponentFactory {
         color: material.Colors.white,
         letterSpacing: 1.5,
       ),
-      shader: shader,
+      shader: metallicShader,
       anchor: Anchor.centerLeft,
       position: Vector2(size.x * 0.15, size.y / 2),
     );
-    component.priority = 25;
-    component.opacity = 0.0;
-    return component;
-  }
+    philosophyText.priority = 25;
+    philosophyText.opacity = 0.0;
 
-  PeelingCardStackComponent createCardStack({
-    required Vector2 size,
-    required ScrollOrchestrator scrollOrchestrator,
-  }) {
-    final component = PeelingCardStackComponent(
+    cardStack = PeelingCardStackComponent(
       scrollOrchestrator: scrollOrchestrator,
-      cardsData: cardData, // Global from card_data.dart
+      cardsData: cardData,
       size: Vector2(size.x * 0.4, size.y * 0.6),
       position: Vector2(size.x * 0.75, size.y / 2),
     );
-    component.anchor = Anchor.center;
-    component.priority = 25;
-    component.opacity = 0.0;
-    return component;
+    cardStack.anchor = Anchor.center;
+    cardStack.priority = 25;
+    cardStack.opacity = 0.0;
+
+    experiencePage = ExperiencePageComponent(size: size);
+    experiencePage.priority = 25;
+
+    testimonialPage = TestimonialPageComponent(
+      size: size,
+      shader: metallicShader,
+    );
+    testimonialPage.priority = 25;
+    testimonialPage.opacity = 0.0;
+
+    skillsPage = SkillsKeyboardComponent(size: size);
+    skillsPage.priority = 28;
+    skillsPage.opacity = 0.0;
+
+    contactPage = ContactPageComponent(size: size, shader: metallicShader);
+    contactPage.priority = 30;
+    contactPage.position = Vector2(0, size.y);
   }
 
-  ExperiencePageComponent createExperiencePage(Vector2 size) {
-    final component = ExperiencePageComponent(size: size);
-    component.priority = 25;
-    return component;
+  // Get all components for easy addition
+  List<Component> get allComponents => [
+    shadowScene,
+    logoComponent,
+    godRay,
+    interactiveUI,
+    backgroundRun,
+    cinematicTitle,
+    cinematicSecondaryTitle,
+    boldTextReveal,
+    dimLayer,
+    philosophyText,
+    cardStack,
+    experiencePage,
+    testimonialPage,
+    skillsPage,
+    contactPage,
+  ];
+
+  // Helper loading methods
+  Future<FragmentShader> _loadShader(String path) async {
+    final program = await FragmentProgram.fromAsset(path);
+    return program.fragmentShader();
   }
 
-  TestimonialPageComponent createTestimonialPage({
-    required Vector2 size,
-    required FragmentShader shader,
-  }) {
-    final component = TestimonialPageComponent(size: size, shader: shader);
-    component.priority = 25;
-    component.opacity = 0.0;
-    return component;
-  }
-
-  SkillsKeyboardComponent createSkillsPage(Vector2 size) {
-    final component = SkillsKeyboardComponent(size: size);
-    component.priority = 28;
-    component.opacity = 0.0;
-    return component;
-  }
-
-  ContactPageComponent createContactPage({
-    required Vector2 size,
-    required FragmentShader shader,
-  }) {
-    final component = ContactPageComponent(size: size, shader: shader);
-    component.priority = 30;
-    component.position = Vector2(0, size.y);
-    return component;
+  Future<Image> _loadImage(String path) async {
+    final sprite = await Sprite.load(path);
+    return sprite.image;
   }
 }

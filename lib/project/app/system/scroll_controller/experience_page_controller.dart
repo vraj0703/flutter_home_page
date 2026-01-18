@@ -3,7 +3,7 @@ import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/views/components/experience/experience_page_component.dart';
-import '../interfaces/scroll_observer.dart';
+import '../../interfaces/scroll_observer.dart';
 
 class ExperiencePageController implements ScrollObserver {
   final ExperiencePageComponent component;

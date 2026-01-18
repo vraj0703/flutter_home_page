@@ -3,16 +3,15 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/curves/spring_curve.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
-import 'package:flutter_home_page/project/app/system/bold_text_controller.dart';
-import 'package:flutter_home_page/project/app/system/contact_page_controller.dart';
-import 'package:flutter_home_page/project/app/system/experience_page_controller.dart';
-import 'package:flutter_home_page/project/app/system/philosophy_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll_controller/bold_text_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll_controller/contact_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll_controller/experience_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll_controller/philosophy_page_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll_effects/opacity.dart';
 import 'package:flutter_home_page/project/app/system/scroll_effects/parallax.dart';
 import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/system/scroll_system.dart';
-import 'package:flutter_home_page/project/app/system/skills_page_controller.dart';
-import 'package:flutter_home_page/project/app/system/testimonial_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll_controller/skills_page_controller.dart';
 import 'package:flutter_home_page/project/app/system/ui_opacity_observer.dart';
 import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
@@ -24,6 +23,8 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/peelin
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
+
+import 'scroll_controller/testimonial_page_controller.dart';
 
 class GameComponents {
   final CinematicTitleComponent cinematicTitle;
