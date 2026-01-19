@@ -1,10 +1,9 @@
-import 'dart:ui';
-import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 
-class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallbacks {
+class SectionProgressIndicator extends PositionComponent
+    with HasPaint, TapCallbacks {
   static const int totalSections = 6;
   static const double dotSize = 8.0;
   static const double dotSpacing = 20.0;
@@ -110,15 +109,17 @@ class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallb
 
     // Velocity-based squash/stretch (scroll-controlled deformation)
     final velocityMagnitude = _velocityDecay.abs().clamp(0.0, 0.5);
-    final stretchFactor = 1.0 + (velocityMagnitude * 3.0); // Vertical stretch when moving
-    final squeezeFactor = 1.0 - (velocityMagnitude * 0.5); // Horizontal compression when moving
+    final stretchFactor =
+        1.0 + (velocityMagnitude * 3.0); // Vertical stretch when moving
+    final squeezeFactor =
+        1.0 - (velocityMagnitude * 0.5); // Horizontal compression when moving
 
     final dropletWidth = dropletSize * squeezeFactor;
     final dropletHeight = dropletSize * stretchFactor;
 
     // Draw droplet glow (outer) - oval shape when moving
     final glowPaint = Paint()
-      ..color = dropletColor.withOpacity(0.3)
+      ..color = dropletColor.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
     final glowRect = Rect.fromCenter(
       center: dropletCenter,
@@ -136,8 +137,7 @@ class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallb
     canvas.drawOval(coreRect, _dropletPaint);
 
     // Draw highlight on droplet (water effect)
-    final highlightPaint = Paint()
-      ..color = Colors.white.withOpacity(0.6);
+    final highlightPaint = Paint()..color = Colors.white.withValues(alpha: 0.6);
     final highlightOffset = Offset(-dropletWidth * 0.15, -dropletHeight * 0.15);
     final highlightRect = Rect.fromCenter(
       center: dropletCenter + highlightOffset,

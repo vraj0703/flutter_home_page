@@ -1,5 +1,4 @@
 import 'package:flame/components.dart';
-import 'package:flame/events.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_physics.dart';
