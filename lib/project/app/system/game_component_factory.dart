@@ -17,7 +17,7 @@ import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_o
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
-import 'package:flutter_home_page/project/app/views/components/section_progress_indicator.dart';
+import 'package:flutter_home_page/project/app/views/components/section_indicator/section_progress_indicator_v2.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
@@ -43,7 +43,7 @@ class GameComponentFactory {
   late ExperiencePageComponent experiencePage;
   late TestimonialPageComponent testimonialPage;
   late ContactPageComponent contactPage;
-  late SectionProgressIndicator progressIndicator;
+  late SectionProgressIndicatorV2 progressIndicator;
 
   late FragmentShader metallicShader;
 
@@ -207,7 +207,7 @@ class GameComponentFactory {
     contactPage.position = Vector2(0, size.y);
 
     // Section Progress Indicator (top right)
-    progressIndicator = SectionProgressIndicator(onSectionTap: onSectionTap);
+    progressIndicator = SectionProgressIndicatorV2(onSectionTap: onSectionTap);
     progressIndicator.position = Vector2(size.x - 30, size.y / 2);
     progressIndicator.priority = GameLayout.zLogoOverlay; // High priority
     progressIndicator.opacity = 0.0; // Starts hidden
