@@ -1,9 +1,9 @@
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
-import 'package:flutter_home_page/project/app/views/components/section_indicator/section_progress_indicator_v2.dart';
+import 'package:flutter_home_page/project/app/views/components/section_indicator/morphing_section_indicator.dart';
 
 class SectionProgressController implements ScrollObserver {
-  final SectionProgressIndicatorV2 component;
+  final MorphingSectionIndicator component;
 
   // Section boundaries (6 sections total)
   // 0: Hero (0 - 400)
