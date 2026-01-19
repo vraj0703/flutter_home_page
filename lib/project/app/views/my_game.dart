@@ -21,7 +21,11 @@ import 'package:flutter_home_page/project/app/system/game_component_factory.dart
 import 'package:flutter_home_page/project/app/system/game_scroll_configurator.dart';
 
 class MyGame extends FlameGame
-    with PointerMoveCallbacks, TapCallbacks, ScrollDetector {
+    with
+        PointerMoveCallbacks,
+        TapCallbacks,
+        ScrollDetector,
+        MouseMovementDetector {
   VoidCallback? onStartExitAnimation;
   final Queuer queuer;
   final StateProvider stateProvider;
@@ -82,7 +86,10 @@ class MyGame extends FlameGame
   // Handle section progress indicator taps
   void _handleSectionTap(int section) {
     if (!isLoaded) return;
-    if (section < 0 || section >= ScrollSequenceConfig.sectionJumpTargets.length) return;
+    if (section < 0 ||
+        section >= ScrollSequenceConfig.sectionJumpTargets.length) {
+      return;
+    }
 
     final targetScroll = ScrollSequenceConfig.sectionJumpTargets[section];
     scrollSystem.setScrollOffset(targetScroll);
@@ -171,6 +178,12 @@ class MyGame extends FlameGame
     if (!isLoaded) return;
 
     // Delegate updates
+    final isMenu = stateProvider.sceneState().maybeWhen(
+      menu: (_) => true,
+      title: () => true,
+      orElse: () => false,
+    );
+
     _cursorSystem.update(
       dt,
       size,
@@ -179,7 +192,10 @@ class MyGame extends FlameGame
         shadowScene: _componentFactory.shadowScene,
         interactiveUI: _componentFactory.logoOverlay,
         logoComponent: _componentFactory.logoComponent,
+        cinematicTitle: _componentFactory.cinematicTitle,
+        cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
       ),
+      enableParallax: isMenu,
     );
 
     _logoAnimator.update(
@@ -216,7 +232,6 @@ class MyGame extends FlameGame
       titleLoading: () {},
       title: () {},
       menu: (uiOpacity) {
-        _cursorSystem.initialize(size / 2);
         // Logo animation target is handled in onGameResize or EnterMenu,
         // but update calls animate implicitly via _logoAnimator.update
       },
@@ -227,9 +242,9 @@ class MyGame extends FlameGame
   void enterTitle() {
     Future.delayed(
       ScrollSequenceConfig.enterTitleDelayDuration,
-          () => _componentFactory.cinematicTitle.show(
-            () => _componentFactory.cinematicSecondaryTitle.show(
-              () => queuer.queue(event: SceneEvent.titleLoaded()),
+      () => _componentFactory.cinematicTitle.show(
+        () => _componentFactory.cinematicSecondaryTitle.show(
+          () => queuer.queue(event: SceneEvent.titleLoaded()),
         ),
       ),
     );
@@ -237,6 +252,7 @@ class MyGame extends FlameGame
 
   void enterMenu() {
     _logoAnimator.updateMenuLayoutTargets(size);
+    _cursorSystem.activate(size / 2);
 
     // Delegate to ScrollConfigurator
     _scrollConfigurator.configureScroll(
@@ -258,13 +274,21 @@ class MyGame extends FlameGame
         experiencePage: _componentFactory.experiencePage,
         testimonialPage: _componentFactory.testimonialPage,
         contactPage: _componentFactory.contactPage,
-        progressIndicator: _componentFactory.progressIndicator,
       ),
     );
   }
 
+  void setCursorPosition(Vector2 position) {
+    _cursorSystem.setCursorPosition(position);
+  }
+
   @override
   void onPointerMove(PointerMoveEvent event) {
-    _cursorSystem.onPointerMove(event);
+    _cursorSystem.setCursorPosition(event.localPosition);
+  }
+
+  @override
+  void onMouseMove(PointerHoverInfo info) {
+    _cursorSystem.setCursorPosition(info.eventPosition.global);
   }
 }

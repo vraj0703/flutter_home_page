@@ -11,7 +11,6 @@ import 'package:flutter_home_page/project/app/system/scroll_controller/contact_p
 import 'package:flutter_home_page/project/app/system/scroll_controller/experience_page_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll_controller/god_ray_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll_controller/philosophy_page_controller.dart';
-import 'package:flutter_home_page/project/app/system/scroll_controller/section_progress_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll_controller/work_experience_title_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll_effects/opacity.dart';
 import 'package:flutter_home_page/project/app/system/scroll_effects/parallax.dart';
@@ -115,10 +114,6 @@ class GameScrollConfigurator {
 
     scrollSystem.register(
       BackgroundTintController(component: components.backgroundTint),
-    );
-
-    scrollSystem.register(
-      SectionProgressController(component: components.progressIndicator),
     );
 
     scrollSystem.register(

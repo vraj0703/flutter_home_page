@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flutter/material.dart';
 
 class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallbacks {
   static const int totalSections = 6;
@@ -156,10 +157,10 @@ class SectionProgressIndicator extends PositionComponent with HasPaint, TapCallb
 
     for (int i = 0; i < totalSections; i++) {
       final y = i * dotSpacing - (totalHeight / 2);
-      final dotCenter = Offset(0, y);
+      final dotCenter = Vector2(0, y);
 
       // Check if tap is within hit area of this dot
-      final distance = (localPos - dotCenter).distance;
+      final distance = (localPos - dotCenter).length;
       if (distance <= hitAreaRadius) {
         // Notify callback
         onSectionTap?.call(i);

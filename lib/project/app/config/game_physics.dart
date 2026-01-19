@@ -16,6 +16,11 @@ class GamePhysics {
   static const double cursorSmoothSpeedFar = 22.0;
   static const double cursorSmoothSpeedNear = 18.0;
 
+  // Parallax
+  static const double titleParallaxFactor = 0.02;
+  static const double secondaryTitleParallaxFactor =
+      0.015; // Slightly different for depth
+
   // --- Scroll Snap Physics ---
   static const double snapZoneRadius = 60.0;
   static const double snapVelocityThreshold = 40.0;

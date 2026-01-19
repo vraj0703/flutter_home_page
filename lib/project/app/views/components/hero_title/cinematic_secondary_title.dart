@@ -14,6 +14,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
   final String text;
   final FragmentShader shader;
 
+  late PositionComponent _contentWrapper;
   late FadeTextComponent _textComponent;
 
   @override
@@ -21,7 +22,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
 
   @override
   set opacity(double value) {
-    _textComponent.opacity = value;
+    if (isLoaded) _textComponent.opacity = value;
   }
 
   CinematicSecondaryTitleComponent({
@@ -30,8 +31,17 @@ class CinematicSecondaryTitleComponent extends PositionComponent
     super.position,
   }) : super(anchor: Anchor.center);
 
+  void setParallaxOffset(Vector2 offset) {
+    if (isLoaded) {
+      _contentWrapper.position = offset;
+    }
+  }
+
   @override
   Future<void> onLoad() async {
+    _contentWrapper = PositionComponent(anchor: Anchor.center);
+    add(_contentWrapper);
+
     const style = TextStyle(
       fontSize: GameStyles.secondaryTitleFontSize,
       fontWeight: FontWeight.w400,
@@ -51,7 +61,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
           ..opacity = 0
           ..scale = Vector2.zero();
 
-    add(_textComponent);
+    _contentWrapper.add(_textComponent);
   }
 
   void show(VoidCallback showComplete) {

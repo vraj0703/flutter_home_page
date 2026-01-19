@@ -6,18 +6,24 @@ import 'package:flutter_home_page/project/app/config/game_physics.dart';
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';
+import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_title.dart';
+import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_secondary_title.dart';
 
 class CursorDependentComponents {
   final GodRayComponent godRay;
   final RayMarchingShadowComponent shadowScene;
   final LogoOverlayComponent interactiveUI;
   final LogoComponent logoComponent;
+  final CinematicTitleComponent cinematicTitle;
+  final CinematicSecondaryTitleComponent cinematicSecondaryTitle;
 
   CursorDependentComponents({
     required this.godRay,
     required this.shadowScene,
     required this.interactiveUI,
     required this.logoComponent,
+    required this.cinematicTitle,
+    required this.cinematicSecondaryTitle,
   });
 }
 
@@ -37,15 +43,27 @@ class GameCursorSystem {
     _lightDirection = _targetLightDirection.clone();
   }
 
-  void onPointerMove(PointerMoveEvent event) {
-    _lastKnownPointerPosition = event.localPosition;
+  // Called when menu is revealed to kickstart movement from center to cursor
+  void activate(Vector2 center) {
+    // Reset virtual position to center so we see it travel to the cursor
+    _virtualLightPosition = center.clone();
+    // We do NOT reset _lastKnownPointerPosition so it remembers where mouse is
   }
 
-  void update(double dt, Vector2 size, CursorDependentComponents components) {
+  void setCursorPosition(Vector2 position) {
+    _lastKnownPointerPosition = position;
+  }
+
+  void update(
+    double dt,
+    Vector2 size,
+    CursorDependentComponents components, {
+    bool enableParallax = false,
+  }) {
     final cursorPosition = _lastKnownPointerPosition ?? size / 2;
 
     // Update target positions
-    components.godRay.position = cursorPosition;
+    // components.godRay.position = cursorPosition; // REMOVED: Instant snap
     _targetLightPosition = cursorPosition + Vector2(0, glowVerticalOffset);
 
     final vectorFromCenter = cursorPosition - size / 2;
@@ -68,8 +86,29 @@ class GameCursorSystem {
     _lightDirection.lerp(_targetLightDirection, easedT);
 
     // Update Components
+    components.godRay.position =
+        _virtualLightPosition; // ADDED: Smoothed position
     components.shadowScene.lightPosition = _virtualLightPosition;
     components.shadowScene.lightDirection = _lightDirection;
     components.shadowScene.logoSize = components.logoComponent.size;
+
+    // Title Parallax
+    if (enableParallax) {
+      final parallaxOffset = (cursorPosition - size / 2);
+
+      components.cinematicTitle.setParallaxOffset(
+        parallaxOffset * GamePhysics.titleParallaxFactor,
+      );
+
+      components.cinematicSecondaryTitle.setParallaxOffset(
+        parallaxOffset * GamePhysics.secondaryTitleParallaxFactor,
+      );
+    } else {
+      // Reset if disabled? Or just leave it?
+      // Best to reset smoothly or snap to zero. For now, snap to zero to ensure stability.
+      // But only if we want to force-reset. If we transition OUT of menu, we might want it to reset.
+      components.cinematicTitle.setParallaxOffset(Vector2.zero());
+      components.cinematicSecondaryTitle.setParallaxOffset(Vector2.zero());
+    }
   }
 }

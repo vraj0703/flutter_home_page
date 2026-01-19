@@ -9,7 +9,6 @@ import 'package:flutter_home_page/project/app/views/components/hero_title/cinema
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
-import 'package:flutter_home_page/project/app/views/components/section_indicator/morphing_section_indicator.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
 
@@ -27,7 +26,6 @@ class GameComponents {
   final ExperiencePageComponent experiencePage;
   final TestimonialPageComponent testimonialPage;
   final ContactPageComponent contactPage;
-  final MorphingSectionIndicator progressIndicator;
 
   GameComponents({
     required this.cinematicTitle,
@@ -43,6 +41,5 @@ class GameComponents {
     required this.experiencePage,
     required this.testimonialPage,
     required this.contactPage,
-    required this.progressIndicator,
   });
 }

@@ -14,6 +14,7 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
   final String primaryText;
   final FragmentShader shader;
 
+  late PositionComponent _contentWrapper;
   late FadeTextComponent _primaryTitle;
 
   CinematicTitleComponent({
@@ -22,8 +23,17 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
     super.position,
   }) : super(anchor: Anchor.center);
 
+  void setParallaxOffset(Vector2 offset) {
+    if (isLoaded) {
+      _contentWrapper.position = offset;
+    }
+  }
+
   @override
   Future<void> onLoad() async {
+    _contentWrapper = PositionComponent(anchor: Anchor.center);
+    add(_contentWrapper);
+
     // --- 1. Initialize Primary Title ("VISHAL RAJ") ---
     const primaryStyle = GameStyles.cinematicPrimaryStyle;
 
@@ -41,7 +51,7 @@ class CinematicTitleComponent extends PositionComponent with HasGameReference {
           ..scale = Vector2.zero();
 
     // Add both to the component tree
-    add(_primaryTitle);
+    _contentWrapper.add(_primaryTitle);
   }
 
   @override

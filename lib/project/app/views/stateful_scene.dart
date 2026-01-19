@@ -1,4 +1,5 @@
 import 'package:flame/game.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
@@ -125,64 +126,83 @@ class _StatefulSceneState extends State<StatefulScene>
         );
       },
       builder: (context, state) {
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            GameWidget(game: _game),
-            // Layer 1: The Flame Game wrapped in HomeOverlay
-            HomeOverlay(
-              key: const ValueKey("home_overlay"),
-              bounceAnimation: _downArrowBounceAnimation,
-            ),
+        return Listener(
+          onPointerHover: (event) {
+            _game.setCursorPosition(
+              Vector2(event.localPosition.dx, event.localPosition.dy),
+            );
+          },
+          child: MouseRegion(
+            onEnter: (event) {
+              _game.setCursorPosition(
+                Vector2(event.localPosition.dx, event.localPosition.dy),
+              );
+            },
+            onHover: (event) {
+              _game.setCursorPosition(
+                Vector2(event.localPosition.dx, event.localPosition.dy),
+              );
+            },
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                GameWidget(game: _game),
+                // Layer 1: The Flame Game wrapped in HomeOverlay
+                HomeOverlay(
+                  key: const ValueKey("home_overlay"),
+                  bounceAnimation: _downArrowBounceAnimation,
+                ),
 
-            // Layer 2: The Black Curtain.
-            // This is the core of the curtain effect. It's a black container that
-            // is "clipped" away by an animated path.
-            AnimatedBuilder(
-              animation: _revealController,
-              builder: (context, child) {
-                return ClipPath(
-                  // The custom clipper uses the controller's value to animate the path.
-                  clipper: CurtainClipper(
-                    revealProgress: _revealController.value,
+                // Layer 2: The Black Curtain.
+                // This is the core of the curtain effect. It's a black container that
+                // is "clipped" away by an animated path.
+                AnimatedBuilder(
+                  animation: _revealController,
+                  builder: (context, child) {
+                    return ClipPath(
+                      // The custom clipper uses the controller's value to animate the path.
+                      clipper: CurtainClipper(
+                        revealProgress: _revealController.value,
+                      ),
+                      child: Container(color: Colors.black),
+                    );
+                  },
+                ),
+
+                TweenAnimationBuilder<double>(
+                  // Animates from current value to this 'end' whenever it changes
+                  tween: Tween<double>(
+                    begin: state is Loading ? 0.0 : _blinkingController.value,
+                    end: state is Loading ? 1.0 : 0.0,
                   ),
-                  child: Container(color: Colors.black),
-                );
-              },
-            ),
-
-            TweenAnimationBuilder<double>(
-              // Animates from current value to this 'end' whenever it changes
-              tween: Tween<double>(
-                begin: state is Loading ? 0.0 : _blinkingController.value,
-                end: state is Loading ? 1.0 : 0.0,
-              ),
-              duration: const Duration(
-                milliseconds: ScrollSequenceConfig.loadingBlinkDuration,
-              ),
-              curve: GameCurves.loadingBlink,
-              // Decelerates for a smoother "exit" feel
-              builder: (context, value, child) {
-                return IgnorePointer(
-                  child: Opacity(opacity: value, child: child),
-                );
-              },
-              child: FadeTransition(
-                key: ValueKey('loading'),
-                opacity: _blinkingController,
-                child: const Text(
-                  GameStrings.loadingText,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: GameStyles.loadingFontSize,
-                    letterSpacing: GameStyles.loadingLetterSpacing,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: GameStyles.fontBroadway,
+                  duration: const Duration(
+                    milliseconds: ScrollSequenceConfig.loadingBlinkDuration,
+                  ),
+                  curve: GameCurves.loadingBlink,
+                  // Decelerates for a smoother "exit" feel
+                  builder: (context, value, child) {
+                    return IgnorePointer(
+                      child: Opacity(opacity: value, child: child),
+                    );
+                  },
+                  child: FadeTransition(
+                    key: ValueKey('loading'),
+                    opacity: _blinkingController,
+                    child: const Text(
+                      GameStrings.loadingText,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: GameStyles.loadingFontSize,
+                        letterSpacing: GameStyles.loadingLetterSpacing,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: GameStyles.fontBroadway,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
