@@ -5,8 +5,11 @@ import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart
 import '../interfaces/scroll_observer.dart';
 
 /// Manages the global scroll state and notifies observers.
+/// Uses a Target/Current model with spring physics for snapping.
 class ScrollSystem {
-  double _scrollOffset = 0.0;
+  double _targetScrollOffset = 0.0;
+  double _currentScrollOffset = 0.0;
+  double _springVelocity = 0.0; // For spring simulation
   final List<ScrollObserver> _observers = [];
   double _scrollVelocity = 0.0;
   double _lastScrollOffset = 0.0;
@@ -16,17 +19,19 @@ class ScrollSystem {
 
   static const List<double> snapPoints = [
     ScrollSequenceConfig.boldTextStart,
+    ScrollSequenceConfig.boldTextFocus,
     ScrollSequenceConfig.boldTextEnd,
     ScrollSequenceConfig.philosophyEnd,
-    ScrollSequenceConfig.workExpTitleHoldStart, // Snap to work exp title hold
+    ScrollSequenceConfig.workExpTitleHoldStart,
     ScrollSequenceConfig.experienceInteractionStart,
     ScrollSequenceConfig.testimonialInteractionStart,
   ];
   static const double snapZoneRadius = GamePhysics.snapZoneRadius;
   static const double snapVelocityThreshold = GamePhysics.snapVelocityThreshold;
-  static const double snapSpeed = GamePhysics.snapSpeed;
 
-  double get scrollOffset => _scrollOffset;
+  double get scrollOffset => _currentScrollOffset;
+
+  double get targetScrollOffset => _targetScrollOffset;
 
   void register(ScrollObserver observer) {
     _observers.add(observer);
@@ -37,75 +42,88 @@ class ScrollSystem {
   }
 
   void setScrollOffset(double offset) {
-    _scrollOffset = offset;
-    _notifyObservers();
+    _targetScrollOffset = offset;
+    _checkSnapPoints();
   }
 
   void onScroll(double delta) {
     if (_isSnapping && delta.abs() > 5.0) {
       _isSnapping = false;
+      _springVelocity = 0.0; // Reset spring velocity on user interrupt
     }
 
-    _scrollOffset += delta;
-    if (_scrollOffset < 0) _scrollOffset = 0;
+    _targetScrollOffset += delta;
+    if (_targetScrollOffset < 0) _targetScrollOffset = 0;
 
     final currentTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
     if (_lastUpdateTime > 0) {
       final deltaTime = currentTime - _lastUpdateTime;
       if (deltaTime > 0) {
-        final deltaOffset = _scrollOffset - _lastScrollOffset;
+        final deltaOffset = _targetScrollOffset - _lastScrollOffset;
         _scrollVelocity = deltaOffset / deltaTime;
       }
     }
-    _lastScrollOffset = _scrollOffset;
+    _lastScrollOffset = _targetScrollOffset;
     _lastUpdateTime = currentTime;
 
     _checkSnapPoints();
-
-    _notifyObservers();
   }
 
-  /// Check if we should trigger snap to nearest point
   void _checkSnapPoints() {
-    if (_isSnapping) return; // Already snapping
-
-    // Only snap if velocity is low
+    if (_isSnapping) return;
     if (_scrollVelocity.abs() > snapVelocityThreshold) return;
 
-    // Check if we're in any snap zone
     for (final snapPoint in snapPoints) {
-      final distance = (_scrollOffset - snapPoint).abs();
+      final distance = (_targetScrollOffset - snapPoint).abs();
       if (distance <= snapZoneRadius) {
-        // Trigger snap
         _isSnapping = true;
         _snapTarget = snapPoint;
+        _springVelocity = 0.0; // Start fresh spring
         break;
       }
     }
   }
 
-  /// Update snap animation (called from game loop)
-  void updateSnap(double dt) {
-    if (!_isSnapping) return;
+  /// Main update loop with spring physics.
+  void update(double dt) {
+    // 1. Handle snapping with SPRING physics
+    if (_isSnapping) {
+      // Spring simulation: F = -kx - cv
+      // x = displacement from target
+      // v = velocity
+      // k = stiffness, c = damping
+      final stiffness = GamePhysics.snapSpringStiffness;
+      final damping = GamePhysics.snapSpringDamping;
 
-    // Lerp toward snap target with spring curve
-    final distance = (_snapTarget - _scrollOffset).abs();
-    if (distance < GamePhysics.snapDistanceThreshold) {
-      _scrollOffset = _snapTarget;
-      _isSnapping = false;
-      _notifyObservers();
-    } else {
-      // Continue snapping
-      _scrollOffset =
-          lerpDouble(_scrollOffset, _snapTarget, dt * snapSpeed) ??
-          _scrollOffset;
-      _notifyObservers();
+      final displacement = _targetScrollOffset - _snapTarget;
+      final springForce = -stiffness * displacement;
+      final dampingForce = -damping * _springVelocity;
+      final acceleration = springForce + dampingForce;
+
+      _springVelocity += acceleration * dt;
+      _targetScrollOffset += _springVelocity * dt;
+
+      // Check if spring has settled
+      if (displacement.abs() < 1.0 && _springVelocity.abs() < 5.0) {
+        _targetScrollOffset = _snapTarget;
+        _springVelocity = 0.0;
+        _isSnapping = false;
+      }
     }
+
+    // 2. Inertia: Lerp current towards target
+    final inertia = GamePhysics.scrollInertia;
+    _currentScrollOffset =
+        lerpDouble(_currentScrollOffset, _targetScrollOffset, dt * inertia) ??
+        _currentScrollOffset;
+
+    // 3. Notify observers
+    _notifyObservers();
   }
 
   void _notifyObservers() {
     for (final observer in _observers) {
-      observer.onScroll(_scrollOffset);
+      observer.onScroll(_currentScrollOffset);
     }
   }
 }

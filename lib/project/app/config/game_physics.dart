@@ -22,8 +22,13 @@ class GamePhysics {
       0.015; // Slightly different for depth
 
   // --- Scroll Snap Physics ---
-  static const double snapZoneRadius = 60.0;
+  static const double snapZoneRadius = 150.0;
   static const double snapVelocityThreshold = 40.0;
-  static const double snapSpeed = 6.0;
+  static const double snapSpeed = 12.0;
   static const double snapDistanceThreshold = 5.0;
+
+  // --- Scroll Inertia ---
+  static const double scrollInertia = 8.0;
+  static const double snapSpringStiffness = 180.0; // Higher = faster snap
+  static const double snapSpringDamping = 12.0; // Higher = less bounce
 }

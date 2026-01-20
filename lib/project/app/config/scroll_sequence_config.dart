@@ -49,6 +49,9 @@ class ScrollSequenceConfig {
   static const double boldTextPass2End = 1800.0;
   // Exit (0.6 - 1.0): 1800 - 3000
 
+  /// Snap point: Bold Text Focus (Clarity Phase Center)
+  static const double boldTextFocus = 1500.0;
+
   // --- Dim Layer (Matches Shine Phase roughly) ---
   static const double dimLayerStart = 1200.0;
   static const double dimLayerEnd = 2500.0;

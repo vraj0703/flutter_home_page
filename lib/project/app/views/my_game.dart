@@ -98,14 +98,22 @@ class MyGame extends FlameGame
 
   // Audio Helpers
   void playEnterSound() => _audioSystem.playEnterSound();
+
   void playTitleLoaded() => _audioSystem.playTitleLoaded();
+
   void playSlideIn() => _audioSystem.playSlideIn();
+
   void playBouncyArrow() => _audioSystem.playBouncyArrow();
+
   void syncBoldTextAudio(double progress, {double velocity = 0.0}) =>
       _audioSystem.syncBoldTextAudio(progress, velocity: velocity);
+
   void stopBoldTextAudio() => _audioSystem.stopBoldTextAudio();
+
   void playTing() => _audioSystem.playTing();
+
   void playHover() => _audioSystem.playHover();
+
   void playClick() => _audioSystem.playClick();
 
   // Compatibility getter for components accessing godRay via game reference
@@ -225,7 +233,7 @@ class MyGame extends FlameGame
       ),
     );
 
-    scrollSystem.updateSnap(dt);
+    scrollSystem.update(dt);
 
     // Update god ray pulse animation
     final godRayController = _scrollConfigurator.godRayController;
