@@ -128,7 +128,8 @@ flutter:
     - assets/audio/title_loaded.wav
     - assets/audio/slide_in.wav
     - assets/audio/bouncy_arrow.wav
-    - assets/audio/bold_text.wav
+    - assets/audio/bold_text_swell.mp3
+    - assets/audio/ting.wav
     - assets/images/logo.png
     - assets/vectors/down_arrow.svg
 
@@ -138,3 +139,4 @@ flutter:
     - assets/shaders/background_run_v2.frag
     - assets/shaders/metallic_text.frag
     - assets/shaders/shine_text.frag
+    - assets/shaders/bold_text_entrance.frag

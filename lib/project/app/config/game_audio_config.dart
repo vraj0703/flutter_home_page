@@ -12,7 +12,8 @@ class GameAudioConfig {
   static const String titleLoadedSfx = 'title_loaded.wav';
   static const String slideInSfx = 'slide_in.wav';
   static const String bouncyArrowSfx = 'bouncy_arrow.wav';
-  static const String boldTextSfx = 'bold_text.wav';
+  static const String boldTextSwell = 'bold_text_swell.mp3';
+  static const String tingSfx = 'ting.wav';
   static const String scrollTickSfx = 'scroll_tick.mp3'; // Optional
 
   // Volumes

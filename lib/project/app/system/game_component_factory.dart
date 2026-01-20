@@ -108,7 +108,8 @@ class GameComponentFactory {
 
     backgroundTint = BackgroundTintComponent();
     backgroundTint.size = size;
-    backgroundTint.priority = GameLayout.zBackground + 1; // Just above background
+    backgroundTint.priority =
+        GameLayout.zBackground + 1; // Just above background
 
     cinematicTitle = CinematicTitleComponent(
       primaryText: GameStrings.primaryTitle,
@@ -124,6 +125,9 @@ class GameComponentFactory {
     );
     cinematicSecondaryTitle.priority = GameLayout.zSecondaryTitle;
 
+    // Load Bold Text Shader
+    final boldTextShader = await _loadShader(GameAssets.boldTextShader);
+
     boldTextReveal = BoldTextRevealComponent(
       text: GameStrings.boldText,
       textStyle: material.TextStyle(
@@ -132,8 +136,7 @@ class GameComponentFactory {
         fontFamily: GameStyles.fontInconsolata,
         letterSpacing: 2.0,
       ),
-      shader: metallicShader,
-      baseColor: GameStyles.boldTextBase,
+      shader: boldTextShader,
       position: size / 2,
     );
     boldTextReveal.priority = GameLayout.zBoldText;

@@ -8,4 +8,5 @@ class GameAssets {
   static const String logoShader = 'assets/shaders/logo.frag';
   static const String backgroundShader =
       'assets/shaders/background_run_v2.frag';
+  static const String boldTextShader = 'assets/shaders/bold_text_entrance.frag';
 }

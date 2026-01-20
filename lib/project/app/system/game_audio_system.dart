@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter_home_page/project/app/config/game_audio_config.dart';
 
@@ -12,7 +13,7 @@ class GameAudioSystem {
       GameAudioConfig.titleLoadedSfx,
       GameAudioConfig.slideInSfx,
       GameAudioConfig.bouncyArrowSfx,
-      GameAudioConfig.boldTextSfx,
+      GameAudioConfig.boldTextSwell,
     ]);
 
     // Start BGM loop (can be toggled in settings later)
@@ -43,7 +44,7 @@ class GameAudioSystem {
   }
 
   void playClick() {
-   /* FlameAudio.play(
+    /* FlameAudio.play(
       GameAudioConfig.clickSfx,
       volume: GameAudioConfig.sfxVolume,
     );*/
@@ -77,11 +78,46 @@ class GameAudioSystem {
     );
   }
 
-  void playBoldText() {
-    FlameAudio.play(
-      GameAudioConfig.boldTextSfx,
-      volume: GameAudioConfig.sfxVolume,
-    );
+  AudioPlayer? _boldTextPlayer;
+
+  Future<void> syncBoldTextAudio(
+    double progress, {
+    double velocity = 0.5,
+  }) async {
+    if (_boldTextPlayer == null) {
+      _boldTextPlayer = AudioPlayer();
+      await _boldTextPlayer!.setSource(
+        AssetSource('audio/${GameAudioConfig.boldTextSwell}'),
+      );
+      await _boldTextPlayer!.setReleaseMode(ReleaseMode.stop);
+    }
+
+    final duration = await _boldTextPlayer!.getDuration();
+    if (duration == null) return;
+
+    final targetMillis = (duration.inMilliseconds * progress).round();
+    double vol = (0.2 + (velocity.abs() * 5.0)).clamp(0.0, 1.0);
+    if (progress < 0.1) vol *= (progress / 0.1);
+
+    await _boldTextPlayer!.setVolume(vol);
+
+    if (_boldTextPlayer!.state != PlayerState.playing ||
+        _boldTextPlayer!.state == PlayerState.completed) {
+      await _boldTextPlayer!.resume();
+    }
+
+    await _boldTextPlayer!.seek(Duration(milliseconds: targetMillis));
+    if (progress <= 0.01 || progress >= 0.99) {
+      if (_boldTextPlayer!.state == PlayerState.playing) {}
+    }
+  }
+
+  void stopBoldTextAudio() {
+    _boldTextPlayer?.stop();
+  }
+
+  void playTing() {
+    FlameAudio.play(GameAudioConfig.tingSfx, volume: GameAudioConfig.sfxVolume);
   }
 
   void playScrollTick() {

@@ -101,7 +101,10 @@ class MyGame extends FlameGame
   void playTitleLoaded() => _audioSystem.playTitleLoaded();
   void playSlideIn() => _audioSystem.playSlideIn();
   void playBouncyArrow() => _audioSystem.playBouncyArrow();
-  void playBoldText() => _audioSystem.playBoldText();
+  void syncBoldTextAudio(double progress, {double velocity = 0.0}) =>
+      _audioSystem.syncBoldTextAudio(progress, velocity: velocity);
+  void stopBoldTextAudio() => _audioSystem.stopBoldTextAudio();
+  void playTing() => _audioSystem.playTing();
   void playHover() => _audioSystem.playHover();
   void playClick() => _audioSystem.playClick();
 

@@ -1,101 +1,107 @@
+import 'dart:ui' as ui;
 import 'dart:ui';
 
 import 'package:flame/components.dart';
-import 'package:flame/extensions.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_home_page/project/app/config/game_styles.dart';
-import 'package:flutter_home_page/project/app/interfaces/shine_provider.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
-class BoldTextRevealComponent extends TextComponent
-    with HasGameReference, HasPaint
-    implements ShineProvider {
+class BoldTextRevealComponent extends PositionComponent
+    with HasGameReference<MyGame>, HasPaint {
   final FragmentShader shader;
-  final Color baseColor;
-  final Color shineColor;
-  final Color edgeColor;
+  final TextStyle textStyle;
+  final String text;
 
-  double _fillProgress = 0.0;
-  double _opacity = 1.0;
-  double _time = 0.0;
+  ui.Image? _textTexture;
+  double _scrollProgress = 0.0;
+  double _lastProgress = 0.0;
+  bool _hasPlayedTing = false;
 
   BoldTextRevealComponent({
-    required String text,
-    required TextStyle textStyle,
     required this.shader,
-    this.baseColor = GameStyles.boldRevealBase,
-    this.shineColor = GameStyles.boldRevealShine,
-    this.edgeColor = GameStyles.boldRevealEdge,
+    required this.text,
+    required this.textStyle,
     super.position,
     super.anchor = Anchor.center,
-    super.priority,
-  }) : super(
-         text: text,
-         textRenderer: TextPaint(
-           style: textStyle.copyWith(foreground: Paint()..shader = shader),
-         ),
-       );
+  });
 
-  @override
-  double get fillProgress => _fillProgress;
+  double get scrollProgress => _scrollProgress;
 
-  @override
-  set fillProgress(double value) {
-    _fillProgress = value;
+  set scrollProgress(double value) {
+    if (_scrollProgress == value) return;
+    double velocity = (value - _lastProgress).abs();
+
+    _lastProgress = _scrollProgress;
+    _scrollProgress = value;
+    game.syncBoldTextAudio(value, velocity: velocity);
+    if (value >= 0.42 && _lastProgress < 0.42 && !_hasPlayedTing) {
+      _hasPlayedTing = true;
+      game.playTing();
+    }
+
+    if (value < 0.35) {
+      _hasPlayedTing = false;
+    }
   }
 
   @override
-  double get opacity => _opacity;
-
-  @override
-  set opacity(double value) {
-    _opacity = value;
-    super.opacity = value;
+  Future<void> onLoad() async {
+    await _generateTextTexture();
+    size = game.size;
   }
 
   @override
-  void update(double dt) {
-    super.update(dt);
-    _time += dt;
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    this.size = size;
+  }
+
+  Future<void> _generateTextTexture() async {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final paintStyle = textStyle.copyWith(color: const Color(0xFFDDDDDD));
+
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: paintStyle),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    const double padding = 60.0;
+    final width = textPainter.width + padding * 2;
+    final height = textPainter.height + padding * 2;
+    textPainter.paint(canvas, const Offset(padding, padding));
+
+    final picture = recorder.endRecording();
+    _textTexture = await picture.toImage(width.ceil(), height.ceil());
   }
 
   @override
   void render(Canvas canvas) {
-    if (opacity <= 0) return;
+    if (_textTexture == null) return;
 
-    // Use same god ray position approach as FadeTextComponent (hero title)
-    // This makes bold text affected by god ray lighting like the hero title
+    final paint = Paint();
 
-    final dpr = game.canvasSize.x / game.size.x;
+    // Shader Uniforms
+    // 0: uSize (vec2) - Screen Size
+    // 1: uScrollProgress (float)
+    // 2: uTextSize (vec2) - Text Texture Size
+    // 3: uTexture (sampler2D)
 
-    // Translate everything to PHYSICAL coordinate space
-    final physicalTopLeft = absolutePositionOf(Vector2.zero()) * dpr;
-    final physicalSize = size * dpr;
-    final physicalLightPos = (game as MyGame).godRay.position * dpr;
+    shader.setFloat(0, size.x);
+    shader.setFloat(1, size.y);
+    shader.setFloat(2, _scrollProgress);
+    shader.setFloat(3, _textTexture!.width.toDouble());
+    shader.setFloat(4, _textTexture!.height.toDouble());
+    shader.setImageSampler(0, _textTexture!);
 
-    // Metallic Shader Uniforms (same as hero title)
-    // 0: uSize.x
-    // 1: uSize.y
-    // 2: uOffset.x
-    // 3: uOffset.y
-    // 4: uTime
-    // 5,6,7: uBaseColor
-    // 8: uOpacity
-    // 9,10: uLightPos (god ray position)
+    paint.shader = shader;
 
-    shader
-      ..setFloat(0, physicalSize.x)
-      ..setFloat(1, physicalSize.y)
-      ..setFloat(2, physicalTopLeft.x)
-      ..setFloat(3, physicalTopLeft.y)
-      ..setFloat(4, _fillProgress * 5.0) // Use fillProgress to drive the shine
-      ..setFloat(5, baseColor.r / 255)
-      ..setFloat(6, baseColor.g / 255)
-      ..setFloat(7, baseColor.b / 255)
-      ..setFloat(8, opacity)
-      ..setFloat(9, physicalLightPos.x)
-      ..setFloat(10, physicalLightPos.y);
+    canvas.drawRect(size.toRect(), paint);
+  }
 
-    super.render(canvas);
+  @override
+  void onRemove() {
+    _textTexture?.dispose();
+    super.onRemove();
   }
 }
