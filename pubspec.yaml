@@ -39,6 +39,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   lottie: ^3.0.0
   flame: ^1.33.0
+  flame_audio: ^2.1.0
   flame_svg: ^1.11.17
   flutter_svg: ^2.0.9
   freezed: ^3.2.3
@@ -123,6 +124,11 @@ flutter:
     - assets/fonts/pixel_code.json
     - assets/fonts/trt_artnik.json
     - assets/audio/space_ambient.mp3
+    - assets/audio/enter_sound.wav
+    - assets/audio/title_loaded.wav
+    - assets/audio/slide_in.wav
+    - assets/audio/bouncy_arrow.wav
+    - assets/audio/bold_text.wav
     - assets/images/logo.png
     - assets/vectors/down_arrow.svg
 

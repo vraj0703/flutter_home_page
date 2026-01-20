@@ -15,7 +15,7 @@ class ScrollSystem {
   double _snapTarget = 0.0;
 
   static const List<double> snapPoints = [
-    ScrollSequenceConfig.boldTextFadeInStart,
+    ScrollSequenceConfig.boldTextStart,
     ScrollSequenceConfig.boldTextEnd,
     ScrollSequenceConfig.philosophyEnd,
     ScrollSequenceConfig.workExpTitleHoldStart, // Snap to work exp title hold

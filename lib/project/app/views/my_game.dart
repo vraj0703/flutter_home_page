@@ -20,6 +20,8 @@ import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/system/game_component_factory.dart';
 import 'package:flutter_home_page/project/app/system/game_scroll_configurator.dart';
 
+import 'package:flutter_home_page/project/app/system/game_audio_system.dart'; // Added import
+
 class MyGame extends FlameGame
     with
         PointerMoveCallbacks,
@@ -40,6 +42,7 @@ class MyGame extends FlameGame
 
   final ScrollSystem scrollSystem = ScrollSystem();
   final ScrollOrchestrator scrollOrchestrator = ScrollOrchestrator();
+  final GameAudioSystem _audioSystem = GameAudioSystem(); // Added instance
 
   final GameComponentFactory _componentFactory = GameComponentFactory();
   final GameScrollConfigurator _scrollConfigurator = GameScrollConfigurator();
@@ -56,6 +59,7 @@ class MyGame extends FlameGame
       repeat: false,
     );
     _cursorSystem.initialize(size / 2);
+    await _audioSystem.initialize(); // Initialize audio
 
     await _componentFactory.initializeComponents(
       size: size,
@@ -76,9 +80,30 @@ class MyGame extends FlameGame
       _componentFactory.logoComponent.position,
     );
 
+    // Bind cursor components once
+    _cursorSystem.bindComponents(
+      CursorDependentComponents(
+        godRay: _componentFactory.godRay,
+        shadowScene: _componentFactory.shadowScene,
+        interactiveUI: _componentFactory.logoOverlay,
+        logoComponent: _componentFactory.logoComponent,
+        cinematicTitle: _componentFactory.cinematicTitle,
+        cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
+      ),
+    );
+
     queuer.queue(event: const SceneEvent.gameReady());
     scrollSystem.register(scrollOrchestrator);
   }
+
+  // Audio Helpers
+  void playEnterSound() => _audioSystem.playEnterSound();
+  void playTitleLoaded() => _audioSystem.playTitleLoaded();
+  void playSlideIn() => _audioSystem.playSlideIn();
+  void playBouncyArrow() => _audioSystem.playBouncyArrow();
+  void playBoldText() => _audioSystem.playBoldText();
+  void playHover() => _audioSystem.playHover();
+  void playClick() => _audioSystem.playClick();
 
   // Compatibility getter for components accessing godRay via game reference
   GodRayComponent get godRay => _componentFactory.godRay;
@@ -91,6 +116,7 @@ class MyGame extends FlameGame
       return;
     }
 
+    playClick(); // Integrated Click Sound
     final targetScroll = ScrollSequenceConfig.sectionJumpTargets[section];
     scrollSystem.setScrollOffset(targetScroll);
   }
@@ -105,6 +131,7 @@ class MyGame extends FlameGame
 
     final delta = info.scrollDelta.global.y;
     scrollSystem.onScroll(delta);
+    _audioSystem.playScrollTick(); // Integrated Scroll Sound
 
     stateProvider.sceneState().maybeWhen(
       menu: (uiOpacity) {
@@ -116,6 +143,7 @@ class MyGame extends FlameGame
 
   @override
   void onTapDown(TapDownEvent event) {
+    playClick(); // Integrated Click Sound (Generic)
     queuer.queue(event: SceneEvent.tapDown(event));
     super.onTapDown(event);
   }
@@ -184,19 +212,7 @@ class MyGame extends FlameGame
       orElse: () => false,
     );
 
-    _cursorSystem.update(
-      dt,
-      size,
-      CursorDependentComponents(
-        godRay: _componentFactory.godRay,
-        shadowScene: _componentFactory.shadowScene,
-        interactiveUI: _componentFactory.logoOverlay,
-        logoComponent: _componentFactory.logoComponent,
-        cinematicTitle: _componentFactory.cinematicTitle,
-        cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
-      ),
-      enableParallax: isMenu,
-    );
+    _cursorSystem.update(dt, size, enableParallax: isMenu);
 
     _logoAnimator.update(
       dt,
@@ -234,20 +250,40 @@ class MyGame extends FlameGame
       menu: (uiOpacity) {
         // Logo animation target is handled in onGameResize or EnterMenu,
         // but update calls animate implicitly via _logoAnimator.update
+
+        // --- 1. Arrow/UI Fade Logic ---
+        // Fade out arrow immediately on scroll (0 -> 150px)
+        final scroll = scrollSystem.scrollOffset;
+        final newOpacity = (1.0 - (scroll / 150.0)).clamp(0.0, 1.0);
+
+        // Only update if changed significantly to avoid Bloc spam
+        if ((newOpacity - uiOpacity).abs() > 0.05 ||
+            (newOpacity == 0 && uiOpacity != 0)) {
+          queuer.queue(event: SceneEvent.updateUIOpacity(newOpacity));
+        }
+
+        // --- 2. Title Parallax Lift ---
+        // Move titles up as we scroll down (Scroll P1: 0 -> 1200)
+        // They should clear the screen relatively quickly
+        if (scroll < ScrollSequenceConfig.boldTextPass1End) {
+          final lift = scroll * 1.5; // Move 1.5x faster than scroll
+          _componentFactory.cinematicTitle.position.y -= lift;
+          _componentFactory.cinematicSecondaryTitle.position.y -= lift;
+        }
       },
     );
     _inactivityTimer.update(dt);
   }
 
   void enterTitle() {
-    Future.delayed(
-      ScrollSequenceConfig.enterTitleDelayDuration,
-      () => _componentFactory.cinematicTitle.show(
-        () => _componentFactory.cinematicSecondaryTitle.show(
+    Future.delayed(ScrollSequenceConfig.enterTitleDelayDuration, () {
+      playTitleLoaded(); // Play sound when main title starts entering
+      _componentFactory.cinematicTitle.show(() {
+        _componentFactory.cinematicSecondaryTitle.show(
           () => queuer.queue(event: SceneEvent.titleLoaded()),
-        ),
-      ),
-    );
+        );
+      });
+    });
   }
 
   void enterMenu() {
@@ -285,10 +321,12 @@ class MyGame extends FlameGame
   @override
   void onPointerMove(PointerMoveEvent event) {
     _cursorSystem.setCursorPosition(event.localPosition);
+    playHover(); // Integrated Hover Sound
   }
 
   @override
   void onMouseMove(PointerHoverInfo info) {
     _cursorSystem.setCursorPosition(info.eventPosition.global);
+    playHover(); // Integrated Hover Sound
   }
 }

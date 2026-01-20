@@ -1,11 +1,10 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:flutter/material.dart' show Colors, TextStyle, FontWeight;
+import 'package:flutter/material.dart'
+    show Colors, TextStyle, FontWeight, Curves, Cubic, TextPainter, TextSpan;
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
-import 'package:flutter_home_page/project/app/config/game_layout.dart';
-import 'package:flutter_home_page/project/app/config/game_curves.dart';
-import 'package:flutter_home_page/project/app/utils/wait_effect.dart';
+import 'package:flutter_home_page/project/app/views/my_game.dart';
 import '../fade_text.dart';
 
 class CinematicSecondaryTitleComponent extends PositionComponent
@@ -15,14 +14,19 @@ class CinematicSecondaryTitleComponent extends PositionComponent
   final FragmentShader shader;
 
   late PositionComponent _contentWrapper;
-  late FadeTextComponent _textComponent;
+  // late FadeTextComponent _textComponent; // unused
 
   @override
-  double get opacity => _textComponent.opacity;
+  double get opacity =>
+      _charComponents.isNotEmpty ? _charComponents.first.opacity : 1.0;
 
   @override
   set opacity(double value) {
-    if (isLoaded) _textComponent.opacity = value;
+    if (isLoaded) {
+      for (final component in _charComponents) {
+        component.opacity = value;
+      }
+    }
   }
 
   CinematicSecondaryTitleComponent({
@@ -49,56 +53,148 @@ class CinematicSecondaryTitleComponent extends PositionComponent
       color: Colors.white,
     );
 
-    _textComponent =
-        FadeTextComponent(
-            text: text,
-            textStyle: style,
-            shader: shader,
-            baseColor: GameStyles.secondaryTitleColor,
-            anchor: Anchor.center,
-            priority: 1,
-          )
-          ..opacity = 0
-          ..scale = Vector2.zero();
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
 
-    _contentWrapper.add(_textComponent);
+    // 1. Measure and Center
+    double totalWidth = 0;
+    final List<double> charWidths = [];
+    for (int i = 0; i < text.length; i++) {
+      final char = text[i];
+      textPainter.text = TextSpan(text: char, style: style);
+      textPainter.layout();
+      final width = textPainter.width;
+      charWidths.add(width);
+      totalWidth += width;
+    }
+
+    // Adjust for letter spacing roughly (Flutter TextPainter includes it usually, but manual spacing might be needed)
+    // We will just place them sequentially based on measured width.
+    final spacing = style.letterSpacing ?? 0.0; // Use style directly
+
+    double currentX = -(totalWidth + (text.length - 1) * spacing) / 2;
+
+    for (int i = 0; i < text.length; i++) {
+      final char = text[i];
+      final width = charWidths[i];
+
+      final charComponent = FadeTextComponent(
+        text: char,
+        textStyle: style,
+        shader: shader,
+        baseColor: GameStyles.secondaryTitleColor,
+        anchor: Anchor.center,
+        priority: 1,
+      );
+
+      // Position relative to wrapper center
+      // x: currentX + half width (since anchor is center)
+      // y: 40 (Initial state)
+      charComponent.position = Vector2(currentX + width / 2, 40);
+      charComponent.opacity = 0;
+      charComponent.scale = Vector2.all(
+        1.0,
+      ); // Start normal? Or scaled? "Initial State... opacity 0, y 40".
+
+      _contentWrapper.add(charComponent);
+      _charComponents.add(charComponent);
+
+      currentX += width + spacing;
+    }
   }
 
-  void show(VoidCallback showComplete) {
-    if (_textComponent.opacity > 0) return;
+  final List<FadeTextComponent> _charComponents = [];
 
-    // Animate Opacity
-    _textComponent.add(
-      SequenceEffect([
-        WaitEffect(2.5),
+  void show(VoidCallback showComplete) {
+    if (_charComponents.isEmpty || _charComponents.first.opacity > 0) return;
+
+    (game as MyGame).playSlideIn();
+
+    // Power-move: Master Horizontal Slide
+    // We slide the whole wrapper slightly?
+    // "Master Animation (The Slide): Container: PositionComponent. Movement: Horizontal slide. Duration: 1200ms."
+    // Let's slide from left offset.
+    final originalWrapperPos = _contentWrapper.position.clone();
+    _contentWrapper.position.x -= 100; // Start 100px left
+    _contentWrapper.add(
+      MoveEffect.to(
+        originalWrapperPos,
+        EffectController(
+          duration: 1.2,
+          curve: const Cubic(0.25, 0.1, 0.25, 1.0),
+        ),
+      ),
+    );
+
+    int completedChars = 0;
+
+    for (int i = 0; i < _charComponents.length; i++) {
+      final component = _charComponents[i];
+      final delay = i * 0.05;
+
+      // 1. Rise & Fade & Stretch
+
+      // Opacity
+      component.add(
         OpacityEffect.to(
           1.0,
           EffectController(
-            duration: GameStyles.secTitleAnimDuration,
-            curve: GameCurves.titleEntry,
+            duration: 0.8,
+            curve: Curves.linear,
+            startDelay: delay,
           ),
         ),
-      ]),
-    );
+      );
 
-    // Animate Scale
-    _textComponent.add(
-      SequenceEffect([
-        ScaleEffect.to(
-          GameLayout.scaleOne,
-          EffectController(duration: 4, curve: GameCurves.titleScale),
-          onComplete: showComplete,
+      // Move (Rise)
+      component.add(
+        MoveEffect.to(
+          Vector2(component.position.x, 0), // Target Y: 0
+          EffectController(
+            duration: 0.8,
+            curve: Curves.easeOutCubic,
+            startDelay: delay,
+          ),
         ),
-      ]),
-    );
+      );
+
+      // Squash and Stretch: Stretch Vertically during rise
+      component.add(
+        ScaleEffect.to(
+          Vector2(0.95, 1.1),
+          EffectController(
+            duration: 0.6,
+            curve: Curves.easeOut,
+            startDelay: delay,
+          ),
+          onComplete: () {
+            // 2. Landing Bounce (Elastic restore to 1.0)
+            // Note: onComplete will happen after delay+duration
+            component.add(
+              ScaleEffect.to(
+                Vector2.all(1.0),
+                EffectController(duration: 0.6, curve: Curves.elasticOut),
+                onComplete: () {
+                  completedChars++;
+                  if (completedChars == _charComponents.length) {
+                    showComplete();
+                  }
+                },
+              ),
+            );
+          },
+        ),
+      );
+    }
   }
 
   void hide() {
-    _textComponent.add(
-      OpacityEffect.to(
-        0.0,
-        EffectController(duration: 0.5, curve: GameCurves.titleEntry),
-      ),
-    );
+    for (final component in _charComponents) {
+      component.add(
+        OpacityEffect.to(
+          0.0,
+          EffectController(duration: 0.5, curve: Curves.easeIn),
+        ),
+      );
+    }
   }
 }

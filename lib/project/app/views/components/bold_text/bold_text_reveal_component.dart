@@ -88,7 +88,7 @@ class BoldTextRevealComponent extends TextComponent
       ..setFloat(1, physicalSize.y)
       ..setFloat(2, physicalTopLeft.x)
       ..setFloat(3, physicalTopLeft.y)
-      ..setFloat(4, _time) // Use time for animation like hero title
+      ..setFloat(4, _fillProgress * 5.0) // Use fillProgress to drive the shine
       ..setFloat(5, baseColor.r / 255)
       ..setFloat(6, baseColor.g / 255)
       ..setFloat(7, baseColor.b / 255)

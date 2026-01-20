@@ -33,6 +33,8 @@ class GameCursorSystem {
   Vector2 _targetLightDirection = Vector2.zero();
   Vector2? _lastKnownPointerPosition;
 
+  CursorDependentComponents? _components;
+
   final double glowVerticalOffset = GameLayout.cursorGlowOffset;
 
   void initialize(Vector2 center) {
@@ -40,6 +42,10 @@ class GameCursorSystem {
     _virtualLightPosition = center.clone();
     _targetLightDirection = Vector2(0, -1)..normalize();
     _lightDirection = _targetLightDirection.clone();
+  }
+
+  void bindComponents(CursorDependentComponents components) {
+    _components = components;
   }
 
   // Called when menu is revealed to kickstart movement from center to cursor
@@ -53,16 +59,12 @@ class GameCursorSystem {
     _lastKnownPointerPosition = position;
   }
 
-  void update(
-    double dt,
-    Vector2 size,
-    CursorDependentComponents components, {
-    bool enableParallax = false,
-  }) {
+  void update(double dt, Vector2 size, {bool enableParallax = false}) {
+    if (_components == null) return;
+    final components = _components!;
+
     final cursorPosition = _lastKnownPointerPosition ?? size / 2;
 
-    // Update target positions
-    // components.godRay.position = cursorPosition; // REMOVED: Instant snap
     _targetLightPosition = cursorPosition + Vector2(0, glowVerticalOffset);
 
     final vectorFromCenter = cursorPosition - size / 2;
@@ -103,9 +105,6 @@ class GameCursorSystem {
         parallaxOffset * GamePhysics.secondaryTitleParallaxFactor,
       );
     } else {
-      // Reset if disabled? Or just leave it?
-      // Best to reset smoothly or snap to zero. For now, snap to zero to ensure stability.
-      // But only if we want to force-reset. If we transition OUT of menu, we might want it to reset.
       components.cinematicTitle.setParallaxOffset(Vector2.zero());
       components.cinematicSecondaryTitle.setParallaxOffset(Vector2.zero());
     }

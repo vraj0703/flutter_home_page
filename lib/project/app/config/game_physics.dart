@@ -13,8 +13,8 @@ class GamePhysics {
   static const double logoOverlayTextAnimSpeed = 2.0;
 
   // --- Cursor Physics ---
-  static const double cursorSmoothSpeedFar = 22.0;
-  static const double cursorSmoothSpeedNear = 18.0;
+  static const double cursorSmoothSpeedFar = 30.0;
+  static const double cursorSmoothSpeedNear = 24.0;
 
   // Parallax
   static const double titleParallaxFactor = 0.02;
