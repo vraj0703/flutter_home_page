@@ -57,6 +57,10 @@ sequenceDiagram
     
     Bloc->>Bloc: on<TitleLoaded>
     Bloc->>Bloc: emit(SceneState.title)
+    par Handle State Change
+        Bloc-->>Game: _handleStateChange (Audio, Config, Logic)
+        Bloc-->>StatefulScene: Listener (Widget Animations only)
+    end
 
     Note over User, ScrollSystem: Scroll Interaction
     User->>Game: Scroll (PointerScrollInfo)
@@ -148,6 +152,20 @@ The application uses a dedicated `ScrollSystem` to decouple input handling from 
     * *Usage*: `orchestrator.addBinding(component, Effect(start, end, ...))`
 3. **Controllers**: Custom logic classes (e.g., `PhilosophyPageController`, `ExperiencePageController`) registered to the `ScrollSystem`. They implement the `ScrollListener` interface to handle complex, non-linear logic that simple bindings can't cover (like triggering animations or state changes at specific points).
 4. **Components**: Standard Flame components that are acted upon by the Orchestrator or Controllers. They generally do *not* handle scroll input directly.
+
+### State Responsibility Pattern
+
+To prevent duplicate logic execution (e.g., playing sounds twice), responsibilities are strictly divided:
+
+* **`MyGame` (Flame Layer)**: The **Single Source of Truth** for game logic.
+  * Handles **Audio Playback** (Enter Sound, Bouncy Arrow, Click).
+  * Handles **Scroll Configuration** (Registering observers).
+  * Handles **Scene Transitions** (Queueing events).
+  * *Listener*: `MyGame._handleStateChange`.
+* **`StatefulScene` (Flutter Widget Layer)**:
+  * Handles **Widget Animations** (Curtain Reveal, Loading Text Blink).
+  * Does **NOT** trigger game logic or audio.
+  * *Listener*: `BlocConsumer.listener`.
 
 ### Motion & Timing
 
