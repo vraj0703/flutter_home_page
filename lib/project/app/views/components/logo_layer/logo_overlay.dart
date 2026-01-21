@@ -152,7 +152,7 @@ class LogoOverlayComponent extends PositionComponent
       },
       titleLoading: () {},
       title: () {},
-      menu: (uiOpacity) {},
+      boldText: (uiOpacity) {},
     );
   }
 
@@ -250,7 +250,7 @@ class LogoOverlayComponent extends PositionComponent
       },
       titleLoading: () {},
       title: () {},
-      menu: (uiOpacity) {},
+      boldText: (uiOpacity) {},
     );
   }
 

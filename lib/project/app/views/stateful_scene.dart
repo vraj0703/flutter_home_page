@@ -124,7 +124,7 @@ class _StatefulSceneState extends State<StatefulScene>
             _game
                 .playBouncyArrow(); // Play triggering sound when title state is confirmed
           },
-          menu: (uiOpacity) {
+          boldText: (uiOpacity) {
             _game.enterMenu();
           },
         );

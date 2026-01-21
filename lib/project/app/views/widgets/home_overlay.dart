@@ -18,7 +18,7 @@ class HomeOverlay extends StatelessWidget {
         return state.maybeWhen(
           orElse: () => SizedBox.shrink(key: ValueKey("home_overlay")),
           title: () => _buildOverlay(1.0),
-          menu: (uiOpacity) => _buildOverlay(uiOpacity),
+          boldText: (uiOpacity) => _buildOverlay(uiOpacity),
         );
       },
     );

@@ -200,7 +200,7 @@ class MyGame extends FlameGame
       title: () {
         _centerTitles(center);
       },
-      menu: (uiOpacity) {
+      boldText: (uiOpacity) {
         _logoAnimator.updateMenuLayoutTargets(size);
       },
     );
@@ -231,7 +231,7 @@ class MyGame extends FlameGame
 
     // Delegate updates
     final isMenu = stateProvider.sceneState().maybeWhen(
-      menu: (_) => true,
+      boldText: (_) => true,
       title: () => true,
       orElse: () => false,
     );
@@ -271,7 +271,7 @@ class MyGame extends FlameGame
       },
       titleLoading: () {},
       title: () {},
-      menu: (uiOpacity) {
+      boldText: (uiOpacity) {
         // Logo animation target is handled in onGameResize or EnterMenu,
         // but update calls animate implicitly via _logoAnimator.update
 

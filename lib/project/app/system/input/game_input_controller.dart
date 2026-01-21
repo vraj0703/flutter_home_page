@@ -31,7 +31,7 @@ class GameInputController extends Component {
     audioSystem.playScrollTick();
 
     stateProvider.sceneState().maybeWhen(
-      menu: (uiOpacity) {
+      boldText: (uiOpacity) {
         queuer.queue(event: SceneEvent.onScrollSequence(delta));
       },
       orElse: () {},

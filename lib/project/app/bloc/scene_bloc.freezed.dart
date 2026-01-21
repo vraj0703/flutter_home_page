@@ -653,7 +653,7 @@ extension SceneStatePatterns on SceneState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Loading value)?  loading,TResult Function( Logo value)?  logo,TResult Function( LogoOverlayRemoving value)?  logoOverlayRemoving,TResult Function( TitleLoading value)?  titleLoading,TResult Function( Title value)?  title,TResult Function( Menu value)?  menu,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Loading value)?  loading,TResult Function( Logo value)?  logo,TResult Function( LogoOverlayRemoving value)?  logoOverlayRemoving,TResult Function( TitleLoading value)?  titleLoading,TResult Function( Title value)?  title,TResult Function( BoldText value)?  boldText,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case Loading() when loading != null:
@@ -661,8 +661,8 @@ return loading(_that);case Logo() when logo != null:
 return logo(_that);case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving(_that);case TitleLoading() when titleLoading != null:
 return titleLoading(_that);case Title() when title != null:
-return title(_that);case Menu() when menu != null:
-return menu(_that);case _:
+return title(_that);case BoldText() when boldText != null:
+return boldText(_that);case _:
   return orElse();
 
 }
@@ -680,7 +680,7 @@ return menu(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Loading value)  loading,required TResult Function( Logo value)  logo,required TResult Function( LogoOverlayRemoving value)  logoOverlayRemoving,required TResult Function( TitleLoading value)  titleLoading,required TResult Function( Title value)  title,required TResult Function( Menu value)  menu,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Loading value)  loading,required TResult Function( Logo value)  logo,required TResult Function( LogoOverlayRemoving value)  logoOverlayRemoving,required TResult Function( TitleLoading value)  titleLoading,required TResult Function( Title value)  title,required TResult Function( BoldText value)  boldText,}){
 final _that = this;
 switch (_that) {
 case Loading():
@@ -688,8 +688,8 @@ return loading(_that);case Logo():
 return logo(_that);case LogoOverlayRemoving():
 return logoOverlayRemoving(_that);case TitleLoading():
 return titleLoading(_that);case Title():
-return title(_that);case Menu():
-return menu(_that);case _:
+return title(_that);case BoldText():
+return boldText(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -706,7 +706,7 @@ return menu(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Loading value)?  loading,TResult? Function( Logo value)?  logo,TResult? Function( LogoOverlayRemoving value)?  logoOverlayRemoving,TResult? Function( TitleLoading value)?  titleLoading,TResult? Function( Title value)?  title,TResult? Function( Menu value)?  menu,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Loading value)?  loading,TResult? Function( Logo value)?  logo,TResult? Function( LogoOverlayRemoving value)?  logoOverlayRemoving,TResult? Function( TitleLoading value)?  titleLoading,TResult? Function( Title value)?  title,TResult? Function( BoldText value)?  boldText,}){
 final _that = this;
 switch (_that) {
 case Loading() when loading != null:
@@ -714,8 +714,8 @@ return loading(_that);case Logo() when logo != null:
 return logo(_that);case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving(_that);case TitleLoading() when titleLoading != null:
 return titleLoading(_that);case Title() when title != null:
-return title(_that);case Menu() when menu != null:
-return menu(_that);case _:
+return title(_that);case BoldText() when boldText != null:
+return boldText(_that);case _:
   return null;
 
 }
@@ -732,15 +732,15 @@ return menu(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isSvgReady,  bool isGameReady)?  loading,TResult Function()?  logo,TResult Function()?  logoOverlayRemoving,TResult Function()?  titleLoading,TResult Function()?  title,TResult Function( double uiOpacity)?  menu,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isSvgReady,  bool isGameReady)?  loading,TResult Function()?  logo,TResult Function()?  logoOverlayRemoving,TResult Function()?  titleLoading,TResult Function()?  title,TResult Function( double uiOpacity)?  boldText,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Loading() when loading != null:
 return loading(_that.isSvgReady,_that.isGameReady);case Logo() when logo != null:
 return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
 return titleLoading();case Title() when title != null:
-return title();case Menu() when menu != null:
-return menu(_that.uiOpacity);case _:
+return title();case BoldText() when boldText != null:
+return boldText(_that.uiOpacity);case _:
   return orElse();
 
 }
@@ -758,15 +758,15 @@ return menu(_that.uiOpacity);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isSvgReady,  bool isGameReady)  loading,required TResult Function()  logo,required TResult Function()  logoOverlayRemoving,required TResult Function()  titleLoading,required TResult Function()  title,required TResult Function( double uiOpacity)  menu,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isSvgReady,  bool isGameReady)  loading,required TResult Function()  logo,required TResult Function()  logoOverlayRemoving,required TResult Function()  titleLoading,required TResult Function()  title,required TResult Function( double uiOpacity)  boldText,}) {final _that = this;
 switch (_that) {
 case Loading():
 return loading(_that.isSvgReady,_that.isGameReady);case Logo():
 return logo();case LogoOverlayRemoving():
 return logoOverlayRemoving();case TitleLoading():
 return titleLoading();case Title():
-return title();case Menu():
-return menu(_that.uiOpacity);case _:
+return title();case BoldText():
+return boldText(_that.uiOpacity);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -783,15 +783,15 @@ return menu(_that.uiOpacity);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isSvgReady,  bool isGameReady)?  loading,TResult? Function()?  logo,TResult? Function()?  logoOverlayRemoving,TResult? Function()?  titleLoading,TResult? Function()?  title,TResult? Function( double uiOpacity)?  menu,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isSvgReady,  bool isGameReady)?  loading,TResult? Function()?  logo,TResult? Function()?  logoOverlayRemoving,TResult? Function()?  titleLoading,TResult? Function()?  title,TResult? Function( double uiOpacity)?  boldText,}) {final _that = this;
 switch (_that) {
 case Loading() when loading != null:
 return loading(_that.isSvgReady,_that.isGameReady);case Logo() when logo != null:
 return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
 return titleLoading();case Title() when title != null:
-return title();case Menu() when menu != null:
-return menu(_that.uiOpacity);case _:
+return title();case BoldText() when boldText != null:
+return boldText(_that.uiOpacity);case _:
   return null;
 
 }
@@ -998,8 +998,8 @@ String toString() {
 /// @nodoc
 
 
-class Menu implements SceneState {
-  const Menu({this.uiOpacity = 1.0});
+class BoldText implements SceneState {
+  const BoldText({this.uiOpacity = 1.0});
   
 
 @JsonKey() final  double uiOpacity;
@@ -1008,13 +1008,13 @@ class Menu implements SceneState {
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$MenuCopyWith<Menu> get copyWith => _$MenuCopyWithImpl<Menu>(this, _$identity);
+$BoldTextCopyWith<BoldText> get copyWith => _$BoldTextCopyWithImpl<BoldText>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Menu&&(identical(other.uiOpacity, uiOpacity) || other.uiOpacity == uiOpacity));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BoldText&&(identical(other.uiOpacity, uiOpacity) || other.uiOpacity == uiOpacity));
 }
 
 
@@ -1023,15 +1023,15 @@ int get hashCode => Object.hash(runtimeType,uiOpacity);
 
 @override
 String toString() {
-  return 'SceneState.menu(uiOpacity: $uiOpacity)';
+  return 'SceneState.boldText(uiOpacity: $uiOpacity)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $MenuCopyWith<$Res> implements $SceneStateCopyWith<$Res> {
-  factory $MenuCopyWith(Menu value, $Res Function(Menu) _then) = _$MenuCopyWithImpl;
+abstract mixin class $BoldTextCopyWith<$Res> implements $SceneStateCopyWith<$Res> {
+  factory $BoldTextCopyWith(BoldText value, $Res Function(BoldText) _then) = _$BoldTextCopyWithImpl;
 @useResult
 $Res call({
  double uiOpacity
@@ -1042,17 +1042,17 @@ $Res call({
 
 }
 /// @nodoc
-class _$MenuCopyWithImpl<$Res>
-    implements $MenuCopyWith<$Res> {
-  _$MenuCopyWithImpl(this._self, this._then);
+class _$BoldTextCopyWithImpl<$Res>
+    implements $BoldTextCopyWith<$Res> {
+  _$BoldTextCopyWithImpl(this._self, this._then);
 
-  final Menu _self;
-  final $Res Function(Menu) _then;
+  final BoldText _self;
+  final $Res Function(BoldText) _then;
 
 /// Create a copy of SceneState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') $Res call({Object? uiOpacity = null,}) {
-  return _then(Menu(
+  return _then(BoldText(
 uiOpacity: null == uiOpacity ? _self.uiOpacity : uiOpacity // ignore: cast_nullable_to_non_nullable
 as double,
   ));

@@ -103,7 +103,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
 
   FutureOr<void> _onScroll(OnScroll event, Emitter<SceneState> emit) {
     if (state is Title) {
-      emit(const SceneState.menu());
+      emit(const SceneState.boldText());
     }
   }
 
@@ -118,8 +118,8 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     UpdateUIOpacity event,
     Emitter<SceneState> emit,
   ) {
-    if (state is Menu) {
-      final menuState = state as Menu;
+    if (state is BoldText) {
+      final menuState = state as BoldText;
       if (menuState.uiOpacity != event.opacity) {
         emit(menuState.copyWith(uiOpacity: event.opacity));
       }
