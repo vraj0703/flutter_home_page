@@ -378,17 +378,25 @@ class MyGame extends FlameGame
 
     // 3. Configure Specific Section
     state.maybeWhen(
-      logoOverlayRemoving: () => loadTitleBackground(),
+      logoOverlayRemoving: () {
+        playEnterSound();
+        loadTitleBackground();
+      },
       titleLoading: () => enterTitle(),
-      title: () =>
-          _scrollConfigurator.configureTitle(components: _gameComponents),
-      boldText: (_) => _scrollConfigurator.configureBoldText(
-        scrollOrchestrator: scrollOrchestrator,
-        scrollSystem: scrollSystem,
-        components: _gameComponents,
-        screenSize: size,
-        stateProvider: stateProvider,
-      ),
+      title: () {
+        playBouncyArrow();
+        _scrollConfigurator.configureTitle(components: _gameComponents);
+      },
+      boldText: (_) {
+        enterMenu();
+        _scrollConfigurator.configureBoldText(
+          scrollOrchestrator: scrollOrchestrator,
+          scrollSystem: scrollSystem,
+          components: _gameComponents,
+          screenSize: size,
+          stateProvider: stateProvider,
+        );
+      },
       philosophy: () => _scrollConfigurator.configurePhilosophy(
         scrollSystem: scrollSystem,
         components: _gameComponents,

@@ -62,7 +62,7 @@ class GameStyles {
 
   // Text Sizes
   static const double titleFontSize = 80.0;
-  static const double primaryTitleFontSize = 48.0;
+  static const double primaryTitleFontSize = 56.0;
   static const double philosophyFontSize = 40.0;
   static const double contactTitleFontSize = 110.0;
   static const double contactDescriptionFontSize = 18.0;
@@ -93,7 +93,7 @@ class GameStyles {
   // Text Spacing
   static const double loadingLetterSpacing = 12.0;
   static const double enterLetterSpacing = 10.0;
-  static const double primaryTitleLetterSpacing = 8.0;
+  static const double primaryTitleLetterSpacing = 28.0;
 
   // --- Animation Durations (Sec) ---
   static const double secTitleAnimDuration = 4.0;

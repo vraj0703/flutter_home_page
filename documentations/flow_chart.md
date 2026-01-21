@@ -62,8 +62,8 @@ sequenceDiagram
     User->>Game: Scroll (PointerScrollInfo)
     Game->>Bloc: queuer.queue(SceneEvent.onScroll)
     Bloc->>Bloc: on<OnScroll> (Transition to Menu)
-    opt State is Title
-        Bloc->>Bloc: emit(SceneState.boldText)
+    opt State is Title OR TitleLoading
+        Bloc->>Bloc: emit(SceneState.boldText) (Skip Intro / Start)
     end
     StatefulScene->>Game: game.enterMenu()
     

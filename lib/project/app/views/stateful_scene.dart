@@ -113,20 +113,10 @@ class _StatefulSceneState extends State<StatefulScene>
               _revealController.forward();
             }
           },
-          logoOverlayRemoving: () {
-            _game.playEnterSound(); // Trigger sound on user tap/reveal
-            _game.loadTitleBackground();
-          },
-          titleLoading: () {
-            _game.enterTitle();
-          },
-          title: () {
-            _game
-                .playBouncyArrow(); // Play triggering sound when title state is confirmed
-          },
-          boldText: (uiOpacity) {
-            _game.enterMenu();
-          },
+          logoOverlayRemoving: () {},
+          titleLoading: () {},
+          title: () {},
+          boldText: (uiOpacity) {},
           philosophy: () {},
           workExperience: () {},
           experience: () {},
