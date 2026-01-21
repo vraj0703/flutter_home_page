@@ -50,6 +50,9 @@ class MyGame extends FlameGame
   final GameCursorSystem _cursorSystem = GameCursorSystem();
   final GameLogoAnimator _logoAnimator = GameLogoAnimator();
 
+  late final GameComponents _gameComponents;
+  SceneState? _lastState;
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
@@ -92,6 +95,29 @@ class MyGame extends FlameGame
         cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
       ),
     );
+
+    // Initialize GameComponents helper
+    _gameComponents = GameComponents(
+      cinematicTitle: _componentFactory.cinematicTitle,
+      cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
+      interactiveUI: _componentFactory.logoOverlay,
+      dimLayer: _componentFactory.dimLayer,
+      godRay: _componentFactory.godRay,
+      backgroundTint: _componentFactory.backgroundTint,
+      boldTextReveal: _componentFactory.boldTextReveal,
+      philosophyText: _componentFactory.philosophyText,
+      cardStack: _componentFactory.cardStack,
+      workExperienceTitle: _componentFactory.workExperienceTitle,
+      experiencePage: _componentFactory.experiencePage,
+      testimonialPage: _componentFactory.testimonialPage,
+      contactPage: _componentFactory.contactPage,
+    );
+
+    // Initialize Global Config
+    _configureGlobal();
+
+    // Listen to State Changes
+    stateProvider.stream.listen(_handleStateChange);
 
     // Initialize and add Input Controller
     _inputController = GameInputController(
@@ -145,6 +171,8 @@ class MyGame extends FlameGame
 
     final targetScroll = ScrollSequenceConfig.sectionJumpTargets[section];
     scrollSystem.setScrollOffset(targetScroll);
+    // Sync Bloc State
+    queuer.queue(event: SceneEvent.forceScrollOffset(targetScroll));
   }
 
   @override
@@ -203,6 +231,21 @@ class MyGame extends FlameGame
       boldText: (uiOpacity) {
         _logoAnimator.updateMenuLayoutTargets(size);
       },
+      philosophy: () {
+        _logoAnimator.updateMenuLayoutTargets(size);
+      },
+      workExperience: () {
+        _logoAnimator.updateMenuLayoutTargets(size);
+      },
+      experience: () {
+        _logoAnimator.updateMenuLayoutTargets(size);
+      },
+      testimonials: () {
+        _logoAnimator.updateMenuLayoutTargets(size);
+      },
+      contact: () {
+        _logoAnimator.updateMenuLayoutTargets(size);
+      },
     );
     // Safe check if factory initialized
     try {
@@ -232,6 +275,11 @@ class MyGame extends FlameGame
     // Delegate updates
     final isMenu = stateProvider.sceneState().maybeWhen(
       boldText: (_) => true,
+      philosophy: () => true,
+      workExperience: () => true,
+      experience: () => true,
+      testimonials: () => true,
+      contact: () => true,
       title: () => true,
       orElse: () => false,
     );
@@ -244,6 +292,13 @@ class MyGame extends FlameGame
         logoComponent: _componentFactory.logoComponent,
         shadowScene: _componentFactory.shadowScene,
       ),
+    );
+
+    stateProvider.sceneState().maybeWhen(
+      logoOverlayRemoving: () {
+        // Wait for LogoOverlay (Text) to trigger transition
+      },
+      orElse: () {},
     );
 
     scrollSystem.update(dt);
@@ -271,30 +326,12 @@ class MyGame extends FlameGame
       },
       titleLoading: () {},
       title: () {},
-      boldText: (uiOpacity) {
-        // Logo animation target is handled in onGameResize or EnterMenu,
-        // but update calls animate implicitly via _logoAnimator.update
-
-        // --- 1. Arrow/UI Fade Logic ---
-        // Fade out arrow immediately on scroll (0 -> 150px)
-        final scroll = scrollSystem.scrollOffset;
-        final newOpacity = (1.0 - (scroll / 150.0)).clamp(0.0, 1.0);
-
-        // Only update if changed significantly to avoid Bloc spam
-        if ((newOpacity - uiOpacity).abs() > 0.05 ||
-            (newOpacity == 0 && uiOpacity != 0)) {
-          queuer.queue(event: SceneEvent.updateUIOpacity(newOpacity));
-        }
-
-        // --- 2. Title Parallax Lift ---
-        // Move titles up as we scroll down (Scroll P1: 0 -> 1200)
-        // They should clear the screen relatively quickly
-        if (scroll < ScrollSequenceConfig.boldTextPass1End) {
-          final lift = scroll * 1.5; // Move 1.5x faster than scroll
-          _componentFactory.cinematicTitle.position.y -= lift;
-          _componentFactory.cinematicSecondaryTitle.position.y -= lift;
-        }
-      },
+      boldText: (uiOpacity) => _handleBoldTextUpdate(uiOpacity),
+      philosophy: () {},
+      workExperience: () {},
+      experience: () {},
+      testimonials: () {},
+      contact: () {},
     );
     _inactivityTimer.update(dt);
   }
@@ -313,32 +350,95 @@ class MyGame extends FlameGame
   void enterMenu() {
     _logoAnimator.updateMenuLayoutTargets(size);
     _cursorSystem.activate(size / 2);
+    // Configuration handled by state listener
+  }
 
-    // Delegate to ScrollConfigurator
-    _scrollConfigurator.configureScroll(
+  void _configureGlobal() {
+    _scrollConfigurator.configureGlobal(
       scrollOrchestrator: scrollOrchestrator,
       scrollSystem: scrollSystem,
+      components: _gameComponents,
       screenSize: size,
-      stateProvider: stateProvider,
-      components: GameComponents(
-        cinematicTitle: _componentFactory.cinematicTitle,
-        cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
-        interactiveUI: _componentFactory.logoOverlay,
-        dimLayer: _componentFactory.dimLayer,
-        godRay: _componentFactory.godRay,
-        backgroundTint: _componentFactory.backgroundTint,
-        boldTextReveal: _componentFactory.boldTextReveal,
-        philosophyText: _componentFactory.philosophyText,
-        cardStack: _componentFactory.cardStack,
-        workExperienceTitle: _componentFactory.workExperienceTitle,
-        experiencePage: _componentFactory.experiencePage,
-        testimonialPage: _componentFactory.testimonialPage,
-        contactPage: _componentFactory.contactPage,
+    );
+  }
+
+  void _handleStateChange(SceneState state) {
+    if (_lastState?.runtimeType == state.runtimeType) return;
+    _lastState = state;
+
+    // 1. Clear previous
+    scrollSystem.clearObservers();
+    scrollOrchestrator.clearBindings();
+    _gameComponents.hideAllSectionComponents();
+    // Do NOT reset scroll offset to 0. ScrollSystem maintains global offset accumulated from InputController.
+
+    // 2. Re-register Base
+    scrollSystem.register(scrollOrchestrator);
+    _configureGlobal();
+
+    // 3. Configure Specific Section
+    state.maybeWhen(
+      logoOverlayRemoving: () => loadTitleBackground(),
+      titleLoading: () => enterTitle(),
+      title: () =>
+          _scrollConfigurator.configureTitle(components: _gameComponents),
+      boldText: (_) => _scrollConfigurator.configureBoldText(
+        scrollOrchestrator: scrollOrchestrator,
+        scrollSystem: scrollSystem,
+        components: _gameComponents,
+        screenSize: size,
+        stateProvider: stateProvider,
       ),
+      philosophy: () => _scrollConfigurator.configurePhilosophy(
+        scrollSystem: scrollSystem,
+        components: _gameComponents,
+        screenSize: size,
+      ),
+      workExperience: () => _scrollConfigurator.configureWorkExperience(
+        scrollSystem: scrollSystem,
+        components: _gameComponents,
+        screenSize: size,
+      ),
+      experience: () => _scrollConfigurator.configureExperience(
+        scrollSystem: scrollSystem,
+        components: _gameComponents,
+        screenSize: size,
+      ),
+      testimonials: () => _scrollConfigurator.configureTestimonials(
+        scrollSystem: scrollSystem,
+        components: _gameComponents,
+        screenSize: size,
+      ),
+      contact: () => _scrollConfigurator.configureContact(
+        scrollSystem: scrollSystem,
+        components: _gameComponents,
+        screenSize: size,
+      ),
+      orElse: () {},
     );
   }
 
   void setCursorPosition(Vector2 position) {
     _cursorSystem.setCursorPosition(position);
+  }
+
+  void _handleBoldTextUpdate(double uiOpacity) {
+    // Logo animation target is handled in onGameResize or EnterMenu,
+    // but update calls animate implicitly via _logoAnimator.update
+
+    // --- 1. Arrow/UI Fade Logic ---
+    // Fade out arrow immediately on scroll (0 -> 150px)
+    final scroll = scrollSystem.scrollOffset;
+    final newOpacity = (1.0 - (scroll / 150.0)).clamp(0.0, 1.0);
+
+    // Only update if changed significantly to avoid Bloc spam
+    if ((newOpacity - uiOpacity).abs() > 0.05 ||
+        (newOpacity == 0 && uiOpacity != 0)) {
+      queuer.queue(event: SceneEvent.updateUIOpacity(newOpacity));
+    }
+
+    // --- 2. Title Parallax Lift ---
+    // Handled by ScrollOrchestrator bindings in configureBoldText.
+    // Manual position update removed to avoid conflicts.
   }
 }

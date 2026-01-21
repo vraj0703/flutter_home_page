@@ -17,4 +17,14 @@ class SceneState with _$SceneState {
 
   const factory SceneState.boldText({@Default(1.0) double uiOpacity}) =
       BoldText;
+
+  const factory SceneState.philosophy() = Philosophy;
+
+  const factory SceneState.workExperience() = WorkExperience;
+
+  const factory SceneState.experience() = Experience;
+
+  const factory SceneState.testimonials() = Testimonials;
+
+  const factory SceneState.contact() = Contact;
 }

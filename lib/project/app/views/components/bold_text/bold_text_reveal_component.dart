@@ -77,7 +77,7 @@ class BoldTextRevealComponent extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    if (_textTexture == null) return;
+    if (_textTexture == null || _scrollProgress < 0.01 || opacity <= 0) return;
 
     final paint = Paint();
 

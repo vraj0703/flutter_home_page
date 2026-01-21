@@ -56,7 +56,10 @@ class GameLogoAnimator {
     components.shadowScene.logoPosition = center;
   }
 
-  void update(double dt, LogoAnimationComponents components) {
+  bool update(double dt, LogoAnimationComponents components) {
+    bool positionDone = false;
+    bool scaleDone = false;
+
     final positionDistance =
         (components.logoComponent.position - _targetLogoPosition).length;
     final scaleDistance = (_currentLogoScale - _targetLogoScale).abs();
@@ -80,6 +83,7 @@ class GameLogoAnimator {
       components.logoComponent.position = _targetLogoPosition.clone();
       components.shadowScene.logoPosition = _targetLogoPosition.clone();
       _logoPositionProgress = 0.0;
+      positionDone = true;
     }
 
     if (scaleDistance > 0.01) {
@@ -99,6 +103,7 @@ class GameLogoAnimator {
     } else {
       _currentLogoScale = _targetLogoScale;
       _logoScaleProgress = 0.0;
+      scaleDone = true;
     }
 
     if (_baseLogoSize != Vector2.zero()) {
@@ -106,5 +111,7 @@ class GameLogoAnimator {
       components.logoComponent.size = newSize;
       components.shadowScene.logoSize = newSize;
     }
+
+    return positionDone && scaleDone;
   }
 }

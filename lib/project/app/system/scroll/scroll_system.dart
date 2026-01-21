@@ -41,6 +41,10 @@ class ScrollSystem {
     _observers.remove(observer);
   }
 
+  void clearObservers() {
+    _observers.clear();
+  }
+
   void setScrollOffset(double offset) {
     _targetScrollOffset = offset;
     _checkSnapPoints();

@@ -30,12 +30,8 @@ class GameInputController extends Component {
     scrollSystem.onScroll(delta);
     audioSystem.playScrollTick();
 
-    stateProvider.sceneState().maybeWhen(
-      boldText: (uiOpacity) {
-        queuer.queue(event: SceneEvent.onScrollSequence(delta));
-      },
-      orElse: () {},
-    );
+    // Always update global scroll sequence
+    queuer.queue(event: SceneEvent.onScrollSequence(delta));
   }
 
   void handleTapDown(TapDownEvent event) {

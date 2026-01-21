@@ -1,9 +1,9 @@
 class ScrollSequenceConfig {
   // --- Intro / Title Section ---
   static const double titleParallaxEnd = 800.0;
-  static const double secondaryTitleParallaxEnd = 1000.0;
+  static const double secondaryTitleParallaxEnd = 800.0; // Matched to title
   static const double titleFadeEnd = 500.0;
-  static const double secondaryTitleFadeEnd = 100.0;
+  static const double secondaryTitleFadeEnd = 500.0; // Matched to title
   static const double uiFadeEnd = 100.0;
 
   // --- Intro Animation Durations (ms) ---
@@ -68,71 +68,75 @@ class ScrollSequenceConfig {
   static const double philosophyPeelDelay = 150.0;
   static const double philosophyExitStart = 4500.0;
 
-  // --- Transition Gap: Philosophy -> Work Experience (4800 - 4900) ---
-  static const double philosophyToWorkExpGap = 100.0;
+  // --- Transition Gap: Philosophy -> Work Experience (Closed) ---
+  static const double philosophyToWorkExpGap = 0.0;
 
-  // --- 2.5. Work Experience Title Section (4900 - 6500) ---
-  static const double workExpTitleEntranceStart = 4900.0;
+  // --- 2.5. Work Experience Title Section (4800 - 6400) ---
+  static const double workExpTitleEntranceStart = philosophyEnd; // 4800.0
   static const double workExpTitleEntranceDuration = 600.0;
   static double get workExpTitleEntranceEnd =>
-      workExpTitleEntranceStart + workExpTitleEntranceDuration; // 5500
+      workExpTitleEntranceStart + workExpTitleEntranceDuration; // 5400
 
-  static const double workExpTitleHoldStart = 5500.0;
+  static const double workExpTitleHoldStart =
+      5400.0; // Adjusted to match new End
   static const double workExpTitleHoldDuration = 500.0;
   static double get workExpTitleHoldEnd =>
-      workExpTitleHoldStart + workExpTitleHoldDuration; // 6000
+      workExpTitleHoldStart + workExpTitleHoldDuration; // 5900
 
-  static const double workExpTitleExitStart = 6000.0;
+  static const double workExpTitleExitStart = 5900.0; // Adjusted
   static const double workExpTitleExitDuration = 500.0;
   static double get workExpTitleExitEnd =>
-      workExpTitleExitStart + workExpTitleExitDuration; // 6500
+      workExpTitleExitStart + workExpTitleExitDuration; // 6400
 
-  // --- Transition Gap: Work Experience -> Experience Section (6500 - 6600) ---
-  static const double workExpToExperienceGap = 100.0;
+  // --- Transition Gap: Work Experience -> Experience Section (Closed) ---
+  static const double workExpToExperienceGap = 0.0;
 
-  // --- 3. Experience Section (6600 - 8950) ---
-  static const double experienceEntranceStart = 6600.0;
+  // --- 3. Experience Section (6400 - 8750) ---
+  static const double experienceEntranceStart =
+      6400.0; // Matches workExpTitleExitEnd
   static const double experienceEntranceDuration = 300.0;
 
   static double get experienceEntranceEnd =>
-      experienceEntranceStart + experienceEntranceDuration; // 6900
-  static const double experienceInteractionStart = 6900.0;
+      experienceEntranceStart + experienceEntranceDuration; // 6700
+  static const double experienceInteractionStart = 6700.0;
   static const double experienceInteractionDuration = 1750.0;
 
   static double get experienceInteractionEnd =>
-      experienceInteractionStart + experienceInteractionDuration; // 8650
-  static double get experienceExitStart => experienceInteractionEnd; // 8650
+      experienceInteractionStart + experienceInteractionDuration; // 8450
+  static double get experienceExitStart => experienceInteractionEnd; // 8450
   static const double experienceExitDuration = 300.0;
 
   static double get experienceExitEnd =>
-      experienceExitStart + experienceExitDuration; // 8950
+      experienceExitStart + experienceExitDuration; // 8750
 
   static const double experienceScrollDivisor = 500.0;
 
-  // --- Transition Gap: Experience -> Testimonials (8950 - 9050) ---
-  static const double experienceToTestimonialGap = 100.0;
+  // --- Transition Gap: Experience -> Testimonials (Closed) ---
+  static const double experienceToTestimonialGap = 0.0;
 
-  // --- 4. Testimonials (9050 - 12950) ---
-  static const double testimonialEntranceStart = 9050.0;
+  // --- 4. Testimonials (8750 - 12650) ---
+  static const double testimonialEntranceStart =
+      8750.0; // Matches experienceExitEnd
   static const double testimonialEntranceDuration = 300.0;
 
   static double get testimonialEntranceEnd =>
-      testimonialEntranceStart + testimonialEntranceDuration; // 9350
-  static const double testimonialInteractionStart = 9350.0;
+      testimonialEntranceStart + testimonialEntranceDuration; // 9050
+  static const double testimonialInteractionStart = 9050.0;
   static const double testimonialVisibleDuration = 3200.0;
   static double get testimonialInteractionEnd =>
-      testimonialInteractionStart + testimonialVisibleDuration; // 12550
-  static double get testimonialExitStart => testimonialInteractionEnd; // 12550
+      testimonialInteractionStart + testimonialVisibleDuration; // 12250
+  static double get testimonialExitStart => testimonialInteractionEnd; // 12250
   static const double testimonialExitDuration = 400.0;
 
   static double get testimonialExitEnd =>
-      testimonialExitStart + testimonialExitDuration; // 12950
+      testimonialExitStart + testimonialExitDuration; // 12650
 
-  // --- Transition Gap: Testimonials -> Contact (12950 - 13050) ---
-  static const double testimonialToContactGap = 100.0;
+  // --- Transition Gap: Testimonials -> Contact (Closed) ---
+  static const double testimonialToContactGap = 0.0;
 
-  // --- 5. Contact (13050+) - FINAL SECTION ---
-  static const double contactEntranceStart = 13050.0;
+  // --- 5. Contact (12650+) - FINAL SECTION ---
+  static const double contactEntranceStart =
+      12650.0; // Matches testimonialExitEnd
   static const double contactEntranceDuration = 600.0;
   static const double contactHoldDuration = 2000.0;
 

@@ -98,7 +98,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
       _contentWrapper.add(charComponent);
       _charComponents.add(charComponent);
 
-      currentX += width + spacing;
+      currentX += width;
     }
   }
 

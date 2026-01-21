@@ -153,6 +153,11 @@ class LogoOverlayComponent extends PositionComponent
       titleLoading: () {},
       title: () {},
       boldText: (uiOpacity) {},
+      philosophy: () {},
+      workExperience: () {},
+      experience: () {},
+      testimonials: () {},
+      contact: () {},
     );
   }
 
@@ -251,6 +256,11 @@ class LogoOverlayComponent extends PositionComponent
       titleLoading: () {},
       title: () {},
       boldText: (uiOpacity) {},
+      philosophy: () {},
+      workExperience: () {},
+      experience: () {},
+      testimonials: () {},
+      contact: () {},
     );
   }
 

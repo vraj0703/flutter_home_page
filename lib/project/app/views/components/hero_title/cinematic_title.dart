@@ -10,7 +10,8 @@ import 'package:flutter_home_page/project/app/utils/wait_effect.dart';
 
 import 'package:flutter_home_page/project/app/views/components/fade_text.dart';
 
-class CinematicTitleComponent extends PositionComponent with HasGameReference {
+class CinematicTitleComponent extends PositionComponent
+    with HasGameReference, HasPaint {
   final String primaryText;
   final FragmentShader shader;
 

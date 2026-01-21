@@ -42,4 +42,27 @@ class GameComponents {
     required this.testimonialPage,
     required this.contactPage,
   });
+
+  void hideAllSectionComponents() {
+    // Reset all section components to hidden/transparent state
+    cinematicTitle.opacity = 0.0;
+    cinematicSecondaryTitle.opacity = 0.0;
+
+    // BoldText might utilize scrollProgress for visibility, but setting opacity 0 ensures it's hidden.
+    // Assuming BoldTextRevealComponent respects opacity (standard PositionComponent).
+    boldTextReveal.opacity = 0.0;
+
+    philosophyText.opacity = 0.0;
+    cardStack.opacity = 0.0;
+    workExperienceTitle.opacity = 0.0;
+    experiencePage.opacity = 0.0;
+    testimonialPage.opacity = 0.0;
+    contactPage.opacity = 0.0;
+
+    // GodRay and BackgroundTint are global/persistent or handled separately?
+    // User said "component of each section". GodRay is background.
+    // BackgroundTint is background.
+    // DimLayer is distinct.
+    dimLayer.opacity = 0.0;
+  }
 }

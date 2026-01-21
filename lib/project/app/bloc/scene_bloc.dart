@@ -7,6 +7,8 @@ import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
+
 part 'scene_event.dart';
 
 part 'scene_state.dart';
@@ -16,6 +18,7 @@ part 'scene_bloc.freezed.dart';
 class SceneBloc extends Bloc<SceneEvent, SceneState>
     implements Queuer, StateProvider {
   double _revealProgress = 0.0;
+  double _globalScrollOffset = 0.0;
 
   late SvgAssetLoader downArrowLoader;
 
@@ -28,6 +31,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     on<TitleLoaded>(_titleLoaded);
     on<OnScroll>(_onScroll);
     on<OnScrollSequence>(_onScrollSequence);
+    on<ForceScrollOffset>(_onForceScrollOffset);
     on<UpdateUIOpacity>(_updateUIOpacity);
   }
 
@@ -110,8 +114,75 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   FutureOr<void> _onScrollSequence(
     OnScrollSequence event,
     Emitter<SceneState> emit,
+  ) async {
+    _globalScrollOffset += event.delta;
+
+    // Ignore scroll sequence updates during intro states to prevent premature navigation
+    if (state is Loading ||
+        state is Logo ||
+        state is LogoOverlayRemoving ||
+        state is TitleLoading) {
+      return;
+    }
+
+    // Boundary Checks based on ScrollSequenceConfig
+    if (_globalScrollOffset < ScrollSequenceConfig.philosophyStart) {
+      if (state is! BoldText) {
+        emit(const SceneState.boldText());
+      }
+    } else if (_globalScrollOffset <
+        ScrollSequenceConfig.workExpTitleEntranceStart) {
+      if (state is! Philosophy) {
+        emit(const SceneState.philosophy());
+      }
+    } else if (_globalScrollOffset <
+        ScrollSequenceConfig.experienceEntranceStart) {
+      if (state is! WorkExperience) {
+        emit(const SceneState.workExperience());
+      }
+    } else if (_globalScrollOffset <
+        ScrollSequenceConfig.testimonialEntranceStart) {
+      if (state is! Experience) {
+        emit(const SceneState.experience());
+      }
+    } else if (_globalScrollOffset <
+        ScrollSequenceConfig.contactEntranceStart) {
+      if (state is! Testimonials) {
+        emit(const SceneState.testimonials());
+      }
+    } else {
+      if (state is! Contact) {
+        emit(const SceneState.contact());
+      }
+    }
+  }
+
+  FutureOr<void> _onForceScrollOffset(
+    ForceScrollOffset event,
+    Emitter<SceneState> emit,
   ) {
-    // Scroll sequence logic to be implemented or handled by UI
+    _globalScrollOffset = event.offset;
+    // Re-evaluate state based on new offset
+    // Reuse logic by simulating a 0 delta event or extracting method
+    // For now, simpler to copy-paste the checks or extract them.
+    // Let's copy-paste for safety to avoid defining new method signature mid-refactor.
+    if (_globalScrollOffset < ScrollSequenceConfig.philosophyStart) {
+      emit(const SceneState.boldText());
+    } else if (_globalScrollOffset <
+        ScrollSequenceConfig.workExpTitleEntranceStart) {
+      emit(const SceneState.philosophy());
+    } else if (_globalScrollOffset <
+        ScrollSequenceConfig.experienceEntranceStart) {
+      emit(const SceneState.workExperience());
+    } else if (_globalScrollOffset <
+        ScrollSequenceConfig.testimonialEntranceStart) {
+      emit(const SceneState.experience());
+    } else if (_globalScrollOffset <
+        ScrollSequenceConfig.contactEntranceStart) {
+      emit(const SceneState.testimonials());
+    } else {
+      emit(const SceneState.contact());
+    }
   }
 
   FutureOr<void> _updateUIOpacity(

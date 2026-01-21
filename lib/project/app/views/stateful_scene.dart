@@ -127,6 +127,11 @@ class _StatefulSceneState extends State<StatefulScene>
           boldText: (uiOpacity) {
             _game.enterMenu();
           },
+          philosophy: () {},
+          workExperience: () {},
+          experience: () {},
+          testimonials: () {},
+          contact: () {},
         );
       },
       builder: (context, state) {

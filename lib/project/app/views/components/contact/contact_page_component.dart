@@ -160,29 +160,34 @@ class ContactPageComponent extends PositionComponent
   set opacity(double val) {
     if (val == super.opacity) return;
     super.opacity = val;
-    for (final child in children) {
-      if (child is TextComponent) {
-        final style = (child.textRenderer as TextPaint).style;
-        if (style.color != null) {
-          child.textRenderer = TextPaint(
-            style: style.copyWith(color: style.color!.withValues(alpha: val)),
-          );
-        }
-      } else if (child is RectangleComponent) {
-        child.paint.color = child.paint.color.withValues(alpha: val);
-        for (final c in child.children) {
-          if (c is TextComponent) {
-            c.textRenderer = TextPaint(
-              style: (c.textRenderer as TextPaint).style.copyWith(
-                color: (c.textRenderer as TextPaint).style.color!.withValues(
-                  alpha: val,
-                ),
-              ),
-            );
-          }
-        }
-      } else if (child is WrappedTextComponent) {
-        child.opacity = val;
+    // Recursive helper
+    _applyOpacity(this, val);
+  }
+
+  void _applyOpacity(Component component, double alpha) {
+    if (component is FadeTextComponent) {
+      component.opacity = alpha;
+    } else if (component is TextComponent) {
+      final style = (component.textRenderer as TextPaint).style;
+      if (style.color != null) {
+        component.textRenderer = TextPaint(
+          style: style.copyWith(
+            color: style.color!.withValues(alpha: alpha * (style.color!.a)),
+          ),
+        );
+      }
+    } else if (component is RectangleComponent) {
+      component.paint.color = component.paint.color.withValues(
+        alpha: alpha * (component.paint.color.a),
+      );
+    } else if (component is WrappedTextComponent) {
+      component.opacity = alpha;
+    }
+
+    // Iterate children
+    if (component is PositionComponent) {
+      for (final child in component.children) {
+        _applyOpacity(child, alpha);
       }
     }
   }

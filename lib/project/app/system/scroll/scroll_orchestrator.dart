@@ -27,6 +27,10 @@ class ScrollOrchestrator implements ScrollObserver {
     _bindings.remove(component);
   }
 
+  void clearBindings() {
+    _bindings.clear();
+  }
+
   @override
   void onScroll(double scrollOffset) {
     // Iterate over all bindings and apply effects

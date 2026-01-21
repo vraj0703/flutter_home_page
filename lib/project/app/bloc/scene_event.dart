@@ -18,5 +18,7 @@ class SceneEvent with _$SceneEvent {
 
   const factory SceneEvent.onScrollSequence(double delta) = OnScrollSequence;
 
+  const factory SceneEvent.forceScrollOffset(double offset) = ForceScrollOffset;
+
   const factory SceneEvent.updateUIOpacity(double opacity) = UpdateUIOpacity;
 }

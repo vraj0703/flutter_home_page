@@ -5,6 +5,14 @@ import 'package:flutter_home_page/project/app/config/game_audio_config.dart';
 class GameAudioSystem {
   DateTime _lastHoverTime = DateTime.now();
 
+  Future<void> _safePlay(String file, {double volume = 1.0}) async {
+    try {
+      await FlameAudio.play(file, volume: volume);
+    } catch (_) {
+      // Ignore autoplay errors
+    }
+  }
+
   Future<void> initialize() async {
     // Preload important SFX to avoid latency
     await FlameAudio.audioCache.loadAll([
@@ -21,7 +29,7 @@ class GameAudioSystem {
   }
 
   void playBgm() {
-    /*FlameAudio.bgm.play(
+    /*_safePlay(
       GameAudioConfig.ambientBgm,
       volume: GameAudioConfig.bgmVolume,
     );*/
@@ -35,7 +43,7 @@ class GameAudioSystem {
     /*final now = DateTime.now();
     if (now.difference(_lastHoverTime).inMilliseconds >
         GameAudioConfig.hoverThrottleMs) {
-      FlameAudio.play(
+      _safePlay(
         GameAudioConfig.hoverSfx,
         volume: GameAudioConfig.hoverVolume,
       );
@@ -44,35 +52,29 @@ class GameAudioSystem {
   }
 
   void playClick() {
-    /* FlameAudio.play(
+    /* _safePlay(
       GameAudioConfig.clickSfx,
       volume: GameAudioConfig.sfxVolume,
     );*/
   }
 
   void playEnterSound() {
-    FlameAudio.play(
-      GameAudioConfig.enterSfx,
-      volume: GameAudioConfig.enterSfxVolume,
-    );
+    _safePlay(GameAudioConfig.enterSfx, volume: GameAudioConfig.enterSfxVolume);
   }
 
   void playTitleLoaded() {
-    FlameAudio.play(
+    _safePlay(
       GameAudioConfig.titleLoadedSfx,
       volume: GameAudioConfig.titleLoadedVolume,
     );
   }
 
   void playSlideIn() {
-    FlameAudio.play(
-      GameAudioConfig.slideInSfx,
-      volume: GameAudioConfig.sfxVolume,
-    );
+    _safePlay(GameAudioConfig.slideInSfx, volume: GameAudioConfig.sfxVolume);
   }
 
   void playBouncyArrow() {
-    FlameAudio.play(
+    _safePlay(
       GameAudioConfig.bouncyArrowSfx,
       volume: GameAudioConfig.sfxVolume,
     );
@@ -103,7 +105,9 @@ class GameAudioSystem {
 
     if (_boldTextPlayer!.state != PlayerState.playing ||
         _boldTextPlayer!.state == PlayerState.completed) {
-      await _boldTextPlayer!.resume();
+      try {
+        await _boldTextPlayer!.resume();
+      } catch (_) {}
     }
 
     await _boldTextPlayer!.seek(Duration(milliseconds: targetMillis));
@@ -117,7 +121,7 @@ class GameAudioSystem {
   }
 
   void playTing() {
-    FlameAudio.play(GameAudioConfig.tingSfx, volume: GameAudioConfig.sfxVolume);
+    _safePlay(GameAudioConfig.tingSfx, volume: GameAudioConfig.sfxVolume);
   }
 
   void playScrollTick() {

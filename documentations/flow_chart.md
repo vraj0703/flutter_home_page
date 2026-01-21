@@ -39,12 +39,15 @@ sequenceDiagram
     loop Every Frame
         Game->>Bloc: stateProvider.sceneState()
         opt State is LogoOverlayRemoving
-            Game->>Game: zoomLogo() (Move & Scale)
+            Game->>Game: _logoAnimator.update()
+            alt Animation Complete
+                Game->>Bloc: queuer.queue(SceneEvent.loadTitle)
+            end
         end
     end
 
     Note over Bloc: Orchestration
-    Bloc->>Bloc: on<LoadTitle> (Transition Logic)
+    Bloc->>Bloc: on<LoadTitle>
     Bloc->>Bloc: emit(SceneState.titleLoading)
     Bloc->>Game: game.enterTitle()
     
@@ -59,7 +62,9 @@ sequenceDiagram
     User->>Game: Scroll (PointerScrollInfo)
     Game->>Bloc: queuer.queue(SceneEvent.onScroll)
     Bloc->>Bloc: on<OnScroll> (Transition to Menu)
-    Bloc->>Bloc: emit(SceneState.menu)
+    opt State is Title
+        Bloc->>Bloc: emit(SceneState.boldText)
+    end
     StatefulScene->>Game: game.enterMenu()
     
     Note over Game, Orchestrator: Scroll Sequence Setup
@@ -93,17 +98,17 @@ stateDiagram-v2
 | Scroll Offset Range | Component | Behavior |
 | :--- | :--- | :--- |
 | **0 - 500** | `CinematicTitle` | **Opacity Fade Out**: Fades from 1.0 to 0.0. Visible initially, disappears as user scrolls down. |
-| **0 - 1000** | `CinematicTitle` & `Secondary` | **Parallax Up**: Moves upwards faster than scroll speed (End Offset: -1000). |
-| **0 - 100** | `CinematicSecondaryTitle` | **Opacity Fade Out**: Fades out quickly (0-100). |
+| **0 - 800** | `CinematicTitle` & `Secondary` | **Parallax Up**: Moves upwards faster than scroll speed (End Offset: -800). |
+| **0 - 500** | `CinematicSecondaryTitle` | **Opacity Fade Out**: Fades out (0-500) synchronized with Primary Title. |
 | **0 - 100** | `LogoOverlay` (UI) | **Opacity Fade Out**: Interactive UI elements fade out immediately. |
 | **0 - 300** | `DimLayer` | **Opacity Fade In**: Darkens the background (0.0 to 0.6). |
-| **0 - ~1000** | `BoldTextReveal` | **Sequence**: Controlled by `BoldTextController`. Reveals text "Crafting Clarity..." |
-| **4100** | `PhilosophyText` | **Exit**: Philosophy text finishes its sequence/exit. |
-| **4200** | `ExperiencePage` | **Enter**: Experience section logic begins (Entrance Start). |
-| **4600** | `ExperiencePage` | **Interact**: Interaction phase begins for Experience components. |
-| **10200** | `GridComponent` | **Enter**: Grid becomes visible and starts scrolling. |
-| **10200 - 10500** | `GridComponent` | **Opacity Fade In**: Fades from 0.0 to 1.0. |
-| **10200 - 110200** | `GridComponent` | **Parallax**: Continuous scrolling background pattern. |
+| **0 - 3000** | `BoldTextReveal` | **Sequence**: Controlled by `BoldTextController`. Reveals text "Crafting Clarity..." |
+| **3200 - 4800** | `PhilosophySection` | **Sequence**: Philosophy text and peeling cards. Ends at 4800. |
+| **4800 - 6400** | `WorkExperienceTitle` | **Sequence**: Entrance, Hold, and Exit of Work Experience Title. |
+| **6400 - 8750** | `ExperiencePage` | **Sequence**: Orbital experience list. Entrance at 6400. Exit at 8750. |
+| **8750 - 12650** | `Testimonials` | **Sequence**: Testimonial carousel. Entrance at 8750. Exit at 12650. |
+| **12650+** | `ContactPage` | **Enter**: Contact form enters. |
+| **Config** | `ScrollSequenceConfig` | **Gaps**: All transition gaps (100px) have been removed for seamless transitions. |
 
 ### Philosophy Section Timeline (Internal)
 
@@ -111,7 +116,7 @@ Controlled by `PhilosophyPageController`.
 
 | Offset | Component | Action | Details |
 | :--- | :--- | :--- | :--- |
-| **< 2200** | All | Hidden | Opacity 0.0 |
+| **< 4800** | All | Active | Managed by controller within 3200-4800 range. |
 | **2200 - 2500** | Text & Stack | **Fade In** | Opacity 0.0 -> 1.0 |
 | **2500 - 3800** | Text | **Hold** | Remains visible (Static) |
 | **2500 - 3800** | Card #0 (Top) | **Peel** | Lifts up, rotates, fades out. |
@@ -125,13 +130,12 @@ Controlled by `ExperiencePageController`.
 
 | Offset | Component | Action | Details |
 | :--- | :--- | :--- | :--- |
-| **4200 - 4600** | Page | **Entrance/Fade In** | Opacity 0.0 -> 1.0. |
-| **4600** | Interaction | **Start** | `localScroll = 0`. |
-| **4600 - 9600** | Orbital System | **Rotate** | Rotates based on scroll delta (approx 1 item per 1000px). |
-| **4600 - 9600** | Satellites | **Cull/Scale** | Items scale up/fade in when near active angle (9 o'clock), fade out elsewhere. |
-| **4600 - 9600** | Text Info | **Switch** | Triggers `MoveTo` animation when index changes. |
-| **9600** | Interaction | **End** | `localScroll` maxed out. |
-| **9600 - 10600** | Page | **Exit/Warp** | Moves Up (-Y) and Warps (Scale Up) to simulate flying through. |
+| **6400 - 6700** | Page | **Entrance/Fade In** | Opacity 0.0 -> 1.0. |
+| **6700** | Interaction | **Start** | `localScroll = 0`. |
+| **6700 - 8450** | Orbital System | **Rotate** | Rotates based on scroll delta. |
+| **8450** | Interaction | **End** | `localScroll` maxed out. |
+| **8450 - 8750** | Page | **Exit/Warp** | Moves Up (-Y) and Warps (Scale Up). |
+| **General** | Components | **Drift Fix** | Positions reset to zero on section entry. |
 
 ## Architecture Overview
 
