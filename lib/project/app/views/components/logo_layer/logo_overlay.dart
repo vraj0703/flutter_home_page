@@ -13,7 +13,7 @@ import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_physics.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 
-import 'bouncy_lines.dart';
+import 'package:flutter_home_page/project/app/views/components/logo_layer/bouncy_lines.dart';
 
 enum _LineOrientation { horizontal, vertical }
 

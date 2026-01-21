@@ -3,8 +3,9 @@ import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/models/game_components.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_orchestrator.dart';
 
-import 'components/god_ray.dart';
+import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
@@ -13,20 +14,19 @@ import 'package:flutter/animation.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
-import 'package:flutter_home_page/project/app/system/game_cursor_system.dart';
-import 'package:flutter_home_page/project/app/system/game_logo_animator.dart';
-import 'package:flutter_home_page/project/app/system/scroll_system.dart';
-import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
-import 'package:flutter_home_page/project/app/system/game_component_factory.dart';
-import 'package:flutter_home_page/project/app/system/game_scroll_configurator.dart';
-
-import 'package:flutter_home_page/project/app/system/game_audio_system.dart'; // Added import
+import 'package:flutter_home_page/project/app/system/cursor/game_cursor_system.dart';
+import 'package:flutter_home_page/project/app/system/animator/game_logo_animator.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
+import 'package:flutter_home_page/project/app/system/registration/game_component_factory.dart';
+import 'package:flutter_home_page/project/app/system/scroll/game_scroll_configurator.dart';
+import 'package:flutter_home_page/project/app/system/input/game_input_controller.dart';
+import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart'; // Added import
 
 class MyGame extends FlameGame
     with
-        PointerMoveCallbacks,
-        TapCallbacks,
         ScrollDetector,
+        TapCallbacks,
+        PointerMoveCallbacks,
         MouseMovementDetector {
   VoidCallback? onStartExitAnimation;
   final Queuer queuer;
@@ -39,6 +39,7 @@ class MyGame extends FlameGame
   });
 
   late final Timer _inactivityTimer;
+  late final GameInputController _inputController;
 
   final ScrollSystem scrollSystem = ScrollSystem();
   final ScrollOrchestrator scrollOrchestrator = ScrollOrchestrator();
@@ -92,6 +93,16 @@ class MyGame extends FlameGame
       ),
     );
 
+    // Initialize and add Input Controller
+    _inputController = GameInputController(
+      queuer: queuer,
+      scrollSystem: scrollSystem,
+      audioSystem: _audioSystem,
+      cursorSystem: _cursorSystem,
+      stateProvider: stateProvider,
+    );
+    add(_inputController);
+
     queuer.queue(event: const SceneEvent.gameReady());
     scrollSystem.register(scrollOrchestrator);
   }
@@ -127,7 +138,11 @@ class MyGame extends FlameGame
       return;
     }
 
-    playClick(); // Integrated Click Sound
+    // We can use the controller for the click sound if we want, or keep it here.
+    // Since this is a UI callback from Factory, it's slightly different from a Game generic tap.
+    // But we should probably use the audio system directly.
+    playClick();
+
     final targetScroll = ScrollSequenceConfig.sectionJumpTargets[section];
     scrollSystem.setScrollOffset(targetScroll);
   }
@@ -138,25 +153,23 @@ class MyGame extends FlameGame
   @override
   void onScroll(PointerScrollInfo info) {
     if (!isLoaded) return;
-    queuer.queue(event: const SceneEvent.onScroll());
-
-    final delta = info.scrollDelta.global.y;
-    scrollSystem.onScroll(delta);
-    _audioSystem.playScrollTick(); // Integrated Scroll Sound
-
-    stateProvider.sceneState().maybeWhen(
-      menu: (uiOpacity) {
-        queuer.queue(event: SceneEvent.onScrollSequence(delta));
-      },
-      orElse: () {},
-    );
+    _inputController.handleScroll(info);
   }
 
   @override
   void onTapDown(TapDownEvent event) {
-    playClick(); // Integrated Click Sound (Generic)
-    queuer.queue(event: SceneEvent.tapDown(event));
+    _inputController.handleTapDown(event);
     super.onTapDown(event);
+  }
+
+  @override
+  void onPointerMove(PointerMoveEvent event) {
+    _inputController.handlePointerMove(event);
+  }
+
+  @override
+  void onMouseMove(PointerHoverInfo info) {
+    _inputController.handleMouseMove(info);
   }
 
   void loadTitleBackground() {
@@ -327,17 +340,5 @@ class MyGame extends FlameGame
 
   void setCursorPosition(Vector2 position) {
     _cursorSystem.setCursorPosition(position);
-  }
-
-  @override
-  void onPointerMove(PointerMoveEvent event) {
-    _cursorSystem.setCursorPosition(event.localPosition);
-    playHover(); // Integrated Hover Sound
-  }
-
-  @override
-  void onMouseMove(PointerHoverInfo info) {
-    _cursorSystem.setCursorPosition(info.eventPosition.global);
-    playHover(); // Integrated Hover Sound
   }
 }

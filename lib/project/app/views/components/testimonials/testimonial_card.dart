@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/models/testimonial_node.dart';
-import '../wrapped_text_component.dart';
+import 'package:flutter_home_page/project/app/views/components/wrapped_text_component.dart';
 
 class TestimonialCard extends PositionComponent with HasPaint {
   final TestimonialNode node;

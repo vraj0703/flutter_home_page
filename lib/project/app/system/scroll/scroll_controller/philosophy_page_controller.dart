@@ -5,7 +5,7 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/peelin
 import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
-import '../../interfaces/scroll_observer.dart';
+import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 
 class PhilosophyPageController implements ScrollObserver {
   final PhilosophyTextComponent component;
@@ -78,7 +78,8 @@ class PhilosophyPageController implements ScrollObserver {
     // Start card after text is fully visible (philosophyFadeInEnd)
     double stackAlpha = 0.0;
     const cardDelayAfterText = 200.0; // 200px delay after text appears
-    final cardStartScroll = ScrollSequenceConfig.philosophyFadeInEnd + cardDelayAfterText;
+    final cardStartScroll =
+        ScrollSequenceConfig.philosophyFadeInEnd + cardDelayAfterText;
 
     if (scrollOffset < cardStartScroll) {
       stackAlpha = 0.0;
@@ -153,7 +154,9 @@ class PhilosophyPageController implements ScrollObserver {
           liftVector = GameLayout.philosophyStackLiftVector * curvedT;
           // More dramatic rotation (0.2 → 0.35 for planning.md spec)
           rotation =
-              (GameLayout.philStackRotation * 1.75) * curvedT * (i % 2 == 0 ? 1 : -1);
+              (GameLayout.philStackRotation * 1.75) *
+              curvedT *
+              (i % 2 == 0 ? 1 : -1);
           alpha = 1.0 - t;
           // More dramatic scale change (planning.md: 1.05+0.15t instead of 1.0+0.1t)
           scale = 1.05 + (0.15 * curvedT);

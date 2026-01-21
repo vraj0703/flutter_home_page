@@ -4,7 +4,7 @@ import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 
-import 'bouncing_arrow.dart';
+import 'package:flutter_home_page/project/app/views/widgets/bouncing_arrow.dart';
 
 class HomeOverlay extends StatelessWidget {
   final Animation<double> bounceAnimation;

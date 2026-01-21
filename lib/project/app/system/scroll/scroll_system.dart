@@ -2,7 +2,7 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter_home_page/project/app/config/game_physics.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
-import '../interfaces/scroll_observer.dart';
+import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 
 /// Manages the global scroll state and notifies observers.
 /// Uses a Target/Current model with spring physics for snapping.

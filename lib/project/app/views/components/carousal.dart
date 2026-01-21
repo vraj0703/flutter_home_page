@@ -5,7 +5,7 @@ import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
-import 'card.dart';
+import 'package:flutter_home_page/project/app/views/components/card.dart';
 
 class ProjectCarouselComponent extends PositionComponent
     with HasGameReference<MyGame> {

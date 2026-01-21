@@ -4,7 +4,7 @@ import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/views/components/experience/experience_page_component.dart';
-import '../../interfaces/scroll_observer.dart';
+import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 
 class ExperiencePageController implements ScrollObserver {
   final ExperiencePageComponent component;

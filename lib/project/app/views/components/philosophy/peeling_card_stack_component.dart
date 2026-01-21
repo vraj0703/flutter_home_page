@@ -2,7 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
-import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 import 'philosophy_card.dart';

@@ -8,7 +8,7 @@ import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/utils/wait_effect.dart';
 
-import '../fade_text.dart';
+import 'package:flutter_home_page/project/app/views/components/fade_text.dart';
 
 class CinematicTitleComponent extends PositionComponent with HasGameReference {
   final String primaryText;

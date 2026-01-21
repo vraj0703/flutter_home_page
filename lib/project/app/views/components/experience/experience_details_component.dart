@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/models/experience_node.dart';
-import 'experience_description_item.dart';
+import 'package:flutter_home_page/project/app/views/components/experience/experience_description_item.dart';
 
 class ExperienceDetailsComponent extends PositionComponent with HasPaint {
   final List<ExperienceNode> data;

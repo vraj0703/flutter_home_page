@@ -1,11 +1,11 @@
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
-import '../interfaces/scroll_observer.dart';
+import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 
-class UIOpacityObserver extends ScrollObserver {
+class OpacityObserver extends ScrollObserver {
   final StateProvider stateProvider;
 
-  UIOpacityObserver({required this.stateProvider});
+  OpacityObserver({required this.stateProvider});
 
   @override
   void onScroll(double scrollOffset) {

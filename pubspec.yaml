@@ -131,11 +131,13 @@ flutter:
     - assets/audio/bold_text_swell.mp3
     - assets/audio/ting.wav
     - assets/images/logo.png
+    - assets/images/cloud_noise.png
     - assets/vectors/down_arrow.svg
 
   shaders:
     - assets/shaders/god_rays.frag
     - assets/shaders/logo.frag
+    - assets/shaders/clouds.frag
     - assets/shaders/background_run_v2.frag
     - assets/shaders/metallic_text.frag
     - assets/shaders/shine_text.frag

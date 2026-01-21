@@ -5,24 +5,25 @@ import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/models/game_components.dart';
-import 'package:flutter_home_page/project/app/system/scroll_controller/background_tint_controller.dart';
-import 'package:flutter_home_page/project/app/system/scroll_controller/bold_text_controller.dart';
-import 'package:flutter_home_page/project/app/system/scroll_controller/contact_page_controller.dart';
-import 'package:flutter_home_page/project/app/system/scroll_controller/experience_page_controller.dart';
-import 'package:flutter_home_page/project/app/system/scroll_controller/god_ray_controller.dart';
-import 'package:flutter_home_page/project/app/system/scroll_controller/philosophy_page_controller.dart';
-import 'package:flutter_home_page/project/app/system/scroll_controller/work_experience_title_controller.dart';
-import 'package:flutter_home_page/project/app/system/scroll_effects/opacity.dart';
-import 'package:flutter_home_page/project/app/system/scroll_effects/parallax.dart';
-import 'package:flutter_home_page/project/app/system/scroll_orchestrator.dart';
-import 'package:flutter_home_page/project/app/system/scroll_system.dart';
-import 'package:flutter_home_page/project/app/system/ui_opacity_observer.dart';
-import 'scroll_controller/testimonial_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/contact_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/experience_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_orchestrator.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/background_tint_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/bold_text_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/god_ray_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/philosophy_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/work_experience_title_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/opacity.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
+import 'package:flutter_home_page/project/app/system/opacity/opacity_observer.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/testimonial_page_controller.dart';
+import 'scroll_effects/parallax.dart';
 
 class GameScrollConfigurator {
   GodRayController? _godRayController;
 
   GodRayController? get godRayController => _godRayController;
+
   void configureScroll({
     required ScrollOrchestrator scrollOrchestrator,
     required ScrollSystem scrollSystem,
@@ -145,7 +146,7 @@ class GameScrollConfigurator {
       ExperiencePageController(component: components.experiencePage),
     );
 
-    scrollSystem.register(UIOpacityObserver(stateProvider: stateProvider));
+    scrollSystem.register(OpacityObserver(stateProvider: stateProvider));
 
     scrollSystem.register(
       TestimonialPageController(component: components.testimonialPage),

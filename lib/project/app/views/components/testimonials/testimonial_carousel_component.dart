@@ -3,7 +3,7 @@ import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/models/testimonial_node.dart';
 
-import 'testimonial_card.dart';
+import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_card.dart';
 
 class TestimonialCarouselComponent extends PositionComponent with HasPaint {
   final List<TestimonialNode> data;
@@ -36,8 +36,8 @@ class TestimonialCarouselComponent extends PositionComponent with HasPaint {
 
       final baseX =
           startX +
-              (i * (GameLayout.testiCardWidth + spacing)) +
-              (GameLayout.testiCardWidth / 2);
+          (i * (GameLayout.testiCardWidth + spacing)) +
+          (GameLayout.testiCardWidth / 2);
       _baseXPositions.add(baseX);
 
       card.position = Vector2(baseX, 0);

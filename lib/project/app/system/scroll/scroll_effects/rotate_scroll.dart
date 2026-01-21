@@ -1,4 +1,5 @@
 import 'package:flame/components.dart';
+
 import 'scroll_effect.dart';
 
 class RotateScrollEffect extends ScrollEffect<PositionComponent> {

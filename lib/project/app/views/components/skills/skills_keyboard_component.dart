@@ -6,7 +6,7 @@ import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_strings.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 
-import 'keycap_component.dart';
+import 'package:flutter_home_page/project/app/views/components/skills/keycap_component.dart';
 
 class SkillsKeyboardComponent extends PositionComponent with HasPaint {
   final FragmentShader? metallicShader;
@@ -45,7 +45,9 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
     if (t == 0.0 || t == 1.0) return t;
     const amplitude = 0.4;
     const period = 0.3;
-    return math.pow(2, -10 * t) * math.sin((t - amplitude / 4) * (2 * math.pi) / period) + 1;
+    return math.pow(2, -10 * t) *
+            math.sin((t - amplitude / 4) * (2 * math.pi) / period) +
+        1;
   }
 
   @override
@@ -106,7 +108,12 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
     add(_chassisSide);
 
     // Layer 3: Main with bevel gradient
-    final bevelRect = Rect.fromLTWH(chassisPos.x, chassisPos.y, chassisWidth, chassisHeight);
+    final bevelRect = Rect.fromLTWH(
+      chassisPos.x,
+      chassisPos.y,
+      chassisWidth,
+      chassisHeight,
+    );
     final bevelGradient = LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
@@ -146,7 +153,8 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
         if (i < count - 1) rowWidth += spacing;
       }
 
-      double startX = chassisPos.x + (chassisWidth - rowWidth) / 2 + rowOffsets[r];
+      double startX =
+          chassisPos.x + (chassisWidth - rowWidth) / 2 + rowOffsets[r];
       double currentX = startX;
 
       for (int k = 0; k < count; k++) {
@@ -168,10 +176,7 @@ class SkillsKeyboardComponent extends PositionComponent with HasPaint {
           shader: isHeroKey ? metallicShader : null,
         );
         key.opacity = opacity;
-        key.position = Vector2(
-          currentX,
-          startY + r * rowSpacing,
-        );
+        key.position = Vector2(currentX, startY + r * rowSpacing);
         add(key);
 
         currentX += keySize + spacing;

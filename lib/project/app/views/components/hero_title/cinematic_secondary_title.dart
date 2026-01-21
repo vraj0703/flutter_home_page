@@ -5,7 +5,7 @@ import 'package:flutter/material.dart'
     show Colors, TextStyle, FontWeight, Curves, Cubic, TextPainter, TextSpan;
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
-import '../fade_text.dart';
+import 'package:flutter_home_page/project/app/views/components/fade_text.dart';
 
 class CinematicSecondaryTitleComponent extends PositionComponent
     with HasGameReference

@@ -12,9 +12,9 @@ import 'package:flutter_home_page/project/app/config/game_data.dart';
 import 'package:flutter_home_page/project/app/models/experience_node.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
-import 'orbital_arcs_component.dart';
-import 'satellite_component.dart';
-import 'experience_details_component.dart';
+import 'package:flutter_home_page/project/app/views/components/experience/orbital_arcs_component.dart';
+import 'package:flutter_home_page/project/app/views/components/experience/satellite_component.dart';
+import 'package:flutter_home_page/project/app/views/components/experience/experience_details_component.dart';
 
 class ExperiencePageComponent extends PositionComponent
     with HasGameReference<MyGame>, HasPaint {

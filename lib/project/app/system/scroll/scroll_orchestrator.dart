@@ -1,6 +1,6 @@
 import 'package:flame/components.dart';
-import 'scroll_effects/scroll_effect.dart';
-import '../interfaces/scroll_observer.dart';
+import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/scroll_effect.dart';
 
 /// Binds components to specific scroll effects and triggers them.
 class ScrollOrchestrator implements ScrollObserver {
