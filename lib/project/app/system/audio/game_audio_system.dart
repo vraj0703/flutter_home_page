@@ -21,6 +21,7 @@ class GameAudioSystem {
       GameAudioConfig.slideInSfx,
       GameAudioConfig.bouncyArrowSfx,
       GameAudioConfig.boldTextSwell,
+      GameAudioConfig.philosophyEntrySfx,
     ]);
 
     // Start BGM loop (can be toggled in settings later)
@@ -121,6 +122,13 @@ class GameAudioSystem {
 
   void playTing() {
     _safePlay(GameAudioConfig.tingSfx, volume: GameAudioConfig.sfxVolume);
+  }
+
+  void playPhilosophyEntry() {
+    _safePlay(
+      GameAudioConfig.philosophyEntrySfx,
+      volume: GameAudioConfig.sfxVolume,
+    );
   }
 
   void playScrollTick() {

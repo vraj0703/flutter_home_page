@@ -14,9 +14,11 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
   /// Time accumulator for shader animation
   double _time = 0.0;
 
+  /// Flag to track if warmup render has occurred
+  bool _hasWarmedUp = false;
+
   @override
   Future<void> onLoad() async {
-    priority = -100; // Ensure it renders behind everything
     await super.onLoad();
 
     // 1. Load Shader (Already registered in pubspec)
@@ -47,6 +49,12 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
 
   @override
   void render(Canvas canvas) {
+    // Warmup: render once invisibly to compile shader
+    if (!_hasWarmedUp) {
+      _warmupShader(canvas);
+      _hasWarmedUp = true;
+    }
+
     if (opacity <= 0.0) return;
 
     // Uniform mapping for beach.frag:
@@ -68,6 +76,23 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
 
     canvas.drawRect(size.toRect(), Paint()..shader = _shader);
 
+    canvas.restore();
+  }
+
+  /// Pre-compile shader by rendering it once invisibly
+  void _warmupShader(Canvas canvas) {
+    // Set minimal uniforms
+    _shader.setFloat(0, size.x);
+    _shader.setFloat(1, size.y);
+    _shader.setFloat(2, 0.0);
+
+    // Render to tiny 1x1 rect at opacity 0 (invisible but compiles shader)
+    final warmupPaint = Paint()
+      ..shader = _shader
+      ..color = const Color(0x00000000);
+
+    canvas.saveLayer(const Rect.fromLTWH(0, 0, 1, 1), warmupPaint);
+    canvas.drawRect(const Rect.fromLTWH(0, 0, 1, 1), warmupPaint);
     canvas.restore();
   }
 }

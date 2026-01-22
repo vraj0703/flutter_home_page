@@ -122,6 +122,7 @@ class MyGame extends FlameGame
       godRay: _componentFactory.godRay,
       backgroundTint: _componentFactory.backgroundTint,
       boldTextReveal: _componentFactory.boldTextReveal,
+      cloudBackground: _componentFactory.cloudBackground,
       philosophyText: _componentFactory.philosophyText,
       cardStack: _componentFactory.cardStack,
       workExperienceTitle: _componentFactory.workExperienceTitle,
@@ -161,6 +162,8 @@ class MyGame extends FlameGame
   void playSlideIn() => _audioSystem.playSlideIn();
 
   void playBouncyArrow() => _audioSystem.playBouncyArrow();
+
+  void playPhilosophyEntry() => _audioSystem.playPhilosophyEntry();
 
   void syncBoldTextAudio(double progress, {double velocity = 0.0}) =>
       _audioSystem.syncBoldTextAudio(progress, velocity: velocity);
@@ -435,8 +438,15 @@ class MyGame extends FlameGame
 
     // 2. Create Managers
     // Note: MaxHeights are defined in managers (or hardcoded/config).
-    final boldManager = BoldTextManager(controller: boldTextController);
-    final philManager = PhilosophyManager(controller: philosophyController);
+    final boldManager = BoldTextManager(
+      controller: boldTextController,
+      cloudBackground: _gameComponents.cloudBackground,
+    );
+    final philManager = PhilosophyManager(
+      controller: philosophyController,
+      cloudBackground: _gameComponents.cloudBackground,
+      playSound: playPhilosophyEntry,
+    );
     final workManager = WorkExperienceManager(controller: workExpController);
     final expManager = ExperienceManager(controller: experienceController);
     final testiManager = TestimonialManager(controller: testimonialController);

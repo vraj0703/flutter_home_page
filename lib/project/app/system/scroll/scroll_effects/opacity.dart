@@ -3,7 +3,6 @@ import 'package:flame/effects.dart';
 
 import 'scroll_effect.dart';
 
-
 class OpacityScrollEffect extends ScrollEffect<PositionComponent> {
   final double startOpacity;
   final double endOpacity;

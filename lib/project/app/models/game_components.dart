@@ -9,6 +9,7 @@ import 'package:flutter_home_page/project/app/views/components/hero_title/cinema
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/cloud_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
 
@@ -20,6 +21,7 @@ class GameComponents {
   final GodRayComponent godRay;
   final BackgroundTintComponent backgroundTint;
   final BoldTextRevealComponent boldTextReveal;
+  final CloudBackgroundComponent cloudBackground;
   final PhilosophyTextComponent philosophyText;
   final PeelingCardStackComponent cardStack;
   final WorkExperienceTitleComponent workExperienceTitle;
@@ -35,6 +37,7 @@ class GameComponents {
     required this.godRay,
     required this.backgroundTint,
     required this.boldTextReveal,
+    required this.cloudBackground,
     required this.philosophyText,
     required this.cardStack,
     required this.workExperienceTitle,
@@ -52,6 +55,7 @@ class GameComponents {
     // Assuming BoldTextRevealComponent respects opacity (standard PositionComponent).
     boldTextReveal.opacity = 0.0;
 
+    // cloudBackground is managed by PhilosophyManager, don't reset it here
     philosophyText.opacity = 0.0;
     cardStack.opacity = 0.0;
     workExperienceTitle.opacity = 0.0;
