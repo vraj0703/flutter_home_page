@@ -4,10 +4,9 @@ import 'package:flame/events.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
+import 'package:flutter_home_page/project/app/interfaces/section_manager.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-
-import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 
 part 'scene_event.dart';
 
@@ -18,7 +17,8 @@ part 'scene_bloc.freezed.dart';
 class SceneBloc extends Bloc<SceneEvent, SceneState>
     implements Queuer, StateProvider {
   double _revealProgress = 0.0;
-  double _globalScrollOffset = 0.0;
+  List<SectionManager> _sections = [];
+  int _currentIndex = 0;
 
   late SvgAssetLoader downArrowLoader;
 
@@ -33,6 +33,10 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     on<OnScrollSequence>(_onScrollSequence);
     on<ForceScrollOffset>(_onForceScrollOffset);
     on<UpdateUIOpacity>(_updateUIOpacity);
+    on<RegisterSections>(_onRegisterSections);
+    on<NextSection>(_onNextSection);
+    on<PreviousSection>(_onPreviousSection);
+    on<UpdateSectionOffset>(_onUpdateSectionOffset);
   }
 
   @override
@@ -105,16 +109,22 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
 
   FutureOr<void> _onScroll(OnScroll event, Emitter<SceneState> emit) {
     if (state is Title) {
-      emit(const SceneState.boldText());
+      emit(const SceneState.boldText(offset: 0.0, uiOpacity: 1.0));
     }
+  }
+
+  FutureOr<void> _onRegisterSections(
+    RegisterSections event,
+    Emitter<SceneState> emit,
+  ) {
+    _sections = event.managers;
   }
 
   FutureOr<void> _onScrollSequence(
     OnScrollSequence event,
     Emitter<SceneState> emit,
   ) async {
-    _globalScrollOffset += event.delta;
-
+    if (_sections.isEmpty) return;
     if (state is Loading ||
         state is Logo ||
         state is LogoOverlayRemoving ||
@@ -122,34 +132,107 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
       return;
     }
 
-    if (_globalScrollOffset < ScrollSequenceConfig.philosophyStart) {
-      if (state is! BoldText) {
-        emit(const SceneState.boldText());
-      }
-    } else if (_globalScrollOffset <
-        ScrollSequenceConfig.workExpTitleEntranceStart) {
-      if (state is! Philosophy) {
-        emit(const SceneState.philosophy());
-      }
-    } else if (_globalScrollOffset <
-        ScrollSequenceConfig.experienceEntranceStart) {
-      if (state is! WorkExperience) {
-        emit(const SceneState.workExperience());
-      }
-    } else if (_globalScrollOffset <
-        ScrollSequenceConfig.testimonialEntranceStart) {
-      if (state is! Experience) {
-        emit(const SceneState.experience());
-      }
-    } else if (_globalScrollOffset <
-        ScrollSequenceConfig.contactEntranceStart) {
-      if (state is! Testimonials) {
-        emit(const SceneState.testimonials());
-      }
+    if (_currentIndex == 0 && state is! BoldText) {}
+
+    final currentOffset = state.mapOrNull(
+      boldText: (s) => s.offset,
+      philosophy: (s) => s.offset,
+      workExperience: (s) => s.offset,
+      experience: (s) => s.offset,
+      testimonials: (s) => s.offset,
+      contact: (s) => s.offset,
+    );
+
+    if (currentOffset == null) return;
+
+    final currentManager = _sections[_currentIndex];
+    final newOffset = currentOffset + event.delta;
+
+    if (newOffset > currentManager.maxHeight) {
+      add(
+        SceneEvent.nextSection(overflow: newOffset - currentManager.maxHeight),
+      );
+    } else if (newOffset < 0) {
+      add(SceneEvent.previousSection(underflow: newOffset));
     } else {
-      if (state is! Contact) {
-        emit(const SceneState.contact());
-      }
+      add(SceneEvent.updateSectionOffset(newOffset));
+    }
+  }
+
+  FutureOr<void> _onNextSection(NextSection event, Emitter<SceneState> emit) {
+    if (_currentIndex < _sections.length - 1) {
+      _currentIndex++;
+      _emitStateForIndex(_currentIndex, event.overflow, emit);
+      _sections[_currentIndex].onActivate();
+    } else {
+       add(SceneEvent.updateSectionOffset(_sections[_currentIndex].maxHeight));
+    }
+  }
+
+  FutureOr<void> _onPreviousSection(
+    PreviousSection event,
+    Emitter<SceneState> emit,
+  ) {
+    if (_currentIndex > 0) {
+      _currentIndex--;
+      final prevMax = _sections[_currentIndex].maxHeight;
+      final startOffset = prevMax + event.underflow; // underflow is negative
+      _emitStateForIndex(_currentIndex, startOffset, emit);
+      _sections[_currentIndex].onActivate();
+    } else {
+      // Clamp at 0
+      add(const SceneEvent.updateSectionOffset(0.0));
+    }
+  }
+
+  FutureOr<void> _onUpdateSectionOffset(
+    UpdateSectionOffset event,
+    Emitter<SceneState> emit,
+  ) {
+    final offset = event.offset;
+    _emitStateForIndex(_currentIndex, offset, emit);
+    _sections[_currentIndex].onScroll(offset);
+  }
+
+  void _emitStateForIndex(int index, double offset, Emitter<SceneState> emit) {
+    // Mapping Index -> State
+    // 0: BoldText
+    // 1: Philosophy
+    // 2: WorkExperience (Title)
+    // 3: Experience
+    // 4: Testimonials
+    // 5: Contact
+
+    // We assume _sections is ordered correctly.
+    // Creating state based on index.
+
+    // NOTE: Ideally we'd store the TYPE in SectionManager or separate config.
+    // implementation simplification: switch case on index.
+
+    switch (index) {
+      case 0:
+        // Preserve uiOpacity from current state if it exists
+        final currentOpacity = state.maybeMap(
+          boldText: (s) => s.uiOpacity,
+          orElse: () => 1.0,
+        );
+        emit(SceneState.boldText(offset: offset, uiOpacity: currentOpacity));
+        break;
+      case 1:
+        emit(SceneState.philosophy(offset: offset));
+        break;
+      case 2:
+        emit(SceneState.workExperience(offset: offset));
+        break;
+      case 3:
+        emit(SceneState.experience(offset: offset));
+        break;
+      case 4:
+        emit(SceneState.testimonials(offset: offset));
+        break;
+      case 5:
+        emit(SceneState.contact(offset: offset));
+        break;
     }
   }
 
@@ -157,24 +240,9 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     ForceScrollOffset event,
     Emitter<SceneState> emit,
   ) {
-    _globalScrollOffset = event.offset;
-     if (_globalScrollOffset < ScrollSequenceConfig.philosophyStart) {
-      emit(const SceneState.boldText());
-    } else if (_globalScrollOffset <
-        ScrollSequenceConfig.workExpTitleEntranceStart) {
-      emit(const SceneState.philosophy());
-    } else if (_globalScrollOffset <
-        ScrollSequenceConfig.experienceEntranceStart) {
-      emit(const SceneState.workExperience());
-    } else if (_globalScrollOffset <
-        ScrollSequenceConfig.testimonialEntranceStart) {
-      emit(const SceneState.experience());
-    } else if (_globalScrollOffset <
-        ScrollSequenceConfig.contactEntranceStart) {
-      emit(const SceneState.testimonials());
-    } else {
-      emit(const SceneState.contact());
-    }
+    // Implementation for later if needed. For now empty or simple reset.
+    _currentIndex = 0;
+    emit(const SceneState.boldText(offset: 0.0, uiOpacity: 1.0));
   }
 
   FutureOr<void> _updateUIOpacity(
@@ -183,8 +251,10 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   ) {
     if (state is BoldText) {
       final menuState = state as BoldText;
-      if (menuState.uiOpacity != event.opacity) {
-        emit(menuState.copyWith(uiOpacity: event.opacity));
+      // Defensive clamping to ensure valid opacity range
+      final clampedOpacity = event.opacity.clamp(0.0, 1.0);
+      if (menuState.uiOpacity != clampedOpacity) {
+        emit(menuState.copyWith(uiOpacity: clampedOpacity));
       }
     }
   }

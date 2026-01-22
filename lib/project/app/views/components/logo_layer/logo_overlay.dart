@@ -152,12 +152,12 @@ class LogoOverlayComponent extends PositionComponent
       },
       titleLoading: () {},
       title: () {},
-      boldText: (uiOpacity) {},
-      philosophy: () {},
-      workExperience: () {},
-      experience: () {},
-      testimonials: () {},
-      contact: () {},
+      boldText: (_, uiOpacity) {},
+      philosophy: (_) {},
+      workExperience: (_) {},
+      experience: (_) {},
+      testimonials: (_) {},
+      contact: (_) {},
     );
   }
 
@@ -255,12 +255,12 @@ class LogoOverlayComponent extends PositionComponent
       },
       titleLoading: () {},
       title: () {},
-      boldText: (uiOpacity) {},
-      philosophy: () {},
-      workExperience: () {},
-      experience: () {},
-      testimonials: () {},
-      contact: () {},
+      boldText: (_, uiOpacity) {},
+      philosophy: (_) {},
+      workExperience: (_) {},
+      experience: (_) {},
+      testimonials: (_) {},
+      contact: (_) {},
     );
   }
 

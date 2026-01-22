@@ -2,7 +2,10 @@ import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
+import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/models/game_components.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/opacity.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/parallax.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_orchestrator.dart';
 
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
@@ -18,7 +21,20 @@ import 'package:flutter_home_page/project/app/system/cursor/game_cursor_system.d
 import 'package:flutter_home_page/project/app/system/animator/game_logo_animator.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/system/registration/game_component_factory.dart';
-import 'package:flutter_home_page/project/app/system/scroll/game_scroll_configurator.dart';
+import 'package:flutter_home_page/project/app/system/scroll/managers/bold_text_manager.dart';
+import 'package:flutter_home_page/project/app/system/scroll/managers/philosophy_manager.dart';
+import 'package:flutter_home_page/project/app/system/scroll/managers/work_experience_manager.dart';
+import 'package:flutter_home_page/project/app/system/scroll/managers/experience_manager.dart';
+import 'package:flutter_home_page/project/app/system/scroll/managers/testimonial_manager.dart';
+import 'package:flutter_home_page/project/app/system/scroll/managers/contact_manager.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/bold_text_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/contact_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/experience_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/philosophy_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/testimonial_page_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/work_experience_title_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/god_ray_controller.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/background_tint_controller.dart';
 import 'package:flutter_home_page/project/app/system/input/game_input_controller.dart';
 import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart'; // Added import
 
@@ -46,7 +62,8 @@ class MyGame extends FlameGame
   final GameAudioSystem _audioSystem = GameAudioSystem(); // Added instance
 
   final GameComponentFactory _componentFactory = GameComponentFactory();
-  final GameScrollConfigurator _scrollConfigurator = GameScrollConfigurator();
+  // final GameScrollConfigurator _scrollConfigurator = GameScrollConfigurator(); // Removed
+  GodRayController? _godRayController;
   final GameCursorSystem _cursorSystem = GameCursorSystem();
   final GameLogoAnimator _logoAnimator = GameLogoAnimator();
 
@@ -115,6 +132,9 @@ class MyGame extends FlameGame
 
     // Initialize Global Config
     _configureGlobal();
+
+    // Initialize Section Managers
+    _initializeSections();
 
     // Listen to State Changes
     stateProvider.stream.listen(_handleStateChange);
@@ -228,22 +248,22 @@ class MyGame extends FlameGame
       title: () {
         _centerTitles(center);
       },
-      boldText: (uiOpacity) {
+      boldText: (_, uiOpacity) {
         _logoAnimator.updateMenuLayoutTargets(size);
       },
-      philosophy: () {
+      philosophy: (_) {
         _logoAnimator.updateMenuLayoutTargets(size);
       },
-      workExperience: () {
+      workExperience: (_) {
         _logoAnimator.updateMenuLayoutTargets(size);
       },
-      experience: () {
+      experience: (_) {
         _logoAnimator.updateMenuLayoutTargets(size);
       },
-      testimonials: () {
+      testimonials: (_) {
         _logoAnimator.updateMenuLayoutTargets(size);
       },
-      contact: () {
+      contact: (_) {
         _logoAnimator.updateMenuLayoutTargets(size);
       },
     );
@@ -274,12 +294,12 @@ class MyGame extends FlameGame
 
     // Delegate updates
     final isMenu = stateProvider.sceneState().maybeWhen(
-      boldText: (_) => true,
-      philosophy: () => true,
-      workExperience: () => true,
-      experience: () => true,
-      testimonials: () => true,
-      contact: () => true,
+      boldText: (_, _) => true,
+      philosophy: (_) => true,
+      workExperience: (_) => true,
+      experience: (_) => true,
+      testimonials: (_) => true,
+      contact: (_) => true,
       title: () => true,
       orElse: () => false,
     );
@@ -304,10 +324,8 @@ class MyGame extends FlameGame
     scrollSystem.update(dt);
 
     // Update god ray pulse animation
-    final godRayController = _scrollConfigurator.godRayController;
-    if (godRayController != null) {
-      godRayController.updatePulse(dt, scrollSystem.scrollOffset);
-    }
+    // final godRayController = _scrollConfigurator.godRayController; // Removed
+    _godRayController?.updatePulse(dt, scrollSystem.scrollOffset);
 
     stateProvider.sceneState().when(
       loading: (isSvgReady, isGameReady) {
@@ -326,12 +344,12 @@ class MyGame extends FlameGame
       },
       titleLoading: () {},
       title: () {},
-      boldText: (uiOpacity) => _handleBoldTextUpdate(uiOpacity),
-      philosophy: () {},
-      workExperience: () {},
-      experience: () {},
-      testimonials: () {},
-      contact: () {},
+      boldText: (_, uiOpacity) => _handleBoldTextUpdate(uiOpacity),
+      philosophy: (_) {},
+      workExperience: (_) {},
+      experience: (_) {},
+      testimonials: (_) {},
+      contact: (_) {},
     );
     _inactivityTimer.update(dt);
   }
@@ -354,11 +372,86 @@ class MyGame extends FlameGame
   }
 
   void _configureGlobal() {
-    _scrollConfigurator.configureGlobal(
-      scrollOrchestrator: scrollOrchestrator,
-      scrollSystem: scrollSystem,
-      components: _gameComponents,
+    // --- Global Effects ---
+    scrollOrchestrator.addBinding(
+      _gameComponents.dimLayer,
+      OpacityScrollEffect(
+        startScroll: ScrollSequenceConfig.dimLayerStart,
+        endScroll: ScrollSequenceConfig.dimLayerEnd,
+        startOpacity: 0.0,
+        endOpacity: ScrollSequenceConfig.dimLayerFinalAlpha,
+        curve: GameCurves.smoothDecel,
+      ),
+    );
+
+    // --- Controllers ---
+    _godRayController = GodRayController(
+      component: _gameComponents.godRay,
       screenSize: size,
+    );
+    scrollSystem.register(_godRayController!);
+
+    scrollSystem.register(
+      BackgroundTintController(component: _gameComponents.backgroundTint),
+    );
+  }
+
+  void _initializeSections() {
+    // 1. Create Controllers
+    final boldTextController = BoldTextController(
+      component: _gameComponents.boldTextReveal,
+      screenWidth: size.x,
+      centerPosition: size / 2,
+    );
+
+    final philosophyController = PhilosophyPageController(
+      component: _gameComponents.philosophyText,
+      cardStack: _gameComponents.cardStack,
+      initialTextPos: Vector2(
+        size.x * GameLayout.philosophyTextXRatio,
+        size.y / 2,
+      ),
+      initialStackPos: Vector2(size.x * GameLayout.cardStackXRatio, size.y / 2),
+    );
+
+    final workExpController = WorkExperienceTitleController(
+      component: _gameComponents.workExperienceTitle,
+      screenHeight: size.y,
+      centerPosition: size / 2,
+    );
+
+    final experienceController = ExperiencePageController(
+      component: _gameComponents.experiencePage,
+    );
+
+    final testimonialController = TestimonialPageController(
+      component: _gameComponents.testimonialPage,
+    );
+
+    final contactController = ContactPageController(
+      component: _gameComponents.contactPage,
+      screenHeight: size.y,
+    );
+
+    // 2. Create Managers
+    // Note: MaxHeights are defined in managers (or hardcoded/config).
+    final boldManager = BoldTextManager(controller: boldTextController);
+    final philManager = PhilosophyManager(controller: philosophyController);
+    final workManager = WorkExperienceManager(controller: workExpController);
+    final expManager = ExperienceManager(controller: experienceController);
+    final testiManager = TestimonialManager(controller: testimonialController);
+    final contactManager = ContactManager(controller: contactController);
+
+    // 3. Register with Bloc
+    queuer.queue(
+      event: SceneEvent.registerSections([
+        boldManager,
+        philManager,
+        workManager,
+        expManager,
+        testiManager,
+        contactManager,
+      ]),
     );
   }
 
@@ -385,44 +478,87 @@ class MyGame extends FlameGame
       titleLoading: () => enterTitle(),
       title: () {
         playBouncyArrow();
-        _scrollConfigurator.configureTitle(components: _gameComponents);
+        // Restore Title Opacity if needed suitable replacement for configureTitle
+        // For now relying on default state or previous scene reset
+        _gameComponents.cinematicTitle.opacity = 1.0;
+        _gameComponents.cinematicTitle.scale = Vector2.all(1.0);
+        _gameComponents.cinematicSecondaryTitle.opacity = 1.0;
+        _gameComponents.cinematicSecondaryTitle.scale = Vector2.all(1.0);
       },
-      boldText: (_) {
+      boldText: (_, __) {
         enterMenu();
-        _scrollConfigurator.configureBoldText(
-          scrollOrchestrator: scrollOrchestrator,
-          scrollSystem: scrollSystem,
-          components: _gameComponents,
-          screenSize: size,
-          stateProvider: stateProvider,
-        );
+        // Show BoldText component (hidden by hideAllSectionComponents)
+        _gameComponents.boldTextReveal.opacity = 1.0;
+
+        _addBoldTextBindings();
       },
-      philosophy: () => _scrollConfigurator.configurePhilosophy(
-        scrollSystem: scrollSystem,
-        components: _gameComponents,
-        screenSize: size,
-      ),
-      workExperience: () => _scrollConfigurator.configureWorkExperience(
-        scrollSystem: scrollSystem,
-        components: _gameComponents,
-        screenSize: size,
-      ),
-      experience: () => _scrollConfigurator.configureExperience(
-        scrollSystem: scrollSystem,
-        components: _gameComponents,
-        screenSize: size,
-      ),
-      testimonials: () => _scrollConfigurator.configureTestimonials(
-        scrollSystem: scrollSystem,
-        components: _gameComponents,
-        screenSize: size,
-      ),
-      contact: () => _scrollConfigurator.configureContact(
-        scrollSystem: scrollSystem,
-        components: _gameComponents,
-        screenSize: size,
-      ),
+      // Other sections handled by Managers + Bloc
       orElse: () {},
+    );
+  }
+
+  void _addBoldTextBindings() {
+    // Restore Positions
+    _gameComponents.cinematicTitle.position = size / 2;
+    _gameComponents.cinematicTitle.scale = Vector2.all(1.0);
+    _gameComponents.cinematicSecondaryTitle.position =
+        size / 2 + GameLayout.secTitleOffsetVector;
+
+    scrollOrchestrator.addBinding(
+      _gameComponents.cinematicTitle,
+      ParallaxScrollEffect(
+        startScroll: 0,
+        endScroll: ScrollSequenceConfig.titleParallaxEnd,
+        initialPosition: _gameComponents.cinematicTitle.position.clone(),
+        endOffset: GameLayout.parallaxEndVector,
+        curve: GameCurves.defaultSpring,
+      ),
+    );
+
+    scrollOrchestrator.addBinding(
+      _gameComponents.cinematicSecondaryTitle,
+      ParallaxScrollEffect(
+        startScroll: 0,
+        endScroll: ScrollSequenceConfig.secondaryTitleParallaxEnd,
+        initialPosition: _gameComponents.cinematicSecondaryTitle.position
+            .clone(),
+        endOffset: GameLayout.parallaxEndVector,
+        curve: GameCurves.logoSpring,
+      ),
+    );
+
+    // Fade Effects
+    scrollOrchestrator.addBinding(
+      _gameComponents.cinematicTitle,
+      OpacityScrollEffect(
+        startScroll: 0,
+        endScroll: ScrollSequenceConfig.titleFadeEnd,
+        startOpacity: 1.0,
+        endOpacity: 0.0,
+        curve: const ExponentialEaseOut(),
+      ),
+    );
+
+    scrollOrchestrator.addBinding(
+      _gameComponents.cinematicSecondaryTitle,
+      OpacityScrollEffect(
+        startScroll: 0,
+        endScroll: ScrollSequenceConfig.secondaryTitleFadeEnd,
+        startOpacity: 1.0,
+        endOpacity: 0.0,
+        curve: const ExponentialEaseOut(),
+      ),
+    );
+
+    scrollOrchestrator.addBinding(
+      _gameComponents.interactiveUI,
+      OpacityScrollEffect(
+        startScroll: 0,
+        endScroll: ScrollSequenceConfig.uiFadeEnd,
+        startOpacity: 1.0,
+        endOpacity: 0.0,
+        curve: const ExponentialEaseOut(),
+      ),
     );
   }
 

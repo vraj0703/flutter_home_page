@@ -137,8 +137,6 @@ flutter:
     - assets/audio/sol.wav
     - assets/audio/si.wav
     - assets/images/logo.png
-    - assets/images/cloud_noise.png
-    - assets/images/blue_noise.png
     - assets/vectors/down_arrow.svg
 
   shaders:

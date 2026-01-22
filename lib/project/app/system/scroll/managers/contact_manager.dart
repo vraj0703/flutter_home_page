@@ -1,0 +1,23 @@
+import 'package:flutter_home_page/project/app/interfaces/section_manager.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/contact_page_controller.dart';
+
+class ContactManager implements SectionManager {
+  final ContactPageController controller;
+
+  // 12650 to ~15650
+  @override
+  double get maxHeight => 3000.0;
+
+  ContactManager({required this.controller});
+
+  @override
+  void onActivate() {}
+
+  @override
+  void onDeactivate() {}
+
+  @override
+  void onScroll(double localOffset) {
+    controller.onScroll(localOffset);
+  }
+}

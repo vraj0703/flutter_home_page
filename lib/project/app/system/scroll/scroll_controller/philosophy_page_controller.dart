@@ -13,6 +13,12 @@ class PhilosophyPageController implements ScrollObserver {
   final Vector2 initialTextPos;
   final Vector2 initialStackPos;
 
+  // Local Constants
+  static const double fadeInEnd = 400.0;
+  static const double exitStart = 1300.0;
+  static const double end = 1600.0;
+  static const double peelStart = 450.0;
+
   PhilosophyPageController({
     required this.component,
     required this.cardStack,
@@ -21,42 +27,34 @@ class PhilosophyPageController implements ScrollObserver {
   });
 
   @override
-  void onScroll(double scrollOffset) {
-    _handleText(scrollOffset);
-    _handleStack(scrollOffset);
+  void onScroll(double localOffset) {
+    _handleText(localOffset);
+    _handleStack(localOffset);
   }
 
-  void _handleText(double scrollOffset) {
+  void _handleText(double offset) {
     const exponentialEaseOut = ExponentialEaseOut();
 
     double opacity = 0.0;
     double scale = 0.0;
     Vector2 pos = initialTextPos.clone();
 
-    if (scrollOffset < ScrollSequenceConfig.philosophyStart) {
+    if (offset < 0) {
       opacity = 0.0;
       scale = 0.0;
       pos = initialTextPos;
-    } else if (scrollOffset < ScrollSequenceConfig.philosophyFadeInEnd) {
-      final t =
-          ((scrollOffset - ScrollSequenceConfig.philosophyStart) /
-                  (ScrollSequenceConfig.philosophyFadeInEnd -
-                      ScrollSequenceConfig.philosophyStart))
-              .clamp(0.0, 1.0);
+    } else if (offset < fadeInEnd) {
+      final t = (offset / fadeInEnd).clamp(0.0, 1.0);
       opacity = exponentialEaseOut.transform(t);
       // Zoom in from 0.5 to 1.0
       scale = 0.5 + (0.5 * exponentialEaseOut.transform(t));
       pos = initialTextPos;
-    } else if (scrollOffset < ScrollSequenceConfig.philosophyExitStart) {
+    } else if (offset < exitStart) {
       opacity = 1.0;
       scale = 1.0;
       pos = initialTextPos;
-    } else if (scrollOffset < ScrollSequenceConfig.philosophyEnd) {
-      final t =
-          ((scrollOffset - ScrollSequenceConfig.philosophyExitStart) /
-                  (ScrollSequenceConfig.philosophyEnd -
-                      ScrollSequenceConfig.philosophyExitStart))
-              .clamp(0.0, 1.0);
+    } else if (offset < end) {
+      final t = ((offset - exitStart) / (end - exitStart)).clamp(0.0, 1.0);
       final curvedT = exponentialEaseOut.transform(t);
       opacity = 1.0 - curvedT;
       scale = 1.0;
@@ -71,21 +69,20 @@ class PhilosophyPageController implements ScrollObserver {
     component.position = pos;
   }
 
-  void _handleStack(double scrollOffset) {
+  void _handleStack(double offset) {
     const exponentialEaseOut = ExponentialEaseOut();
     const gentleSpring = GameCurves.philosophySpring;
 
-    // Start card after text is fully visible (philosophyFadeInEnd)
+    // Start card after text is fully visible (fadeInEnd)
     double stackAlpha = 0.0;
-    const cardDelayAfterText = 200.0; // 200px delay after text appears
-    final cardStartScroll =
-        ScrollSequenceConfig.philosophyFadeInEnd + cardDelayAfterText;
+    const cardDelayAfterText = 200.0;
+    const cardStartScroll = fadeInEnd + cardDelayAfterText; // 600
 
-    if (scrollOffset < cardStartScroll) {
+    if (offset < cardStartScroll) {
       stackAlpha = 0.0;
-    } else if (scrollOffset < cardStartScroll + 300.0) {
+    } else if (offset < cardStartScroll + 300.0) {
       stackAlpha = exponentialEaseOut.transform(
-        ((scrollOffset - cardStartScroll) / 300.0).clamp(0.0, 1.0),
+        ((offset - cardStartScroll) / 300.0).clamp(0.0, 1.0),
       );
     } else {
       stackAlpha = 1.0;
@@ -95,7 +92,6 @@ class PhilosophyPageController implements ScrollObserver {
     cardStack.position = initialStackPos;
 
     final cards = cardStack.cards;
-    final peelStart = ScrollSequenceConfig.philosophyPeelStart;
     final peelDuration = ScrollSequenceConfig.philosophyPeelDuration;
     final peelDelay = ScrollSequenceConfig.philosophyPeelDelay;
 
@@ -112,12 +108,10 @@ class PhilosophyPageController implements ScrollObserver {
       double scale = 1.0;
 
       if (i == 0) {
-        if (scrollOffset < ScrollSequenceConfig.dimLayerStart) {
-          alpha = 0.0;
-        } else if (scrollOffset < ScrollSequenceConfig.philosophyPeelStart) {
+        if (offset < peelStart) {
           alpha = stackAlpha;
-        } else if (scrollOffset < myEnd) {
-          final t = ((scrollOffset - myStart) / peelDuration).clamp(0.0, 1.0);
+        } else if (offset < myEnd) {
+          final t = ((offset - myStart) / peelDuration).clamp(0.0, 1.0);
           final curvedT = exponentialEaseOut.transform(t);
           liftVector = GameLayout.philosophyStackLiftVector * curvedT;
           rotation = GameLayout.philStackRotation * curvedT;
@@ -131,11 +125,11 @@ class PhilosophyPageController implements ScrollObserver {
         final prevStart = peelStart + ((i - 1) * (peelDuration + peelDelay));
         final prevEnd = prevStart + peelDuration;
 
-        if (scrollOffset < prevStart) {
+        if (offset < prevStart) {
           alpha = 0.0;
-        } else if (scrollOffset < myStart) {
-          if (scrollOffset < prevEnd) {
-            final revealT = ((scrollOffset - prevStart) / peelDuration).clamp(
+        } else if (offset < myStart) {
+          if (offset < prevEnd) {
+            final revealT = ((offset - prevStart) / peelDuration).clamp(
               0.0,
               1.0,
             );
@@ -148,17 +142,15 @@ class PhilosophyPageController implements ScrollObserver {
             alpha = 1.0;
             scale = 1.0;
           }
-        } else if (scrollOffset < myEnd) {
-          final t = ((scrollOffset - myStart) / peelDuration).clamp(0.0, 1.0);
+        } else if (offset < myEnd) {
+          final t = ((offset - myStart) / peelDuration).clamp(0.0, 1.0);
           final curvedT = exponentialEaseOut.transform(t);
           liftVector = GameLayout.philosophyStackLiftVector * curvedT;
-          // More dramatic rotation (0.2 → 0.35 for planning.md spec)
           rotation =
               (GameLayout.philStackRotation * 1.75) *
               curvedT *
               (i % 2 == 0 ? 1 : -1);
           alpha = 1.0 - t;
-          // More dramatic scale change (planning.md: 1.05+0.15t instead of 1.0+0.1t)
           scale = 1.05 + (0.15 * curvedT);
         } else {
           // Gone

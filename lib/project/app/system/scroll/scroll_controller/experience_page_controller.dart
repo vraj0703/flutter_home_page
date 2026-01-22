@@ -8,53 +8,44 @@ import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 
 class ExperiencePageController implements ScrollObserver {
   final ExperiencePageComponent component;
-  final double entranceStart;
-  final double interactionStart;
-  final double interactionEnd;
-  final double exitStart;
-  final double exitEnd;
-  static const double initEntranceStart =
-      ScrollSequenceConfig.experienceEntranceStart;
-  static const double initInteractionStart =
-      ScrollSequenceConfig.experienceInteractionStart;
-  static const double itemScrollHeight = 350.0;
-  static const int itemCount = 5;
 
-  ExperiencePageController({
-    required this.component,
-    this.entranceStart = initEntranceStart,
-    this.interactionStart = initInteractionStart,
-  }) : interactionEnd = ScrollSequenceConfig.experienceInteractionEnd,
-       exitStart = ScrollSequenceConfig.experienceExitStart,
-       exitEnd = ScrollSequenceConfig.experienceExitEnd;
+  // Local Constants
+  // interactionStart was 6700 - 6400 = 300
+  static const double interactionStart = 300.0;
+  // exitStart was 8450 - 6400 = 2050
+  static const double exitStart = 2050.0;
+  // exitEnd was 8750 - 6400 = 2350
+  static const double exitEnd = 2350.0;
+  // interactionEnd was exitEnd (or close to it) in old config?
+  // Old config: interactionEnd = 8750 (same as exitEnd)
+  static const double interactionEnd = 2350.0;
+
+  static const double fadeOffset =
+      ScrollSequenceConfig.experienceFadeOffset; // 400?
+
+  ExperiencePageController({required this.component});
 
   @override
-  void onScroll(double scrollOffset) {
-    _handleVisibility(scrollOffset);
-    _handleInteraction(scrollOffset);
-    _handleExit(scrollOffset);
+  void onScroll(double offset) {
+    _handleVisibility(offset);
+    _handleInteraction(offset);
+    _handleExit(offset);
   }
 
-  void _handleVisibility(double scrollOffset) {
+  void _handleVisibility(double offset) {
     const exponentialEaseOut = ExponentialEaseOut();
     double opacity = 0.0;
-    if (scrollOffset < entranceStart) {
+
+    if (offset < 0) {
       opacity = 0.0;
-    } else if (scrollOffset <
-        entranceStart + ScrollSequenceConfig.experienceFadeOffset) {
-      final t =
-          ((scrollOffset - entranceStart) /
-                  ScrollSequenceConfig.experienceFadeOffset)
-              .clamp(0.0, 1.0);
+    } else if (offset < fadeOffset) {
+      final t = (offset / fadeOffset).clamp(0.0, 1.0);
       opacity = exponentialEaseOut.transform(t);
-    } else if (scrollOffset < exitStart) {
+    } else if (offset < exitStart) {
       opacity = 1.0;
-    } else if (scrollOffset <
-        exitStart + ScrollSequenceConfig.experienceExitFadeOffset) {
-      final t =
-          ((scrollOffset - exitStart) /
-                  ScrollSequenceConfig.experienceExitFadeOffset)
-              .clamp(0.0, 1.0);
+    } else if (offset < exitEnd) {
+      // fade out during exit
+      final t = ((offset - exitStart) / (exitEnd - exitStart)).clamp(0.0, 1.0);
       opacity = 1.0 - exponentialEaseOut.transform(t);
     } else {
       opacity = 0.0;
@@ -63,36 +54,33 @@ class ExperiencePageController implements ScrollObserver {
     component.opacity = opacity;
   }
 
-  void _handleInteraction(double scrollOffset) {
-    if (scrollOffset < interactionStart) {
+  void _handleInteraction(double offset) {
+    if (offset < interactionStart) {
       component.updateInteraction(0.0);
       return;
     }
 
-    if (scrollOffset > interactionEnd) {
+    if (offset > interactionEnd) {
       component.updateInteraction(interactionEnd - interactionStart);
       return;
     }
 
-    final localScroll = scrollOffset - interactionStart;
+    final localScroll = offset - interactionStart;
     component.updateInteraction(localScroll);
   }
 
-  void _handleExit(double scrollOffset) {
+  void _handleExit(double offset) {
     if (!component.isLoaded) return;
 
     const springCurve = GameCurves.expExitSpring;
-    if (scrollOffset < exitStart) {
+    if (offset < exitStart) {
       component.position = component.initialPosition;
       component.setWarp(0.0);
       if (component.scale != Vector2.all(1.0)) {
         component.scale = Vector2.all(1.0);
       }
-    } else if (scrollOffset < exitEnd) {
-      final t = ((scrollOffset - exitStart) / (exitEnd - exitStart)).clamp(
-        0.0,
-        1.0,
-      );
+    } else if (offset < exitEnd) {
+      final t = ((offset - exitStart) / (exitEnd - exitStart)).clamp(0.0, 1.0);
       final curvedT = springCurve.transform(t);
 
       component.position =

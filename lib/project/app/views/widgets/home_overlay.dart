@@ -18,12 +18,12 @@ class HomeOverlay extends StatelessWidget {
         return state.maybeWhen(
           orElse: () => SizedBox.shrink(key: ValueKey("home_overlay")),
           title: () => _buildOverlay(1.0),
-          boldText: (uiOpacity) => _buildOverlay(uiOpacity),
-          philosophy: () => _buildOverlay(0.0),
-          workExperience: () => _buildOverlay(0.0),
-          experience: () => _buildOverlay(0.0),
-          testimonials: () => _buildOverlay(0.0),
-          contact: () => _buildOverlay(0.0),
+          boldText: (uiOpacity, _) => _buildOverlay(uiOpacity),
+          philosophy: (_) => _buildOverlay(0.0),
+          workExperience: (_) => _buildOverlay(0.0),
+          experience: (_) => _buildOverlay(0.0),
+          testimonials: (_) => _buildOverlay(0.0),
+          contact: (_) => _buildOverlay(0.0),
         );
       },
     );

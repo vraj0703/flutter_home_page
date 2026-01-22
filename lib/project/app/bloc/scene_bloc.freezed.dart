@@ -55,7 +55,7 @@ extension SceneEventPatterns on SceneEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Initialize value)?  initialize,TResult Function( CloseCurtain value)?  closeCurtain,TResult Function( TapDown value)?  tapDown,TResult Function( LoadTitle value)?  loadTitle,TResult Function( TitleLoaded value)?  titleLoaded,TResult Function( GameReady value)?  gameReady,TResult Function( OnScroll value)?  onScroll,TResult Function( OnScrollSequence value)?  onScrollSequence,TResult Function( ForceScrollOffset value)?  forceScrollOffset,TResult Function( UpdateUIOpacity value)?  updateUIOpacity,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Initialize value)?  initialize,TResult Function( CloseCurtain value)?  closeCurtain,TResult Function( TapDown value)?  tapDown,TResult Function( LoadTitle value)?  loadTitle,TResult Function( TitleLoaded value)?  titleLoaded,TResult Function( GameReady value)?  gameReady,TResult Function( OnScroll value)?  onScroll,TResult Function( OnScrollSequence value)?  onScrollSequence,TResult Function( ForceScrollOffset value)?  forceScrollOffset,TResult Function( UpdateUIOpacity value)?  updateUIOpacity,TResult Function( RegisterSections value)?  registerSections,TResult Function( NextSection value)?  nextSection,TResult Function( PreviousSection value)?  previousSection,TResult Function( UpdateSectionOffset value)?  updateSectionOffset,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
@@ -68,7 +68,11 @@ return gameReady(_that);case OnScroll() when onScroll != null:
 return onScroll(_that);case OnScrollSequence() when onScrollSequence != null:
 return onScrollSequence(_that);case ForceScrollOffset() when forceScrollOffset != null:
 return forceScrollOffset(_that);case UpdateUIOpacity() when updateUIOpacity != null:
-return updateUIOpacity(_that);case _:
+return updateUIOpacity(_that);case RegisterSections() when registerSections != null:
+return registerSections(_that);case NextSection() when nextSection != null:
+return nextSection(_that);case PreviousSection() when previousSection != null:
+return previousSection(_that);case UpdateSectionOffset() when updateSectionOffset != null:
+return updateSectionOffset(_that);case _:
   return orElse();
 
 }
@@ -86,7 +90,7 @@ return updateUIOpacity(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Initialize value)  initialize,required TResult Function( CloseCurtain value)  closeCurtain,required TResult Function( TapDown value)  tapDown,required TResult Function( LoadTitle value)  loadTitle,required TResult Function( TitleLoaded value)  titleLoaded,required TResult Function( GameReady value)  gameReady,required TResult Function( OnScroll value)  onScroll,required TResult Function( OnScrollSequence value)  onScrollSequence,required TResult Function( ForceScrollOffset value)  forceScrollOffset,required TResult Function( UpdateUIOpacity value)  updateUIOpacity,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Initialize value)  initialize,required TResult Function( CloseCurtain value)  closeCurtain,required TResult Function( TapDown value)  tapDown,required TResult Function( LoadTitle value)  loadTitle,required TResult Function( TitleLoaded value)  titleLoaded,required TResult Function( GameReady value)  gameReady,required TResult Function( OnScroll value)  onScroll,required TResult Function( OnScrollSequence value)  onScrollSequence,required TResult Function( ForceScrollOffset value)  forceScrollOffset,required TResult Function( UpdateUIOpacity value)  updateUIOpacity,required TResult Function( RegisterSections value)  registerSections,required TResult Function( NextSection value)  nextSection,required TResult Function( PreviousSection value)  previousSection,required TResult Function( UpdateSectionOffset value)  updateSectionOffset,}){
 final _that = this;
 switch (_that) {
 case Initialize():
@@ -99,7 +103,11 @@ return gameReady(_that);case OnScroll():
 return onScroll(_that);case OnScrollSequence():
 return onScrollSequence(_that);case ForceScrollOffset():
 return forceScrollOffset(_that);case UpdateUIOpacity():
-return updateUIOpacity(_that);case _:
+return updateUIOpacity(_that);case RegisterSections():
+return registerSections(_that);case NextSection():
+return nextSection(_that);case PreviousSection():
+return previousSection(_that);case UpdateSectionOffset():
+return updateSectionOffset(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -116,7 +124,7 @@ return updateUIOpacity(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Initialize value)?  initialize,TResult? Function( CloseCurtain value)?  closeCurtain,TResult? Function( TapDown value)?  tapDown,TResult? Function( LoadTitle value)?  loadTitle,TResult? Function( TitleLoaded value)?  titleLoaded,TResult? Function( GameReady value)?  gameReady,TResult? Function( OnScroll value)?  onScroll,TResult? Function( OnScrollSequence value)?  onScrollSequence,TResult? Function( ForceScrollOffset value)?  forceScrollOffset,TResult? Function( UpdateUIOpacity value)?  updateUIOpacity,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Initialize value)?  initialize,TResult? Function( CloseCurtain value)?  closeCurtain,TResult? Function( TapDown value)?  tapDown,TResult? Function( LoadTitle value)?  loadTitle,TResult? Function( TitleLoaded value)?  titleLoaded,TResult? Function( GameReady value)?  gameReady,TResult? Function( OnScroll value)?  onScroll,TResult? Function( OnScrollSequence value)?  onScrollSequence,TResult? Function( ForceScrollOffset value)?  forceScrollOffset,TResult? Function( UpdateUIOpacity value)?  updateUIOpacity,TResult? Function( RegisterSections value)?  registerSections,TResult? Function( NextSection value)?  nextSection,TResult? Function( PreviousSection value)?  previousSection,TResult? Function( UpdateSectionOffset value)?  updateSectionOffset,}){
 final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
@@ -129,7 +137,11 @@ return gameReady(_that);case OnScroll() when onScroll != null:
 return onScroll(_that);case OnScrollSequence() when onScrollSequence != null:
 return onScrollSequence(_that);case ForceScrollOffset() when forceScrollOffset != null:
 return forceScrollOffset(_that);case UpdateUIOpacity() when updateUIOpacity != null:
-return updateUIOpacity(_that);case _:
+return updateUIOpacity(_that);case RegisterSections() when registerSections != null:
+return registerSections(_that);case NextSection() when nextSection != null:
+return nextSection(_that);case PreviousSection() when previousSection != null:
+return previousSection(_that);case UpdateSectionOffset() when updateSectionOffset != null:
+return updateSectionOffset(_that);case _:
   return null;
 
 }
@@ -146,7 +158,7 @@ return updateUIOpacity(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initialize,TResult Function()?  closeCurtain,TResult Function( TapDownEvent tapDownEvent)?  tapDown,TResult Function()?  loadTitle,TResult Function()?  titleLoaded,TResult Function()?  gameReady,TResult Function()?  onScroll,TResult Function( double delta)?  onScrollSequence,TResult Function( double offset)?  forceScrollOffset,TResult Function( double opacity)?  updateUIOpacity,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initialize,TResult Function()?  closeCurtain,TResult Function( TapDownEvent tapDownEvent)?  tapDown,TResult Function()?  loadTitle,TResult Function()?  titleLoaded,TResult Function()?  gameReady,TResult Function()?  onScroll,TResult Function( double delta)?  onScrollSequence,TResult Function( double offset)?  forceScrollOffset,TResult Function( double opacity)?  updateUIOpacity,TResult Function( List<SectionManager> managers)?  registerSections,TResult Function( double overflow)?  nextSection,TResult Function( double underflow)?  previousSection,TResult Function( double offset)?  updateSectionOffset,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
 return initialize();case CloseCurtain() when closeCurtain != null:
@@ -158,7 +170,11 @@ return gameReady();case OnScroll() when onScroll != null:
 return onScroll();case OnScrollSequence() when onScrollSequence != null:
 return onScrollSequence(_that.delta);case ForceScrollOffset() when forceScrollOffset != null:
 return forceScrollOffset(_that.offset);case UpdateUIOpacity() when updateUIOpacity != null:
-return updateUIOpacity(_that.opacity);case _:
+return updateUIOpacity(_that.opacity);case RegisterSections() when registerSections != null:
+return registerSections(_that.managers);case NextSection() when nextSection != null:
+return nextSection(_that.overflow);case PreviousSection() when previousSection != null:
+return previousSection(_that.underflow);case UpdateSectionOffset() when updateSectionOffset != null:
+return updateSectionOffset(_that.offset);case _:
   return orElse();
 
 }
@@ -176,7 +192,7 @@ return updateUIOpacity(_that.opacity);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initialize,required TResult Function()  closeCurtain,required TResult Function( TapDownEvent tapDownEvent)  tapDown,required TResult Function()  loadTitle,required TResult Function()  titleLoaded,required TResult Function()  gameReady,required TResult Function()  onScroll,required TResult Function( double delta)  onScrollSequence,required TResult Function( double offset)  forceScrollOffset,required TResult Function( double opacity)  updateUIOpacity,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initialize,required TResult Function()  closeCurtain,required TResult Function( TapDownEvent tapDownEvent)  tapDown,required TResult Function()  loadTitle,required TResult Function()  titleLoaded,required TResult Function()  gameReady,required TResult Function()  onScroll,required TResult Function( double delta)  onScrollSequence,required TResult Function( double offset)  forceScrollOffset,required TResult Function( double opacity)  updateUIOpacity,required TResult Function( List<SectionManager> managers)  registerSections,required TResult Function( double overflow)  nextSection,required TResult Function( double underflow)  previousSection,required TResult Function( double offset)  updateSectionOffset,}) {final _that = this;
 switch (_that) {
 case Initialize():
 return initialize();case CloseCurtain():
@@ -188,7 +204,11 @@ return gameReady();case OnScroll():
 return onScroll();case OnScrollSequence():
 return onScrollSequence(_that.delta);case ForceScrollOffset():
 return forceScrollOffset(_that.offset);case UpdateUIOpacity():
-return updateUIOpacity(_that.opacity);case _:
+return updateUIOpacity(_that.opacity);case RegisterSections():
+return registerSections(_that.managers);case NextSection():
+return nextSection(_that.overflow);case PreviousSection():
+return previousSection(_that.underflow);case UpdateSectionOffset():
+return updateSectionOffset(_that.offset);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -205,7 +225,7 @@ return updateUIOpacity(_that.opacity);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initialize,TResult? Function()?  closeCurtain,TResult? Function( TapDownEvent tapDownEvent)?  tapDown,TResult? Function()?  loadTitle,TResult? Function()?  titleLoaded,TResult? Function()?  gameReady,TResult? Function()?  onScroll,TResult? Function( double delta)?  onScrollSequence,TResult? Function( double offset)?  forceScrollOffset,TResult? Function( double opacity)?  updateUIOpacity,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initialize,TResult? Function()?  closeCurtain,TResult? Function( TapDownEvent tapDownEvent)?  tapDown,TResult? Function()?  loadTitle,TResult? Function()?  titleLoaded,TResult? Function()?  gameReady,TResult? Function()?  onScroll,TResult? Function( double delta)?  onScrollSequence,TResult? Function( double offset)?  forceScrollOffset,TResult? Function( double opacity)?  updateUIOpacity,TResult? Function( List<SectionManager> managers)?  registerSections,TResult? Function( double overflow)?  nextSection,TResult? Function( double underflow)?  previousSection,TResult? Function( double offset)?  updateSectionOffset,}) {final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
 return initialize();case CloseCurtain() when closeCurtain != null:
@@ -217,7 +237,11 @@ return gameReady();case OnScroll() when onScroll != null:
 return onScroll();case OnScrollSequence() when onScrollSequence != null:
 return onScrollSequence(_that.delta);case ForceScrollOffset() when forceScrollOffset != null:
 return forceScrollOffset(_that.offset);case UpdateUIOpacity() when updateUIOpacity != null:
-return updateUIOpacity(_that.opacity);case _:
+return updateUIOpacity(_that.opacity);case RegisterSections() when registerSections != null:
+return registerSections(_that.managers);case NextSection() when nextSection != null:
+return nextSection(_that.overflow);case PreviousSection() when previousSection != null:
+return previousSection(_that.underflow);case UpdateSectionOffset() when updateSectionOffset != null:
+return updateSectionOffset(_that.offset);case _:
   return null;
 
 }
@@ -682,6 +706,276 @@ as double,
 }
 
 /// @nodoc
+
+
+class RegisterSections implements SceneEvent {
+  const RegisterSections(final  List<SectionManager> managers): _managers = managers;
+  
+
+ final  List<SectionManager> _managers;
+ List<SectionManager> get managers {
+  if (_managers is EqualUnmodifiableListView) return _managers;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_managers);
+}
+
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$RegisterSectionsCopyWith<RegisterSections> get copyWith => _$RegisterSectionsCopyWithImpl<RegisterSections>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterSections&&const DeepCollectionEquality().equals(other._managers, _managers));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_managers));
+
+@override
+String toString() {
+  return 'SceneEvent.registerSections(managers: $managers)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $RegisterSectionsCopyWith<$Res> implements $SceneEventCopyWith<$Res> {
+  factory $RegisterSectionsCopyWith(RegisterSections value, $Res Function(RegisterSections) _then) = _$RegisterSectionsCopyWithImpl;
+@useResult
+$Res call({
+ List<SectionManager> managers
+});
+
+
+
+
+}
+/// @nodoc
+class _$RegisterSectionsCopyWithImpl<$Res>
+    implements $RegisterSectionsCopyWith<$Res> {
+  _$RegisterSectionsCopyWithImpl(this._self, this._then);
+
+  final RegisterSections _self;
+  final $Res Function(RegisterSections) _then;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? managers = null,}) {
+  return _then(RegisterSections(
+null == managers ? _self._managers : managers // ignore: cast_nullable_to_non_nullable
+as List<SectionManager>,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class NextSection implements SceneEvent {
+  const NextSection({this.overflow = 0.0});
+  
+
+@JsonKey() final  double overflow;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$NextSectionCopyWith<NextSection> get copyWith => _$NextSectionCopyWithImpl<NextSection>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NextSection&&(identical(other.overflow, overflow) || other.overflow == overflow));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,overflow);
+
+@override
+String toString() {
+  return 'SceneEvent.nextSection(overflow: $overflow)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $NextSectionCopyWith<$Res> implements $SceneEventCopyWith<$Res> {
+  factory $NextSectionCopyWith(NextSection value, $Res Function(NextSection) _then) = _$NextSectionCopyWithImpl;
+@useResult
+$Res call({
+ double overflow
+});
+
+
+
+
+}
+/// @nodoc
+class _$NextSectionCopyWithImpl<$Res>
+    implements $NextSectionCopyWith<$Res> {
+  _$NextSectionCopyWithImpl(this._self, this._then);
+
+  final NextSection _self;
+  final $Res Function(NextSection) _then;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? overflow = null,}) {
+  return _then(NextSection(
+overflow: null == overflow ? _self.overflow : overflow // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class PreviousSection implements SceneEvent {
+  const PreviousSection({this.underflow = 0.0});
+  
+
+@JsonKey() final  double underflow;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$PreviousSectionCopyWith<PreviousSection> get copyWith => _$PreviousSectionCopyWithImpl<PreviousSection>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PreviousSection&&(identical(other.underflow, underflow) || other.underflow == underflow));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,underflow);
+
+@override
+String toString() {
+  return 'SceneEvent.previousSection(underflow: $underflow)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $PreviousSectionCopyWith<$Res> implements $SceneEventCopyWith<$Res> {
+  factory $PreviousSectionCopyWith(PreviousSection value, $Res Function(PreviousSection) _then) = _$PreviousSectionCopyWithImpl;
+@useResult
+$Res call({
+ double underflow
+});
+
+
+
+
+}
+/// @nodoc
+class _$PreviousSectionCopyWithImpl<$Res>
+    implements $PreviousSectionCopyWith<$Res> {
+  _$PreviousSectionCopyWithImpl(this._self, this._then);
+
+  final PreviousSection _self;
+  final $Res Function(PreviousSection) _then;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? underflow = null,}) {
+  return _then(PreviousSection(
+underflow: null == underflow ? _self.underflow : underflow // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class UpdateSectionOffset implements SceneEvent {
+  const UpdateSectionOffset(this.offset);
+  
+
+ final  double offset;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$UpdateSectionOffsetCopyWith<UpdateSectionOffset> get copyWith => _$UpdateSectionOffsetCopyWithImpl<UpdateSectionOffset>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UpdateSectionOffset&&(identical(other.offset, offset) || other.offset == offset));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,offset);
+
+@override
+String toString() {
+  return 'SceneEvent.updateSectionOffset(offset: $offset)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $UpdateSectionOffsetCopyWith<$Res> implements $SceneEventCopyWith<$Res> {
+  factory $UpdateSectionOffsetCopyWith(UpdateSectionOffset value, $Res Function(UpdateSectionOffset) _then) = _$UpdateSectionOffsetCopyWithImpl;
+@useResult
+$Res call({
+ double offset
+});
+
+
+
+
+}
+/// @nodoc
+class _$UpdateSectionOffsetCopyWithImpl<$Res>
+    implements $UpdateSectionOffsetCopyWith<$Res> {
+  _$UpdateSectionOffsetCopyWithImpl(this._self, this._then);
+
+  final UpdateSectionOffset _self;
+  final $Res Function(UpdateSectionOffset) _then;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? offset = null,}) {
+  return _then(UpdateSectionOffset(
+null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$SceneState {
 
 
@@ -819,7 +1113,7 @@ return contact(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isSvgReady,  bool isGameReady)?  loading,TResult Function()?  logo,TResult Function()?  logoOverlayRemoving,TResult Function()?  titleLoading,TResult Function()?  title,TResult Function( double uiOpacity)?  boldText,TResult Function()?  philosophy,TResult Function()?  workExperience,TResult Function()?  experience,TResult Function()?  testimonials,TResult Function()?  contact,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isSvgReady,  bool isGameReady)?  loading,TResult Function()?  logo,TResult Function()?  logoOverlayRemoving,TResult Function()?  titleLoading,TResult Function()?  title,TResult Function( double uiOpacity,  double offset)?  boldText,TResult Function( double offset)?  philosophy,TResult Function( double offset)?  workExperience,TResult Function( double offset)?  experience,TResult Function( double offset)?  testimonials,TResult Function( double offset)?  contact,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Loading() when loading != null:
 return loading(_that.isSvgReady,_that.isGameReady);case Logo() when logo != null:
@@ -827,12 +1121,12 @@ return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
 return titleLoading();case Title() when title != null:
 return title();case BoldText() when boldText != null:
-return boldText(_that.uiOpacity);case Philosophy() when philosophy != null:
-return philosophy();case WorkExperience() when workExperience != null:
-return workExperience();case Experience() when experience != null:
-return experience();case Testimonials() when testimonials != null:
-return testimonials();case Contact() when contact != null:
-return contact();case _:
+return boldText(_that.uiOpacity,_that.offset);case Philosophy() when philosophy != null:
+return philosophy(_that.offset);case WorkExperience() when workExperience != null:
+return workExperience(_that.offset);case Experience() when experience != null:
+return experience(_that.offset);case Testimonials() when testimonials != null:
+return testimonials(_that.offset);case Contact() when contact != null:
+return contact(_that.offset);case _:
   return orElse();
 
 }
@@ -850,7 +1144,7 @@ return contact();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isSvgReady,  bool isGameReady)  loading,required TResult Function()  logo,required TResult Function()  logoOverlayRemoving,required TResult Function()  titleLoading,required TResult Function()  title,required TResult Function( double uiOpacity)  boldText,required TResult Function()  philosophy,required TResult Function()  workExperience,required TResult Function()  experience,required TResult Function()  testimonials,required TResult Function()  contact,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isSvgReady,  bool isGameReady)  loading,required TResult Function()  logo,required TResult Function()  logoOverlayRemoving,required TResult Function()  titleLoading,required TResult Function()  title,required TResult Function( double uiOpacity,  double offset)  boldText,required TResult Function( double offset)  philosophy,required TResult Function( double offset)  workExperience,required TResult Function( double offset)  experience,required TResult Function( double offset)  testimonials,required TResult Function( double offset)  contact,}) {final _that = this;
 switch (_that) {
 case Loading():
 return loading(_that.isSvgReady,_that.isGameReady);case Logo():
@@ -858,12 +1152,12 @@ return logo();case LogoOverlayRemoving():
 return logoOverlayRemoving();case TitleLoading():
 return titleLoading();case Title():
 return title();case BoldText():
-return boldText(_that.uiOpacity);case Philosophy():
-return philosophy();case WorkExperience():
-return workExperience();case Experience():
-return experience();case Testimonials():
-return testimonials();case Contact():
-return contact();case _:
+return boldText(_that.uiOpacity,_that.offset);case Philosophy():
+return philosophy(_that.offset);case WorkExperience():
+return workExperience(_that.offset);case Experience():
+return experience(_that.offset);case Testimonials():
+return testimonials(_that.offset);case Contact():
+return contact(_that.offset);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -880,7 +1174,7 @@ return contact();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isSvgReady,  bool isGameReady)?  loading,TResult? Function()?  logo,TResult? Function()?  logoOverlayRemoving,TResult? Function()?  titleLoading,TResult? Function()?  title,TResult? Function( double uiOpacity)?  boldText,TResult? Function()?  philosophy,TResult? Function()?  workExperience,TResult? Function()?  experience,TResult? Function()?  testimonials,TResult? Function()?  contact,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isSvgReady,  bool isGameReady)?  loading,TResult? Function()?  logo,TResult? Function()?  logoOverlayRemoving,TResult? Function()?  titleLoading,TResult? Function()?  title,TResult? Function( double uiOpacity,  double offset)?  boldText,TResult? Function( double offset)?  philosophy,TResult? Function( double offset)?  workExperience,TResult? Function( double offset)?  experience,TResult? Function( double offset)?  testimonials,TResult? Function( double offset)?  contact,}) {final _that = this;
 switch (_that) {
 case Loading() when loading != null:
 return loading(_that.isSvgReady,_that.isGameReady);case Logo() when logo != null:
@@ -888,12 +1182,12 @@ return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
 return titleLoading();case Title() when title != null:
 return title();case BoldText() when boldText != null:
-return boldText(_that.uiOpacity);case Philosophy() when philosophy != null:
-return philosophy();case WorkExperience() when workExperience != null:
-return workExperience();case Experience() when experience != null:
-return experience();case Testimonials() when testimonials != null:
-return testimonials();case Contact() when contact != null:
-return contact();case _:
+return boldText(_that.uiOpacity,_that.offset);case Philosophy() when philosophy != null:
+return philosophy(_that.offset);case WorkExperience() when workExperience != null:
+return workExperience(_that.offset);case Experience() when experience != null:
+return experience(_that.offset);case Testimonials() when testimonials != null:
+return testimonials(_that.offset);case Contact() when contact != null:
+return contact(_that.offset);case _:
   return null;
 
 }
@@ -1101,10 +1395,11 @@ String toString() {
 
 
 class BoldText implements SceneState {
-  const BoldText({this.uiOpacity = 1.0});
+  const BoldText({this.uiOpacity = 1.0, this.offset = 0.0});
   
 
 @JsonKey() final  double uiOpacity;
+@JsonKey() final  double offset;
 
 /// Create a copy of SceneState
 /// with the given fields replaced by the non-null parameter values.
@@ -1116,16 +1411,16 @@ $BoldTextCopyWith<BoldText> get copyWith => _$BoldTextCopyWithImpl<BoldText>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is BoldText&&(identical(other.uiOpacity, uiOpacity) || other.uiOpacity == uiOpacity));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BoldText&&(identical(other.uiOpacity, uiOpacity) || other.uiOpacity == uiOpacity)&&(identical(other.offset, offset) || other.offset == offset));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,uiOpacity);
+int get hashCode => Object.hash(runtimeType,uiOpacity,offset);
 
 @override
 String toString() {
-  return 'SceneState.boldText(uiOpacity: $uiOpacity)';
+  return 'SceneState.boldText(uiOpacity: $uiOpacity, offset: $offset)';
 }
 
 
@@ -1136,7 +1431,7 @@ abstract mixin class $BoldTextCopyWith<$Res> implements $SceneStateCopyWith<$Res
   factory $BoldTextCopyWith(BoldText value, $Res Function(BoldText) _then) = _$BoldTextCopyWithImpl;
 @useResult
 $Res call({
- double uiOpacity
+ double uiOpacity, double offset
 });
 
 
@@ -1153,9 +1448,10 @@ class _$BoldTextCopyWithImpl<$Res>
 
 /// Create a copy of SceneState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? uiOpacity = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? uiOpacity = null,Object? offset = null,}) {
   return _then(BoldText(
 uiOpacity: null == uiOpacity ? _self.uiOpacity : uiOpacity // ignore: cast_nullable_to_non_nullable
+as double,offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
 as double,
   ));
 }
@@ -1167,160 +1463,330 @@ as double,
 
 
 class Philosophy implements SceneState {
-  const Philosophy();
+  const Philosophy({this.offset = 0.0});
   
 
+@JsonKey() final  double offset;
 
-
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$PhilosophyCopyWith<Philosophy> get copyWith => _$PhilosophyCopyWithImpl<Philosophy>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Philosophy);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Philosophy&&(identical(other.offset, offset) || other.offset == offset));
 }
 
 
 @override
-int get hashCode => runtimeType.hashCode;
+int get hashCode => Object.hash(runtimeType,offset);
 
 @override
 String toString() {
-  return 'SceneState.philosophy()';
+  return 'SceneState.philosophy(offset: $offset)';
 }
 
 
 }
 
+/// @nodoc
+abstract mixin class $PhilosophyCopyWith<$Res> implements $SceneStateCopyWith<$Res> {
+  factory $PhilosophyCopyWith(Philosophy value, $Res Function(Philosophy) _then) = _$PhilosophyCopyWithImpl;
+@useResult
+$Res call({
+ double offset
+});
 
 
+
+
+}
+/// @nodoc
+class _$PhilosophyCopyWithImpl<$Res>
+    implements $PhilosophyCopyWith<$Res> {
+  _$PhilosophyCopyWithImpl(this._self, this._then);
+
+  final Philosophy _self;
+  final $Res Function(Philosophy) _then;
+
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? offset = null,}) {
+  return _then(Philosophy(
+offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
 
 /// @nodoc
 
 
 class WorkExperience implements SceneState {
-  const WorkExperience();
+  const WorkExperience({this.offset = 0.0});
   
 
+@JsonKey() final  double offset;
 
-
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WorkExperienceCopyWith<WorkExperience> get copyWith => _$WorkExperienceCopyWithImpl<WorkExperience>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkExperience);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkExperience&&(identical(other.offset, offset) || other.offset == offset));
 }
 
 
 @override
-int get hashCode => runtimeType.hashCode;
+int get hashCode => Object.hash(runtimeType,offset);
 
 @override
 String toString() {
-  return 'SceneState.workExperience()';
+  return 'SceneState.workExperience(offset: $offset)';
 }
 
 
 }
 
+/// @nodoc
+abstract mixin class $WorkExperienceCopyWith<$Res> implements $SceneStateCopyWith<$Res> {
+  factory $WorkExperienceCopyWith(WorkExperience value, $Res Function(WorkExperience) _then) = _$WorkExperienceCopyWithImpl;
+@useResult
+$Res call({
+ double offset
+});
 
 
+
+
+}
+/// @nodoc
+class _$WorkExperienceCopyWithImpl<$Res>
+    implements $WorkExperienceCopyWith<$Res> {
+  _$WorkExperienceCopyWithImpl(this._self, this._then);
+
+  final WorkExperience _self;
+  final $Res Function(WorkExperience) _then;
+
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? offset = null,}) {
+  return _then(WorkExperience(
+offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
 
 /// @nodoc
 
 
 class Experience implements SceneState {
-  const Experience();
+  const Experience({this.offset = 0.0});
   
 
+@JsonKey() final  double offset;
 
-
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ExperienceCopyWith<Experience> get copyWith => _$ExperienceCopyWithImpl<Experience>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Experience);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Experience&&(identical(other.offset, offset) || other.offset == offset));
 }
 
 
 @override
-int get hashCode => runtimeType.hashCode;
+int get hashCode => Object.hash(runtimeType,offset);
 
 @override
 String toString() {
-  return 'SceneState.experience()';
+  return 'SceneState.experience(offset: $offset)';
 }
 
 
 }
 
+/// @nodoc
+abstract mixin class $ExperienceCopyWith<$Res> implements $SceneStateCopyWith<$Res> {
+  factory $ExperienceCopyWith(Experience value, $Res Function(Experience) _then) = _$ExperienceCopyWithImpl;
+@useResult
+$Res call({
+ double offset
+});
 
 
+
+
+}
+/// @nodoc
+class _$ExperienceCopyWithImpl<$Res>
+    implements $ExperienceCopyWith<$Res> {
+  _$ExperienceCopyWithImpl(this._self, this._then);
+
+  final Experience _self;
+  final $Res Function(Experience) _then;
+
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? offset = null,}) {
+  return _then(Experience(
+offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
 
 /// @nodoc
 
 
 class Testimonials implements SceneState {
-  const Testimonials();
+  const Testimonials({this.offset = 0.0});
   
 
+@JsonKey() final  double offset;
 
-
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TestimonialsCopyWith<Testimonials> get copyWith => _$TestimonialsCopyWithImpl<Testimonials>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Testimonials);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Testimonials&&(identical(other.offset, offset) || other.offset == offset));
 }
 
 
 @override
-int get hashCode => runtimeType.hashCode;
+int get hashCode => Object.hash(runtimeType,offset);
 
 @override
 String toString() {
-  return 'SceneState.testimonials()';
+  return 'SceneState.testimonials(offset: $offset)';
 }
 
 
 }
 
+/// @nodoc
+abstract mixin class $TestimonialsCopyWith<$Res> implements $SceneStateCopyWith<$Res> {
+  factory $TestimonialsCopyWith(Testimonials value, $Res Function(Testimonials) _then) = _$TestimonialsCopyWithImpl;
+@useResult
+$Res call({
+ double offset
+});
 
 
+
+
+}
+/// @nodoc
+class _$TestimonialsCopyWithImpl<$Res>
+    implements $TestimonialsCopyWith<$Res> {
+  _$TestimonialsCopyWithImpl(this._self, this._then);
+
+  final Testimonials _self;
+  final $Res Function(Testimonials) _then;
+
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? offset = null,}) {
+  return _then(Testimonials(
+offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
 
 /// @nodoc
 
 
 class Contact implements SceneState {
-  const Contact();
+  const Contact({this.offset = 0.0});
   
 
+@JsonKey() final  double offset;
 
-
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ContactCopyWith<Contact> get copyWith => _$ContactCopyWithImpl<Contact>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Contact);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Contact&&(identical(other.offset, offset) || other.offset == offset));
 }
 
 
 @override
-int get hashCode => runtimeType.hashCode;
+int get hashCode => Object.hash(runtimeType,offset);
 
 @override
 String toString() {
-  return 'SceneState.contact()';
+  return 'SceneState.contact(offset: $offset)';
 }
 
 
 }
 
+/// @nodoc
+abstract mixin class $ContactCopyWith<$Res> implements $SceneStateCopyWith<$Res> {
+  factory $ContactCopyWith(Contact value, $Res Function(Contact) _then) = _$ContactCopyWithImpl;
+@useResult
+$Res call({
+ double offset
+});
 
 
+
+
+}
+/// @nodoc
+class _$ContactCopyWithImpl<$Res>
+    implements $ContactCopyWith<$Res> {
+  _$ContactCopyWithImpl(this._self, this._then);
+
+  final Contact _self;
+  final $Res Function(Contact) _then;
+
+/// Create a copy of SceneState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? offset = null,}) {
+  return _then(Contact(
+offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
 
 // dart format on

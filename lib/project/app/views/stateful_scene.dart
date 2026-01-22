@@ -116,12 +116,12 @@ class _StatefulSceneState extends State<StatefulScene>
           logoOverlayRemoving: () {},
           titleLoading: () {},
           title: () {},
-          boldText: (uiOpacity) {},
-          philosophy: () {},
-          workExperience: () {},
-          experience: () {},
-          testimonials: () {},
-          contact: () {},
+          boldText: (_,uiOpacity) {},
+          philosophy: (_) {},
+          workExperience: (_) {},
+          experience: (_) {},
+          testimonials: (_) {},
+          contact: (_) {},
         );
       },
       builder: (context, state) {
