@@ -8,7 +8,7 @@ import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'philosophy_card.dart';
 
 class PeelingCardStackComponent extends PositionComponent
-    with HasGameReference<MyGame> {
+    with HasGameReference<MyGame>, HasPaint {
   final ScrollOrchestrator scrollOrchestrator;
   final List<PhilosophyCardData> cardsData;
   late final List<PhilosophyCard> _cards = [];

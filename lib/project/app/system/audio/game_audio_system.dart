@@ -22,6 +22,7 @@ class GameAudioSystem {
       GameAudioConfig.bouncyArrowSfx,
       GameAudioConfig.boldTextSwell,
       GameAudioConfig.philosophyEntrySfx,
+      GameAudioConfig.philosophyCompleteSfx,
     ]);
 
     // Start BGM loop (can be toggled in settings later)
@@ -127,6 +128,13 @@ class GameAudioSystem {
   void playPhilosophyEntry() {
     _safePlay(
       GameAudioConfig.philosophyEntrySfx,
+      volume: GameAudioConfig.sfxVolume,
+    );
+  }
+
+  void playPhilosophyComplete() {
+    _safePlay(
+      GameAudioConfig.philosophyCompleteSfx,
       volume: GameAudioConfig.sfxVolume,
     );
   }

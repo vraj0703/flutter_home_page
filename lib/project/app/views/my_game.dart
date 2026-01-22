@@ -4,6 +4,8 @@ import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/models/game_components.dart';
+import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/philosophy_burst_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/opacity.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/parallax.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_orchestrator.dart';
@@ -36,7 +38,9 @@ import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/wo
 import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/god_ray_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/background_tint_controller.dart';
 import 'package:flutter_home_page/project/app/system/input/game_input_controller.dart';
-import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart'; // Added import
+import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_card_burst_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_title_burst_component.dart'; // Added import
 
 class MyGame extends FlameGame
     with
@@ -164,6 +168,8 @@ class MyGame extends FlameGame
   void playBouncyArrow() => _audioSystem.playBouncyArrow();
 
   void playPhilosophyEntry() => _audioSystem.playPhilosophyEntry();
+
+  void playPhilosophyComplete() => _audioSystem.playPhilosophyComplete();
 
   void syncBoldTextAudio(double progress, {double velocity = 0.0}) =>
       _audioSystem.syncBoldTextAudio(progress, velocity: velocity);
@@ -407,14 +413,18 @@ class MyGame extends FlameGame
       centerPosition: size / 2,
     );
 
+    // Setup title for balloon floating animation with built-in reflection
+    final philosophyTitle = _gameComponents.philosophyText;
+    philosophyTitle.priority = 20;
+    philosophyTitle.anchor = Anchor.center;
+    philosophyTitle.position = Vector2(size.x / 2, size.y * 0.7); // Start below
+    philosophyTitle.scale = Vector2.all(0.1); // Start small
+    philosophyTitle.opacity = 0.0;
+
     final philosophyController = PhilosophyPageController(
-      component: _gameComponents.philosophyText,
-      cardStack: _gameComponents.cardStack,
-      initialTextPos: Vector2(
-        size.x * GameLayout.philosophyTextXRatio,
-        size.y / 2,
-      ),
-      initialStackPos: Vector2(size.x * GameLayout.cardStackXRatio, size.y / 2),
+      titleComponent: philosophyTitle,
+      screenSize: size,
+      onComplete: playPhilosophyComplete,
     );
 
     final workExpController = WorkExperienceTitleController(

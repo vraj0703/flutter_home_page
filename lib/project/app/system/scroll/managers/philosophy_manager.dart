@@ -8,7 +8,7 @@ class PhilosophyManager implements SectionManager {
   final void Function() playSound;
 
   @override
-  double get maxHeight => 1600.0;
+  double get maxHeight => 3000.0;
 
   PhilosophyManager({
     required this.controller,

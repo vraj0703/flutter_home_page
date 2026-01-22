@@ -16,6 +16,8 @@ class GameAudioConfig {
   static const String tingSfx = 'ting.wav';
   static const String scrollTickSfx = 'scroll_tick.mp3'; // Optional
   static const String philosophyEntrySfx = 'do.wav'; // Philosophy section entry
+  static const String philosophyCompleteSfx =
+      're.wav'; // Philosophy title complete
 
   // Volumes
   static const double bgmVolume = 0.4;
