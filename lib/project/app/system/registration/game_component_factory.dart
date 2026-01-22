@@ -13,7 +13,7 @@ import 'package:flutter_home_page/project/app/views/components/hero_title/cinema
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
-import 'package:flutter_home_page/project/app/views/components/cloud_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/cloud_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';

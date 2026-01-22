@@ -8,7 +8,7 @@ import 'package:flutter_home_page/project/app/models/component_context.dart';
 import 'package:flutter_home_page/project/app/config/component_ids.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_tint_component.dart';
-import 'package:flutter_home_page/project/app/views/components/cloud_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/cloud_background_component.dart';
 
 class BackgroundRunBuilder extends ComponentBuilder<BackgroundRunComponent> {
   @override

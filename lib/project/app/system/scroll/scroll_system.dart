@@ -50,6 +50,15 @@ class ScrollSystem {
     _checkSnapPoints();
   }
 
+  void resetScroll(double offset) {
+    _targetScrollOffset = offset;
+    _currentScrollOffset = offset;
+    _lastScrollOffset = offset;
+    _springVelocity = 0.0;
+    _scrollVelocity = 0.0;
+    _isSnapping = false;
+  }
+
   void onScroll(double delta) {
     if (_isSnapping && delta.abs() > 5.0) {
       _isSnapping = false;

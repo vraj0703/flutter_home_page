@@ -58,7 +58,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
       () => downArrowLoader.loadBytes(null),
     );
 
-    // Mark SVG as ready
     if (state is Loading) {
       final currentState = state as Loading;
       final newState = currentState.copyWith(isSvgReady: true);
@@ -81,7 +80,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     Emitter<SceneState> emit,
   ) async {
     if (state.isSvgReady && state.isGameReady) {
-      // Optional delay for effect, similar to original code
       await Future.delayed(const Duration(milliseconds: 600));
       emit(const SceneState.logo());
     }
@@ -117,7 +115,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   ) async {
     _globalScrollOffset += event.delta;
 
-    // Ignore scroll sequence updates during intro states to prevent premature navigation
     if (state is Loading ||
         state is Logo ||
         state is LogoOverlayRemoving ||
@@ -125,7 +122,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
       return;
     }
 
-    // Boundary Checks based on ScrollSequenceConfig
     if (_globalScrollOffset < ScrollSequenceConfig.philosophyStart) {
       if (state is! BoldText) {
         emit(const SceneState.boldText());
@@ -162,11 +158,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     Emitter<SceneState> emit,
   ) {
     _globalScrollOffset = event.offset;
-    // Re-evaluate state based on new offset
-    // Reuse logic by simulating a 0 delta event or extracting method
-    // For now, simpler to copy-paste the checks or extract them.
-    // Let's copy-paste for safety to avoid defining new method signature mid-refactor.
-    if (_globalScrollOffset < ScrollSequenceConfig.philosophyStart) {
+     if (_globalScrollOffset < ScrollSequenceConfig.philosophyStart) {
       emit(const SceneState.boldText());
     } else if (_globalScrollOffset <
         ScrollSequenceConfig.workExpTitleEntranceStart) {

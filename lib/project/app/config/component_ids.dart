@@ -15,5 +15,6 @@ class ComponentIds {
   static const String workExperienceTitle = 'work_experience_title';
   static const String experiencePage = 'experience_page';
   static const String testimonialPage = 'testimonial_page';
+  static const String philosophyPage = 'philosophy_page';
   static const String contactPage = 'contact_page';
 }

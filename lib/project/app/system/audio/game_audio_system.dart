@@ -127,4 +127,8 @@ class GameAudioSystem {
     // Optional: Very quiet tick for scrolling
     // FlameAudio.play(GameAudioConfig.scrollTickSfx, volume: 0.1);
   }
+
+  void playAsset(String file, {double volume = 1.0}) {
+    _safePlay(file, volume: volume);
+  }
 }
