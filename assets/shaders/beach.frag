@@ -411,14 +411,14 @@ void BirdPM (float t) {
 
 // Text Reflection Uniforms
 uniform sampler2D uTextTexture;
-uniform float uTextY;      // Text center Y (Flutter coords: 0 at top)
-uniform float uWaterY;     // Water line Y (Flutter coords: 0 at top)
+uniform float uTextY;// Text center Y (Flutter coords: 0 at top)
+uniform float uWaterY;// Water line Y (Flutter coords: 0 at top)
 uniform float uTextOpacity;
 uniform float uTextScale;
 uniform float uTextWidth;
 uniform float uTextHeight;
-uniform float uTextX;      // Text center X (Logical)
-uniform float uPixelRatio; // Device Pixel Ratio
+uniform float uTextX;// Text center X (Logical)
+uniform float uPixelRatio;// Device Pixel Ratio
 
 // Function to render text reflection with water distortion
 vec3 RenderTextReflection(vec2 fragCoord) {
@@ -442,7 +442,7 @@ vec3 RenderTextReflection(vec2 fragCoord) {
 
     // Distortion (Physical) -> Scaled to Logical
     // Keep distortion calculation in physical domain for consistency with wave size
-    float physDistortion = WaterHt(vec3(fragCoord.x, rawPhysY, tCur*10.0)) * 20.0; // Enabled
+    float physDistortion = WaterHt(vec3(fragCoord.x, rawPhysY, tCur*10.0)) * 20.0;// Enabled
     logicalPos.x += physDistortion / uPixelRatio;
 
     // Calculate UV based on distance from Text Center (Logical)
@@ -478,7 +478,7 @@ vec3 RenderTextReflection(vec2 fragCoord) {
 
 void main() {
     vec2 fragCoord = FlutterFragCoord().xy;
-    fragCoord.y = uSize.y - fragCoord.y; // Flip Y for Flutter (Top-Left) -> GLSL (Bottom-Left)
+    fragCoord.y = uSize.y - fragCoord.y;// Flip Y for Flutter (Top-Left) -> GLSL (Bottom-Left)
 
     vec2 uv = 2. * fragCoord.xy / uSize.xy - 1.;
     uv.x *= uSize.x / uSize.y;
@@ -511,7 +511,7 @@ void main() {
 
     // Add text reflection
     vec3 refl = RenderTextReflection(fragCoord);
-    col += refl; // Additive blend for light reflection
+    col += refl;// Additive blend for light reflection
 
     fragColor = vec4 (col, 1.);
 }
