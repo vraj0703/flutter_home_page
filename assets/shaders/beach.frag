@@ -409,9 +409,77 @@ void BirdPM (float t) {
     legAng = pi * clamp (0.4 + 1.5 * el, 0.12, 0.8);
 }
 
+// Text Reflection Uniforms
+uniform sampler2D uTextTexture;
+uniform float uTextY;      // Text center Y (Flutter coords: 0 at top)
+uniform float uWaterY;     // Water line Y (Flutter coords: 0 at top)
+uniform float uTextOpacity;
+uniform float uTextScale;
+uniform float uTextWidth;
+uniform float uTextHeight;
+uniform float uTextX;      // Text center X (Logical)
+uniform float uPixelRatio; // Device Pixel Ratio
+
+// Function to render text reflection with water distortion
+vec3 RenderTextReflection(vec2 fragCoord) {
+    if (uTextOpacity <= 0.01 || uTextWidth <= 0.0) return vec3(0.0);
+
+    // Recover Raw Physical Y (Top-Down) from "Logical Flip" done in main
+    float rawPhysY = uSize.y - fragCoord.y;
+
+    // Convert to Logical Coordinates (Top-Down)
+    vec2 logicalPos = vec2(fragCoord.x, rawPhysY) / uPixelRatio;
+
+    // Only render below water line (Logical check)
+    if (logicalPos.y < uWaterY) return vec3(0.0);
+
+    // Reflection Geometry key:
+    // Mirror the texture lookup position around the water line.
+    // logicalPos.y is below water.
+    // distance = logicalPos.y - uWaterY.
+    // virtualSourceY = uWaterY - distance.
+    float virtualSourceY = uWaterY - (logicalPos.y - uWaterY);
+
+    // Distortion (Physical) -> Scaled to Logical
+    // Keep distortion calculation in physical domain for consistency with wave size
+    float physDistortion = WaterHt(vec3(fragCoord.x, rawPhysY, tCur*10.0)) * 20.0; // Enabled
+    logicalPos.x += physDistortion / uPixelRatio;
+
+    // Calculate UV based on distance from Text Center (Logical)
+    float dx = logicalPos.x - uTextX;
+    float dy = virtualSourceY - uTextY;
+
+    // Text Dimensions (Logical)
+    float contentW = uTextWidth * uTextScale;
+    float contentH = uTextHeight * uTextScale;
+
+    // Map to UV
+    // u: 0.5 at center + dx/W
+    float u = 0.5 + dx / contentW;
+
+    // v: 0.5 at center + dy/H
+    // If dy is negative (virtualSource above center), v < 0.5.
+    // Top of Text -> Low V (0).
+    // Bottom of Text -> High V (1).
+    float v = 0.5 + dy / contentH;
+
+    // Clip
+    if (u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0) return vec3(0.0);
+
+    // Sample texture
+    vec4 texCol = texture(uTextTexture, vec2(u, v));
+
+    // Fade with depth (Logical distance)
+    float fade = smoothstep(1200.0, 0.0, logicalPos.y - uWaterY);
+
+    vec3 waterTint = vec3(0.7, 0.9, 1.0);
+    return texCol.rgb * waterTint * texCol.a * uTextOpacity * 0.4 * fade;
+}
+
 void main() {
     vec2 fragCoord = FlutterFragCoord().xy;
     fragCoord.y = uSize.y - fragCoord.y; // Flip Y for Flutter (Top-Left) -> GLSL (Bottom-Left)
+
     vec2 uv = 2. * fragCoord.xy / uSize.xy - 1.;
     uv.x *= uSize.x / uSize.y;
     tCur = uTime;
@@ -440,5 +508,10 @@ void main() {
     ro = vuMat * vec3 (0., 0., -30.);
     ro.y = 4.;
     vec3 col = ShowScene (ro, rd);
+
+    // Add text reflection
+    vec3 refl = RenderTextReflection(fragCoord);
+    col += refl; // Additive blend for light reflection
+
     fragColor = vec4 (col, 1.);
 }
