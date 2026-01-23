@@ -19,6 +19,12 @@ class GameAudioConfig {
   static const String philosophyCompleteSfx =
       're.wav'; // Philosophy title complete
 
+  // Trail Card SFX
+  static const String trailCard1Sfx = 'mi.wav';
+  static const String trailCard2Sfx = 'fa.wav';
+  static const String trailCard3Sfx = 'si.wav';
+  static const String trailCard4Sfx = 'sol.wav';
+
   // Volumes
   static const double bgmVolume = 0.4;
   static const double sfxVolume = 0.6;

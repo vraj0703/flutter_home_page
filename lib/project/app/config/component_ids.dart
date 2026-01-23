@@ -17,4 +17,5 @@ class ComponentIds {
   static const String testimonialPage = 'testimonial_page';
   static const String philosophyPage = 'philosophy_page';
   static const String contactPage = 'contact_page';
+  static const String philosophyTrail = 'philosophy_trail';
 }

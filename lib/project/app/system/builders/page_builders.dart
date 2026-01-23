@@ -12,6 +12,7 @@ import 'package:flutter_home_page/project/app/views/components/contact/contact_p
 import 'package:flutter_home_page/project/app/views/components/experience/experience_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 
 class PhilosophyTextBuilder extends ComponentBuilder<PhilosophyTextComponent> {
@@ -124,6 +125,29 @@ class ContactPageBuilder extends ComponentBuilder<ContactPageComponent> {
     final component = ContactPageComponent(size: context.size, shader: shader);
     component.priority = GameLayout.zContact;
     component.position = Vector2(0, context.size.y);
+    return component;
+  }
+}
+
+class PhilosophyTrailBuilder
+    extends ComponentBuilder<PhilosophyTrailComponent> {
+  @override
+  String get id => ComponentIds.philosophyTrail;
+
+  @override
+  int get priority => 0;
+
+  @override
+  Future<PhilosophyTrailComponent> build(ComponentContext context) async {
+    final component =
+        PhilosophyTrailComponent(); // Layout handled in onGameResize
+    component.priority = -1; // Behind bold text? Or above?
+    // Balloon is 20. Main content.
+    // Trail cards should be above background (0) but maybe below balloon?
+    // Or concurrent.
+    // Let's set priority to GameLayout.zContent constant if available, or just 10.
+    component.priority = GameLayout.zContent;
+    component.opacity = 0.0; // Start hidden
     return component;
   }
 }

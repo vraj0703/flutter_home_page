@@ -1,4 +1,5 @@
 import 'package:flame/components.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_tint_component.dart';
 import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
@@ -24,6 +25,7 @@ class GameComponents {
   final CloudBackgroundComponent cloudBackground;
   final PhilosophyTextComponent philosophyText;
   final PeelingCardStackComponent cardStack;
+  final PhilosophyTrailComponent philosophyTrail;
   final WorkExperienceTitleComponent workExperienceTitle;
   final ExperiencePageComponent experiencePage;
   final TestimonialPageComponent testimonialPage;
@@ -40,6 +42,7 @@ class GameComponents {
     required this.cloudBackground,
     required this.philosophyText,
     required this.cardStack,
+    required this.philosophyTrail,
     required this.workExperienceTitle,
     required this.experiencePage,
     required this.testimonialPage,
@@ -58,6 +61,7 @@ class GameComponents {
     // cloudBackground is managed by PhilosophyManager, don't reset it here
     philosophyText.opacity = 0.0;
     cardStack.opacity = 0.0;
+    philosophyTrail.opacity = 0.0;
     workExperienceTitle.opacity = 0.0;
     experiencePage.opacity = 0.0;
     testimonialPage.opacity = 0.0;

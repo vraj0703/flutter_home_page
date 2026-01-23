@@ -15,8 +15,10 @@ class PeelingCardStackComponent extends PositionComponent
 
   double _opacity = 0.0;
 
+  @override
   double get opacity => _opacity;
 
+  @override
   set opacity(double value) {
     _opacity = value;
     for (final card in _cards) {

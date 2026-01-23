@@ -24,6 +24,9 @@ class PhilosophyManager implements SectionManager {
 
     // Play philosophy entry sound
     playSound();
+
+    // Ensure trail component is visible (cards handle their own opacity)
+    controller.trailComponent.opacity = 1.0;
   }
 
   @override

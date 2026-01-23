@@ -2,8 +2,6 @@ import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter_home_page/project/app/config/game_audio_config.dart';
 
 class GameAudioSystem {
-  DateTime _lastHoverTime = DateTime.now();
-
   Future<void> _safePlay(String file, {double volume = 1.0}) async {
     try {
       await FlameAudio.play(file, volume: volume);
@@ -14,16 +12,25 @@ class GameAudioSystem {
 
   Future<void> initialize() async {
     // Preload important SFX to avoid latency
-    await FlameAudio.audioCache.loadAll([
-      GameAudioConfig.ambientBgm,
-      GameAudioConfig.enterSfx,
-      GameAudioConfig.titleLoadedSfx,
-      GameAudioConfig.slideInSfx,
-      GameAudioConfig.bouncyArrowSfx,
-      GameAudioConfig.boldTextSwell,
-      GameAudioConfig.philosophyEntrySfx,
-      GameAudioConfig.philosophyCompleteSfx,
-    ]);
+    try {
+      await FlameAudio.audioCache.loadAll([
+        GameAudioConfig.ambientBgm,
+        GameAudioConfig.enterSfx,
+        GameAudioConfig.titleLoadedSfx,
+        GameAudioConfig.slideInSfx,
+        GameAudioConfig.bouncyArrowSfx,
+        GameAudioConfig.boldTextSwell,
+        GameAudioConfig.philosophyEntrySfx,
+        GameAudioConfig.philosophyCompleteSfx,
+        GameAudioConfig.trailCard1Sfx,
+        GameAudioConfig.trailCard2Sfx,
+        GameAudioConfig.trailCard3Sfx,
+        GameAudioConfig.trailCard4Sfx,
+      ]);
+    } catch (e) {
+      // Ignore audio loading errors (likely format issues on web)
+      print('Audio load error: $e');
+    }
 
     // Start BGM loop (can be toggled in settings later)
     playBgm();
@@ -137,6 +144,27 @@ class GameAudioSystem {
       GameAudioConfig.philosophyCompleteSfx,
       volume: GameAudioConfig.sfxVolume,
     );
+  }
+
+  void playTrailCardSound(int index) {
+    String sfx;
+    switch (index) {
+      case 0:
+        sfx = GameAudioConfig.trailCard1Sfx;
+        break;
+      case 1:
+        sfx = GameAudioConfig.trailCard2Sfx;
+        break;
+      case 2:
+        sfx = GameAudioConfig.trailCard3Sfx;
+        break;
+      case 3:
+        sfx = GameAudioConfig.trailCard4Sfx;
+        break;
+      default:
+        return;
+    }
+    _safePlay(sfx, volume: GameAudioConfig.sfxVolume);
   }
 
   void playScrollTick() {

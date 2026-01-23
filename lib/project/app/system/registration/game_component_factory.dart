@@ -18,6 +18,7 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/peelin
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 
@@ -45,6 +46,7 @@ class GameComponentFactory {
   late CloudBackgroundComponent cloudBackground;
   late PhilosophyTextComponent philosophyText;
   late PeelingCardStackComponent cardStack;
+  late PhilosophyTrailComponent philosophyTrail;
   late WorkExperienceTitleComponent workExperienceTitle;
   late ExperiencePageComponent experiencePage;
   late TestimonialPageComponent testimonialPage;
@@ -79,6 +81,7 @@ class GameComponentFactory {
 
     registry.register(PhilosophyTextBuilder());
     registry.register(PeelingCardStackBuilder());
+    registry.register(PhilosophyTrailBuilder());
     registry.register(ExperiencePageBuilder());
     registry.register(TestimonialPageBuilder());
     registry.register(ContactPageBuilder());
@@ -126,6 +129,7 @@ class GameComponentFactory {
 
     philosophyText = registry.get(ComponentIds.philosophyText);
     cardStack = registry.get(ComponentIds.cardStack);
+    philosophyTrail = registry.get(ComponentIds.philosophyTrail);
     experiencePage = registry.get(ComponentIds.experiencePage);
     testimonialPage = registry.get(ComponentIds.testimonialPage);
     contactPage = registry.get(ComponentIds.contactPage);
@@ -146,6 +150,7 @@ class GameComponentFactory {
     cloudBackground,
     philosophyText,
     cardStack,
+    philosophyTrail,
     workExperienceTitle,
     experiencePage,
     testimonialPage,

@@ -4,8 +4,7 @@ import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/models/game_components.dart';
-import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
-import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/philosophy_burst_controller.dart';
+
 import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/opacity.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/parallax.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_orchestrator.dart';
@@ -39,8 +38,6 @@ import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/go
 import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/background_tint_controller.dart';
 import 'package:flutter_home_page/project/app/system/input/game_input_controller.dart';
 import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_card_burst_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_title_burst_component.dart'; // Added import
 
 class MyGame extends FlameGame
     with
@@ -129,6 +126,7 @@ class MyGame extends FlameGame
       cloudBackground: _componentFactory.cloudBackground,
       philosophyText: _componentFactory.philosophyText,
       cardStack: _componentFactory.cardStack,
+      philosophyTrail: _componentFactory.philosophyTrail,
       workExperienceTitle: _componentFactory.workExperienceTitle,
       experiencePage: _componentFactory.experiencePage,
       testimonialPage: _componentFactory.testimonialPage,
@@ -181,6 +179,8 @@ class MyGame extends FlameGame
   void playHover() => _audioSystem.playHover();
 
   void playClick() => _audioSystem.playClick();
+
+  void playTrailCardSound(int index) => _audioSystem.playTrailCardSound(index);
 
   // Compatibility getter for components accessing godRay via game reference
   GodRayComponent get godRay => _componentFactory.godRay;
@@ -423,6 +423,8 @@ class MyGame extends FlameGame
 
     final philosophyController = PhilosophyPageController(
       titleComponent: philosophyTitle,
+      cloudBackground: _gameComponents.cloudBackground,
+      trailComponent: _gameComponents.philosophyTrail, // Added
       screenSize: size,
       onComplete: playPhilosophyComplete,
     );
