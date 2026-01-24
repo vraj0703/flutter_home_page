@@ -22,22 +22,25 @@ class PhilosophyPageController implements ScrollObserver {
     required this.trailComponent,
     required this.screenSize,
     this.onComplete,
-  });
+  }) {
+    // Bind smoothing callback
+    trailComponent.onScrollUpdate = _updateFloatingTitleAnimation;
+  }
 
   @override
   void onScroll(double scrollOffset) {
-    _updateFloatingTitleAnimation(scrollOffset);
+    trailComponent.setTargetScroll(scrollOffset);
   }
 
   void _updateFloatingTitleAnimation(double scrollOffset) {
-    // 1. Balloon Title Animation (0 - 500px)
-    const titleDuration = 500.0;
+    // 1. Balloon Title Animation (0 - 800px, sound "Re" at end)
+    const titleDuration = 800.0;
     final titleProgress = (scrollOffset / titleDuration).clamp(0.0, 1.0);
 
-    // 2. Trail Cards Animation (Starts at 500px, Ends at 1500px)
-    // Runs AFTER balloon title is fully visible/stabilized
+    // 2. Trail Cards Animation (Starts at 800px, extends for 2600px)
+    // Range: 800 - 3400. Ample space for 4 distinct triggers.
     if (scrollOffset > titleDuration) {
-      const trailDuration = 1000.0;
+      const trailDuration = 2600.0;
       final trailProgress = ((scrollOffset - titleDuration) / trailDuration)
           .clamp(0.0, 1.0);
       trailComponent.updateTrailAnimation(trailProgress);

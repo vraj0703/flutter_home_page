@@ -8,7 +8,7 @@ class PhilosophyManager implements SectionManager {
   final void Function() playSound;
 
   @override
-  double get maxHeight => 3000.0;
+  double get maxHeight => 3500.0; // Increased for spaced-out audio sequence
 
   PhilosophyManager({
     required this.controller,
@@ -35,10 +35,20 @@ class PhilosophyManager implements SectionManager {
     cloudBackground.opacity = 0.0;
   }
 
+  bool _canReplayDo = false;
+
   @override
   void onScroll(double localOffset) {
     controller.onScroll(localOffset);
     // Keep cloud fully visible throughout Philosophy section
     cloudBackground.opacity = 1.0;
+
+    // Logic to replay "Do" when returning to 0
+    if (localOffset > 50.0) {
+      _canReplayDo = true;
+    } else if (localOffset < 10.0 && _canReplayDo) {
+      playSound();
+      _canReplayDo = false;
+    }
   }
 }

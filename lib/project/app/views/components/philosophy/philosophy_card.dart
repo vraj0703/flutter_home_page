@@ -37,7 +37,7 @@ class PhilosophyCard extends PositionComponent
   late TextComponent iconComp;
   late TextComponent titleComp;
   late RectangleComponent dividerComp;
-  late TextComponent descComp;
+  late TextBoxComponent descComp;
 
   PhilosophyCard({
     required this.data,
@@ -82,14 +82,9 @@ class PhilosophyCard extends PositionComponent
       );
       add(dividerComp);
 
-      // 5. Description
-      final wrappedDesc = _wordWrap(
-        data!.description,
-        GameLayout.cardDescWrapLimit,
-      );
-
-      descComp = TextComponent(
-        text: wrappedDesc,
+      // 5. Description (Using TextBoxComponent for auto-wrap)
+      descComp = TextBoxComponent(
+        text: data!.description,
         textRenderer: TextPaint(
           style: TextStyle(
             fontFamily: GameStyles.fontModernUrban,
@@ -98,33 +93,75 @@ class PhilosophyCard extends PositionComponent
             height: 1.4,
           ),
         ),
+        boxConfig: TextBoxConfig(
+          // CRITICAL: Clamp width to >= 1.0 to prevent CanvasKit "unsigned long" error during init
+          maxWidth: (size.x - (padding * 3)).clamp(1.0, 10000.0),
+          growingBox: false,
+          timePerChar: 0.0,
+        ),
         position: GameLayout.cardDescPosVector,
       );
       add(descComp);
     }
 
+    _updateLayout();
     _updateVisuals();
   }
 
-  String _wordWrap(String text, int lineCharLimit) {
-    final words = text.split(' ');
-    final buffer = StringBuffer();
-    int currentLineLength = 0;
-
-    for (var word in words) {
-      if (currentLineLength + word.length > lineCharLimit) {
-        buffer.write('\n$word');
-        currentLineLength = word.length;
-      } else {
-        if (buffer.isNotEmpty && !buffer.toString().endsWith('\n')) {
-          buffer.write(' ');
-          currentLineLength++;
-        }
-        buffer.write(word);
-        currentLineLength += word.length;
-      }
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    if (isLoaded && data != null) {
+      // Update layout completely on resize
+      _updateLayout();
     }
-    return buffer.toString();
+  }
+
+  void _updateLayout() {
+    // Mockup-based Layout: Left Aligned, Stacked
+    final padding = 24.0;
+    // CRITICAL: Clamp width to >= 1.0 to prevent CanvasKit "unsigned long" error
+    final contentWidth = (size.x - (padding * 2)).clamp(1.0, 10000.0);
+
+    // 1. Icon (Top Left)
+    iconComp.anchor = Anchor.topLeft;
+    iconComp.position = Vector2(padding, padding);
+    // Scale icon slightly up if needed for "Vibrant" look
+    // iconComp.scale = Vector2.all(1.2);
+
+    // 2. Title (Below Icon)
+    titleComp.anchor = Anchor.topLeft;
+    titleComp.position = Vector2(
+      padding,
+      padding + 60.0,
+    ); // 60px gap from top approx
+
+    // 3. Divider (Hidden - not in mockup)
+    dividerComp.position = Vector2(-200, -200); // Move offscreen
+    dividerComp.size = Vector2.zero();
+
+    // 4. Description (Below Title)
+    // Use fixed offset to ensure visibility even if title height is 0 during init
+    // Icon (50px) + Gap (10px) + Title (30px) + Gap (10px) -> ~100px from top padding
+    // Total Y ~= padding + 100.0
+
+    final descTop = padding + 100.0;
+    final bottomPadding = padding;
+    // CRITICAL: Clamp height to >= 1.0 to prevent CanvasKit error
+    final maxDescHeight = (size.y - descTop - bottomPadding).clamp(1.0, 5000.0);
+
+    descComp.anchor = Anchor.topLeft;
+    descComp.position = Vector2(padding, descTop);
+
+    // Explicitly constrain size to prevent overflow
+    descComp.size = Vector2(contentWidth, maxDescHeight);
+
+    // Update Text Box BoxConfig
+    descComp.boxConfig = TextBoxConfig(
+      maxWidth: contentWidth,
+      timePerChar: 0.0,
+      growingBox: false, // Strict constraint
+    );
   }
 
   void _updateVisuals() {
@@ -182,12 +219,15 @@ class PhilosophyCard extends PositionComponent
       size.toRect(),
       const Radius.circular(16),
     );
+    canvas.clipRRect(rrect);
 
     // Match testimonial card fill alpha
     canvas.drawRRect(
       rrect,
       Paint()
-        ..color = Colors.white.withValues(alpha: GameStyles.testiFillAlpha * alpha)
+        ..color = Colors.white.withValues(
+          alpha: GameStyles.testiFillAlpha * alpha,
+        )
         ..style = PaintingStyle.fill,
     );
 

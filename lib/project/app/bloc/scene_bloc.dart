@@ -149,11 +149,10 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     final newOffset = currentOffset + event.delta;
 
     if (newOffset > currentManager.maxHeight) {
-      add(
-        SceneEvent.nextSection(overflow: newOffset - currentManager.maxHeight),
-      );
+      add(const SceneEvent.nextSection(overflow: 0.0));
     } else if (newOffset < 0) {
-      add(SceneEvent.previousSection(underflow: newOffset));
+      // Discard underflow momentum to break the scroll
+      add(const SceneEvent.previousSection(underflow: 0.0));
     } else {
       add(SceneEvent.updateSectionOffset(newOffset));
     }
@@ -165,7 +164,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
       _emitStateForIndex(_currentIndex, event.overflow, emit);
       _sections[_currentIndex].onActivate();
     } else {
-       add(SceneEvent.updateSectionOffset(_sections[_currentIndex].maxHeight));
+      add(SceneEvent.updateSectionOffset(_sections[_currentIndex].maxHeight));
     }
   }
 
