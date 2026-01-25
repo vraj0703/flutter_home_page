@@ -7,14 +7,28 @@ class BackgroundRunComponent extends PositionComponent
   final FragmentShader shader;
   double _time = 0;
 
+  // Warmup logic
+  int _warmupFrames = 0;
+
   BackgroundRunComponent({required this.shader, super.size, super.priority}) {
-    opacity = 0.0;
+    // Start with tiny opacity to force a render path (warmup)
+    opacity = 0.001;
   }
 
   @override
   void update(double dt) {
     super.update(dt);
     _time += dt;
+
+    // Shader Warmup: Render the first few frames to compile pipeline state
+    if (_warmupFrames < 3) {
+      _warmupFrames++;
+      if (_warmupFrames == 3) {
+        if (opacity <= 0.002) {
+          opacity = 0.0;
+        }
+      }
+    }
   }
 
   @override

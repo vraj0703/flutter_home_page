@@ -8,12 +8,9 @@ import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/interfaces/component_builder.dart';
 import 'package:flutter_home_page/project/app/models/component_context.dart';
 import 'package:flutter_home_page/project/app/config/component_ids.dart';
-import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
-import 'package:flutter_home_page/project/app/views/components/experience/experience_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
-import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 
 class PhilosophyTextBuilder extends ComponentBuilder<PhilosophyTextComponent> {
   @override
@@ -72,59 +69,6 @@ class PeelingCardStackBuilder
     component.anchor = Anchor.center;
     component.priority = GameLayout.zContent;
     component.opacity = 0.0;
-    return component;
-  }
-}
-
-class ExperiencePageBuilder extends ComponentBuilder<ExperiencePageComponent> {
-  @override
-  String get id => ComponentIds.experiencePage;
-
-  @override
-  int get priority => 0;
-
-  @override
-  Future<ExperiencePageComponent> build(ComponentContext context) async {
-    final component = ExperiencePageComponent(size: context.size);
-    component.priority = GameLayout.zContent;
-    return component;
-  }
-}
-
-class TestimonialPageBuilder
-    extends ComponentBuilder<TestimonialPageComponent> {
-  @override
-  String get id => ComponentIds.testimonialPage;
-
-  @override
-  int get priority => 0;
-
-  @override
-  Future<TestimonialPageComponent> build(ComponentContext context) async {
-    final shader = await context.loadShader(GameAssets.metallicShader);
-    final component = TestimonialPageComponent(
-      size: context.size,
-      shader: shader,
-    );
-    component.priority = GameLayout.zContent;
-    component.opacity = 0.0;
-    return component;
-  }
-}
-
-class ContactPageBuilder extends ComponentBuilder<ContactPageComponent> {
-  @override
-  String get id => ComponentIds.contactPage;
-
-  @override
-  int get priority => 0;
-
-  @override
-  Future<ContactPageComponent> build(ComponentContext context) async {
-    final shader = await context.loadShader(GameAssets.metallicShader);
-    final component = ContactPageComponent(size: context.size, shader: shader);
-    component.priority = GameLayout.zContact;
-    component.position = Vector2(0, context.size.y);
     return component;
   }
 }

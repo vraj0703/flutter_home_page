@@ -1,5 +1,7 @@
 import 'package:flutter_home_page/project/app/interfaces/section_manager.dart';
+import 'package:flutter_home_page/project/app/models/scroll_result.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/philosophy_page_controller.dart';
+import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/cloud_background_component.dart';
 
 class PhilosophyManager implements SectionManager {
@@ -8,7 +10,7 @@ class PhilosophyManager implements SectionManager {
   final void Function() playSound;
 
   @override
-  double get maxHeight => 3500.0; // Increased for spaced-out audio sequence
+  double get maxHeight => 3500.0;
 
   PhilosophyManager({
     required this.controller,
@@ -32,7 +34,10 @@ class PhilosophyManager implements SectionManager {
   @override
   void onDeactivate() {
     // Hide beach shader background when leaving Philosophy
+    // Switch back to Run (Gold) or let BoldText handle it
     cloudBackground.opacity = 0.0;
+    // Enforce clean exit for title/cards/reflection
+    controller.reset();
   }
 
   bool _canReplayDo = false;
@@ -49,6 +54,18 @@ class PhilosophyManager implements SectionManager {
     } else if (localOffset < 10.0 && _canReplayDo) {
       playSound();
       _canReplayDo = false;
+    }
+  }
+
+  @override
+  ScrollResult handleScroll(double currentOffset, double delta) {
+    final newOffset = currentOffset + delta;
+    if (newOffset > maxHeight) {
+      return ScrollOverflow(newOffset - maxHeight);
+    } else if (newOffset < 0) {
+      return ScrollUnderflow(newOffset);
+    } else {
+      return ScrollConsumed(newOffset);
     }
   }
 }

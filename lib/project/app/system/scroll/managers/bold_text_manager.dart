@@ -1,4 +1,5 @@
 import 'package:flutter_home_page/project/app/interfaces/section_manager.dart';
+import 'package:flutter_home_page/project/app/models/scroll_result.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/bold_text_controller.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/cloud_background_component.dart';
 
@@ -26,8 +27,8 @@ class BoldTextManager implements SectionManager {
   void onScroll(double localOffset) {
     controller.onScroll(localOffset);
 
-    // Fade in cloud background during bold text exit/flash
-    // Flash happens at 2880-3040 (90-95% of 3200)
+    // Transition to Beach Mode (Blue) during bold text exit
+    // Flash happens at 2880-3040
     // Start fading in slightly earlier at 2700 for smooth transition
     const fadeStart = 2700.0;
     const fadeEnd = 3200.0;
@@ -40,6 +41,18 @@ class BoldTextManager implements SectionManager {
       cloudBackground.opacity = progress.clamp(0.0, 1.0);
     } else {
       cloudBackground.opacity = 1.0;
+    }
+  }
+
+  @override
+  ScrollResult handleScroll(double currentOffset, double delta) {
+    final newOffset = currentOffset + delta;
+    if (newOffset > maxHeight) {
+      return ScrollOverflow(newOffset - maxHeight);
+    } else if (newOffset < 0) {
+      return ScrollUnderflow(newOffset);
+    } else {
+      return ScrollConsumed(newOffset);
     }
   }
 }

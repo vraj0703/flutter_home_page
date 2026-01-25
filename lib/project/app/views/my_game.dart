@@ -119,7 +119,7 @@ class MyGame extends FlameGame
       cinematicTitle: _componentFactory.cinematicTitle,
       cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
       interactiveUI: _componentFactory.logoOverlay,
-      dimLayer: _componentFactory.dimLayer,
+      //dimLayer: _componentFactory.dimLayer,
       godRay: _componentFactory.godRay,
       backgroundTint: _componentFactory.backgroundTint,
       boldTextReveal: _componentFactory.boldTextReveal,
@@ -278,7 +278,7 @@ class MyGame extends FlameGame
     );
     // Safe check if factory initialized
     try {
-      _componentFactory.dimLayer.size = size;
+     // _componentFactory.dimLayer.size = size;
       _componentFactory.boldTextReveal.position = center;
     } catch (_) {
       // Components might not be loaded yet during initial resize
@@ -382,7 +382,7 @@ class MyGame extends FlameGame
 
   void _configureGlobal() {
     // --- Global Effects ---
-    scrollOrchestrator.addBinding(
+    /*scrollOrchestrator.addBinding(
       _gameComponents.dimLayer,
       OpacityScrollEffect(
         startScroll: ScrollSequenceConfig.dimLayerStart,
@@ -391,7 +391,7 @@ class MyGame extends FlameGame
         endOpacity: ScrollSequenceConfig.dimLayerFinalAlpha,
         curve: GameCurves.smoothDecel,
       ),
-    );
+    );*/
 
     // --- Controllers ---
     _godRayController = GodRayController(

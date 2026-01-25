@@ -3,7 +3,7 @@ class TestimonialNode {
   final String role;
   final String company;
   final String quote;
-  final String avatarUrl; // Optional, maybe use Initials
+  final String avatarUrl;
 
   const TestimonialNode({
     required this.name,

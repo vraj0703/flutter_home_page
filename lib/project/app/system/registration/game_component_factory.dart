@@ -2,6 +2,11 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flutter/material.dart' as material;
+import 'package:flutter_home_page/project/app/system/builders/experience_builders.dart';
+import 'package:flutter_home_page/project/app/system/builders/god_ray_builder.dart';
+import 'package:flutter_home_page/project/app/system/builders/philosophy_builders.dart';
+import 'package:flutter_home_page/project/app/system/builders/shader_scene_builder.dart';
+import 'package:flutter_home_page/project/app/system/builders/testimonial_builders.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_tint_component.dart';
@@ -28,7 +33,7 @@ import 'package:flutter_home_page/project/app/models/component_context.dart';
 import 'package:flutter_home_page/project/app/config/component_ids.dart';
 import 'package:flutter_home_page/project/app/system/builders/background_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/logo_layer_builders.dart';
-import 'package:flutter_home_page/project/app/system/builders/page_builders.dart';
+import 'package:flutter_home_page/project/app/system/builders/contact_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/title_builders.dart';
 
 class GameComponentFactory {
@@ -42,7 +47,6 @@ class GameComponentFactory {
   late CinematicTitleComponent cinematicTitle;
   late CinematicSecondaryTitleComponent cinematicSecondaryTitle;
   late BoldTextRevealComponent boldTextReveal;
-  late RectangleComponent dimLayer;
   late CloudBackgroundComponent cloudBackground;
   late PhilosophyTextComponent philosophyText;
   late PeelingCardStackComponent cardStack;
@@ -72,7 +76,6 @@ class GameComponentFactory {
     registry.register(BackgroundRunBuilder());
     registry.register(BackgroundTintBuilder());
     registry.register(CloudBackgroundBuilder());
-    registry.register(DimLayerBuilder());
 
     registry.register(CinematicTitleBuilder());
     registry.register(CinematicSecondaryTitleBuilder());
@@ -118,7 +121,7 @@ class GameComponentFactory {
     backgroundRun = registry.get(ComponentIds.backgroundRun);
     backgroundTint = registry.get(ComponentIds.backgroundTint);
     cloudBackground = registry.get(ComponentIds.cloudBackground);
-    dimLayer = registry.get(ComponentIds.dimLayer);
+    //dimLayer = registry.get(ComponentIds.dimLayer);
 
     cinematicTitle = registry.get(ComponentIds.cinematicTitle);
     cinematicSecondaryTitle = registry.get(
@@ -146,7 +149,6 @@ class GameComponentFactory {
     cinematicTitle,
     cinematicSecondaryTitle,
     boldTextReveal,
-    dimLayer,
     cloudBackground,
     philosophyText,
     cardStack,

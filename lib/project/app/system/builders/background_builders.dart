@@ -54,7 +54,11 @@ class CloudBackgroundBuilder
 
   @override
   Future<CloudBackgroundComponent> build(ComponentContext context) async {
-    final component = CloudBackgroundComponent(size: context.size);
+    final shader = await context.loadShader(GameAssets.beachShader);
+    final component = CloudBackgroundComponent(
+      size: context.size,
+      shader: shader,
+    );
     component.opacity = 0.0;
     component.priority = 10;
     return component;

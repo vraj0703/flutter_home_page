@@ -2,9 +2,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 
 class CloudBackgroundComponent extends PositionComponent with HasGameReference {
-  CloudBackgroundComponent({super.size});
-
-  late FragmentShader _shader;
+  final FragmentShader shader;
 
   /// 0.0 = Invisible, 1.0 = Fully Visible
   double opacity = 0.0;
@@ -23,23 +21,23 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
   double _textScale = 1.0;
   double _centerX = 1.0;
 
+  /// Warmup logic
+  int _warmupFrames = 0;
+
+  CloudBackgroundComponent({super.size, required this.shader}) {
+    // Start with tiny opacity to force a render path (warmup)
+    opacity = 0.001;
+  }
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-
-    // 1. Load Shader (Already registered in pubspec)
-    final program = await FragmentProgram.fromAsset(
-      'assets/shaders/beach.frag',
-    );
-    _shader = program.fragmentShader();
-
-    // 2. Create dummy 1x1 transparent texture for shader sampler
+    // Set size to game size (full screen)
     final recorder = PictureRecorder();
     final _ = Canvas(recorder);
     final picture = recorder.endRecording();
     _dummyTexture = await picture.toImage(1, 1);
 
-    // Set size to game size (full screen)
     size = game.size;
   }
 
@@ -52,6 +50,18 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
   @override
   void update(double dt) {
     super.update(dt);
+
+    // Shader Warmup: Render the first few frames to compile pipeline state
+    if (_warmupFrames < 3) {
+      _warmupFrames++;
+      if (_warmupFrames == 3) {
+        // Only reset if it hasn't been changed externally (e.g. by manager)
+        if (opacity <= 0.002) {
+          opacity = 0.0;
+        }
+      }
+    }
+
     if (opacity <= 0.0) return; // Optimization
 
     _time += dt;
@@ -66,15 +76,12 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
       Paint()..color = Color.fromRGBO(0, 0, 0, opacity),
     );
 
-    // Default reflection values (fallback to dummy)
     double texW = 0.0;
     double texH = 0.0;
     Image samplerImage = _dummyTexture;
 
     try {
-      // Try to use text texture if available
       if (_textTexture != null) {
-        // Accessing width/height checks for disposal
         texW = _textTexture!.width.toDouble();
         texH = _textTexture!.height.toDouble();
         samplerImage = _textTexture!;
@@ -86,13 +93,6 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
     try {
       // Set uniforms (always safe)
       double dpr = game.canvasSize.x / game.size.x;
-
-      // Convert World Coordinates (Logic) to Screen Coordinates (Logic)
-      // Flame 1.33: localToGlobal converts from Component-Local to Global (Screen/World Root).
-      // If passing a point in World space, we treat it as local to the world root.
-      // Actually, camera.worldToScreen replacement is often camera.globalToLocal if Camera is Global?
-      // No, camera Viewfinder transforms World to Local.
-      // Proper replacement for worldToScreen:
       final screenPos = game.camera.viewfinder.transform.globalToLocal(
         Vector2(_centerX, _textY),
       );
@@ -100,23 +100,23 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
           .globalToLocal(Vector2(0, _waterY))
           .y;
 
-      _shader.setFloat(0, size.x);
-      _shader.setFloat(1, size.y);
-      _shader.setFloat(2, _time);
-      _shader.setFloat(3, _textY); // uTextY (Screen)
-      _shader.setFloat(4, _waterY); // uWaterY (Screen)
-      _shader.setFloat(5, _textOpacity);
-      _shader.setFloat(6, _textScale);
-      _shader.setFloat(7, texW);
-      _shader.setFloat(8, texH);
-      _shader.setFloat(9, screenPos.x); // uTextX (Screen)
-      _shader.setFloat(10, dpr); // uPixelRatio
+      shader.setFloat(0, size.x);
+      shader.setFloat(1, size.y);
+      shader.setFloat(2, _time);
+      shader.setFloat(3, _textY); // uTextY (Screen)
+      shader.setFloat(4, _waterY); // uWaterY (Screen)
+      shader.setFloat(5, _textOpacity);
+      shader.setFloat(6, _textScale);
+      shader.setFloat(7, texW);
+      shader.setFloat(8, texH);
+      shader.setFloat(9, screenPos.x); // uTextX (Screen)
+      shader.setFloat(10, dpr); // uPixelRatio
 
       // Set sampler (safe image)
-      _shader.setImageSampler(0, samplerImage);
+      shader.setImageSampler(0, samplerImage);
 
       // Always draw to prevent black screen
-      canvas.drawRect(size.toRect(), Paint()..shader = _shader);
+      canvas.drawRect(size.toRect(), Paint()..shader = shader);
     } catch (_) {
       // If shader draw fails, we might get black screen, but better than app crash
       // print('Shader draw error: $e');

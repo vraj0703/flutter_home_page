@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/interfaces/section_manager.dart';
+import 'package:flutter_home_page/project/app/models/scroll_result.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -146,15 +147,15 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     if (currentOffset == null) return;
 
     final currentManager = _sections[_currentIndex];
-    final newOffset = currentOffset + event.delta;
 
-    if (newOffset > currentManager.maxHeight) {
-      add(const SceneEvent.nextSection(overflow: 0.0));
-    } else if (newOffset < 0) {
-      // Discard underflow momentum to break the scroll
-      add(const SceneEvent.previousSection(underflow: 0.0));
-    } else {
-      add(SceneEvent.updateSectionOffset(newOffset));
+    final result = currentManager.handleScroll(currentOffset, event.delta);
+
+    if (result is ScrollConsumed) {
+      add(SceneEvent.updateSectionOffset(result.newOffset));
+    } else if (result is ScrollOverflow) {
+      add(SceneEvent.nextSection(overflow: result.overflowAmount));
+    } else if (result is ScrollUnderflow) {
+      add(SceneEvent.previousSection(underflow: result.underflowAmount));
     }
   }
 
@@ -175,7 +176,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     if (_currentIndex > 0) {
       _currentIndex--;
       final prevMax = _sections[_currentIndex].maxHeight;
-      final startOffset = prevMax + event.underflow; // underflow is negative
+      final startOffset = prevMax + event.underflow;
       _emitStateForIndex(_currentIndex, startOffset, emit);
       _sections[_currentIndex].onActivate();
     } else {
@@ -239,7 +240,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     ForceScrollOffset event,
     Emitter<SceneState> emit,
   ) {
-    // Implementation for later if needed. For now empty or simple reset.
     _currentIndex = 0;
     emit(const SceneState.boldText(offset: 0.0, uiOpacity: 1.0));
   }
@@ -250,7 +250,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   ) {
     if (state is BoldText) {
       final menuState = state as BoldText;
-      // Defensive clamping to ensure valid opacity range
       final clampedOpacity = event.opacity.clamp(0.0, 1.0);
       if (menuState.uiOpacity != clampedOpacity) {
         emit(menuState.copyWith(uiOpacity: clampedOpacity));

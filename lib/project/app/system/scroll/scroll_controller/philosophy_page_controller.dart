@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/cloud_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flame/components.dart';
 
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
@@ -49,13 +49,14 @@ class PhilosophyPageController implements ScrollObserver {
       trailComponent.updateTrailAnimation(0.0);
     }
 
-    if (titleProgress == 0.0) {
-      // Hidden at start
-      titleComponent.opacity = 0.0;
-      titleComponent.scale = Vector2.all(0.1);
-      titleComponent.position = Vector2(screenSize.x / 2, screenSize.y * 0.7);
-      titleComponent.showReflection = false;
-      _hasPlayedSound = false;
+    if (titleProgress <= 0.0) {
+      reset();
+      return;
+    }
+
+    // Safety check for reverse scroll cleanup
+    if (scrollOffset <= 0) {
+      reset();
       return;
     }
 
@@ -111,5 +112,26 @@ class PhilosophyPageController implements ScrollObserver {
   /// Gentle ease-out quad for smooth balloon motion
   double _easeOutQuad(double t) {
     return 1 - (1 - t) * (1 - t);
+  }
+
+  /// Instantly resets the title visuals to hidden state.
+  /// Called when scrolling out of section or initializing.
+  void reset() {
+    titleComponent.opacity = 0.0;
+    titleComponent.scale = Vector2.all(0.1);
+    titleComponent.position = Vector2(screenSize.x / 2, screenSize.y * 0.7);
+    titleComponent.showReflection = false;
+    _hasPlayedSound = false;
+
+    // Also clear reflection from cloud immediately
+    cloudBackground.setTextReflection(
+      texture: null,
+      textX: 0,
+      textY: 0,
+      waterY: 0,
+      textOpacity: 0,
+      textScale: 0,
+      centerX: 0,
+    );
   }
 }
