@@ -1,7 +1,3 @@
-import 'package:flame/components.dart';
-import 'package:flutter_home_page/project/app/config/game_layout.dart';
-import 'package:flutter_home_page/project/app/config/game_curves.dart';
-import 'package:flutter_home_page/project/app/config/game_physics.dart';
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';

@@ -1,6 +1,5 @@
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
-import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_observer.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
