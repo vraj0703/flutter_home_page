@@ -104,6 +104,7 @@ class MyGame extends FlameGame
       interactiveUI: _componentFactory.logoOverlay,
       godRay: _componentFactory.godRay,
       backgroundTint: _componentFactory.backgroundTint,
+      backgroundRun: _componentFactory.backgroundRun,
       boldTextReveal: _componentFactory.boldTextReveal,
       beachBackground: _componentFactory.beachBackground,
       philosophyText: _componentFactory.philosophyText,
@@ -315,6 +316,10 @@ class MyGame extends FlameGame
     final boldSection = BoldTextSection(
       boldTextComponent: _gameComponents.boldTextReveal,
       beachBackground: _gameComponents.beachBackground,
+      backgroundRun: _gameComponents.backgroundRun,
+      cinematicTitle: _gameComponents.cinematicTitle,
+      cinematicSecondaryTitle: _gameComponents.cinematicSecondaryTitle,
+      interactiveUI: _gameComponents.interactiveUI,
       centerPosition: size / 2,
     );
 
@@ -323,6 +328,7 @@ class MyGame extends FlameGame
       titleComponent: _gameComponents.philosophyText,
       cloudBackground: _gameComponents.beachBackground,
       trailComponent: _gameComponents.philosophyTrail,
+      backgroundRun: _gameComponents.backgroundRun,
       screenSize: size,
       playEntrySound: playPhilosophyEntry,
       playCompletionSound: playPhilosophyComplete,

@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'dart:ui';
+
 import 'package:flame/components.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
@@ -8,10 +8,13 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/beach_
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
 
+import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
+
 class PhilosophySection implements GameSection {
   final PhilosophyTextComponent titleComponent;
   final BeachBackgroundComponent cloudBackground;
   final PhilosophyTrailComponent trailComponent;
+  final BackgroundRunComponent backgroundRun; // Added
   Vector2 screenSize;
   final VoidCallback playEntrySound;
   final VoidCallback playCompletionSound;
@@ -27,6 +30,7 @@ class PhilosophySection implements GameSection {
     required this.titleComponent,
     required this.cloudBackground,
     required this.trailComponent,
+    required this.backgroundRun,
     required this.screenSize,
     required this.playEntrySound,
     required this.playCompletionSound,
@@ -41,6 +45,8 @@ class PhilosophySection implements GameSection {
   @override
   VoidCallback? onReverseComplete; // To previous section
 
+  bool _isActive = false;
+
   @override
   Future<void> warmUp() async {
     if (_scrollProgress <= 0) {
@@ -50,7 +56,11 @@ class PhilosophySection implements GameSection {
 
   @override
   Future<void> enter() async {
+    _isActive = true;
     trailComponent.opacity = 1.0;
+    // Hide default background when Philosophy enters
+    backgroundRun.opacity = 0.0;
+
     // Cloud background should be visible from previous section (BoldText)
     // We play the generic entry sound if this is fresh entry?
     // Legacy manager played sound onActivate.
@@ -59,6 +69,7 @@ class PhilosophySection implements GameSection {
 
   @override
   Future<void> exit() async {
+    _isActive = false;
     // When done, we might hide things or let them linger?
     // Legacy: onDeactivate calling reset().
     _resetVisuals();
@@ -114,6 +125,8 @@ class PhilosophySection implements GameSection {
   }
 
   void _updateFloatingTitleAnimation(double scrollOffset) {
+    if (!_isActive) return;
+
     // Ported from PhilosophyPageController
 
     // 1. Balloon Title Animation (0 - 800px)
@@ -189,6 +202,9 @@ class PhilosophySection implements GameSection {
     titleComponent.position = Vector2(screenSize.x / 2, screenSize.y * 0.7);
     titleComponent.showReflection = false;
     _hasPlayedEntrySound = false;
+
+    // Reset Trail (prevent leaks)
+    trailComponent.updateTrailAnimation(0.0);
 
     cloudBackground.setTextReflection(
       texture: null,
