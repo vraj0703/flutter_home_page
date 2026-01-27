@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/animation.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
@@ -65,7 +66,7 @@ class PhilosophyPageController implements ScrollObserver {
     titleComponent.waterLineY = screenSize.y * 0.55;
 
     // Gentle ease-out for balloon float
-    final eased = _easeOutQuad(titleProgress);
+    final eased = Curves.easeOutQuad.transform(titleProgress);
 
     // Fade in gently
     titleComponent.opacity = (titleProgress * 1.5).clamp(0.0, 1.0);
@@ -107,11 +108,6 @@ class PhilosophyPageController implements ScrollObserver {
       onComplete!();
       _hasPlayedSound = true;
     }
-  }
-
-  /// Gentle ease-out quad for smooth balloon motion
-  double _easeOutQuad(double t) {
-    return 1 - (1 - t) * (1 - t);
   }
 
   /// Instantly resets the title visuals to hidden state.

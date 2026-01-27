@@ -20,11 +20,7 @@ class PhilosophyCardStack extends PositionComponent
     }
   }
 
-  PhilosophyCardStack({
-    this.cardsData = const [],
-    super.position,
-    super.size,
-  });
+  PhilosophyCardStack({this.cardsData = const [], super.position, super.size});
 
   @override
   Future<void> onLoad() async {
@@ -57,8 +53,6 @@ class PhilosophyCardStack extends PositionComponent
       card.parentOpacity = _opacity;
       card.opacity = 0.0;
     }
-
-    _cards.sort((a, b) => a.index.compareTo(b.index));
   }
 
   List<PhilosophyCard> get cards => _cards;

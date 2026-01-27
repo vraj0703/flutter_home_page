@@ -94,6 +94,15 @@ class PhilosophyTrailComponent extends PositionComponent
     // Smoothing factor of 5.0 gives a nice "fluid" feel
     const double smoothingSpeed = 5.0;
 
+    // Optimization: Don't update if close enough
+    if ((_targetScroll - _currentScroll).abs() < 0.01) {
+      if (_currentScroll != _targetScroll) {
+        _currentScroll = _targetScroll;
+        onScrollUpdate?.call(_currentScroll);
+      }
+      return;
+    }
+
     // Simple Lerp
     _currentScroll += (_targetScroll - _currentScroll) * smoothingSpeed * dt;
 
