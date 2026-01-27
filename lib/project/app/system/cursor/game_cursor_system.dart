@@ -2,29 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_physics.dart';
-import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
-import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.dart';
-import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';
-import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_title.dart';
-import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_secondary_title.dart';
-
-class CursorDependentComponents {
-  final GodRayComponent godRay;
-  final RayMarchingShadowComponent shadowScene;
-  final LogoOverlayComponent interactiveUI;
-  final LogoComponent logoComponent;
-  final CinematicTitleComponent cinematicTitle;
-  final CinematicSecondaryTitleComponent cinematicSecondaryTitle;
-
-  CursorDependentComponents({
-    required this.godRay,
-    required this.shadowScene,
-    required this.interactiveUI,
-    required this.logoComponent,
-    required this.cinematicTitle,
-    required this.cinematicSecondaryTitle,
-  });
-}
+import 'package:flutter_home_page/project/app/models/cursor_dependent_components.dart';
 
 class GameCursorSystem {
   Vector2 _virtualLightPosition = Vector2.zero();
@@ -60,6 +38,7 @@ class GameCursorSystem {
   }
 
   void update(double dt, Vector2 size, {bool enableParallax = false}) {
+    // todo ai: make it state based
     if (_components == null) return;
     final components = _components!;
 

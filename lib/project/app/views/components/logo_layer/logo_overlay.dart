@@ -3,16 +3,16 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
-import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
-import 'package:flutter_home_page/project/app/config/game_strings.dart';
-import 'package:flutter_home_page/project/app/config/game_styles.dart';
-import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter/material.dart' as flutter;
-import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
+import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_physics.dart';
+import 'package:flutter_home_page/project/app/config/game_strings.dart';
+import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
-
+import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
+import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
+import 'package:flutter_home_page/project/app/utils/extension.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/bouncy_lines.dart';
 
 enum _LineOrientation { horizontal, vertical }
@@ -23,14 +23,9 @@ class LogoOverlayComponent extends PositionComponent
     with PointerMoveCallbacks
     implements OpacityProvider {
   final StateProvider stateProvider;
-
   final Queuer queuer;
 
   // --- Configuration ---
-  final double ratio = 1;
-  final double outerRadius = GameLayout.logoOverlayOuterRadius;
-  final double innerRadius = GameLayout.logoOverlayInnerRadius;
-
   final double horizontalLineLength = GameLayout.logoOverlayHLineLength;
   final double horizontalLineGap = GameLayout.logoOverlayHLineGap;
   final double horizontalThreshold = GameLayout.logoOverlayHThreshold;
@@ -39,44 +34,13 @@ class LogoOverlayComponent extends PositionComponent
   final double verticalLineGap = GameLayout.logoOverlayVLineGap;
   final double verticalThreshold = GameLayout.logoOverlayVThreshold;
 
-  final String _fullText = GameStrings.enterText;
+  String fullText = GameStrings.bullet;
   final Color uiColor = GameStyles.logoOverlayUi;
 
   final double startThickness = GameLayout.logoOverlayStartThickness;
   final double endThickness = GameLayout.logoOverlayEndThickness;
   double inactivityOpacity = 1.0;
-
-  // OpacityProvider implementation
   double _opacity = 1.0;
-
-  @override
-  double get opacity => _opacity;
-
-  @override
-  set opacity(double value) {
-    _opacity = value;
-    _textComponent.textRenderer = TextPaint(
-      style: flutter.TextStyle(
-        fontSize: GameStyles.enterFontSize,
-        color: uiColor.withValues(alpha: _opacity),
-        // Apply opacity
-        letterSpacing: GameStyles.enterLetterSpacing,
-        fontWeight: FontWeight.w900,
-        fontFamily: GameStyles.fontBroadway,
-        shadows: [
-          Shadow(
-            color: GameStyles.logoOverlayShadow.withValues(alpha: _opacity),
-            offset: const Offset(
-              GameStyles.logoOverlayShadowOffsetX,
-              GameStyles.logoOverlayShadowOffsetY,
-            ),
-            blurRadius: GameStyles.logoOverlayShadowBlur,
-          ),
-        ],
-      ),
-    );
-  }
-
   final List<Color> glassyColors = GameStyles.glassyColors;
   final List<double> glassyStops = GameStyles.glassyStops;
 
@@ -86,6 +50,8 @@ class LogoOverlayComponent extends PositionComponent
   final BouncyLine _bottomLine = BouncyLine();
 
   late final TextComponent _textComponent;
+  late final flutter.TextStyle style;
+  late final Shadow textShadow;
   late final Paint _materialPaint;
 
   final Path _rightPath = Path();
@@ -99,40 +65,50 @@ class LogoOverlayComponent extends PositionComponent
   double _textAnimationProgress = 0.0;
   final double _textAnimationSpeed = GamePhysics.logoOverlayTextAnimSpeed;
 
+  @override
+  double get opacity => _opacity;
+
+  @override
+  set opacity(double value) {
+    _opacity = value;
+    _textComponent.textRenderer = TextPaint(
+      style: style.copyWith(
+        color: uiColor.withValues(alpha: _opacity),
+        shadows: [
+          textShadow.copyWith(
+            color: GameStyles.logoOverlayShadow.withValues(alpha: _opacity),
+          ),
+        ],
+      ),
+    );
+  }
+
   LogoOverlayComponent({required this.stateProvider, required this.queuer});
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-
-    // Set the component's anchor to its center for easy positioning.
     anchor = Anchor.center;
-
-    // Configure the paint object for drawing circles and lines.
     _materialPaint = Paint()..style = PaintingStyle.fill;
-
-    // Create and add the central text.
+    textShadow = Shadow(
+      color: GameStyles.logoOverlayShadow,
+      offset: const Offset(
+        GameStyles.logoOverlayShadowOffsetX,
+        GameStyles.logoOverlayShadowOffsetY,
+      ),
+      blurRadius: GameStyles.logoOverlayShadowBlur,
+    );
+    style = flutter.TextStyle(
+      fontSize: GameStyles.enterFontSize,
+      color: uiColor,
+      letterSpacing: GameStyles.enterLetterSpacing,
+      fontWeight: FontWeight.w900,
+      fontFamily: GameStyles.fontBroadway,
+      shadows: [textShadow],
+    );
     _textComponent = TextComponent(
       text: '',
-      textRenderer: TextPaint(
-        style: flutter.TextStyle(
-          fontSize: GameStyles.enterFontSize,
-          color: uiColor,
-          letterSpacing: GameStyles.enterLetterSpacing,
-          fontWeight: FontWeight.w900,
-          fontFamily: GameStyles.fontBroadway,
-          shadows: [
-            Shadow(
-              color: GameStyles.logoOverlayShadow,
-              offset: const Offset(
-                GameStyles.logoOverlayShadowOffsetX,
-                GameStyles.logoOverlayShadowOffsetY,
-              ),
-              blurRadius: GameStyles.logoOverlayShadowBlur,
-            ),
-          ],
-        ),
-      ),
+      textRenderer: TextPaint(style: style),
       anchor: Anchor.center,
       position: size / 2,
     );
@@ -142,22 +118,37 @@ class LogoOverlayComponent extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    stateProvider.sceneState().when(
-      loading: (isSvgReady, isGameReady) {},
+    stateProvider.sceneState().maybeWhen(
       logo: () {
         _updateInteractiveState(dt);
       },
       logoOverlayRemoving: () {
         _updateRemovingStartState(dt);
       },
-      titleLoading: () {},
-      title: () {},
-      boldText: (_, uiOpacity) {},
-      philosophy: (_) {},
-      workExperience: (_) {},
-      experience: (_) {},
-      testimonials: (_) {},
-      contact: (_) {},
+      orElse: () {},
+    );
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    var sceneProgress = stateProvider.revealProgress();
+
+    const double start = ScrollSequenceConfig.logoOverlayRevealStart;
+    const double range = 1.0 - start;
+    final revealFade = ((sceneProgress - start) / range).clamp(0.0, 1.0);
+
+    if (revealFade <= 0.0) {
+      return;
+    }
+    stateProvider.sceneState().maybeWhen(
+      logo: () {
+        _renderBouncyLines(canvas);
+      },
+      logoOverlayRemoving: () {
+        _renderBouncyLines(canvas);
+      },
+      orElse: () {},
     );
   }
 
@@ -179,8 +170,8 @@ class LogoOverlayComponent extends PositionComponent
       1.0,
     );
 
-    final charCount = (_fullText.length * textProgress).floor();
-    _textComponent.text = _fullText.substring(0, charCount);
+    final charCount = (fullText.length * textProgress).floor();
+    _textComponent.text = fullText.substring(0, charCount);
 
     if (gameSize.x == 0 || gameSize.y == 0) return;
 
@@ -210,58 +201,26 @@ class LogoOverlayComponent extends PositionComponent
 
   void _updateRemovingStartState(double dt) {
     _textAnimationProgress += _textAnimationSpeed * dt;
-    final charsToRemove = (_textAnimationProgress * _fullText.length).floor();
-    final remainingChars = _fullText.length - charsToRemove;
+    final charsToRemove = (_textAnimationProgress * fullText.length).floor();
+    final remainingChars = fullText.length - charsToRemove;
 
     if (remainingChars > 0) {
-      _textComponent.text = _fullText.substring(0, remainingChars);
+      _textComponent.text = fullText.substring(0, remainingChars);
     } else {
       _textComponent.text = '';
       queuer.queue(event: SceneEvent.loadTitle());
       _textAnimationProgress = 0.0;
     }
 
-    // For now, let's reset lines to zero.
-    _rightLine.targetPosition = 0;
-    _leftLine.targetPosition = 0;
-    _bottomLine.targetPosition = 0;
-    _topLine.targetPosition = 0;
+    _rightLine.targetPosition = GamePhysics.bouncyLineMaxScale;
+    _leftLine.targetPosition = GamePhysics.bouncyLineMaxScale;
+    _bottomLine.targetPosition = GamePhysics.bouncyLineMaxScale;
+    _topLine.targetPosition = GamePhysics.bouncyLineMaxScale;
 
     _rightLine.update(dt);
     _leftLine.update(dt);
     _topLine.update(dt);
     _bottomLine.update(dt);
-  }
-
-  @override
-  void render(Canvas canvas) {
-    super.render(canvas);
-    var sceneProgress = stateProvider.revealProgress();
-
-    const double start = ScrollSequenceConfig.logoOverlayRevealStart;
-    const double range = 1.0 - start;
-    final revealFade = ((sceneProgress - start) / range).clamp(0.0, 1.0);
-
-    if (revealFade <= 0.0) {
-      return;
-    }
-    stateProvider.sceneState().when(
-      loading: (isSvgReady, isGameReady) {},
-      logo: () {
-        _renderBouncyLines(canvas);
-      },
-      logoOverlayRemoving: () {
-        _renderBouncyLines(canvas);
-      },
-      titleLoading: () {},
-      title: () {},
-      boldText: (_, uiOpacity) {},
-      philosophy: (_) {},
-      workExperience: (_) {},
-      experience: (_) {},
-      testimonials: (_) {},
-      contact: (_) {},
-    );
   }
 
   void _renderBouncyLines(Canvas canvas) {

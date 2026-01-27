@@ -8,7 +8,7 @@ import 'package:flutter_home_page/project/app/models/component_context.dart';
 import 'package:flutter_home_page/project/app/config/component_ids.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_tint_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/cloud_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 
 class BackgroundRunBuilder extends ComponentBuilder<BackgroundRunComponent> {
   @override
@@ -45,7 +45,7 @@ class BackgroundTintBuilder extends ComponentBuilder<BackgroundTintComponent> {
 }
 
 class CloudBackgroundBuilder
-    extends ComponentBuilder<CloudBackgroundComponent> {
+    extends ComponentBuilder<BeachBackgroundComponent> {
   @override
   String get id => ComponentIds.cloudBackground;
 
@@ -53,9 +53,9 @@ class CloudBackgroundBuilder
   int get priority => 0;
 
   @override
-  Future<CloudBackgroundComponent> build(ComponentContext context) async {
+  Future<BeachBackgroundComponent> build(ComponentContext context) async {
     final shader = await context.loadShader(GameAssets.beachShader);
-    final component = CloudBackgroundComponent(
+    final component = BeachBackgroundComponent(
       size: context.size,
       shader: shader,
     );

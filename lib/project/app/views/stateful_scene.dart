@@ -113,11 +113,23 @@ class _StatefulSceneState extends State<StatefulScene>
               _revealController.forward();
             }
           },
-          logoOverlayRemoving: () {},
-          titleLoading: () {},
-          title: () {},
-          boldText: (_,uiOpacity) {},
-          philosophy: (_) {},
+          logoOverlayRemoving: () {
+            _game.playEnterSound();
+            _game.loadTitleBackground();
+          },
+          titleLoading: () {
+            _game.enterTitle();
+          },
+          title: () {
+            _game.playBouncyArrow();
+            _game.activateTitleCursorSystem();
+          },
+          boldText: (_, uiOpacity) {
+            _game.addBoldTextBindings();
+          },
+          philosophy: (_) {
+            _game.addPhilosophyBindings();
+          },
           workExperience: (_) {},
           experience: (_) {},
           testimonials: (_) {},

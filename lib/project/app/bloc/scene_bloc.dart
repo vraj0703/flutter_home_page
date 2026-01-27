@@ -110,7 +110,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
 
   FutureOr<void> _onScroll(OnScroll event, Emitter<SceneState> emit) {
     if (state is Title) {
-      emit(const SceneState.boldText(offset: 0.0, uiOpacity: 1.0));
+      emit(const SceneState.boldText(uiOpacity: 1.0, offset: 0.0));
     }
   }
 
@@ -132,8 +132,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
         state is TitleLoading) {
       return;
     }
-
-    if (_currentIndex == 0 && state is! BoldText) {}
 
     final currentOffset = state.mapOrNull(
       boldText: (s) => s.offset,
@@ -162,10 +160,14 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   FutureOr<void> _onNextSection(NextSection event, Emitter<SceneState> emit) {
     if (_currentIndex < _sections.length - 1) {
       _currentIndex++;
-      _emitStateForIndex(_currentIndex, event.overflow, emit);
-      _sections[_currentIndex].onActivate();
+      final baseOffset = _sections[_currentIndex].onActivate(false);
+      final startOffset = baseOffset + event.overflow;
+      _emitStateForIndex(_currentIndex, startOffset, emit);
     } else {
-      add(SceneEvent.updateSectionOffset(_sections[_currentIndex].maxHeight));
+      // Stay at end if no more sections.
+      // We can query onActivate(true) to get the 'end' if we really wanted to clamp,
+      // but simpler to just do nothing or clamp to current offset.
+      // Assuming handled by manager's handleScroll returning Consumed.
     }
   }
 
@@ -175,10 +177,10 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   ) {
     if (_currentIndex > 0) {
       _currentIndex--;
-      final prevMax = _sections[_currentIndex].maxHeight;
-      final startOffset = prevMax + event.underflow;
+      // Ask manager where to start when entering from bottom
+      final baseOffset = _sections[_currentIndex].onActivate(true);
+      final startOffset = baseOffset + event.underflow;
       _emitStateForIndex(_currentIndex, startOffset, emit);
-      _sections[_currentIndex].onActivate();
     } else {
       // Clamp at 0
       add(const SceneEvent.updateSectionOffset(0.0));
@@ -249,6 +251,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     Emitter<SceneState> emit,
   ) {
     if (state is BoldText) {
+      print("here ");
       final menuState = state as BoldText;
       final clampedOpacity = event.opacity.clamp(0.0, 1.0);
       if (menuState.uiOpacity != clampedOpacity) {

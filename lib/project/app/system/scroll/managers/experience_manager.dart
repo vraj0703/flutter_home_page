@@ -5,13 +5,14 @@ import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/ex
 class ExperienceManager implements SectionManager {
   final ExperiencePageController controller;
 
-  @override
-  double get maxHeight => 2350.0;
+  static const double _maxHeight = 2350.0;
 
   ExperienceManager({required this.controller});
 
   @override
-  void onActivate() {}
+  double onActivate(bool reverse) {
+    return reverse ? _maxHeight : 0.0;
+  }
 
   @override
   void onDeactivate() {}
@@ -24,8 +25,8 @@ class ExperienceManager implements SectionManager {
   @override
   ScrollResult handleScroll(double currentOffset, double delta) {
     final newOffset = currentOffset + delta;
-    if (newOffset > maxHeight) {
-      return ScrollOverflow(newOffset - maxHeight);
+    if (newOffset > _maxHeight) {
+      return ScrollOverflow(newOffset - _maxHeight);
     } else if (newOffset < 0) {
       return ScrollUnderflow(newOffset);
     } else {

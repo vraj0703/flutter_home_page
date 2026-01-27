@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 
-class CloudBackgroundComponent extends PositionComponent with HasGameReference {
+class BeachBackgroundComponent extends PositionComponent with HasGameReference {
   final FragmentShader shader;
 
   /// 0.0 = Invisible, 1.0 = Fully Visible
@@ -24,7 +24,7 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
   /// Warmup logic
   int _warmupFrames = 0;
 
-  CloudBackgroundComponent({super.size, required this.shader}) {
+  BeachBackgroundComponent({super.size, required this.shader}) {
     // Start with tiny opacity to force a render path (warmup)
     opacity = 0.001;
   }
@@ -47,34 +47,54 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
     this.size = size;
   }
 
+  // Manual warmup
+  bool _manualWarmup = false;
+  int _manualWarmupFrames = 0;
+
+  void warmUp() {
+    // Keep alive logic: if called repeatedly, we stay in warmup mode.
+    _manualWarmup = true;
+    _manualWarmupFrames = 0; // Reset timer
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
 
-    // Shader Warmup: Render the first few frames to compile pipeline state
+    // Initial Load Warmup
     if (_warmupFrames < 3) {
       _warmupFrames++;
       if (_warmupFrames == 3) {
-        // Only reset if it hasn't been changed externally (e.g. by manager)
         if (opacity <= 0.002) {
           opacity = 0.0;
         }
       }
     }
 
-    if (opacity <= 0.0) return; // Optimization
+    // Manual Warmup Logic (Keep Alive)
+    if (_manualWarmup) {
+      _manualWarmupFrames++;
+      // Keep alive for 10 frames without a call before turning off
+      if (_manualWarmupFrames > 10) {
+        _manualWarmup = false;
+      }
+    }
+
+    if (opacity <= 0.0 && !_manualWarmup) return;
 
     _time += dt;
   }
 
   @override
   void render(Canvas canvas) {
-    if (opacity <= 0.0) return;
+    // Skip if invisible AND not warming up
+    if (opacity <= 0.0 && !_manualWarmup) return;
 
-    canvas.saveLayer(
-      size.toRect(),
-      Paint()..color = Color.fromRGBO(0, 0, 0, opacity),
-    );
+    // Use tiny opacity during warmup if actual opacity is zero
+    // 0.01 ensures visibility to driver while being mostly transparent
+    final effectiveOpacity = (opacity <= 0.0 && _manualWarmup) ? 0.01 : opacity;
+
+    // Removed expensive saveLayer. Using uniform instead.
 
     double texW = 0.0;
     double texH = 0.0;
@@ -96,6 +116,7 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
       final screenPos = game.camera.viewfinder.transform.globalToLocal(
         Vector2(_centerX, _textY),
       );
+      // ignore: unused_local_variable
       final screenWaterY = game.camera.viewfinder.transform
           .globalToLocal(Vector2(0, _waterY))
           .y;
@@ -111,6 +132,7 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
       shader.setFloat(8, texH);
       shader.setFloat(9, screenPos.x); // uTextX (Screen)
       shader.setFloat(10, dpr); // uPixelRatio
+      shader.setFloat(11, effectiveOpacity); // uOpacity (New)
 
       // Set sampler (safe image)
       shader.setImageSampler(0, samplerImage);
@@ -121,14 +143,12 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
       // If shader draw fails, we might get black screen, but better than app crash
       // print('Shader draw error: $e');
     }
-
-    canvas.restore();
   }
 
   /// Set text reflection data for shader rendering
   void setTextReflection({
     required Image? texture,
-    required double textX, // Added textX parameter
+    required double textX,
     required double textY,
     required double waterY,
     required double textOpacity,
@@ -136,7 +156,7 @@ class CloudBackgroundComponent extends PositionComponent with HasGameReference {
     required double centerX,
   }) {
     _textTexture = texture;
-    _textX = textX; // Assigned textX to _textX field
+    _textX = textX;
     _textY = textY;
     _waterY = waterY;
     _textOpacity = textOpacity;

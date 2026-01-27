@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/cloud_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flame/components.dart';
 
@@ -9,7 +9,7 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/philos
 /// Controller for Philosophy section with floating balloon title animation
 class PhilosophyPageController implements ScrollObserver {
   final PhilosophyTextComponent titleComponent;
-  final CloudBackgroundComponent cloudBackground;
+  final BeachBackgroundComponent cloudBackground;
   final PhilosophyTrailComponent trailComponent;
   final Vector2 screenSize;
   final void Function()? onComplete;

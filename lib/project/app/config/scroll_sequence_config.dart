@@ -18,7 +18,8 @@ class ScrollSequenceConfig {
   static const int sceneArrowFadeDurationMs = 300;
 
   static const double titleRevealDelay = 1.0;
-  static const double titleAnimDuration = 4.0;
+  static const double titleAnimDuration = 3.0;
+  static const double titleAnimLiftDuration = 2.0;
   static const double titleMoveDuration = 1.0;
 
   // --- Global UI Timings ---

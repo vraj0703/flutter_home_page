@@ -14,6 +14,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
   final FragmentShader shader;
 
   late PositionComponent _contentWrapper;
+
   // late FadeTextComponent _textComponent; // unused
 
   @override
@@ -109,22 +110,17 @@ class CinematicSecondaryTitleComponent extends PositionComponent
 
     (game as MyGame).playSlideIn();
 
-    // Power-move: Master Horizontal Slide
-    // We slide the whole wrapper slightly?
-    // "Master Animation (The Slide): Container: PositionComponent. Movement: Horizontal slide. Duration: 1200ms."
-    // Let's slide from left offset.
     final originalWrapperPos = _contentWrapper.position.clone();
     _contentWrapper.position.x -= 100; // Start 100px left
     _contentWrapper.add(
       MoveEffect.to(
         originalWrapperPos,
         EffectController(
-          duration: 1.2,
+          duration: 2,
           curve: const Cubic(0.25, 0.1, 0.25, 1.0),
         ),
       ),
     );
-
     int completedChars = 0;
 
     for (int i = 0; i < _charComponents.length; i++) {
@@ -138,7 +134,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
         OpacityEffect.to(
           1.0,
           EffectController(
-            duration: 0.8,
+            duration: 0.1,
             curve: Curves.linear,
             startDelay: delay,
           ),

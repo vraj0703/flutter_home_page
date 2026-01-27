@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 class PhilosophyCardData {
-  final String icon; // Emoji
+  final String icon;
   final String title;
   final String description;
   final Color accentColor;

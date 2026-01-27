@@ -38,9 +38,6 @@ class GameLayout {
   static const double godRayOuterBlur = 35.0;
 
   // --- Logo Overlay ---
-  static const double logoOverlayOuterRadius = 135.0;
-  static const double logoOverlayInnerRadius = 95.0;
-
   static const double logoOverlayHLineLength = 80.0;
   static const double logoOverlayHLineGap = 120.0;
   static const double logoOverlayHThreshold = 300.0;
@@ -134,12 +131,12 @@ class GameLayout {
 
   // --- Logo Animator Layout ---
   static const double logoHeaderY = 60.0;
-  static const double logoMinScale = 0.25;
+  static const double logoMinScale = 0.3;
   static const double logoStartX = 60.0;
   static const double logoInitialScale = 3.0;
   static const double logoRemovingScale = 0.3;
-  static const double logoRemovingTargetX = 36.0;
-  static const double logoRemovingTargetY = 36.0;
+  static const double logoRemovingTargetX = 60.0;
+  static const double logoRemovingTargetY = 60.0;
 
   // --- Cursor System Layout ---
   static const double cursorGlowOffset = 10.0;

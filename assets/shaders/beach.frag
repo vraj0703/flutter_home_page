@@ -14,6 +14,7 @@ uniform float uTextWidth;   // 7  (Physical Texture Width)
 uniform float uTextHeight;  // 8  (Physical Texture Height)
 uniform float uTextX;       // 9  (Logical Center X)
 uniform float uPixelRatio;  // 10
+uniform float uOpacity;     // 11 - New Global Opacity
 
 uniform sampler2D uTextTexture;
 
@@ -302,5 +303,5 @@ void main() {
     // --- Add Reflection ---
     //col += RenderTextReflection(logicalCoord);
 
-    fragColor = vec4(col, 1.0);
+    fragColor = vec4(col, uOpacity);
 }

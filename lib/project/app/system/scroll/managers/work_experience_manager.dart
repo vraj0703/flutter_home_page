@@ -5,14 +5,14 @@ import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/wo
 class WorkExperienceManager implements SectionManager {
   final WorkExperienceTitleController controller;
 
-  // 4800 to 6400
-  @override
-  double get maxHeight => 1600.0;
+  static const double _maxHeight = 1600.0;
 
   WorkExperienceManager({required this.controller});
 
   @override
-  void onActivate() {}
+  double onActivate(bool reverse) {
+    return reverse ? _maxHeight : 0.0;
+  }
 
   @override
   void onDeactivate() {}
@@ -25,8 +25,8 @@ class WorkExperienceManager implements SectionManager {
   @override
   ScrollResult handleScroll(double currentOffset, double delta) {
     final newOffset = currentOffset + delta;
-    if (newOffset > maxHeight) {
-      return ScrollOverflow(newOffset - maxHeight);
+    if (newOffset > _maxHeight) {
+      return ScrollOverflow(newOffset - _maxHeight);
     } else if (newOffset < 0) {
       return ScrollUnderflow(newOffset);
     } else {

@@ -95,11 +95,11 @@ class CinematicTitleComponent extends PositionComponent
 
     _primaryTitle.add(
       SequenceEffect([
-        WaitEffect(1),
+        WaitEffect(2),
         MoveByEffect(
-          GameLayout.titleHeatDriftVector, // Subtle upward "heat" drift
+          GameLayout.titleHeatDriftVector,
           EffectController(
-            duration: ScrollSequenceConfig.titleAnimDuration,
+            duration: ScrollSequenceConfig.titleAnimLiftDuration,
             curve: GameCurves.titleDrift,
           ),
         ),

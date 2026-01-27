@@ -8,6 +8,4 @@ abstract class StateProvider {
   void updateRevealProgress(double progress);
 
   void updateUIOpacity(double opacity);
-
-  Stream<SceneState> get stream;
 }

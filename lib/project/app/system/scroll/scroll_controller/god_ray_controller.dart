@@ -31,9 +31,7 @@ class GodRayController implements ScrollObserver {
     required this.screenSize,
   });
 
-  // Update pulse animation (called from game update loop)
   void updatePulse(double dt, double currentScroll) {
-    // Only pulse during Work Experience section
     if (currentScroll >= ScrollSequenceConfig.workExpTitleEntranceStart &&
         currentScroll <= ScrollSequenceConfig.experienceExitEnd) {
       _pulseTime += dt;
@@ -41,7 +39,6 @@ class GodRayController implements ScrollObserver {
         _pulseTime -= _pulseCycleTime;
       }
 
-      // Sine wave: 1.0 -> 1.15 -> 1.0
       final pulseProgress = _pulseTime / _pulseCycleTime;
       final pulseFactor = 1.0 + (0.15 * math.sin(pulseProgress * 2 * math.pi));
       component.sizeMultiplier = pulseFactor;

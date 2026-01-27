@@ -2,27 +2,21 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flutter/material.dart' as material;
-import 'package:flutter_home_page/project/app/system/builders/experience_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/god_ray_builder.dart';
 import 'package:flutter_home_page/project/app/system/builders/philosophy_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/shader_scene_builder.dart';
-import 'package:flutter_home_page/project/app/system/builders/testimonial_builders.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_tint_component.dart';
+import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_background.dart';
 import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
-import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
-import 'package:flutter_home_page/project/app/views/components/experience/experience_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_secondary_title.dart';
 import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_title.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/cloud_background_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
-import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
-import 'package:flutter_home_page/project/app/views/components/work_experience_title_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
@@ -33,30 +27,12 @@ import 'package:flutter_home_page/project/app/models/component_context.dart';
 import 'package:flutter_home_page/project/app/config/component_ids.dart';
 import 'package:flutter_home_page/project/app/system/builders/background_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/logo_layer_builders.dart';
-import 'package:flutter_home_page/project/app/system/builders/contact_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/title_builders.dart';
 
 class GameComponentFactory {
-  // Fields to store component instances
-  late RayMarchingShadowComponent shadowScene;
-  late LogoComponent logoComponent;
-  late GodRayComponent godRay;
-  late LogoOverlayComponent logoOverlay;
-  late BackgroundRunComponent backgroundRun;
-  late BackgroundTintComponent backgroundTint;
-  late CinematicTitleComponent cinematicTitle;
-  late CinematicSecondaryTitleComponent cinematicSecondaryTitle;
-  late BoldTextRevealComponent boldTextReveal;
-  late CloudBackgroundComponent cloudBackground;
-  late PhilosophyTextComponent philosophyText;
-  late PeelingCardStackComponent cardStack;
-  late PhilosophyTrailComponent philosophyTrail;
-  late WorkExperienceTitleComponent workExperienceTitle;
-  late ExperiencePageComponent experiencePage;
-  late TestimonialPageComponent testimonialPage;
-  late ContactPageComponent contactPage;
-
   // Initialize all components
+  final registry = ComponentRegistry();
+
   Future<void> initializeComponents({
     required Vector2 size,
     required StateProvider stateProvider,
@@ -65,8 +41,6 @@ class GameComponentFactory {
     required material.Color Function() backgroundColorCallback,
     void Function(int section)? onSectionTap,
   }) async {
-    final registry = ComponentRegistry();
-
     // Register all builders
     registry.register(ShadowSceneBuilder());
     registry.register(LogoComponentBuilder());
@@ -80,16 +54,10 @@ class GameComponentFactory {
     registry.register(CinematicTitleBuilder());
     registry.register(CinematicSecondaryTitleBuilder());
     registry.register(BoldTextRevealBuilder());
-    registry.register(WorkExperienceTitleBuilder());
 
     registry.register(PhilosophyTextBuilder());
-    registry.register(PeelingCardStackBuilder());
     registry.register(PhilosophyTrailBuilder());
-    registry.register(ExperiencePageBuilder());
-    registry.register(TestimonialPageBuilder());
-    registry.register(ContactPageBuilder());
 
-    // Asset Caching
     final shaderCache = <String, FragmentProgram>{};
 
     final context = ComponentContext(
@@ -111,51 +79,44 @@ class GameComponentFactory {
 
     // Initialize all components via registry
     await registry.initializeAll(context);
-
-    // Assign to fields for backward compatibility
-    shadowScene = registry.get(ComponentIds.shadowScene);
-    logoComponent = registry.get(ComponentIds.logo);
-    godRay = registry.get(ComponentIds.godRay);
-    logoOverlay = registry.get(ComponentIds.logoOverlay);
-
-    backgroundRun = registry.get(ComponentIds.backgroundRun);
-    backgroundTint = registry.get(ComponentIds.backgroundTint);
-    cloudBackground = registry.get(ComponentIds.cloudBackground);
-    //dimLayer = registry.get(ComponentIds.dimLayer);
-
-    cinematicTitle = registry.get(ComponentIds.cinematicTitle);
-    cinematicSecondaryTitle = registry.get(
-      ComponentIds.cinematicSecondaryTitle,
-    );
-    boldTextReveal = registry.get(ComponentIds.boldTextReveal);
-    workExperienceTitle = registry.get(ComponentIds.workExperienceTitle);
-
-    philosophyText = registry.get(ComponentIds.philosophyText);
-    cardStack = registry.get(ComponentIds.cardStack);
-    philosophyTrail = registry.get(ComponentIds.philosophyTrail);
-    experiencePage = registry.get(ComponentIds.experiencePage);
-    testimonialPage = registry.get(ComponentIds.testimonialPage);
-    contactPage = registry.get(ComponentIds.contactPage);
   }
 
+  Component component(String id) => registry.get(id);
+
   // Get all components for easy addition
-  List<Component> get allComponents => [
-    shadowScene,
-    logoComponent,
-    godRay,
-    logoOverlay,
-    backgroundRun,
-    backgroundTint,
-    cinematicTitle,
-    cinematicSecondaryTitle,
-    boldTextReveal,
-    cloudBackground,
-    philosophyText,
-    cardStack,
-    philosophyTrail,
-    workExperienceTitle,
-    experiencePage,
-    testimonialPage,
-    contactPage,
-  ];
+  List<Component> get allComponents => registry.allComponents;
+
+  RayMarchingShadowComponent get shadowScene =>
+      registry.get(ComponentIds.shadowScene);
+
+  LogoComponent get logoComponent => registry.get(ComponentIds.logo);
+
+  GodRayComponent get godRay => registry.get(ComponentIds.godRay);
+
+  LogoOverlayComponent get logoOverlay =>
+      registry.get(ComponentIds.logoOverlay);
+
+  BackgroundRunComponent get backgroundRun =>
+      registry.get(ComponentIds.backgroundRun);
+
+  BackgroundTintComponent get backgroundTint =>
+      registry.get(ComponentIds.backgroundTint);
+
+  BeachBackgroundComponent get beachBackground =>
+      registry.get(ComponentIds.cloudBackground);
+
+  CinematicTitleComponent get cinematicTitle =>
+      registry.get(ComponentIds.cinematicTitle);
+
+  CinematicSecondaryTitleComponent get cinematicSecondaryTitle =>
+      registry.get(ComponentIds.cinematicSecondaryTitle);
+
+  BoldTextRevealComponent get boldTextReveal =>
+      registry.get(ComponentIds.boldTextReveal);
+
+  PhilosophyTextComponent get philosophyText =>
+      registry.get(ComponentIds.philosophyText);
+
+  PhilosophyTrailComponent get philosophyTrail =>
+      registry.get(ComponentIds.philosophyTrail);
 }
