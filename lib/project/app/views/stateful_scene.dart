@@ -124,16 +124,9 @@ class _StatefulSceneState extends State<StatefulScene>
             _game.playBouncyArrow();
             _game.activateTitleCursorSystem();
           },
-          boldText: (_, uiOpacity) {
-            _game.addBoldTextBindings();
+          active: (_) {
+            // Game is now fully active and scrolling
           },
-          philosophy: (_) {
-            _game.addPhilosophyBindings();
-          },
-          workExperience: (_) {},
-          experience: (_) {},
-          testimonials: (_) {},
-          contact: (_) {},
         );
       },
       builder: (context, state) {

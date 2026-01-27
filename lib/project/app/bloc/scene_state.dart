@@ -15,22 +15,8 @@ class SceneState with _$SceneState {
 
   const factory SceneState.title() = Title;
 
-  const factory SceneState.boldText({
-    @Default(1.0) double uiOpacity,
-    @Default(0.0) double offset,
-  }) = BoldText;
+  const factory SceneState.active({@Default(1.0) double uiOpacity}) = Active;
 
-  const factory SceneState.philosophy({@Default(0.0) double offset}) =
-      Philosophy;
-
-  const factory SceneState.workExperience({@Default(0.0) double offset}) =
-      WorkExperience;
-
-  const factory SceneState.experience({@Default(0.0) double offset}) =
-      Experience;
-
-  const factory SceneState.testimonials({@Default(0.0) double offset}) =
-      Testimonials;
-
-  const factory SceneState.contact({@Default(0.0) double offset}) = Contact;
+  // Deprecated States (Kept temporarily if needed for immediate build fix, but usually safer to remove)
+  // Logic is now in GameSections
 }

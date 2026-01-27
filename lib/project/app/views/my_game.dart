@@ -2,11 +2,8 @@ import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
-import 'package:flutter_home_page/project/app/curves/exponential_ease_out.dart';
 import 'package:flutter_home_page/project/app/models/cursor_dependent_components.dart';
 import 'package:flutter_home_page/project/app/models/game_components.dart';
-import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/opacity.dart';
-import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/parallax.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_orchestrator.dart';
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flame/components.dart';
@@ -21,13 +18,12 @@ import 'package:flutter_home_page/project/app/system/cursor/game_cursor_system.d
 import 'package:flutter_home_page/project/app/system/animator/game_logo_animator.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/system/registration/game_component_factory.dart';
-import 'package:flutter_home_page/project/app/system/scroll/managers/bold_text_manager.dart';
-import 'package:flutter_home_page/project/app/system/scroll/managers/philosophy_manager.dart';
-import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/bold_text_controller.dart';
-import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/philosophy_page_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/god_ray_controller.dart';
 import 'package:flutter_home_page/project/app/system/input/game_input_controller.dart';
 import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart';
+import 'package:flutter_home_page/project/app/system/sequence/sequence_runner.dart';
+import 'package:flutter_home_page/project/app/sections/bold_text_section.dart';
+import 'package:flutter_home_page/project/app/sections/philosophy_section.dart';
 
 class MyGame extends FlameGame
     with
@@ -47,6 +43,8 @@ class MyGame extends FlameGame
 
   final ScrollSystem scrollSystem = ScrollSystem();
   final ScrollOrchestrator scrollOrchestrator = ScrollOrchestrator();
+  final SequenceRunner _sequenceRunner = SequenceRunner();
+
   final GameAudioSystem _audioSystem = GameAudioSystem();
   final GameComponentFactory _componentFactory = GameComponentFactory();
   final GameCursorSystem _cursorSystem = GameCursorSystem();
@@ -115,8 +113,8 @@ class MyGame extends FlameGame
     // Initialize Global Config
     _configureGlobal();
 
-    // Initialize Section Managers
-    _initializeSections();
+    // Initialize Sections
+    _initSequence();
 
     // Initialize and add Input Controller
     _inputController = GameInputController(
@@ -135,13 +133,35 @@ class MyGame extends FlameGame
   // Compatibility getter for components accessing godRay via game reference
   GodRayComponent get godRay => _componentFactory.godRay;
 
+  void setCursorPosition(Vector2 position) {
+    _cursorSystem.setCursorPosition(position);
+  }
+
   @override
   Color backgroundColor() => GameStyles.primaryBackground;
 
   @override
   void onScroll(PointerScrollInfo info) {
     if (!isLoaded) return;
-    _inputController.handleScroll(info);
+
+    // Check if Active, if so, bypass standard input controller for scroll
+    // OR keep input controller updating scroll system, but use scroll system to drive runner?
+    // Plan says: "Explicit Entry when user scrolls... transitioning to first active section"
+
+    stateProvider.sceneState().maybeWhen(
+      active: (_) {
+        // Direct control to sequence runner
+        // We might want to use some smoothing from InputController later,
+        // but for now, raw delta or smoothed delta from ScrollSystem?
+        // InputController feeds ScrollSystem. ScrollSystem has 'scrollOffset'.
+        // Let's use the delta directly for 'Callback-Driven' feel without physics lag for now
+        // as per "Zero Math Dependencies" goal.
+        _sequenceRunner.handleScroll(info.scrollDelta.global.y);
+      },
+      orElse: () {
+        _inputController.handleScroll(info);
+      },
+    );
   }
 
   @override
@@ -165,23 +185,26 @@ class MyGame extends FlameGame
     super.update(dt);
     if (!isLoaded) return;
 
-    // Delegate updates
-    final isMenu = stateProvider.sceneState().maybeWhen(
-      boldText: (_, _) => true,
-      philosophy: (_) => true,
-      workExperience: (_) => true,
-      experience: (_) => true,
-      testimonials: (_) => true,
-      contact: (_) => true,
-      title: () => true,
-      orElse: () => false,
-    );
+    // Check State
+    final state = stateProvider.sceneState();
 
-    _cursorSystem.update(dt, size, enableParallax: isMenu);
+    // Update Runner
+    state.maybeWhen(active: (_) => _sequenceRunner.update(dt), orElse: () {});
+
+    // Listen to Start Trigger
+    state.maybeWhen(active: (_) => _sequenceRunner.start(), orElse: () {});
+
+    // Base Updates
+    _cursorSystem.update(
+      dt,
+      size,
+      enableParallax: true,
+    ); // Always enable parallax for consistency?
     scrollSystem.update(dt);
     _godRayController?.updatePulse(dt, scrollSystem.scrollOffset);
 
-    stateProvider.sceneState().when(
+    // Intro State Handlers
+    state.maybeWhen(
       loading: (isSvgReady, isGameReady) {
         _centerTitles(size / 2);
         _componentFactory.logoOverlay.inactivityOpacity +=
@@ -203,15 +226,9 @@ class MyGame extends FlameGame
           ),
         );
       },
-      titleLoading: () {},
-      title: () {},
-      boldText: (_, uiOpacity) => _handleBoldTextUpdate(uiOpacity),
-      philosophy: (_) {},
-      workExperience: (_) {},
-      experience: (_) {},
-      testimonials: (_) {},
-      contact: (_) {},
+      orElse: () {},
     );
+
     _inactivityTimer.update(dt);
   }
 
@@ -219,7 +236,10 @@ class MyGame extends FlameGame
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
     final center = size / 2;
-    stateProvider.sceneState().when(
+
+    _sequenceRunner.onResize(size);
+
+    stateProvider.sceneState().maybeWhen(
       loading: (isSvgReady, isGameReady) {},
       logo: () {
         _snapLogoToCenter(center);
@@ -227,58 +247,24 @@ class MyGame extends FlameGame
         _componentFactory.logoOverlay.position = center;
         _componentFactory.logoOverlay.gameSize = size;
       },
-      logoOverlayRemoving: () {},
-      titleLoading: () {
-        _centerTitles(center);
-      },
-      title: () {
-        _centerTitles(center);
-      },
-      boldText: (_, uiOpacity) {
-        logoAnimator.updateMenuLayoutTargets(size);
-      },
-      philosophy: (_) {
-        logoAnimator.updateMenuLayoutTargets(size);
-      },
-      workExperience: (_) {
-        logoAnimator.updateMenuLayoutTargets(size);
-      },
-      experience: (_) {
-        logoAnimator.updateMenuLayoutTargets(size);
-      },
-      testimonials: (_) {
-        logoAnimator.updateMenuLayoutTargets(size);
-      },
-      contact: (_) {
-        logoAnimator.updateMenuLayoutTargets(size);
-      },
+      titleLoading: () => _centerTitles(center),
+      title: () => _centerTitles(center),
+      orElse: () {},
     );
+
     // Safe check if factory initialized
     try {
       // _componentFactory.dimLayer.size = size;
-      _componentFactory.boldTextReveal.position = center;
-    } catch (_) {
-      // Components might not be loaded yet during initial resize
-    }
+      // Recenter bold text locally if needed, but onResize handled it in section
+    } catch (_) {}
   }
 
   // Handle section progress indicator taps
   void _handleSectionTap(int section) {
     if (!isLoaded) return;
-    if (section < 0 ||
-        section >= ScrollSequenceConfig.sectionJumpTargets.length) {
-      return;
-    }
-
-    // We can use the controller for the click sound if we want, or keep it here.
-    // Since this is a UI callback from Factory, it's slightly different from a Game generic tap.
-    // But we should probably use the audio system directly.
     playClick();
-
-    final targetScroll = ScrollSequenceConfig.sectionJumpTargets[section];
-    scrollSystem.setScrollOffset(targetScroll);
-    // Sync Bloc State
-    queuer.queue(event: SceneEvent.forceScrollOffset(targetScroll));
+    // Simplified: Just log or ignored for now as absolute offsets are gone
+    // Logic for jumping to section index would need SequenceRunner.jumpTo(index)
   }
 
   void _snapLogoToCenter(Vector2 center) {
@@ -324,131 +310,34 @@ class MyGame extends FlameGame
     scrollSystem.register(_godRayController!);
   }
 
-  void _initializeSections() {
-    // Bold text section
-    final boldTextController = BoldTextController(
-      component: _gameComponents.boldTextReveal,
-      screenWidth: size.x,
+  void _initSequence() {
+    // 1. Bold Text
+    final boldSection = BoldTextSection(
+      boldTextComponent: _gameComponents.boldTextReveal,
+      beachBackground: _gameComponents.beachBackground,
       centerPosition: size / 2,
     );
 
-    final boldManager = BoldTextManager(
-      controller: boldTextController,
-      beachBackground: _gameComponents.beachBackground,
-    );
-
-    // philosophy section
-    final philosophyTitle = _gameComponents.philosophyText;
-    philosophyTitle.priority = 20;
-    philosophyTitle.anchor = Anchor.center;
-    philosophyTitle.position = Vector2(size.x / 2, size.y * 0.7); // Start below
-    philosophyTitle.scale = Vector2.all(0.1); // Start small
-    philosophyTitle.opacity = 0.0;
-
-    final philosophyController = PhilosophyPageController(
-      titleComponent: philosophyTitle,
+    // 2. Philosophy
+    final philSection = PhilosophySection(
+      titleComponent: _gameComponents.philosophyText,
       cloudBackground: _gameComponents.beachBackground,
       trailComponent: _gameComponents.philosophyTrail,
-      // Added
       screenSize: size,
-      onComplete: playPhilosophyComplete,
+      playEntrySound: playPhilosophyEntry,
+      playCompletionSound: playPhilosophyComplete,
     );
 
-    final philManager = PhilosophyManager(
-      controller: philosophyController,
-      playSound: playPhilosophyEntry,
-    );
-
-    // 3. Register with Bloc
-    queuer.queue(
-      event: SceneEvent.registerSections([boldManager, philManager]),
-    );
-  }
-
-  void addPhilosophyBindings() {
+    // Configure components via binding-like logic (formerly addBoldTextBindings)
     _gameComponents.boldTextReveal.opacity = 0.0;
-    _gameComponents.philosophyText.opacity = 1.0;
-    _gameComponents.philosophyTrail.opacity = 1.0;
-    _gameComponents.beachBackground.opacity = 1.0;
-  }
+    // Philosophy text setup
+    _gameComponents.philosophyText.priority = 20;
+    _gameComponents.philosophyText.anchor = Anchor.center;
+    _gameComponents.philosophyText.position = Vector2(size.x / 2, size.y * 0.7);
+    _gameComponents.philosophyText.scale = Vector2.all(0.1);
+    _gameComponents.philosophyText.opacity = 0.0;
 
-  void addBoldTextBindings() {
-    _gameComponents.boldTextReveal.opacity = 1;
-    _gameComponents.cinematicTitle.position = size / 2;
-    _gameComponents.cinematicTitle.scale = Vector2.all(1.0);
-    _gameComponents.cinematicSecondaryTitle.position =
-        size / 2 + GameLayout.secTitleOffsetVector;
-
-    scrollOrchestrator.addBinding(
-      _gameComponents.cinematicTitle,
-      ParallaxScrollEffect(
-        startScroll: 0,
-        endScroll: ScrollSequenceConfig.titleParallaxEnd,
-        initialPosition: _gameComponents.cinematicTitle.position.clone(),
-        endOffset: GameLayout.parallaxEndVector,
-        curve: GameCurves.defaultSpring,
-      ),
-    );
-
-    scrollOrchestrator.addBinding(
-      _gameComponents.cinematicSecondaryTitle,
-      ParallaxScrollEffect(
-        startScroll: 0,
-        endScroll: ScrollSequenceConfig.secondaryTitleParallaxEnd,
-        initialPosition: _gameComponents.cinematicSecondaryTitle.position
-            .clone(),
-        endOffset: GameLayout.parallaxEndVector,
-        curve: GameCurves.logoSpring,
-      ),
-    );
-
-    // Fade Effects
-    scrollOrchestrator.addBinding(
-      _gameComponents.cinematicTitle,
-      OpacityScrollEffect(
-        startScroll: 0,
-        endScroll: ScrollSequenceConfig.titleFadeEnd,
-        startOpacity: 1.0,
-        endOpacity: 0.0,
-        curve: const ExponentialEaseOut(),
-      ),
-    );
-
-    scrollOrchestrator.addBinding(
-      _gameComponents.cinematicSecondaryTitle,
-      OpacityScrollEffect(
-        startScroll: 0,
-        endScroll: ScrollSequenceConfig.secondaryTitleFadeEnd,
-        startOpacity: 1.0,
-        endOpacity: 0.0,
-        curve: const ExponentialEaseOut(),
-      ),
-    );
-
-    scrollOrchestrator.addBinding(
-      _gameComponents.interactiveUI,
-      OpacityScrollEffect(
-        startScroll: 0,
-        endScroll: ScrollSequenceConfig.uiFadeEnd,
-        startOpacity: 1.0,
-        endOpacity: 0.0,
-        curve: const ExponentialEaseOut(),
-      ),
-    );
-  }
-
-  void setCursorPosition(Vector2 position) {
-    _cursorSystem.setCursorPosition(position);
-  }
-
-  void _handleBoldTextUpdate(double uiOpacity) {
-    final scroll = scrollSystem.scrollOffset;
-    final newOpacity = (1.0 - (scroll / 150.0)).clamp(0.0, 1.0);
-
-    if ((newOpacity - uiOpacity).abs() > 0.05 ||
-        (newOpacity == 0 && uiOpacity != 0)) {
-      queuer.queue(event: SceneEvent.updateUIOpacity(newOpacity));
-    }
+    _sequenceRunner.init([boldSection, philSection]);
   }
 
   // Audio Helpers

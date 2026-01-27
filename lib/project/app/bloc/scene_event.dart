@@ -16,21 +16,5 @@ class SceneEvent with _$SceneEvent {
 
   const factory SceneEvent.onScroll() = OnScroll;
 
-  const factory SceneEvent.onScrollSequence(double delta) = OnScrollSequence;
-
-  const factory SceneEvent.forceScrollOffset(double offset) = ForceScrollOffset;
-
   const factory SceneEvent.updateUIOpacity(double opacity) = UpdateUIOpacity;
-
-  const factory SceneEvent.registerSections(List<SectionManager> managers) =
-      RegisterSections;
-
-  const factory SceneEvent.nextSection({@Default(0.0) double overflow}) =
-      NextSection;
-
-  const factory SceneEvent.previousSection({@Default(0.0) double underflow}) =
-      PreviousSection;
-
-  const factory SceneEvent.updateSectionOffset(double offset) =
-      UpdateSectionOffset;
 }

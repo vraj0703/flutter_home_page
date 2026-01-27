@@ -29,9 +29,6 @@ class GameInputController extends Component {
     final delta = info.scrollDelta.global.y;
     scrollSystem.onScroll(delta);
     audioSystem.playScrollTick();
-
-    // Always update global scroll sequence
-    queuer.queue(event: SceneEvent.onScrollSequence(delta));
   }
 
   void handleTapDown(TapDownEvent event) {
