@@ -1,8 +1,8 @@
-import 'package:flame/components.dart';
-import 'package:flutter/animation.dart';
+import 'package:flame/components.dart' hide Matrix4;
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'philosophy_card.dart';
+import 'package:flutter/material.dart';
 
 class PhilosophyTrailComponent extends PositionComponent
     with HasGameReference, HasPaint {
@@ -14,11 +14,11 @@ class PhilosophyTrailComponent extends PositionComponent
   double _currentScroll = 0.0;
   void Function(double smoothedOffset)? onScrollUpdate;
 
-  // We store the calculated positions here
-  final List<Vector2> _targetPositions = [];
+  // 3D Anchors (X, Y, Depth)
+  final List<Vector3> _targetAnchors = [];
+  final List<double> _targetRotations = [];
 
-  PhilosophyTrailComponent()
-    : super(anchor: Anchor.topLeft); // Use topLeft for the container
+  PhilosophyTrailComponent() : super(anchor: Anchor.topLeft);
 
   @override
   Future<void> onLoad() async {
@@ -30,9 +30,13 @@ class PhilosophyTrailComponent extends PositionComponent
 
       card.opacity = 0.0;
       card.parentOpacity = 1.0;
-      card.anchor = Anchor.center; // Critical for the math below
+      card.anchor = Anchor.center;
       cards.add(card);
-      _targetPositions.add(Vector2.zero());
+
+      // Initialize 3D lists
+      _targetAnchors.add(Vector3.zero());
+      _targetRotations.add(0.0);
+
       add(card);
     }
 
@@ -49,41 +53,87 @@ class PhilosophyTrailComponent extends PositionComponent
   void _layoutCards() {
     if (cards.isEmpty) return;
 
-    // MATH CALCULATION FOR CENTERING
-    final n = cards.length;
+    final centerX = size.x / 2;
+    final centerY = size.y / 2;
 
-    // 1. Determine card size based on screen width (roughly 18% of screen)
-    double cardWidth = (size.x * 0.18).clamp(150.0, 250.0);
-    double cardHeight = cardWidth * 1.4;
-    double spacing = 20.0; // Gap between cards
+    // Card Base Dimensions
+    final cardWidth = (size.x * 0.15).clamp(120.0, 300.0);
+    final cardHeight = size.y * 0.45; // Reduced from 0.6 for shorter cards
 
-    // 2. Calculate the total width of the 4-card block
-    double totalBlockWidth = (n * cardWidth) + ((n - 1) * spacing);
+    // Hallway Configuration
+    // Outer Cards (0, 3): Closer (Z=0), Wider (X offset large)
+    final outerX = size.x * 0.35;
+    final outerZ = 0.0;
+    final outerRot = 0.4; // ~23 deg
 
-    // 3. Find the starting X (left edge of the first card)
-    // We subtract half the block width from the screen center
-    double startX = (size.x / 2) - (totalBlockWidth / 2);
+    // Inner Cards (1, 2): Further (Z=300), Narrower (X offset small)
+    final innerX = size.x * 0.15;
+    final innerZ = 300.0;
+    final innerRot = 0.2; // ~11 deg
 
-    // 4. Center Y (Middle of screen)
-    double centerY = size.y / 2;
+    // 0: Far Left
+    _configureCard(
+      0,
+      -outerX + centerX,
+      centerY,
+      outerZ,
+      cardWidth,
+      cardHeight,
+      outerRot,
+    );
 
-    for (int i = 0; i < n; i++) {
-      cards[i].size = Vector2(cardWidth, cardHeight);
+    // 1: Inner Left
+    _configureCard(
+      1,
+      -innerX + centerX,
+      centerY,
+      innerZ,
+      cardWidth,
+      cardHeight,
+      innerRot,
+    );
 
-      // Target X is startX + previous cards + half of own width (because anchor is center)
-      double targetX = startX + (i * (cardWidth + spacing)) + (cardWidth / 2);
+    // 2: Inner Right
+    _configureCard(
+      2,
+      innerX + centerX,
+      centerY,
+      innerZ,
+      cardWidth,
+      cardHeight,
+      -innerRot,
+    );
 
-      _targetPositions[i].setValues(targetX, centerY);
+    // 3: Far Right
+    _configureCard(
+      3,
+      outerX + centerX,
+      centerY,
+      outerZ,
+      cardWidth,
+      cardHeight,
+      -outerRot,
+    );
+  }
 
-      // If progress hasn't started yet, keep them at target but invisible
-      // OR move them off-screen if you want them to fly in later
-      if (cards[i].opacity == 0) {
-        cards[i].position = Vector2(
-          targetX,
-          centerY + 500,
-        ); // Start below screen
-      }
-    }
+  void _configureCard(
+    int index,
+    double x,
+    double y,
+    double z,
+    double w,
+    double h,
+    double rotY,
+  ) {
+    if (index >= cards.length) return;
+
+    final card = cards[index];
+    card.size = Vector2(w, h); // Base size
+
+    _targetAnchors[index].setValues(x, y, z);
+    _targetRotations[index] = rotY;
+
+    // Initial State (Off-screen/Hidden) handles by updateTrailAnimation
   }
 
   @override
@@ -120,53 +170,116 @@ class PhilosophyTrailComponent extends PositionComponent
   }
 
   /// Call this from your Page/Game scroll listener (Now controlled by onScrollUpdate feedback)
+  /// Tri-Phase Animation: Burst (0-0.3) -> Settle (0.3-0.7) -> Lock (0.7-1.0)
   void updateTrailAnimation(double progress) {
+    // Shared center for burst origin
+    final center = Vector3(size.x / 2, size.y / 2, 0);
+
     for (int i = 0; i < cards.length; i++) {
       final card = cards[i];
 
-      // Staggered arrival logic (Spread evenly for audio sync)
-      // Total Trail Range: 2600px.
-      // We want Card 1 (Mi), Card 2 (Fa), Card 3 (Si), Card 4 (Sol)
-      // intervals: 0.1, 0.35, 0.60, 0.85 approx
-
-      final double duration = 0.2; // 20% of scroll range per card flight
-      final double startTrigger = i * 0.25; // 0.0, 0.25, 0.50, 0.75
-      final double endTrigger = startTrigger + duration;
-
-      double t = ((progress - startTrigger) / (endTrigger - startTrigger))
-          .clamp(0.0, 1.0);
+      // Normalize progress: The entire sequence happens over the scroll range passed in.
+      // We process all cards simultaneously but with slightly different chaotic offsets if desired.
+      // For a "Singularity" burst, they usually explode together.
+      double t = progress.clamp(0.0, 1.0);
 
       if (t <= 0) {
         card.opacity = 0;
-        // Reset sound if scrolled back significantly
-        if (progress < startTrigger) _hasPlayedAudio[i] = false;
         continue;
       }
 
-      // Physics: Use a smooth Ease-Out curve
-      final curve = Curves.easeOutCubic.transform(t);
+      // Explicit fade in
+      card.opacity = (t * 3.0).clamp(0.0, 1.0);
 
-      final targetPos = _targetPositions[i];
-      // Fly in from bottom-center
-      final startPos = Vector2(targetPos.x, size.y + 200);
+      // --- Tri-Phase Logic ---
+      Vector3 currentPos;
+      double currentRot;
 
-      // Interpolate position
-      card.position = startPos + (targetPos - startPos) * curve;
+      final target = _targetAnchors[i];
+      final targetRot = _targetRotations[i];
 
-      // Fade and scale
-      card.opacity = t;
-      card.scale = Vector2.all(0.8 + (0.2 * curve));
+      if (t < 0.3) {
+        // PHASE 1: SINGULARITY BURST (0.0 -> 0.3)
+        // Explode from center OUTWARD past the target (Overshoot)
+        final phaseT = t / 0.3;
+        final ease = Curves.easeOutExpo.transform(phaseT);
 
-      // Subtilt: Card 0 & 1 tilt left, 2 & 3 tilt right
-      double maxTilt = 0.05; // radians
-      card.angle = (i < 2 ? -maxTilt : maxTilt) * (1 - curve);
+        // Direction from center to target
+        final direction = (target - center);
+        // Overshoot by 50%
+        final overshootPos = center + (direction * 1.5);
 
-      // Sound trigger - Play when card locks in (t=1.0)
-      // or slightly before to sync with visual "hit"
+        // Lerp: Center -> Overshoot
+        currentPos = center + (overshootPos - center) * ease;
+
+        // Rotation: Chaotic Spin -> Target Rotation
+        // Starts wild (e.g. +2 radians), settles towards near-target
+        currentRot = targetRot + (1.0 - ease) * 2.0;
+      } else if (t < 0.7) {
+        // PHASE 2: FLOATING SETTLE (0.3 -> 0.7)
+        // Drift from Overshoot back to Target
+        final phaseT = (t - 0.3) / 0.4;
+        final ease = Curves.easeInOutSine.transform(phaseT);
+
+        final direction = (target - center);
+        final overshootPos = center + (direction * 1.5);
+
+        // Lerp: Overshoot -> Target
+        currentPos = overshootPos + (target - overshootPos) * ease;
+
+        // Rotation: Settle to exact target rotation
+        currentRot = targetRot;
+      } else {
+        // PHASE 3: PERSPECTIVE LOCK (0.7 -> 1.0)
+        // Locked in place (plus subtle hover if we added it)
+        currentPos = target;
+        currentRot = targetRot;
+      }
+
+      // --- Apply 3D Transform ---
+      _apply3DTransform(card, currentPos, currentRot);
+
+      // Audio Trigger (Lock-in sound)
       if (t >= 0.9 && !_hasPlayedAudio[i]) {
         (game as MyGame).playTrailCardSound(i);
         _hasPlayedAudio[i] = true;
+      } else if (t < 0.5) {
+        _hasPlayedAudio[i] = false;
       }
     }
+  }
+
+  void _apply3DTransform(PhilosophyCard card, Vector3 pos, double rotY) {
+    // Perspective Scale
+    const focalLength = 800.0;
+    // Z > 0 means further away -> smaller scale
+    final depth = pos.z;
+    if (depth + focalLength == 0) return; // Prevent divide by zero
+
+    final scale = focalLength / (focalLength + depth);
+
+    // Construct Matrix
+    final matrix = Matrix4.identity();
+
+    // 1. Translate to Position
+    matrix.translate(pos.x, pos.y);
+
+    // 2. Perspective Scale (Simulating Z distance)
+    matrix.scale(scale, scale, 1.0);
+
+    // 3. Rotation Y (Tilt)
+    matrix.rotateY(rotY);
+
+    // 4. Center Anchor Adjustment
+    // Since we draw from (0,0), we must shift back by half size to center the card on 'pos'
+    matrix.translate(-card.size.x / 2, -card.size.y / 2);
+
+    // Apply to card
+    card.transformMat = matrix;
+
+    // Reset standard properties to avoid conflict
+    card.position = Vector2.zero();
+    card.angle = 0;
+    card.scale = Vector2.all(1.0);
   }
 }

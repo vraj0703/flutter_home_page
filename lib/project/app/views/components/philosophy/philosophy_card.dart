@@ -1,4 +1,4 @@
-import 'package:flame/components.dart';
+import 'package:flame/components.dart' hide Matrix4;
 import 'package:flame/effects.dart';
 import 'package:flame/text.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +16,9 @@ class PhilosophyCard extends PositionComponent
 
   double _scrollOpacity = 0.0;
   double _parentOpacity = 0.0;
+
+  // 3D Transform Matrix (Overrides standard 2D transform if set)
+  Matrix4? transformMat;
 
   @override
   double get opacity => _scrollOpacity;
@@ -123,16 +126,14 @@ class PhilosophyCard extends PositionComponent
     // CRITICAL: Clamp width to >= 1.0 to prevent CanvasKit "unsigned long" error
     final contentWidth = (size.x - (padding * 2)).clamp(1.0, 10000.0);
 
-    // 1. Icon (Top Left)
-    iconComp.anchor = Anchor.topLeft;
-    iconComp.position = Vector2(padding, padding);
-    // Scale icon slightly up if needed for "Vibrant" look
-    // iconComp.scale = Vector2.all(1.2);
+    // 1. Icon (Top Center)
+    iconComp.anchor = Anchor.topCenter;
+    iconComp.position = Vector2(size.x / 2, padding);
 
-    // 2. Title (Below Icon)
-    titleComp.anchor = Anchor.topLeft;
+    // 2. Title (Below Icon, Centered)
+    titleComp.anchor = Anchor.topCenter;
     titleComp.position = Vector2(
-      padding,
+      size.x / 2,
       padding + 60.0,
     ); // 60px gap from top approx
 
@@ -207,6 +208,27 @@ class PhilosophyCard extends PositionComponent
           height: 1.4,
         ),
       );
+    }
+  }
+
+  @override
+  void renderTree(Canvas canvas) {
+    if (transformMat != null) {
+      canvas.save();
+      canvas.transform(transformMat!.storage);
+
+      // Render Content
+      render(canvas);
+
+      // Render Children (Text, Icons, etc.)
+      for (final child in children) {
+        child.renderTree(canvas);
+      }
+
+      canvas.restore();
+    } else {
+      // Fallback to standard 2D render if no 3D matrix provided
+      super.renderTree(canvas);
     }
   }
 

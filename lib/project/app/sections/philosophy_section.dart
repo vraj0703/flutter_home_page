@@ -201,11 +201,16 @@ class PhilosophySection implements GameSection {
     const titleDuration = 800.0;
     final titleProgress = (scrollOffset / titleDuration).clamp(0.0, 1.0);
 
-    // 2. Trail Cards Animation (Starts at 800px)
-    if (scrollOffset > titleDuration) {
-      const trailDuration = 2600.0;
-      final trailProgress = ((scrollOffset - titleDuration) / trailDuration)
-          .clamp(0.0, 1.0);
+    // 2. Trail Cards Animation (Starts closer to 0 for Burst Effect)
+    // We want the burst to happen AS the title is forming, not after.
+    const trailStart = 200.0;
+
+    if (scrollOffset > trailStart) {
+      const trailDuration = 3200.0;
+      final trailProgress = ((scrollOffset - trailStart) / trailDuration).clamp(
+        0.0,
+        1.0,
+      );
       trailComponent.updateTrailAnimation(trailProgress);
     } else {
       trailComponent.updateTrailAnimation(0.0);
