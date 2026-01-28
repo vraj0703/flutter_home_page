@@ -6,6 +6,7 @@ uniform vec2 uSize;
 uniform float uScrollProgress;
 uniform sampler2D uTexture;
 uniform vec2 uTextSize;
+uniform float uOpacity;
 
 out vec4 fragColor;
 
@@ -163,5 +164,5 @@ void main() {
         finalA = mix(finalA, 1.0, flash);
     }
 
-    fragColor = vec4(finalRGB, finalA);
+    fragColor = vec4(finalRGB, finalA * uOpacity);
 }

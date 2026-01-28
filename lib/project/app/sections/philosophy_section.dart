@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
 import 'package:flutter_home_page/project/app/models/scroll_result.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
@@ -14,7 +15,6 @@ class PhilosophySection implements GameSection {
   final PhilosophyTextComponent titleComponent;
   final BeachBackgroundComponent cloudBackground;
   final PhilosophyTrailComponent trailComponent;
-  final BackgroundRunComponent backgroundRun; // Added
   Vector2 screenSize;
   final VoidCallback playEntrySound;
   final VoidCallback playCompletionSound;
@@ -30,7 +30,6 @@ class PhilosophySection implements GameSection {
     required this.titleComponent,
     required this.cloudBackground,
     required this.trailComponent,
-    required this.backgroundRun,
     required this.screenSize,
     required this.playEntrySound,
     required this.playCompletionSound,
@@ -43,7 +42,48 @@ class PhilosophySection implements GameSection {
   VoidCallback? onComplete; // To next section
 
   @override
+  @override
   VoidCallback? onReverseComplete; // To previous section
+
+  @override
+  List<Vector2> get snapRegions => [
+    // Snap to End
+    Vector2(1400, _maxHeight),
+  ];
+
+  @override
+  void setScrollOffset(double offset) {
+    if (offset > _maxHeight) {
+      _scrollProgress = _maxHeight;
+      _updateVisuals(_scrollProgress);
+      onComplete?.call();
+      return;
+    }
+
+    if (offset < 0) {
+      _scrollProgress = 0;
+      _updateVisuals(_scrollProgress);
+      onReverseComplete?.call();
+      return;
+    }
+
+    _scrollProgress = offset;
+    _updateVisuals(_scrollProgress);
+  }
+
+  void _updateVisuals(double offset) {
+    // Logic for re-playing entry sound if user scrolls back to start
+    if (offset > 50.0) {
+      _canReplayEntrySound = true;
+    } else if (offset < 10.0 && _canReplayEntrySound) {
+      playEntrySound();
+      _canReplayEntrySound = false;
+    }
+
+    // Update Components
+    trailComponent.setTargetScroll(offset);
+    _updateFloatingTitleAnimation(offset);
+  }
 
   bool _isActive = false;
 
@@ -55,15 +95,34 @@ class PhilosophySection implements GameSection {
   }
 
   @override
-  Future<void> enter() async {
+  Future<void> enter(ScrollSystem scrollSystem) async {
     _isActive = true;
+
+    // Configure ScrollSystem
+    scrollSystem.resetScroll(0.0);
+    scrollSystem.setSnapRegions(snapRegions);
+
     trailComponent.opacity = 1.0;
     // Hide default background when Philosophy enters
-    backgroundRun.opacity = 0.0;
 
     // Cloud background should be visible from previous section (BoldText)
     // We play the generic entry sound if this is fresh entry?
     // Legacy manager played sound onActivate.
+    playEntrySound();
+  }
+
+  @override
+  Future<void> enterReverse(ScrollSystem scrollSystem) async {
+    _isActive = true;
+
+    // Configure ScrollSystem
+    scrollSystem.resetScroll(_maxHeight);
+    scrollSystem.setSnapRegions(snapRegions);
+
+    // Set internal state
+    setScrollOffset(_maxHeight);
+
+    trailComponent.opacity = 1.0;
     playEntrySound();
   }
 
@@ -95,33 +154,19 @@ class PhilosophySection implements GameSection {
   @override
   ScrollResult handleScroll(double delta) {
     final newScroll = _scrollProgress + delta;
+    setScrollOffset(newScroll);
 
     // Check Overflow
     if (newScroll > _maxHeight) {
-      onComplete?.call();
       return ScrollOverflow(newScroll - _maxHeight);
     }
 
     // Check Underflow
     if (newScroll < 0) {
-      onReverseComplete?.call();
       return ScrollUnderflow(newScroll);
     }
 
-    _scrollProgress = newScroll;
-
-    // Logic for re-playing entry sound if user scrolls back to start
-    if (_scrollProgress > 50.0) {
-      _canReplayEntrySound = true;
-    } else if (_scrollProgress < 10.0 && _canReplayEntrySound) {
-      playEntrySound();
-      _canReplayEntrySound = false;
-    }
-
-    // Update Components
-    trailComponent.setTargetScroll(_scrollProgress);
-
-    return ScrollConsumed(_scrollProgress);
+    return ScrollConsumed(newScroll);
   }
 
   void _updateFloatingTitleAnimation(double scrollOffset) {

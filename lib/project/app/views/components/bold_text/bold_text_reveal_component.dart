@@ -92,6 +92,7 @@ class BoldTextRevealComponent extends PositionComponent
     shader.setFloat(2, _scrollProgress);
     shader.setFloat(3, _textTexture!.width.toDouble());
     shader.setFloat(4, _textTexture!.height.toDouble());
+    shader.setFloat(5, opacity);
     shader.setImageSampler(0, _textTexture!);
 
     paint.shader = shader;

@@ -1,14 +1,19 @@
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
+import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/models/scroll_result.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 
 /// Orchestrates the execution of [GameSection]s in a linear sequence.
 ///
 /// Replaces complex Bloc state logic with a simple "Run Until Done" pattern.
-class SequenceRunner {
+class SequenceRunner implements ScrollObserver {
+  final ScrollSystem scrollSystem;
   List<GameSection> _sections = [];
   int _currentIndex = 0;
   bool _isActive = false;
+
+  SequenceRunner({required this.scrollSystem});
 
   /// Initializes the runner with the defined chain of sections.
   void init(List<GameSection> sections) {
@@ -29,9 +34,16 @@ class SequenceRunner {
     if (_isActive) return;
     _isActive = true;
     if (_sections.isNotEmpty) {
+      scrollSystem.setSnapRegions(_sections[_currentIndex].snapRegions);
       await _sections[_currentIndex].warmUp();
-      await _sections[_currentIndex].enter();
+      await _sections[_currentIndex].enter(scrollSystem);
     }
+  }
+
+  @override
+  void onScroll(double scrollOffset) {
+    if (!_isActive || _sections.isEmpty) return;
+    _sections[_currentIndex].setScrollOffset(scrollOffset);
   }
 
   /// Routes scroll input to the current active section.
@@ -73,8 +85,9 @@ class SequenceRunner {
       final nextSection = _sections[_currentIndex];
 
       // 2. Enter new
+      // Section configures the system itself (reset to 0, snap regions, etc)
       await nextSection.warmUp();
-      await nextSection.enter();
+      await nextSection.enter(scrollSystem);
 
       // Notify UI listener if needed (e.g., via Bloc event)
       // _onSectionChanged(_currentIndex);
@@ -94,9 +107,9 @@ class SequenceRunner {
       final prevSection = _sections[_currentIndex];
 
       // 2. Re-enter previous
+      // Section configures the system itself (reset to Max, snap regions, etc)
       await prevSection.warmUp();
-      // We might need a specific enterReverse() or just enter() with config
-      await prevSection.enter();
+      await prevSection.enterReverse(scrollSystem);
     }
   }
 }

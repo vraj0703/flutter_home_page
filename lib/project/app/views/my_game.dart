@@ -43,7 +43,9 @@ class MyGame extends FlameGame
 
   final ScrollSystem scrollSystem = ScrollSystem();
   final ScrollOrchestrator scrollOrchestrator = ScrollOrchestrator();
-  final SequenceRunner _sequenceRunner = SequenceRunner();
+  late final SequenceRunner _sequenceRunner = SequenceRunner(
+    scrollSystem: scrollSystem,
+  );
 
   final GameAudioSystem _audioSystem = GameAudioSystem();
   final GameComponentFactory _componentFactory = GameComponentFactory();
@@ -129,6 +131,7 @@ class MyGame extends FlameGame
 
     queuer.queue(event: const SceneEvent.gameReady());
     scrollSystem.register(scrollOrchestrator);
+    scrollSystem.register(_sequenceRunner);
   }
 
   // Compatibility getter for components accessing godRay via game reference
@@ -151,13 +154,9 @@ class MyGame extends FlameGame
 
     stateProvider.sceneState().maybeWhen(
       active: (_) {
-        // Direct control to sequence runner
-        // We might want to use some smoothing from InputController later,
-        // but for now, raw delta or smoothed delta from ScrollSystem?
-        // InputController feeds ScrollSystem. ScrollSystem has 'scrollOffset'.
-        // Let's use the delta directly for 'Callback-Driven' feel without physics lag for now
-        // as per "Zero Math Dependencies" goal.
-        _sequenceRunner.handleScroll(info.scrollDelta.global.y);
+        // Direct control to ScrollSystem
+        // This allows physics (snapping/inertia) to run, which then updates SequenceRunner via observer
+        scrollSystem.onScroll(info.scrollDelta.global.y);
       },
       orElse: () {
         _inputController.handleScroll(info);
@@ -315,20 +314,19 @@ class MyGame extends FlameGame
     // 1. Bold Text
     final boldSection = BoldTextSection(
       boldTextComponent: _gameComponents.boldTextReveal,
-      beachBackground: _gameComponents.beachBackground,
       backgroundRun: _gameComponents.backgroundRun,
       cinematicTitle: _gameComponents.cinematicTitle,
       cinematicSecondaryTitle: _gameComponents.cinematicSecondaryTitle,
-      interactiveUI: _gameComponents.interactiveUI,
+      logoOverlay: _gameComponents.interactiveUI,
       centerPosition: size / 2,
     );
+    boldSection.onComplete = () {};
 
     // 2. Philosophy
     final philSection = PhilosophySection(
       titleComponent: _gameComponents.philosophyText,
       cloudBackground: _gameComponents.beachBackground,
       trailComponent: _gameComponents.philosophyTrail,
-      backgroundRun: _gameComponents.backgroundRun,
       screenSize: size,
       playEntrySound: playPhilosophyEntry,
       playCompletionSound: playPhilosophyComplete,

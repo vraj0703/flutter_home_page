@@ -1,11 +1,4 @@
 class ScrollSequenceConfig {
-  // --- Intro / Title Section ---
-  static const double titleParallaxEnd = 800.0;
-  static const double secondaryTitleParallaxEnd = 800.0; // Matched to title
-  static const double titleFadeEnd = 500.0;
-  static const double secondaryTitleFadeEnd = 500.0; // Matched to title
-  static const double uiFadeEnd = 100.0;
-
   // --- Intro Animation Durations (ms) ---
   static const int sceneRevealDuration = 2000;
   static const int loadingBlinkDuration = 600;
@@ -40,8 +33,7 @@ class ScrollSequenceConfig {
 
   // --- 1. Bold Text Section (0 - 3000) ---
   // The bold text sequence covers a large area for the 3-pass animation
-  static const double boldTextStart = 0.0;
-  static const double boldTextEnd = 3000.0; // Extended from 1700
+  static const double boldTextStart = 0.0;// Extended from 1700
 
   // Relative Progress Ranges (0.0 - 1.0)
   // Entrance (0.0 - 0.4): 0 - 1200

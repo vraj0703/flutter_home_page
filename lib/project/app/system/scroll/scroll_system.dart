@@ -1,7 +1,8 @@
 import 'dart:ui' show lerpDouble;
 
+import 'package:flame/components.dart';
+
 import 'package:flutter_home_page/project/app/config/game_physics.dart';
-import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 
 /// Manages the global scroll state and notifies observers.
@@ -14,24 +15,19 @@ class ScrollSystem {
   double _scrollVelocity = 0.0;
   double _lastScrollOffset = 0.0;
   double _lastUpdateTime = 0.0;
+  List<Vector2> _snapRegions = [];
   bool _isSnapping = false;
   double _snapTarget = 0.0;
 
-  static const List<double> snapPoints = [
-    ScrollSequenceConfig.boldTextStart,
-    ScrollSequenceConfig.boldTextFocus,
-    ScrollSequenceConfig.boldTextEnd,
-    ScrollSequenceConfig.philosophyEnd,
-    ScrollSequenceConfig.workExpTitleHoldStart,
-    ScrollSequenceConfig.experienceInteractionStart,
-    ScrollSequenceConfig.testimonialInteractionStart,
-  ];
-  static const double snapZoneRadius = GamePhysics.snapZoneRadius;
   static const double snapVelocityThreshold = GamePhysics.snapVelocityThreshold;
 
   double get scrollOffset => _currentScrollOffset;
 
   double get targetScrollOffset => _targetScrollOffset;
+
+  void setSnapRegions(List<Vector2> regions) {
+    _snapRegions = regions;
+  }
 
   void register(ScrollObserver observer) {
     _observers.add(observer);
@@ -66,7 +62,6 @@ class ScrollSystem {
     }
 
     _targetScrollOffset += delta;
-    if (_targetScrollOffset < 0) _targetScrollOffset = 0;
 
     final currentTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
     if (_lastUpdateTime > 0) {
@@ -86,11 +81,19 @@ class ScrollSystem {
     if (_isSnapping) return;
     if (_scrollVelocity.abs() > snapVelocityThreshold) return;
 
-    for (final snapPoint in snapPoints) {
-      final distance = (_targetScrollOffset - snapPoint).abs();
-      if (distance <= snapZoneRadius) {
+    for (final region in _snapRegions) {
+      // region.x = start of snap zone reference
+      // region.y = target snap point
+      // Zone covers the range between x and y.
+      final double start = region.x < region.y ? region.x : region.y;
+      final double end = region.x > region.y ? region.x : region.y;
+
+      if (_targetScrollOffset >= start && _targetScrollOffset <= end) {
+        // If we are already at the target (within epsilon), don't snap again
+        if ((_targetScrollOffset - region.y).abs() < 1.0) continue;
+
         _isSnapping = true;
-        _snapTarget = snapPoint;
+        _snapTarget = region.y;
         _springVelocity = 0.0; // Start fresh spring
         break;
       }

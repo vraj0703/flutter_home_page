@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/models/scroll_result.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 
 /// Defines the contract for a distinct section of the game experience.
 ///
@@ -17,9 +18,15 @@ abstract class GameSection {
   /// before the section becomes visible.
   Future<void> warmUp();
 
-  /// Starts the entrance animation logic.
-  /// The section should become visible and interactive after this.
-  Future<void> enter();
+  /// Starts the entrance animation logic (forward).
+  /// The section configures the [scrollSystem] (e.g. reset to 0, set snap regions)
+  /// and becomes visible.
+  Future<void> enter(ScrollSystem scrollSystem);
+
+  /// Starts the entrance animation logic (reverse).
+  /// The section configures the [scrollSystem] (e.g. set to max extent, set snap regions)
+  /// and becomes visible.
+  Future<void> enterReverse(ScrollSystem scrollSystem);
 
   /// Starts the exit animation logic.
   /// The section should cleanup and hide itself after this.
@@ -31,6 +38,14 @@ abstract class GameSection {
   /// Per-frame update logic.
   /// [dt] is the delta time in seconds.
   void update(double dt);
+
+  /// The snap regions for this section.
+  /// Each Vector2 represents a region: x = start, y = end.
+  /// If the scroll offset falls within this range, the system should snap to the end (y).
+  List<Vector2> get snapRegions;
+
+  /// Handles manual scroll offset updates (e.g. from ScrollSystem physics).
+  void setScrollOffset(double offset);
 
   /// Handles scroll input directed to this section.
   ///
