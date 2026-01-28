@@ -44,6 +44,10 @@ abstract class GameSection {
   /// If the scroll offset falls within this range, the system should snap to the end (y).
   List<Vector2> get snapRegions;
 
+  /// The maximum scroll extent for this section.
+  /// Used for clamping logic at the end of the sequence or for reverse entry.
+  double get maxScrollExtent;
+
   /// Handles manual scroll offset updates (e.g. from ScrollSystem physics).
   void setScrollOffset(double offset);
 

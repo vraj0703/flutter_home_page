@@ -92,7 +92,11 @@ class SequenceRunner implements ScrollObserver {
       // Notify UI listener if needed (e.g., via Bloc event)
       // _onSectionChanged(_currentIndex);
     } else {
-      // End of game sequence
+      // End of game sequence: Clamp to max
+      // If we are at the last section and try to advance, just clamp the physics system.
+      // We use currentSection.maxScrollExtent.
+      final currentSection = _sections[_currentIndex];
+      scrollSystem.resetScroll(currentSection.maxScrollExtent);
     }
   }
 
@@ -110,6 +114,10 @@ class SequenceRunner implements ScrollObserver {
       // Section configures the system itself (reset to Max, snap regions, etc)
       await prevSection.warmUp();
       await prevSection.enterReverse(scrollSystem);
+    } else {
+      // Start of game sequence: Clamp to 0
+      // If we are at the first section and try to reverse, just clamp.
+      scrollSystem.resetScroll(0.0);
     }
   }
 }

@@ -12,6 +12,8 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/philos
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 
 class PhilosophySection implements GameSection {
+  @override
+  double get maxScrollExtent => _maxHeight;
   final PhilosophyTextComponent titleComponent;
   final BeachBackgroundComponent cloudBackground;
   final PhilosophyTrailComponent trailComponent;

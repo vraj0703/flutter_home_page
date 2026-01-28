@@ -13,6 +13,8 @@ import 'package:flutter_home_page/project/app/views/components/background/backgr
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 
 class BoldTextSection implements GameSection {
+  @override
+  double get maxScrollExtent => _maxHeight;
   final BoldTextRevealComponent boldTextComponent;
   final BackgroundRunComponent backgroundRun;
   final CinematicTitleComponent cinematicTitle;
