@@ -291,6 +291,10 @@ class MyGame extends FlameGame
     );
   }
 
+  void loadBouncingLines() {
+    _componentFactory.logoOverlay.opacity = 1.0;
+  }
+
   void enterTitle() {
     Future.delayed(ScrollSequenceConfig.enterTitleDelayDuration, () {
       playTitleLoaded(); // Play sound when main title starts entering

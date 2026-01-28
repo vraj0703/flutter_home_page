@@ -108,6 +108,7 @@ class _StatefulSceneState extends State<StatefulScene>
             _revealController.reverse();
           },
           logo: () {
+            _game.loadBouncingLines();
             if (mounted) {
               _blinkingController.stop();
               _revealController.forward();
