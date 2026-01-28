@@ -53,10 +53,29 @@ class PhilosophyTextComponent extends PositionComponent with HasPaint {
     );
     _fadeText.anchor = Anchor.center;
     _fadeText.position = size / 2; // Center in parent
-    _fadeText.opacity = 0.0;
+    _fadeText.opacity = 0.0; // Invisible initially
 
     add(_fadeText);
     opacity = 0.0;
+  }
+
+  /// Forces texture generation for warmup
+  Future<void> warmUp() async {
+    if (!isLoaded) return;
+    if (textTexture != null)
+      return; // Skip if already generated (Startup optimization)
+
+    _needsTextureUpdate = true;
+    // Temporarily set opacity > 0 for _updateTextTexture check (safe because _fadeText.opacity is 0)
+    final oldOpacity = opacity;
+    opacity = 0.01;
+    _fadeText.opacity = 1.0; // Needs to be visible for render capture
+
+    await _updateTextTexture();
+
+    // Restore
+    opacity = oldOpacity;
+    _fadeText.opacity = 0.0;
   }
 
   @override

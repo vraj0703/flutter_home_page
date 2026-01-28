@@ -71,16 +71,18 @@ class LogoOverlayComponent extends PositionComponent
   @override
   set opacity(double value) {
     _opacity = value;
-    _textComponent.textRenderer = TextPaint(
-      style: style.copyWith(
-        color: uiColor.withValues(alpha: _opacity),
-        shadows: [
-          textShadow.copyWith(
-            color: GameStyles.logoOverlayShadow.withValues(alpha: _opacity),
-          ),
-        ],
-      ),
-    );
+    if (isLoaded) {
+      _textComponent.textRenderer = TextPaint(
+        style: style.copyWith(
+          color: uiColor.withValues(alpha: _opacity),
+          shadows: [
+            textShadow.copyWith(
+              color: GameStyles.logoOverlayShadow.withValues(alpha: _opacity),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   LogoOverlayComponent({required this.stateProvider, required this.queuer});
@@ -100,11 +102,15 @@ class LogoOverlayComponent extends PositionComponent
     );
     style = flutter.TextStyle(
       fontSize: GameStyles.enterFontSize,
-      color: uiColor,
+      color: uiColor.withValues(alpha: _opacity),
       letterSpacing: GameStyles.enterLetterSpacing,
       fontWeight: FontWeight.w900,
       fontFamily: GameStyles.fontBroadway,
-      shadows: [textShadow],
+      shadows: [
+        textShadow.copyWith(
+          color: GameStyles.logoOverlayShadow.withValues(alpha: _opacity),
+        ),
+      ],
     );
     _textComponent = TextComponent(
       text: '',

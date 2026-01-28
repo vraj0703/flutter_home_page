@@ -9,8 +9,6 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/beach_
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
 
-import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
-
 class PhilosophySection implements GameSection {
   @override
   double get maxScrollExtent => _maxHeight;
@@ -44,8 +42,12 @@ class PhilosophySection implements GameSection {
   VoidCallback? onComplete; // To next section
 
   @override
+  VoidCallback? onWarmUpNextSection;
+
   @override
   VoidCallback? onReverseComplete; // To previous section
+
+  bool _hasWarmedUpNext = false;
 
   @override
   List<Vector2> get snapRegions => [
@@ -70,6 +72,13 @@ class PhilosophySection implements GameSection {
     }
 
     _scrollProgress = offset;
+
+    // Warm up next section if nearing completion
+    if (_scrollProgress > _maxHeight - 500 && !_hasWarmedUpNext) {
+      onWarmUpNextSection?.call();
+      _hasWarmedUpNext = true;
+    }
+
     _updateVisuals(_scrollProgress);
   }
 
@@ -94,27 +103,35 @@ class PhilosophySection implements GameSection {
     if (_scrollProgress <= 0) {
       _resetVisuals();
     }
+    // Pre-complile shader
+    cloudBackground.warmUp();
+    titleComponent.warmUp();
+
+    // Architectural Visibility: Ensure hidden after warmup
+    cloudBackground.opacity = 0.0;
+    titleComponent.opacity = 0.0;
   }
 
   @override
   Future<void> enter(ScrollSystem scrollSystem) async {
+    _hasWarmedUpNext = false;
     _isActive = true;
 
     // Configure ScrollSystem
     scrollSystem.resetScroll(0.0);
     scrollSystem.setSnapRegions(snapRegions);
 
+    // Architectural Visibility: Reveal components
     trailComponent.opacity = 1.0;
-    // Hide default background when Philosophy enters
+    cloudBackground.opacity = 1.0;
 
-    // Cloud background should be visible from previous section (BoldText)
-    // We play the generic entry sound if this is fresh entry?
     // Legacy manager played sound onActivate.
     playEntrySound();
   }
 
   @override
   Future<void> enterReverse(ScrollSystem scrollSystem) async {
+    _hasWarmedUpNext = false;
     _isActive = true;
 
     // Configure ScrollSystem
@@ -124,16 +141,20 @@ class PhilosophySection implements GameSection {
     // Set internal state
     setScrollOffset(_maxHeight);
 
+    // Architectural Visibility: Reveal components
     trailComponent.opacity = 1.0;
+    cloudBackground.opacity = 1.0;
+
     playEntrySound();
   }
 
   @override
   Future<void> exit() async {
     _isActive = false;
-    // When done, we might hide things or let them linger?
-    // Legacy: onDeactivate calling reset().
+    // Architectural Visibility: Hide everything
     _resetVisuals();
+    cloudBackground.opacity = 0.0;
+    trailComponent.opacity = 0.0;
   }
 
   @override

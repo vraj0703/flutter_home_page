@@ -129,6 +129,10 @@ class MyGame extends FlameGame
     );
     add(_inputController);
 
+    // Warm up all sections (Shaders & Textures) via Runner
+    // This architecturally ensures all current and future sections are primed.
+    await _sequenceRunner.warmUpAll();
+
     queuer.queue(event: const SceneEvent.gameReady());
     scrollSystem.register(scrollOrchestrator);
     scrollSystem.register(_sequenceRunner);

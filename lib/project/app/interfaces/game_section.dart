@@ -14,6 +14,10 @@ abstract class GameSection {
   /// Callback triggered when the section completes its reverse sequence (scrolling back up).
   VoidCallback? onReverseComplete;
 
+  /// Callback triggered when the section is nearing its end, allowing the next section
+  /// to pre-warm resources (e.g. compile shaders) before becoming fully visible.
+  VoidCallback? onWarmUpNextSection;
+
   /// Pre-loads resources, compiles shaders, or performs heavy calculations
   /// before the section becomes visible.
   Future<void> warmUp();

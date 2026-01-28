@@ -1,11 +1,9 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
-import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
 import 'package:flutter_home_page/project/app/models/scroll_result.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_title.dart';
 import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_secondary_title.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';
@@ -44,7 +42,12 @@ class BoldTextSection implements GameSection {
   VoidCallback? onComplete;
 
   @override
+  VoidCallback? onWarmUpNextSection;
+
+  @override
   VoidCallback? onReverseComplete;
+
+  bool _hasWarmedUpNext = false;
 
   @override
   List<Vector2> get snapRegions => [
@@ -76,40 +79,51 @@ class BoldTextSection implements GameSection {
 
     // Valid Scroll
     _scrollProgress = offset;
+
+    // Warm up next section if nearing completion
+    if (_scrollProgress > _maxHeight - 500 && !_hasWarmedUpNext) {
+      onWarmUpNextSection?.call();
+      _hasWarmedUpNext = true;
+    }
+
     _updateVisuals(_scrollProgress);
   }
 
   @override
   Future<void> warmUp() async {
-    // Only reset if we are effectively at the start
-    if (_scrollProgress <= 0) {
-      boldTextComponent.opacity = 0.0;
-      // Ensure titles are visible and centered if we are back at start
-      cinematicTitle.opacity = 1.0;
-      cinematicSecondaryTitle.opacity = 1.0;
-      logoOverlay.opacity = 1.0;
+    // Architectural Visibility: Ensure everything is hidden during warmup
+    boldTextComponent.opacity = 0.0;
+    cinematicTitle.opacity = 0.0;
+    cinematicSecondaryTitle.opacity = 0.0;
+    logoOverlay.opacity = 0.0;
+    backgroundRun.opacity = 0.0;
 
-      cinematicTitle.position = centerPosition;
-      cinematicSecondaryTitle.position =
-          centerPosition + GameLayout.secTitleOffsetVector;
-
-      backgroundRun.opacity = 1.0;
-    }
+    // Position resets can still happen here if needed, but visibility is strictly 0.
+    cinematicTitle.position = centerPosition;
+    cinematicSecondaryTitle.position =
+        centerPosition + GameLayout.secTitleOffsetVector;
   }
 
   @override
   Future<void> enter(ScrollSystem scrollSystem) async {
+    _hasWarmedUpNext = false;
     // Configure ScrollSystem for this section
     scrollSystem.resetScroll(0.0);
     scrollSystem.setSnapRegions(snapRegions);
 
+    // Architectural Visibility: Reveal all components
     boldTextComponent.opacity = 1.0;
-    boldTextComponent.position = centerPosition;
+    cinematicTitle.opacity = 1.0;
+    cinematicSecondaryTitle.opacity = 1.0;
+    logoOverlay.opacity = 1.0;
     backgroundRun.opacity = 1.0;
+
+    boldTextComponent.position = centerPosition;
   }
 
   @override
   Future<void> enterReverse(ScrollSystem scrollSystem) async {
+    _hasWarmedUpNext = false;
     // Configure ScrollSystem for reverse entry
     scrollSystem.resetScroll(_maxHeight);
     scrollSystem.setSnapRegions(snapRegions);
@@ -117,9 +131,25 @@ class BoldTextSection implements GameSection {
     // Set internal state to end
     setScrollOffset(_maxHeight);
 
+    // Architectural Visibility: Reveal all components
     boldTextComponent.opacity = 1.0;
-    boldTextComponent.position = centerPosition;
+    // Note: In reverse (coming from Philosophy), we might want these hidden if we are at the bottom?
+    // But enterReverse usually implies we are "activating" the section.
+    // If we enterReverse at _maxHeight, we are at the BOTTOM of the section.
+    // At the bottom of BoldTextSection, the titles should be FADED OUT (scrollProgress > titleFadeEnd).
+    // So setting them to 1.0 here might be wrong if we are immediately setting scroll to max.
+
+    // However, setScrollOffset(_maxHeight) is called right after.
+    // _updateVisuals(_maxHeight) will set their opacity to 0.0 correctly.
+    // So setting them to 1.0 here is safe as a baseline "active" state,
+    // and _updateVisuals will immediately clamp them to the correct state for the scroll position.
+
+    cinematicTitle.opacity = 1.0;
+    cinematicSecondaryTitle.opacity = 1.0;
+    logoOverlay.opacity = 1.0;
     backgroundRun.opacity = 1.0;
+
+    boldTextComponent.position = centerPosition;
   }
 
   @override
