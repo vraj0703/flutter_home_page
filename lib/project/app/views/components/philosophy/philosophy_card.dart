@@ -124,8 +124,21 @@ class PhilosophyCard extends PositionComponent
     }
   }
 
+  // Interaction Guard
+  bool canFlip = false;
+
+  bool get isFlipped => _isFlipped;
+
+  void forceResetFlip() {
+    _isFlipped = false;
+    // We let update() animate it back, or force it?
+    // User wants strict "do not start flip".
+    // If we simply set _isFlipped false, it will animate back.
+  }
+
   @override
   void onHoverEnter() {
+    if (!canFlip) return;
     print('PhilosophyCard $index: onHoverEnter (Toggle Flip)');
     _isHovered = true;
     _isFlipped = !_isFlipped; // Toggle State
@@ -142,6 +155,7 @@ class PhilosophyCard extends PositionComponent
 
   // Manual Fallback for Hover (Bypasses Event System)
   void manualHoverCheck(Vector2 point) {
+    if (!canFlip) return;
     bool isOver = containsPoint(point);
     if (isOver && !_isHovered) {
       onHoverEnter();
@@ -179,15 +193,17 @@ class PhilosophyCard extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
-    // Flip Animation Lerp
-    final target = _isFlipped ? 1.0 : 0.0;
-    if ((target - flipProgress).abs() > 0.01) {
-      flipProgress += (target - flipProgress) * dt * 5.0;
+    // React Logic: "duration-700" (0.7s)
+    const duration = 0.7;
+
+    // Move linear progress
+    if (_isFlipped) {
+      flipProgress = (flipProgress + dt / duration).clamp(0.0, 1.0);
     } else {
-      flipProgress = target;
+      flipProgress = (flipProgress - dt / duration).clamp(0.0, 1.0);
     }
 
-    // Toggle Content Visibilty based on flip side
+    // Apply strict visibility toggles
     final isBack = flipProgress > 0.5;
     if (isBack) {
       iconComp.scale = Vector2.zero();
@@ -195,13 +211,67 @@ class PhilosophyCard extends PositionComponent
 
       // Mirror description so it reads correctly when rotated 180
       descComp.scale = Vector2(-1.0, 1.0);
-      // Ensure text is full immediately (No Animation)
       descComp.text = data!.description;
     } else {
-      // Front Face
       iconComp.scale = Vector2.all(1.0);
       titleComp.scale = Vector2.all(1.0);
       descComp.scale = Vector2.zero();
+    }
+  }
+
+  @override
+  void renderTree(Canvas canvas) {
+    if (transformMat != null) {
+      canvas.save();
+      canvas.transform(transformMat!.storage);
+
+      // Render Card Body
+      render(canvas);
+
+      // Calculate Physics Curve (React default ease is cubic-bezier(0.25, 0.1, 0.25, 1.0))
+      // Curves.easeInOut is a good approximation for "transition-all" default
+      final curvedProgress = Curves.easeInOut.transform(flipProgress);
+
+      // React Physics: "translateZ(70px) scale(.93)"
+      final popMatrix = Matrix4.identity()
+        ..translate(0.0, 0.0, 70.0)
+        ..scale(0.93, 0.93, 1.0);
+
+      // Render Children with Z-Axis Offsets
+      // Front Content
+      if (curvedProgress <= 0.5) {
+        canvas.save();
+        // Lift (+70) and Scale (0.93)
+        canvas.transform(popMatrix.storage);
+
+        iconComp.renderTree(canvas);
+        titleComp.renderTree(canvas);
+        dividerComp.renderTree(canvas);
+        canvas.restore();
+      }
+
+      // Back Content
+      if (curvedProgress > 0.5) {
+        canvas.save();
+        // For the back, we want it to project "outwards" relative to the flipped surface.
+        // Since the parent surface is flipped 180, Z+70 is correct "outwards".
+        // HOWEVER, we need to counter-rotate or mirror the content so it draws on the "Back" face?
+        // No, we are drawing logically.
+        // If we draw at Z=-70.0, it pushes "behind" the card. When flipped, "Behind" becomes "Front".
+        // Let's stick to the Z=-70 logic which worked, but applying scale 0.93.
+
+        final backPopMatrix = Matrix4.identity()
+          ..translate(0.0, 0.0, -70.0) // Pushes out the back
+          ..scale(0.93, 0.93, 1.0);
+
+        canvas.transform(backPopMatrix.storage);
+        descComp.renderTree(canvas);
+        canvas.restore();
+      }
+
+      canvas.restore();
+    } else {
+      super.renderTree(canvas);
     }
   }
 
@@ -279,41 +349,6 @@ class PhilosophyCard extends PositionComponent
   }
 
   @override
-  void renderTree(Canvas canvas) {
-    if (transformMat != null) {
-      canvas.save();
-      canvas.transform(transformMat!.storage);
-
-      // Render Card Body
-      render(canvas);
-
-      // Render Children with Z-Axis Offsets
-      // Front Content (Lifted up)
-      if (flipProgress <= 0.5) {
-        canvas.save();
-        canvas.transform(Matrix4.translationValues(0, 0, 10.0).storage); // Z+10
-        iconComp.renderTree(canvas);
-        titleComp.renderTree(canvas);
-        dividerComp.renderTree(canvas);
-        canvas.restore();
-      }
-
-      // Back Content (Pushed down/back)
-      if (flipProgress > 0.5) {
-        canvas.save();
-        // Z = -10.0 so when flipped 180, it becomes Z = +10.0 (Towards camera)
-        canvas.transform(Matrix4.translationValues(0, 0, -10.0).storage);
-        descComp.renderTree(canvas);
-        canvas.restore();
-      }
-
-      canvas.restore();
-    } else {
-      super.renderTree(canvas);
-    }
-  }
-
-  @override
   void render(Canvas canvas) {
     final alpha = _finalOpacity;
     if (alpha <= 0.01) return;
@@ -323,6 +358,14 @@ class PhilosophyCard extends PositionComponent
       const Radius.circular(16),
     );
     canvas.clipRRect(rrect);
+
+    // Shadow (Simulating 'shadow-lg' -> 0 10px 15px -3px)
+    canvas.drawRRect(
+      rrect.shift(const Offset(0, 10)),
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.15 * alpha)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15),
+    );
 
     // Match testimonial card fill alpha
     canvas.drawRRect(

@@ -239,14 +239,29 @@ class PhilosophyTrailComponent extends PositionComponent
         currentRot = targetRot;
       }
 
+      // --- Interaction Guard ---
+      // User Req: "do not start flip until cards are up"
+      // Wait until Lock Phase (Phase 3, t > 0.7) or at least Settle (t > 0.3)
+      if (t > 0.5) {
+        card.canFlip = true;
+      } else {
+        card.canFlip = false;
+        // Ensure card resets if we scroll back up
+        if (card.isFlipped) card.forceResetFlip();
+      }
+
       // --- Apply 3D Transform ---
       _apply3DTransform(card, currentPos, currentRot);
     }
   }
 
   void _apply3DTransform(PhilosophyCard card, Vector3 pos, double rotY) {
+    // Initial Hide Check
+    // If Z is 0 and pos is 0, it might be uninitialized.
+    // But our logic above sets position.
+
     // Perspective Scale
-    const focalLength = 800.0;
+    const focalLength = 1000.0; // Matches React 'perspective:1000px'
     // Z > 0 means further away -> smaller scale
     final depth = pos.z;
     if (depth + focalLength == 0) return; // Prevent divide by zero
