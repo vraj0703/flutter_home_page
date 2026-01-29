@@ -8,6 +8,7 @@ import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
+import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 class PhilosophySection implements GameSection {
   @override
@@ -22,9 +23,9 @@ class PhilosophySection implements GameSection {
   // Internal State
   double _scrollProgress = 0.0;
   static const double _maxHeight = 3500.0;
-  bool _hasPlayedEntrySound = false; // "Re" sound at balloon top
-  bool _canReplayEntrySound =
-      false; // Logic for re-triggering sound on scroll back
+
+  // Audio Phase Tracking
+  int _currentPhase = 0;
 
   PhilosophySection({
     required this.titleComponent,
@@ -52,7 +53,7 @@ class PhilosophySection implements GameSection {
   @override
   List<Vector2> get snapRegions => [
     // Snap to End
-    Vector2(1400, _maxHeight),
+    Vector2(3000, _maxHeight),
   ];
 
   @override
@@ -83,17 +84,53 @@ class PhilosophySection implements GameSection {
   }
 
   void _updateVisuals(double offset) {
-    // Logic for re-playing entry sound if user scrolls back to start
-    if (offset > 50.0) {
-      _canReplayEntrySound = true;
-    } else if (offset < 10.0 && _canReplayEntrySound) {
-      playEntrySound();
-      _canReplayEntrySound = false;
+    trailComponent.setTargetScroll(offset);
+  }
+
+  void _updateAudio(double offset) {
+    if (!_isActive) return;
+
+    int newPhase = 0;
+    if (offset < 500) {
+      newPhase = 1; // 0-500: Do
+    } else if (offset < 1000) {
+      newPhase = 2; // 500-1000: Re
+    } else if (offset < 1500) {
+      newPhase = 3; // 1000-1500: Mi
+    } else if (offset < 2000) {
+      newPhase = 4; // 1500-2000: Fa
+    } else if (offset < 2500) {
+      newPhase = 5; // 2000-2500: Si
+    } else if (offset < 3000) {
+      newPhase = 6; // 2500-3000: Sol
+    } else {
+      newPhase = 7;
     }
 
-    // Update Components
-    trailComponent.setTargetScroll(offset);
-    _updateFloatingTitleAnimation(offset);
+    if (newPhase != _currentPhase) {
+      _currentPhase = newPhase;
+      // Play sound for the NEW phase we just ALIGHTED upon
+      switch (newPhase) {
+        case 1:
+          playEntrySound(); // Do
+          break;
+        case 2:
+          playCompletionSound(); // Re
+          break;
+        case 3:
+          (trailComponent.game as MyGame).playTrailCardSound(0); // Mi
+          break;
+        case 4:
+          (trailComponent.game as MyGame).playTrailCardSound(1); // Fa
+          break;
+        case 5:
+          (trailComponent.game as MyGame).playTrailCardSound(2); // Si
+          break;
+        case 6:
+          (trailComponent.game as MyGame).playTrailCardSound(3); // Sol
+          break;
+      }
+    }
   }
 
   bool _isActive = false;
@@ -116,6 +153,7 @@ class PhilosophySection implements GameSection {
   Future<void> enter(ScrollSystem scrollSystem) async {
     _hasWarmedUpNext = false;
     _isActive = true;
+    _currentPhase = 0; // Reset phase tracker
 
     // Configure ScrollSystem
     scrollSystem.resetScroll(0.0);
@@ -125,14 +163,15 @@ class PhilosophySection implements GameSection {
     trailComponent.opacity = 1.0;
     cloudBackground.opacity = 1.0;
 
-    // Legacy manager played sound onActivate.
-    playEntrySound();
+    // Trigger initial sound (Phase 1)
+    _updateVisuals(0.0);
   }
 
   @override
   Future<void> enterReverse(ScrollSystem scrollSystem) async {
     _hasWarmedUpNext = false;
     _isActive = true;
+    _currentPhase = 7;
 
     // Configure ScrollSystem
     scrollSystem.resetScroll(_maxHeight);
@@ -144,8 +183,6 @@ class PhilosophySection implements GameSection {
     // Architectural Visibility: Reveal components
     trailComponent.opacity = 1.0;
     cloudBackground.opacity = 1.0;
-
-    playEntrySound();
   }
 
   @override
@@ -195,29 +232,31 @@ class PhilosophySection implements GameSection {
   void _updateFloatingTitleAnimation(double scrollOffset) {
     if (!_isActive) return;
 
-    // Ported from PhilosophyPageController
+    // Sync Audio with smoothed scroll
+    _updateAudio(scrollOffset);
 
-    // 1. Balloon Title Animation (0 - 800px)
-    const titleDuration = 800.0;
-    final titleProgress = (scrollOffset / titleDuration).clamp(0.0, 1.0);
+    // 1. Background Entrance (0 - 500)
+    // Handled by generic opacity, but maybe enforce full visibility here?
+    cloudBackground.opacity = 1.0;
 
-    // 2. Trail Cards Animation (Starts closer to 0 for Burst Effect)
-    // We want the burst to happen AS the title is forming, not after.
-    const trailStart = 200.0;
+    // 2. Title Animation (500 - 1000)
+    // Remapped per user request
+    const double titleStart = 500.0;
+    const double titleEnd = 1000.0;
 
-    if (scrollOffset > trailStart) {
-      const trailDuration = 3200.0;
-      final trailProgress = ((scrollOffset - trailStart) / trailDuration).clamp(
-        0.0,
-        1.0,
-      );
-      trailComponent.updateTrailAnimation(trailProgress);
-    } else {
-      trailComponent.updateTrailAnimation(0.0);
-    }
+    // Pass raw offset to trail (it handles its own 1000-3000 ranges now)
+    trailComponent.updateTrailAnimation(scrollOffset);
+
+    // Title Progress
+    final titleProgress =
+        ((scrollOffset - titleStart) / (titleEnd - titleStart)).clamp(0.0, 1.0);
 
     if (titleProgress <= 0.0) {
-      // _resetVisuals(); // Careful not to hard reset if we just dipped slightly below
+      // Reset position/opacity if below range
+      if (scrollOffset < titleStart) {
+        titleComponent.opacity = 0.0;
+        titleComponent.showReflection = false;
+      }
       return;
     }
 
@@ -229,24 +268,25 @@ class PhilosophySection implements GameSection {
     final eased = Curves.easeOutQuad.transform(titleProgress);
 
     // Visuals
-    titleComponent.opacity = (titleProgress * 1.5).clamp(0.0, 1.0);
+    // Fade in 0->1
+    titleComponent.opacity = titleProgress;
 
+    // Scale up
     final scale = 0.1 + (eased * 0.9);
     titleComponent.scale = Vector2.all(scale);
 
+    // Move Up
     final startY = screenSize.y * 0.7;
     final endY = screenSize.y * 0.15;
     final currentY = startY + (endY - startY) * eased;
 
-    // Sway
+    // Sway (subtle)
     final swayAmount = 20.0;
     final sway = sin(titleProgress * pi * 2) * swayAmount * (1 - eased);
     titleComponent.position = Vector2(screenSize.x / 2 + sway, currentY);
 
     // Reflection Update
-    final reflectionOpacity = (titleProgress >= 1.0)
-        ? titleComponent.opacity
-        : 0.0;
+    final reflectionOpacity = titleComponent.opacity;
 
     cloudBackground.setTextReflection(
       texture: titleComponent.textTexture,
@@ -257,16 +297,6 @@ class PhilosophySection implements GameSection {
       textScale: titleComponent.scale.x * 1.5,
       centerX: titleComponent.x,
     );
-
-    // Sound Trigger (The "Re" sound when balloon hits top)
-    // Note: This matches the old controller's "onComplete"
-    if (titleProgress >= 1.0 && !_hasPlayedEntrySound) {
-      playCompletionSound(); // Confusing naming in legacy, triggers at top of balloon
-      _hasPlayedEntrySound = true;
-    } else if (titleProgress < 1.0) {
-      _hasPlayedEntrySound =
-          false; // Reset so it can play again if we scroll down and up
-    }
   }
 
   void _resetVisuals() {
@@ -274,7 +304,7 @@ class PhilosophySection implements GameSection {
     titleComponent.scale = Vector2.all(0.1);
     titleComponent.position = Vector2(screenSize.x / 2, screenSize.y * 0.7);
     titleComponent.showReflection = false;
-    _hasPlayedEntrySound = false;
+    _currentPhase = 0;
 
     // Reset Trail (prevent leaks)
     trailComponent.updateTrailAnimation(0.0);

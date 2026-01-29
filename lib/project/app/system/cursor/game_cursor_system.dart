@@ -37,8 +37,9 @@ class GameCursorSystem {
     _lastKnownPointerPosition = position;
   }
 
+  Vector2 get lastKnownPosition => _lastKnownPointerPosition ?? Vector2.zero();
+
   void update(double dt, Vector2 size, {bool enableParallax = false}) {
-    // todo ai: make it state based
     if (_components == null) return;
     final components = _components!;
 

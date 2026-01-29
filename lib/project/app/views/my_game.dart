@@ -10,6 +10,7 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flame/input.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
@@ -30,7 +31,8 @@ class MyGame extends FlameGame
         ScrollDetector,
         TapCallbacks,
         PointerMoveCallbacks,
-        MouseMovementDetector {
+        MouseMovementDetector,
+        HoverCallbacks {
   VoidCallback? onStartExitAnimation;
   final Queuer queuer;
   final StateProvider stateProvider;
@@ -145,6 +147,8 @@ class MyGame extends FlameGame
     _cursorSystem.setCursorPosition(position);
   }
 
+  Vector2 get cursorPosition => _cursorSystem.lastKnownPosition;
+
   @override
   Color backgroundColor() => GameStyles.primaryBackground;
 
@@ -181,6 +185,7 @@ class MyGame extends FlameGame
 
   @override
   void onMouseMove(PointerHoverInfo info) {
+    super.onMouseMove(info);
     _inputController.handleMouseMove(info);
   }
 
@@ -374,7 +379,9 @@ class MyGame extends FlameGame
 
   void playHover() => _audioSystem.playHover();
 
-  void playClick() => _audioSystem.playClick();
+  void playScrollTick() => _audioSystem.playScrollTick();
 
   void playTrailCardSound(int index) => _audioSystem.playTrailCardSound(index);
+
+  void playClick() => _audioSystem.playClick();
 }

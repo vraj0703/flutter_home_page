@@ -1,13 +1,13 @@
 import 'package:flame/components.dart' hide Matrix4;
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
-import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'philosophy_card.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
+import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 class PhilosophyTrailComponent extends PositionComponent
-    with HasGameReference, HasPaint {
+    with HasGameReference<MyGame>, HasPaint {
   final List<PhilosophyCard> cards = [];
-  final List<bool> _hasPlayedAudio = [false, false, false, false];
 
   // Smoothing Logic
   double _targetScroll = 0.0;
@@ -140,21 +140,27 @@ class PhilosophyTrailComponent extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
-    // Inertia Logic: Lerp current -> target
-    // Smoothing factor of 5.0 gives a nice "fluid" feel
-    const double smoothingSpeed = 5.0;
+    // Manual Hover Check (Robust Fallback)
+    final cursor = game.cursorPosition;
+    for (final card in cards) {
+      card.manualHoverCheck(cursor);
+    }
 
-    // Optimization: Don't update if close enough
+    // Inertia Logic: Lerp current -> target
+    // Smoothing factor of 2.0 (was 5.0) for "heavier/fluid" float
+    const double smoothingSpeed = 2.0;
+
+    // Optimization: Don't update SCROLL if close enough (but continue to update animation below)
     if ((_targetScroll - _currentScroll).abs() < 0.01) {
       if (_currentScroll != _targetScroll) {
         _currentScroll = _targetScroll;
         onScrollUpdate?.call(_currentScroll);
       }
-      return;
+      // Do not return early, as we must updateTrailAnimation for hover effects
+    } else {
+      // Only lerp if we haven't snapped
+      _currentScroll += (_targetScroll - _currentScroll) * smoothingSpeed * dt;
     }
-
-    // Simple Lerp
-    _currentScroll += (_targetScroll - _currentScroll) * smoothingSpeed * dt;
 
     // If very close, snap to avoid jitter
     if ((_targetScroll - _currentScroll).abs() < 0.5) {
@@ -163,6 +169,9 @@ class PhilosophyTrailComponent extends PositionComponent
 
     // Notify controller to update visuals (Title + Trail) based on smoothed value
     onScrollUpdate?.call(_currentScroll);
+
+    // CRITICAL FIX: Always update animation to apply hover flips (local matrix changes)
+    updateTrailAnimation(_currentScroll);
   }
 
   void setTargetScroll(double scroll) {
@@ -171,17 +180,27 @@ class PhilosophyTrailComponent extends PositionComponent
 
   /// Call this from your Page/Game scroll listener (Now controlled by onScrollUpdate feedback)
   /// Tri-Phase Animation: Burst (0-0.3) -> Settle (0.3-0.7) -> Lock (0.7-1.0)
-  void updateTrailAnimation(double progress) {
+  /// Tri-Phase Animation driven by specific scroll ranges
+  void updateTrailAnimation(double scrollOffset) {
     // Shared center for burst origin
     final center = Vector3(size.x / 2, size.y / 2, 0);
 
     for (int i = 0; i < cards.length; i++) {
       final card = cards[i];
 
-      // Normalize progress: The entire sequence happens over the scroll range passed in.
-      // We process all cards simultaneously but with slightly different chaotic offsets if desired.
-      // For a "Singularity" burst, they usually explode together.
-      double t = progress.clamp(0.0, 1.0);
+      // Define Range for this card
+      // Card 0: 1000-1500
+      // Card 1: 1500-2000
+      // Card 2: 2000-2500
+      // Card 3: 2500-3000
+      final double rangeStart = 1000.0 + (i * 500.0);
+      final double rangeEnd = rangeStart + 500.0;
+
+      // Calculate progress 0.0 -> 1.0 within range
+      double t = ((scrollOffset - rangeStart) / (rangeEnd - rangeStart)).clamp(
+        0.0,
+        1.0,
+      );
 
       if (t <= 0) {
         card.opacity = 0;
@@ -189,7 +208,7 @@ class PhilosophyTrailComponent extends PositionComponent
       }
 
       // Explicit fade in
-      card.opacity = (t * 3.0).clamp(0.0, 1.0);
+      card.opacity = (t * 4.0).clamp(0.0, 1.0);
 
       // --- Tri-Phase Logic ---
       Vector3 currentPos;
@@ -199,53 +218,29 @@ class PhilosophyTrailComponent extends PositionComponent
       final targetRot = _targetRotations[i];
 
       if (t < 0.3) {
-        // PHASE 1: SINGULARITY BURST (0.0 -> 0.3)
-        // Explode from center OUTWARD past the target (Overshoot)
+        // PHASE 1: BURST
         final phaseT = t / 0.3;
         final ease = Curves.easeOutExpo.transform(phaseT);
-
-        // Direction from center to target
         final direction = (target - center);
-        // Overshoot by 50%
         final overshootPos = center + (direction * 1.5);
-
-        // Lerp: Center -> Overshoot
         currentPos = center + (overshootPos - center) * ease;
-
-        // Rotation: Chaotic Spin -> Target Rotation
-        // Starts wild (e.g. +2 radians), settles towards near-target
         currentRot = targetRot + (1.0 - ease) * 2.0;
       } else if (t < 0.7) {
-        // PHASE 2: FLOATING SETTLE (0.3 -> 0.7)
-        // Drift from Overshoot back to Target
+        // PHASE 2: SETTLE
         final phaseT = (t - 0.3) / 0.4;
         final ease = Curves.easeInOutSine.transform(phaseT);
-
         final direction = (target - center);
         final overshootPos = center + (direction * 1.5);
-
-        // Lerp: Overshoot -> Target
         currentPos = overshootPos + (target - overshootPos) * ease;
-
-        // Rotation: Settle to exact target rotation
         currentRot = targetRot;
       } else {
-        // PHASE 3: PERSPECTIVE LOCK (0.7 -> 1.0)
-        // Locked in place (plus subtle hover if we added it)
+        // PHASE 3: LOCK
         currentPos = target;
         currentRot = targetRot;
       }
 
       // --- Apply 3D Transform ---
       _apply3DTransform(card, currentPos, currentRot);
-
-      // Audio Trigger (Lock-in sound)
-      if (t >= 0.9 && !_hasPlayedAudio[i]) {
-        (game as MyGame).playTrailCardSound(i);
-        _hasPlayedAudio[i] = true;
-      } else if (t < 0.5) {
-        _hasPlayedAudio[i] = false;
-      }
     }
   }
 
@@ -267,8 +262,8 @@ class PhilosophyTrailComponent extends PositionComponent
     // 2. Perspective Scale (Simulating Z distance)
     matrix.scale(scale, scale, 1.0);
 
-    // 3. Rotation Y (Tilt)
-    matrix.rotateY(rotY);
+    // 3. Rotation Y (Tilt + Hover Flip)
+    matrix.rotateY(rotY + (card.flipProgress * math.pi));
 
     // 4. Center Anchor Adjustment
     // Since we draw from (0,0), we must shift back by half size to center the card on 'pos'
