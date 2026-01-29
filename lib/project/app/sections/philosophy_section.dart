@@ -8,7 +8,6 @@ import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
-import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 class PhilosophySection implements GameSection {
   @override
@@ -118,16 +117,16 @@ class PhilosophySection implements GameSection {
           playCompletionSound(); // Re
           break;
         case 3:
-          (trailComponent.game as MyGame).playTrailCardSound(0); // Mi
+          trailComponent.game.playTrailCardSound(0); // Mi
           break;
         case 4:
-          (trailComponent.game as MyGame).playTrailCardSound(1); // Fa
+          trailComponent.game.playTrailCardSound(1); // Fa
           break;
         case 5:
-          (trailComponent.game as MyGame).playTrailCardSound(2); // Si
+          trailComponent.game.playTrailCardSound(2); // Si
           break;
         case 6:
-          (trailComponent.game as MyGame).playTrailCardSound(3); // Sol
+          trailComponent.game.playTrailCardSound(3); // Sol
           break;
       }
     }
