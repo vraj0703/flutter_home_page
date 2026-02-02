@@ -57,18 +57,19 @@ class PhilosophyTrailComponent extends PositionComponent
     final centerY = size.y / 2;
 
     // Card Base Dimensions
-    final cardWidth = (size.x * 0.15).clamp(120.0, 300.0);
-    final cardHeight = size.y * 0.45; // Reduced from 0.6 for shorter cards
+    // Wider Cards (0.20) for more presence
+    final cardWidth = (size.x * 0.20).clamp(180.0, 250.0);
+    final cardHeight = size.y * 0.40;
 
     // Hallway Configuration
-    // Outer Cards (0, 3): Closer (Z=0), Wider (X offset large)
-    final outerX = size.x * 0.35;
+    // Outer Cards (0, 3): Tighter formation (0.30)
+    final outerX = size.x * 0.38;
     final outerZ = 0.0;
     final outerRot = 0.4; // ~23 deg
 
-    // Inner Cards (1, 2): Further (Z=300), Narrower (X offset small)
-    final innerX = size.x * 0.15;
-    final innerZ = 300.0;
+    // Inner Cards (1, 2): Standard gap (0.15)
+    final innerX = size.x * 0.18;
+    final innerZ = 280.0;
     final innerRot = 0.2; // ~11 deg
 
     // 0: Far Left

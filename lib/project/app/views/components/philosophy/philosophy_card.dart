@@ -141,8 +141,8 @@ class PhilosophyCard extends PositionComponent
     if (!canFlip) return;
     _isHovered = true;
     _isFlipped = true;
-    game.playTrailCardSound(index);
-    game.playHover();
+    game.audio.playTrailCardSound(index);
+    game.audio.playHover();
   }
 
   void onHoverExit() {

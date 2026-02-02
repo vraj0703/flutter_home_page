@@ -108,7 +108,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
   void show(VoidCallback showComplete) {
     if (_charComponents.isEmpty || _charComponents.first.opacity > 0) return;
 
-    (game as MyGame).playSlideIn();
+    (game as MyGame).audio.playSlideIn();
 
     final originalWrapperPos = _contentWrapper.position.clone();
     _contentWrapper.position.x -= 100; // Start 100px left

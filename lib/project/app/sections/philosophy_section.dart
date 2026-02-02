@@ -117,16 +117,16 @@ class PhilosophySection implements GameSection {
           playCompletionSound(); // Re
           break;
         case 3:
-          trailComponent.game.playTrailCardSound(0); // Mi
+          trailComponent.game.audio.playTrailCardSound(0); // Mi
           break;
         case 4:
-          trailComponent.game.playTrailCardSound(1); // Fa
+          trailComponent.game.audio.playTrailCardSound(1); // Fa
           break;
         case 5:
-          trailComponent.game.playTrailCardSound(2); // Si
+          trailComponent.game.audio.playTrailCardSound(2); // Si
           break;
         case 6:
-          trailComponent.game.playTrailCardSound(3); // Sol
+          trailComponent.game.audio.playTrailCardSound(3); // Sol
           break;
       }
     }
@@ -271,12 +271,14 @@ class PhilosophySection implements GameSection {
     titleComponent.opacity = titleProgress;
 
     // Scale up
-    final scale = 0.1 + (eased * 0.9);
+    // Reduced max scale from 1.0 to 0.6 per user request
+    final scale = 0.1 + (eased * 0.5);
     titleComponent.scale = Vector2.all(scale);
 
     // Move Up
     final startY = screenSize.y * 0.7;
-    final endY = screenSize.y * 0.15;
+    // Target Y: Just above horizon (approx 0.5), so 0.42
+    final endY = screenSize.y * 0.42;
     final currentY = startY + (endY - startY) * eased;
 
     // Sway (subtle)

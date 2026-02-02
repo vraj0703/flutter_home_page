@@ -32,10 +32,10 @@ class BoldTextRevealComponent extends PositionComponent
 
     _lastProgress = _scrollProgress;
     _scrollProgress = value;
-    game.syncBoldTextAudio(value, velocity: velocity);
+    game.audio.syncBoldTextAudio(value, velocity: velocity);
     if (value >= 0.42 && _lastProgress < 0.42 && !_hasPlayedTing) {
       _hasPlayedTing = true;
-      game.playTing();
+      game.audio.playTing();
     }
 
     if (value < 0.35) {

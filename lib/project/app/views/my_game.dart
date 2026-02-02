@@ -50,6 +50,8 @@ class MyGame extends FlameGame
   );
 
   final GameAudioSystem _audioSystem = GameAudioSystem();
+
+  GameAudioSystem get audio => _audioSystem;
   final GameComponentFactory _componentFactory = GameComponentFactory();
   final GameCursorSystem _cursorSystem = GameCursorSystem();
   final GameLogoAnimator logoAnimator = GameLogoAnimator();
@@ -260,20 +262,13 @@ class MyGame extends FlameGame
       title: () => _centerTitles(center),
       orElse: () {},
     );
-
-    // Safe check if factory initialized
-    try {
-      // _componentFactory.dimLayer.size = size;
-      // Recenter bold text locally if needed, but onResize handled it in section
-    } catch (_) {}
+    try {} catch (_) {}
   }
 
   // Handle section progress indicator taps
   void _handleSectionTap(int section) {
     if (!isLoaded) return;
-    playClick();
-    // Simplified: Just log or ignored for now as absolute offsets are gone
-    // Logic for jumping to section index would need SequenceRunner.jumpTo(index)
+    audio.playClick();
   }
 
   void _snapLogoToCenter(Vector2 center) {
@@ -302,7 +297,7 @@ class MyGame extends FlameGame
 
   void enterTitle() {
     Future.delayed(ScrollSequenceConfig.enterTitleDelayDuration, () {
-      playTitleLoaded(); // Play sound when main title starts entering
+      audio.playTitleLoaded(); // Play sound when main title starts entering
       _componentFactory.cinematicTitle.show(() {
         _componentFactory.cinematicSecondaryTitle.show(
           () => queuer.queue(event: SceneEvent.titleLoaded()),
@@ -341,8 +336,8 @@ class MyGame extends FlameGame
       cloudBackground: _gameComponents.beachBackground,
       trailComponent: _gameComponents.philosophyTrail,
       screenSize: size,
-      playEntrySound: playPhilosophyEntry,
-      playCompletionSound: playPhilosophyComplete,
+      playEntrySound: audio.playPhilosophyEntry,
+      playCompletionSound: audio.playPhilosophyComplete,
     );
 
     // Configure components via binding-like logic (formerly addBoldTextBindings)
@@ -356,32 +351,4 @@ class MyGame extends FlameGame
 
     _sequenceRunner.init([boldSection, philSection]);
   }
-
-  // Audio Helpers
-  void playEnterSound() => _audioSystem.playEnterSound();
-
-  void playTitleLoaded() => _audioSystem.playTitleLoaded();
-
-  void playSlideIn() => _audioSystem.playSlideIn();
-
-  void playBouncyArrow() => _audioSystem.playBouncyArrow();
-
-  void playPhilosophyEntry() => _audioSystem.playPhilosophyEntry();
-
-  void playPhilosophyComplete() => _audioSystem.playPhilosophyComplete();
-
-  void syncBoldTextAudio(double progress, {double velocity = 0.0}) =>
-      _audioSystem.syncBoldTextAudio(progress, velocity: velocity);
-
-  void stopBoldTextAudio() => _audioSystem.stopBoldTextAudio();
-
-  void playTing() => _audioSystem.playTing();
-
-  void playHover() => _audioSystem.playHover();
-
-  void playScrollTick() => _audioSystem.playScrollTick();
-
-  void playTrailCardSound(int index) => _audioSystem.playTrailCardSound(index);
-
-  void playClick() => _audioSystem.playClick();
 }

@@ -175,4 +175,9 @@ class GameAudioSystem {
   void playAsset(String file, {double volume = 1.0}) {
     _safePlay(file, volume: volume);
   }
+
+  void playPhilosophyTitleHover() {
+    // User requested specifically 'mi.wav' for title hover
+    _safePlay('mi.wav', volume: GameAudioConfig.sfxVolume);
+  }
 }

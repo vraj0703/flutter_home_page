@@ -115,14 +115,14 @@ class _StatefulSceneState extends State<StatefulScene>
             }
           },
           logoOverlayRemoving: () {
-            _game.playEnterSound();
+            _game.audio.playEnterSound();
             _game.loadTitleBackground();
           },
           titleLoading: () {
             _game.enterTitle();
           },
           title: () {
-            _game.playBouncyArrow();
+            _game.audio.playBouncyArrow();
             _game.activateTitleCursorSystem();
           },
           active: (_) {

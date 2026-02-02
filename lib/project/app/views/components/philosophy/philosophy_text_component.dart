@@ -4,8 +4,11 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/views/components/fade_text.dart';
+import 'package:flutter_home_page/project/app/views/my_game.dart';
+import 'package:flame/events.dart';
 
-class PhilosophyTextComponent extends PositionComponent with HasPaint {
+class PhilosophyTextComponent extends PositionComponent
+    with HasPaint, HasGameReference<MyGame>, HoverCallbacks {
   final String text;
   final material.TextStyle style;
   final ui.FragmentShader shader;
@@ -31,6 +34,11 @@ class PhilosophyTextComponent extends PositionComponent with HasPaint {
     super.position,
     super.anchor,
   });
+
+  @override
+  void onHoverEnter() {
+    game.audio.playPhilosophyTitleHover();
+  }
 
   @override
   Future<void> onLoad() async {
@@ -62,8 +70,9 @@ class PhilosophyTextComponent extends PositionComponent with HasPaint {
   /// Forces texture generation for warmup
   Future<void> warmUp() async {
     if (!isLoaded) return;
-    if (textTexture != null)
+    if (textTexture != null) {
       return; // Skip if already generated (Startup optimization)
+    }
 
     _needsTextureUpdate = true;
     // Temporarily set opacity > 0 for _updateTextTexture check (safe because _fadeText.opacity is 0)
