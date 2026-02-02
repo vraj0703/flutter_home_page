@@ -138,6 +138,10 @@ flutter:
     - assets/audio/sol.wav
     - assets/audio/si.wav
     - assets/images/logo.png
+    - assets/images/ic_book.png
+    - assets/images/ic_chalice.png
+    - assets/images/ic_crystal.png
+    - assets/images/ic_sword.png
     - assets/vectors/down_arrow.svg
 
   shaders:

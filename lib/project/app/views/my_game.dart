@@ -94,7 +94,7 @@ class MyGame extends FlameGame
       CursorDependentComponents(
         godRay: _componentFactory.godRay,
         shadowScene: _componentFactory.shadowScene,
-        interactiveUI: _componentFactory.logoOverlay,
+        logoOverlay: _componentFactory.logoOverlay,
         logoComponent: _componentFactory.logoComponent,
         cinematicTitle: _componentFactory.cinematicTitle,
         cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
@@ -105,7 +105,7 @@ class MyGame extends FlameGame
     _gameComponents = GameComponents(
       cinematicTitle: _componentFactory.cinematicTitle,
       cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
-      interactiveUI: _componentFactory.logoOverlay,
+      logoOverlay: _componentFactory.logoOverlay,
       godRay: _componentFactory.godRay,
       backgroundTint: _componentFactory.backgroundTint,
       backgroundRun: _componentFactory.backgroundRun,
@@ -330,7 +330,7 @@ class MyGame extends FlameGame
       backgroundRun: _gameComponents.backgroundRun,
       cinematicTitle: _gameComponents.cinematicTitle,
       cinematicSecondaryTitle: _gameComponents.cinematicSecondaryTitle,
-      logoOverlay: _gameComponents.interactiveUI,
+      logoOverlay: _gameComponents.logoOverlay,
       centerPosition: size / 2,
     );
     boldSection.onComplete = () {};

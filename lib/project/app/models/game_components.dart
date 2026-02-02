@@ -12,7 +12,7 @@ import 'package:flutter_home_page/project/app/views/components/background/backgr
 class GameComponents {
   final CinematicTitleComponent cinematicTitle;
   final CinematicSecondaryTitleComponent cinematicSecondaryTitle;
-  final LogoOverlayComponent interactiveUI;
+  final LogoOverlayComponent logoOverlay;
   final BackgroundTintComponent backgroundTint;
   final BackgroundRunComponent backgroundRun;
   final BoldTextRevealComponent boldTextReveal;
@@ -24,7 +24,7 @@ class GameComponents {
   GameComponents({
     required this.cinematicTitle,
     required this.cinematicSecondaryTitle,
-    required this.interactiveUI,
+    required this.logoOverlay,
     required this.godRay,
     required this.backgroundTint,
     required this.backgroundRun,

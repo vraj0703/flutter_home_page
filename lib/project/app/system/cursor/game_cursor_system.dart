@@ -51,8 +51,8 @@ class GameCursorSystem {
     if (vectorFromCenter.length2 > 0) {
       _targetLightDirection = vectorFromCenter.normalized();
     }
-    components.interactiveUI.cursorPosition =
-        cursorPosition - components.interactiveUI.position;
+    components.logoOverlay.cursorPosition =
+        cursorPosition - components.logoOverlay.position;
 
     // Calculate smoothing
     final distance = (_targetLightPosition - _virtualLightPosition).length;

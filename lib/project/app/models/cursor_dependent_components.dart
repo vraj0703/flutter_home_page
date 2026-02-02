@@ -7,7 +7,7 @@ import 'package:flutter_home_page/project/app/views/components/hero_title/cinema
 class CursorDependentComponents {
   final GodRayComponent godRay;
   final RayMarchingShadowComponent shadowScene;
-  final LogoOverlayComponent interactiveUI;
+  final LogoOverlayComponent logoOverlay;
   final LogoComponent logoComponent;
   final CinematicTitleComponent cinematicTitle;
   final CinematicSecondaryTitleComponent cinematicSecondaryTitle;
@@ -15,7 +15,7 @@ class CursorDependentComponents {
   CursorDependentComponents({
     required this.godRay,
     required this.shadowScene,
-    required this.interactiveUI,
+    required this.logoOverlay,
     required this.logoComponent,
     required this.cinematicTitle,
     required this.cinematicSecondaryTitle,

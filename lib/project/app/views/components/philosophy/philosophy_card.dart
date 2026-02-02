@@ -44,7 +44,9 @@ class PhilosophyCard extends PositionComponent
   double get _finalOpacity => _scrollOpacity * _parentOpacity;
 
   late RectangleComponent bgComp;
-  late TextComponent iconComp;
+
+  // late TextComponent indexComp; // Removed as per feedback
+  late SpriteComponent iconComp;
   late TextComponent titleComp;
   late RectangleComponent dividerComp;
   late TextBoxComponent descComp;
@@ -57,40 +59,43 @@ class PhilosophyCard extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    // 1. Background
     if (data != null) {
       final padding = GameLayout.cardPadding;
+      final iconPaths = [
+        'ic_crystal.png',
+        'ic_chalice.png',
+        'ic_sword.png',
+        'ic_book.png',
+      ];
+      final iconPath = iconPaths[index % iconPaths.length];
 
-      // 2. Icon (Emoji)
-      iconComp = TextComponent(
-        text: data!.icon,
-        textRenderer: TextPaint(style: GameStyles.philosophyIconStyle),
-        anchor: Anchor.center,
+      iconComp = SpriteComponent(
+        sprite: await game.loadSprite(iconPath),
+        size: Vector2.all(120.0),
+        anchor: Anchor.topRight,
       );
       add(iconComp);
 
-      // 3. Title
       titleComp = TextComponent(
         text: data!.title,
         textRenderer: TextPaint(
           style: TextStyle(
             fontFamily: GameStyles.fontModernUrban,
-            fontSize: GameStyles.cardTitleVisibleSize,
+            fontSize: 20.0,
             fontWeight: FontWeight.bold,
             color: Colors.white,
+            height: 1.1,
           ),
         ),
-        anchor: Anchor.center,
+        anchor: Anchor.bottomLeft,
       );
       add(titleComp);
 
-      // 4. Divider (Unused)
       dividerComp = RectangleComponent(
         paint: Paint()..color = GameStyles.cardDivider,
       );
       add(dividerComp);
 
-      // 5. Description
       descComp = TextBoxComponent(
         text: '',
         textRenderer: TextPaint(
@@ -119,7 +124,6 @@ class PhilosophyCard extends PositionComponent
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
     if (isLoaded && data != null) {
-      // Update layout completely on resize
       _updateLayout();
     }
   }
@@ -131,29 +135,22 @@ class PhilosophyCard extends PositionComponent
 
   void forceResetFlip() {
     _isFlipped = false;
-    // We let update() animate it back, or force it?
-    // User wants strict "do not start flip".
-    // If we simply set _isFlipped false, it will animate back.
   }
 
   @override
   void onHoverEnter() {
     if (!canFlip) return;
-    print('PhilosophyCard $index: onHoverEnter (Toggle Flip)');
     _isHovered = true;
-    _isFlipped = !_isFlipped; // Toggle State
-    game.playTrailCardSound(index); // Play sound on every flip
-    game.setCursorPosition(absolutePosition + size / 2);
+    _isFlipped = !_isFlipped;
+    game.playTrailCardSound(index);
     game.playHover();
   }
 
   @override
   void onHoverExit() {
-    // print('PhilosophyCard $index: onHoverExit');
     _isHovered = false;
   }
 
-  // Manual Fallback for Hover (Bypasses Event System)
   void manualHoverCheck(Vector2 point) {
     if (!canFlip) return;
     bool isOver = containsPoint(point);
@@ -164,25 +161,19 @@ class PhilosophyCard extends PositionComponent
     }
   }
 
-  // Robust Hit Test for 3D Transformed Card
   @override
   bool containsPoint(Vector2 point) {
     if (transformMat != null) {
-      // Invert the 3D matrix to map the screen point back to local space
       try {
         final inverted = Matrix4.copy(transformMat!)..invert();
         final localPoint = inverted.perspectiveTransform(
           Vector3(point.x, point.y, 0),
         );
-        // Check if the local point is within the card's bounds (0,0 -> w,h)
         final result = size.toRect().contains(
           Offset(localPoint.x, localPoint.y),
         );
-        // print('Card $index hit test: $result (Loc: $localPoint)'); // Uncomment for spam
         return result;
       } catch (e) {
-        // Matrix is singular (e.g. 90 degree turn).
-        // If we were already hovering, assume we are still hovering to prevent flickering state.
         return _isHovered;
       }
     }
@@ -193,23 +184,19 @@ class PhilosophyCard extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
-    // React Logic: "duration-700" (0.7s)
     const duration = 0.7;
 
-    // Move linear progress
     if (_isFlipped) {
       flipProgress = (flipProgress + dt / duration).clamp(0.0, 1.0);
     } else {
       flipProgress = (flipProgress - dt / duration).clamp(0.0, 1.0);
     }
 
-    // Apply strict visibility toggles
     final isBack = flipProgress > 0.5;
     if (isBack) {
       iconComp.scale = Vector2.zero();
       titleComp.scale = Vector2.zero();
-
-      // Mirror description so it reads correctly when rotated 180
+      // Use Scale -1 to flip text back to normal (un-mirror)
       descComp.scale = Vector2(-1.0, 1.0);
       descComp.text = data!.description;
     } else {
@@ -228,45 +215,29 @@ class PhilosophyCard extends PositionComponent
       // Render Card Body
       render(canvas);
 
-      // Calculate Physics Curve (React default ease is cubic-bezier(0.25, 0.1, 0.25, 1.0))
-      // Curves.easeInOut is a good approximation for "transition-all" default
+      // Calculate Physics Curve
       final curvedProgress = Curves.easeInOut.transform(flipProgress);
 
-      // React Physics: "translateZ(70px) scale(.93)"
+      // Pivot for alignment
+      final pivot = Vector2(size.x / 2, size.y / 2);
+
+      // React Physics: Flattened Z-Lift (Scale 0.93)
       final popMatrix = Matrix4.identity()
-        ..translate(0.0, 0.0, 70.0)
-        ..scale(0.93, 0.93, 1.0);
+        ..translateByVector3(Vector3(pivot.x, pivot.y, 0))
+        ..scaleByVector3(Vector3(0.93, 0.93, 1.0))
+        ..translateByVector3(Vector3(-pivot.x, -pivot.y, 0));
 
-      // Render Children with Z-Axis Offsets
-      // Front Content
+      canvas.transform(popMatrix.storage);
+
       if (curvedProgress <= 0.5) {
-        canvas.save();
-        // Lift (+70) and Scale (0.93)
-        canvas.transform(popMatrix.storage);
-
+        // Front Content
         iconComp.renderTree(canvas);
         titleComp.renderTree(canvas);
         dividerComp.renderTree(canvas);
-        canvas.restore();
-      }
-
-      // Back Content
-      if (curvedProgress > 0.5) {
-        canvas.save();
-        // For the back, we want it to project "outwards" relative to the flipped surface.
-        // Since the parent surface is flipped 180, Z+70 is correct "outwards".
-        // HOWEVER, we need to counter-rotate or mirror the content so it draws on the "Back" face?
-        // No, we are drawing logically.
-        // If we draw at Z=-70.0, it pushes "behind" the card. When flipped, "Behind" becomes "Front".
-        // Let's stick to the Z=-70 logic which worked, but applying scale 0.93.
-
-        final backPopMatrix = Matrix4.identity()
-          ..translate(0.0, 0.0, -70.0) // Pushes out the back
-          ..scale(0.93, 0.93, 1.0);
-
-        canvas.transform(backPopMatrix.storage);
+      } else {
+        // Back Content
+        // descComp has scale(-1, 1) set in update(), so it un-mirrors itself.
         descComp.renderTree(canvas);
-        canvas.restore();
       }
 
       canvas.restore();
@@ -276,40 +247,53 @@ class PhilosophyCard extends PositionComponent
   }
 
   void _updateLayout() {
-    final padding = 24.0;
-    final contentWidth = (size.x - (padding * 2)).clamp(1.0, 10000.0);
+    final padding = 32.0;
+    final bool isLeftSide = index < 2;
 
-    // Center Alignment for Front Face
-    // Calculate total height of Icon + Gap + Title
-    final iconH = GameStyles.cardIconVisibleSize; // Approx height
-    final titleH = GameStyles.cardTitleVisibleSize;
-    final gap = 20.0;
+    if (isLeftSide) {
+      iconComp.position = Vector2(size.x - padding + 20, padding - 10);
+      iconComp.anchor = Anchor.topRight;
 
-    final centerY = size.y / 2;
-    // Heuristic centering
-    final startY = centerY - (iconH / 2) - (gap / 2) - (titleH / 2);
-
-    // 1. Icon
-    iconComp.anchor = Anchor.center;
-    iconComp.position = Vector2(size.x / 2, startY);
-
-    // 2. Title
-    titleComp.anchor = Anchor.center;
-    titleComp.position = Vector2(size.x / 2, startY + iconH + gap);
+      titleComp.position = Vector2(padding, size.y - padding);
+      titleComp.anchor = Anchor.bottomLeft;
+    } else {
+      iconComp.position = Vector2(padding - 20, padding - 10);
+      iconComp.anchor = Anchor.topLeft;
+      titleComp.position = Vector2(size.x - padding, size.y - padding);
+      titleComp.anchor = Anchor.bottomRight;
+    }
 
     dividerComp.size = Vector2.zero(); // Hidden
+    final style = TextStyle(
+      fontFamily: GameStyles.fontModernUrban,
+      fontSize: GameStyles.cardDescVisibleSize,
+      color: GameStyles.cardDesc,
+      height: 1.4,
+    );
+    final textAlign = isLeftSide ? TextAlign.left : TextAlign.right;
 
-    // 4. Description (Centered Box)
+    final textPainter = TextPainter(
+      text: TextSpan(text: data?.description ?? '', style: style),
+      textDirection: TextDirection.ltr,
+      textAlign: textAlign,
+    );
+    // Safe content width for description to avoid overflow
+    final descWidth =
+        size.x - (padding * 2.5); // Reduced safety padding (Decrease margin)
+
+    textPainter.layout(maxWidth: descWidth);
+    final textHeight = textPainter.height;
+
     descComp.anchor = Anchor.center;
     descComp.position = size / 2;
-
-    final maxDescHeight = (size.y - (padding * 2)).clamp(1.0, 5000.0);
-    descComp.size = Vector2(contentWidth, maxDescHeight);
+    descComp.align = isLeftSide ? Anchor.centerLeft : Anchor.centerRight;
+    descComp.size = Vector2(descWidth, textHeight + 10.0); // +10 buffer
 
     descComp.boxConfig = TextBoxConfig(
-      maxWidth: contentWidth,
+      maxWidth: descWidth,
       timePerChar: 0.0,
       growingBox: false,
+      margins: EdgeInsets.zero,
     );
   }
 
@@ -317,23 +301,14 @@ class PhilosophyCard extends PositionComponent
     final alpha = _finalOpacity;
 
     if (data != null) {
-      // Note: Visibility is now largely controlled by update() loop for flip
-      // But we still apply Alpha here
-
-      iconComp.textRenderer = TextPaint(
-        style: TextStyle(
-          fontSize: GameStyles.cardIconVisibleSize,
-          fontFamily: GameStyles.fontModernUrban,
-          color: Colors.white.withValues(alpha: alpha),
-        ),
-      );
-
+      iconComp.paint.color = Colors.white.withValues(alpha: 0.15 * alpha);
       titleComp.textRenderer = TextPaint(
         style: TextStyle(
           fontFamily: GameStyles.fontModernUrban,
-          fontSize: GameStyles.cardTitleVisibleSize,
+          fontSize: 20.0,
           fontWeight: FontWeight.bold,
-          color: data!.accentColor.withValues(alpha: alpha),
+          color: Colors.white.withValues(alpha: alpha),
+          height: 1.1,
         ),
       );
 
@@ -358,8 +333,6 @@ class PhilosophyCard extends PositionComponent
       const Radius.circular(16),
     );
     canvas.clipRRect(rrect);
-
-    // Shadow (Simulating 'shadow-lg' -> 0 10px 15px -3px)
     canvas.drawRRect(
       rrect.shift(const Offset(0, 10)),
       Paint()
@@ -367,7 +340,6 @@ class PhilosophyCard extends PositionComponent
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15),
     );
 
-    // Match testimonial card fill alpha
     canvas.drawRRect(
       rrect,
       Paint()
@@ -377,7 +349,6 @@ class PhilosophyCard extends PositionComponent
         ..style = PaintingStyle.fill,
     );
 
-    // Match testimonial card border with subtle highlight effect
     final borderAlpha = GameStyles.testiBorderAlphaBase * alpha;
     canvas.drawRRect(
       rrect,

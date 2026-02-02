@@ -60,6 +60,39 @@ class BoldTextSection implements GameSection {
   ];
 
   @override
+  Future<void> warmUp() async {
+    // Architectural Visibility: Ensure everything is hidden during warmup
+    boldTextComponent.opacity = 0.0;
+    cinematicTitle.opacity = 0.0;
+    cinematicSecondaryTitle.opacity = 0.0;
+    //logoOverlay.opacity = 0.0;
+    backgroundRun.opacity = 0.0;
+
+    // Position resets can still happen here if needed, but visibility is strictly 0.
+    cinematicTitle.position = centerPosition;
+    cinematicSecondaryTitle.position =
+        centerPosition + GameLayout.secTitleOffsetVector;
+  }
+
+  @override
+  Future<void> enter(ScrollSystem scrollSystem) async {
+    _hasWarmedUpNext = false;
+    // Configure ScrollSystem for this section
+    scrollSystem.resetScroll(0.0);
+    scrollSystem.setSnapRegions(snapRegions);
+
+    // Architectural Visibility: Reveal all components
+    boldTextComponent.opacity = 1.0;
+    cinematicTitle.opacity = 1.0;
+    cinematicSecondaryTitle.opacity = 1.0;
+    backgroundRun.opacity = 1.0;
+
+    logoOverlay.opacity = 1.0;
+
+    boldTextComponent.position = centerPosition;
+  }
+
+  @override
   void setScrollOffset(double offset) {
     // Check for Overflow (Next Section)
     if (offset > _maxHeight) {
@@ -89,37 +122,6 @@ class BoldTextSection implements GameSection {
     _updateVisuals(_scrollProgress);
   }
 
-  @override
-  Future<void> warmUp() async {
-    // Architectural Visibility: Ensure everything is hidden during warmup
-    boldTextComponent.opacity = 0.0;
-    cinematicTitle.opacity = 0.0;
-    cinematicSecondaryTitle.opacity = 0.0;
-    logoOverlay.opacity = 0.0;
-    backgroundRun.opacity = 0.0;
-
-    // Position resets can still happen here if needed, but visibility is strictly 0.
-    cinematicTitle.position = centerPosition;
-    cinematicSecondaryTitle.position =
-        centerPosition + GameLayout.secTitleOffsetVector;
-  }
-
-  @override
-  Future<void> enter(ScrollSystem scrollSystem) async {
-    _hasWarmedUpNext = false;
-    // Configure ScrollSystem for this section
-    scrollSystem.resetScroll(0.0);
-    scrollSystem.setSnapRegions(snapRegions);
-
-    // Architectural Visibility: Reveal all components
-    boldTextComponent.opacity = 1.0;
-    cinematicTitle.opacity = 1.0;
-    cinematicSecondaryTitle.opacity = 1.0;
-    logoOverlay.opacity = 1.0;
-    backgroundRun.opacity = 1.0;
-
-    boldTextComponent.position = centerPosition;
-  }
 
   @override
   Future<void> enterReverse(ScrollSystem scrollSystem) async {

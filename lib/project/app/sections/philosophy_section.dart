@@ -144,8 +144,8 @@ class PhilosophySection implements GameSection {
     titleComponent.warmUp();
 
     // Architectural Visibility: Ensure hidden after warmup
-    cloudBackground.opacity = 0.0;
-    titleComponent.opacity = 0.0;
+    //cloudBackground.opacity = 0.0;
+    //titleComponent.opacity = 0.0;
   }
 
   @override
