@@ -277,8 +277,8 @@ class PhilosophySection implements GameSection {
 
     // Move Up
     final startY = screenSize.y * 0.7;
-    // Target Y: Just above horizon (approx 0.5), so 0.42
-    final endY = screenSize.y * 0.42;
+    // Target Y: Center Aligned with Cards (0.5) per user request
+    final endY = screenSize.y * 0.5;
     final currentY = startY + (endY - startY) * eased;
 
     // Sway (subtle)
