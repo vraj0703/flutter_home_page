@@ -79,7 +79,7 @@ class GameStyles {
   // Phase 3 Text Sizes
   static const double cardIconVisibleSize = 42.0;
   static const double cardTitleVisibleSize = 22.0;
-  static const double cardDescVisibleSize = 15.0;
+  static const double cardDescVisibleSize = 18.0;
 
   static const double keyFontSize = 10.0;
 

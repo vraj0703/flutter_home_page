@@ -58,7 +58,6 @@ class PhilosophyCard extends PositionComponent
   @override
   Future<void> onLoad() async {
     if (data != null) {
-      final padding = GameLayout.cardPadding;
       final iconPaths = [
         'ic_crystal.png',
         'ic_chalice.png',
@@ -71,6 +70,7 @@ class PhilosophyCard extends PositionComponent
         sprite: await game.loadSprite(iconPath),
         size: Vector2.all(120.0),
         anchor: Anchor.topRight,
+        priority: -10,
       );
       add(iconComp);
 
@@ -105,7 +105,10 @@ class PhilosophyCard extends PositionComponent
           ),
         ),
         boxConfig: TextBoxConfig(
-          maxWidth: (size.x - (padding * 3)).clamp(1.0, 10000.0),
+          maxWidth: (size.x - 32.0).clamp(
+            1.0,
+            10000.0,
+          ), // 16px padding on each side
           growingBox: false,
           timePerChar: 0.0,
         ),
@@ -223,8 +226,20 @@ class PhilosophyCard extends PositionComponent
 
       if (curvedProgress <= 0.5) {
         // Front Content
+
+        // Icon: Lower Priority (Sunk into card) -> Z = -50
+        canvas.save();
+        canvas.transform(Matrix4.translationValues(0, 0, -50.0).storage);
         iconComp.renderTree(canvas);
+        canvas.restore();
+
+        // Title: Higher Priority (Lifted off card) -> Z = +30
+        canvas.save();
+        canvas.transform(Matrix4.translationValues(0, 0, 30.0).storage);
         titleComp.renderTree(canvas);
+        canvas.restore();
+
+        // Divider: Standard Plane (Z=0)
         dividerComp.renderTree(canvas);
       } else {
         // Back Content
@@ -250,7 +265,8 @@ class PhilosophyCard extends PositionComponent
 
     // Mirror logic
     final textAlign = isLeftSide ? TextAlign.left : TextAlign.right;
-    final descWidth = size.x - (padding * 2.5);
+    // Fill parent with 16.0 padding (16 left + 16 right = 32)
+    final descWidth = size.x - 16.0;
 
     final textPainter = TextPainter(
       text: TextSpan(text: data?.description ?? '', style: style),
@@ -265,6 +281,14 @@ class PhilosophyCard extends PositionComponent
     descComp.position = size / 2; // Back to center
     descComp.anchor = Anchor.center;
     descComp.align = isLeftSide ? Anchor.centerLeft : Anchor.centerRight;
+
+    // Critical: Update boxConfig so text wraps at the new width
+    descComp.boxConfig = TextBoxConfig(
+      maxWidth: descWidth,
+      timePerChar: 0.0,
+      growingBox: false,
+      margins: EdgeInsets.zero,
+    );
 
     if (isLeftSide) {
       // Icon: Top-Right
