@@ -1,6 +1,5 @@
 import 'package:flame/components.dart' hide Matrix4, Vector3;
 import 'package:flame/effects.dart';
-import 'package:flame/events.dart';
 import 'package:flame/text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
@@ -10,7 +9,7 @@ import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'package:vector_math/vector_math_64.dart' hide Vector2, Colors;
 
 class PhilosophyCard extends PositionComponent
-    with HasPaint, HasGameReference<MyGame>, HoverCallbacks
+    with HasPaint, HasGameReference<MyGame>
     implements OpacityProvider {
   final PhilosophyCardData? data;
   final int index;
@@ -20,12 +19,12 @@ class PhilosophyCard extends PositionComponent
   double _parentOpacity = 0.0;
 
   // Flip Logic
-  bool _isHovered = false; // Tracks actual mouse presence for edge detection
-  bool _isFlipped = false; // Tracks visual state (Toggle)
-  double flipProgress = 0.0; // 0.0 (Front) -> 1.0 (Back)
+  bool _isHovered = false;
+  bool _isFlipped = false;
+  double flipProgress = 0.0;
 
-  // 3D Transform Matrix (Overrides standard 2D transform if set)
   Matrix4? transformMat;
+  Matrix4? hitboxMatrix;
 
   @override
   double get opacity => _scrollOpacity;
@@ -45,7 +44,6 @@ class PhilosophyCard extends PositionComponent
 
   late RectangleComponent bgComp;
 
-  // late TextComponent indexComp; // Removed as per feedback
   late SpriteComponent iconComp;
   late TextComponent titleComp;
   late RectangleComponent dividerComp;
@@ -128,7 +126,6 @@ class PhilosophyCard extends PositionComponent
     }
   }
 
-  // Interaction Guard
   bool canFlip = false;
 
   bool get isFlipped => _isFlipped;
@@ -137,18 +134,17 @@ class PhilosophyCard extends PositionComponent
     _isFlipped = false;
   }
 
-  @override
   void onHoverEnter() {
     if (!canFlip) return;
     _isHovered = true;
-    _isFlipped = !_isFlipped;
+    _isFlipped = true;
     game.playTrailCardSound(index);
     game.playHover();
   }
 
-  @override
   void onHoverExit() {
     _isHovered = false;
+    _isFlipped = false;
   }
 
   void manualHoverCheck(Vector2 point) {
@@ -163,9 +159,10 @@ class PhilosophyCard extends PositionComponent
 
   @override
   bool containsPoint(Vector2 point) {
-    if (transformMat != null) {
+    final matrix = hitboxMatrix ?? transformMat;
+    if (matrix != null) {
       try {
-        final inverted = Matrix4.copy(transformMat!)..invert();
+        final inverted = Matrix4.copy(matrix)..invert();
         final localPoint = inverted.perspectiveTransform(
           Vector3(point.x, point.y, 0),
         );
@@ -212,19 +209,14 @@ class PhilosophyCard extends PositionComponent
       canvas.save();
       canvas.transform(transformMat!.storage);
 
-      // Render Card Body
       render(canvas);
 
-      // Calculate Physics Curve
       final curvedProgress = Curves.easeInOut.transform(flipProgress);
 
-      // Pivot for alignment
       final pivot = Vector2(size.x / 2, size.y / 2);
 
-      // React Physics: Flattened Z-Lift (Scale 0.93)
       final popMatrix = Matrix4.identity()
         ..translateByVector3(Vector3(pivot.x, pivot.y, 0))
-        ..scaleByVector3(Vector3(0.93, 0.93, 1.0))
         ..translateByVector3(Vector3(-pivot.x, -pivot.y, 0));
 
       canvas.transform(popMatrix.storage);
@@ -249,59 +241,57 @@ class PhilosophyCard extends PositionComponent
   void _updateLayout() {
     final padding = 32.0;
     final bool isLeftSide = index < 2;
-
-    if (isLeftSide) {
-      iconComp.position = Vector2(size.x - padding + 20, padding - 10);
-      iconComp.anchor = Anchor.topRight;
-
-      titleComp.position = Vector2(padding, size.y - padding);
-      titleComp.anchor = Anchor.bottomLeft;
-    } else {
-      iconComp.position = Vector2(padding - 20, padding - 10);
-      iconComp.anchor = Anchor.topLeft;
-      titleComp.position = Vector2(size.x - padding, size.y - padding);
-      titleComp.anchor = Anchor.bottomRight;
-    }
-
-    dividerComp.size = Vector2.zero(); // Hidden
     final style = TextStyle(
       fontFamily: GameStyles.fontModernUrban,
       fontSize: GameStyles.cardDescVisibleSize,
       color: GameStyles.cardDesc,
       height: 1.4,
     );
+
+    // Mirror logic
     final textAlign = isLeftSide ? TextAlign.left : TextAlign.right;
+    final descWidth = size.x - (padding * 2.5);
 
     final textPainter = TextPainter(
       text: TextSpan(text: data?.description ?? '', style: style),
       textDirection: TextDirection.ltr,
       textAlign: textAlign,
     );
-    // Safe content width for description to avoid overflow
-    final descWidth =
-        size.x - (padding * 2.5); // Reduced safety padding (Decrease margin)
-
     textPainter.layout(maxWidth: descWidth);
-    final textHeight = textPainter.height;
+    final descHeight = textPainter.height;
 
+    // Position Description at CENTER
+    descComp.size = Vector2(descWidth, descHeight + 10);
+    descComp.position = size / 2; // Back to center
     descComp.anchor = Anchor.center;
-    descComp.position = size / 2;
     descComp.align = isLeftSide ? Anchor.centerLeft : Anchor.centerRight;
-    descComp.size = Vector2(descWidth, textHeight + 10.0); // +10 buffer
 
-    descComp.boxConfig = TextBoxConfig(
-      maxWidth: descWidth,
-      timePerChar: 0.0,
-      growingBox: false,
-      margins: EdgeInsets.zero,
-    );
+    if (isLeftSide) {
+      // Icon: Top-Right
+      iconComp.position = Vector2(size.x - padding, padding);
+      iconComp.anchor = Anchor.topRight;
+
+      // Title: Bottom-Left (Fixed at bottom)
+      titleComp.position = Vector2(padding, size.y - padding);
+      titleComp.anchor = Anchor.bottomLeft;
+    } else {
+      // Icon: Top-Left (Mirrored)
+      iconComp.position = Vector2(padding, padding);
+      iconComp.anchor = Anchor.topLeft;
+
+      // Title: Bottom-Right (Fixed at bottom)
+      titleComp.position = Vector2(size.x - padding, size.y - padding);
+      titleComp.anchor = Anchor.bottomRight;
+    }
+
+    dividerComp.size = Vector2.zero(); // Hidden
   }
 
   void _updateVisuals() {
     final alpha = _finalOpacity;
 
     if (data != null) {
-      iconComp.paint.color = Colors.white.withValues(alpha: 0.15 * alpha);
+      iconComp.paint.color = Colors.white.withValues(alpha: 1 * alpha);
       titleComp.textRenderer = TextPaint(
         style: TextStyle(
           fontFamily: GameStyles.fontModernUrban,
@@ -340,22 +330,37 @@ class PhilosophyCard extends PositionComponent
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15),
     );
 
-    canvas.drawRRect(
-      rrect,
-      Paint()
-        ..color = Colors.white.withValues(
-          alpha: GameStyles.testiFillAlpha * alpha,
-        )
-        ..style = PaintingStyle.fill,
+    // Technical "Crop Marks" (Corner Brackets)
+    final borderAlpha = GameStyles.testiBorderAlphaBase * alpha;
+    final cornerLength = 20.0;
+    final strokeWidth = 2.0;
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: borderAlpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    // Top-Left
+    canvas.drawLine(Offset(0, 0), Offset(cornerLength, 0), paint);
+    canvas.drawLine(Offset(0, 0), Offset(0, cornerLength), paint);
+
+    // Top-Right
+    canvas.drawLine(Offset(size.x, 0), Offset(size.x - cornerLength, 0), paint);
+    canvas.drawLine(Offset(size.x, 0), Offset(size.x, cornerLength), paint);
+
+    // Bottom-Right
+    canvas.drawLine(
+      Offset(size.x, size.y),
+      Offset(size.x - cornerLength, size.y),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(size.x, size.y),
+      Offset(size.x, size.y - cornerLength),
+      paint,
     );
 
-    final borderAlpha = GameStyles.testiBorderAlphaBase * alpha;
-    canvas.drawRRect(
-      rrect,
-      Paint()
-        ..color = Colors.white.withValues(alpha: borderAlpha)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = GameStyles.testiBorderWidth,
-    );
+    // Bottom-Left
+    canvas.drawLine(Offset(0, size.y), Offset(cornerLength, size.y), paint);
+    canvas.drawLine(Offset(0, size.y), Offset(0, size.y - cornerLength), paint);
   }
 }

@@ -132,8 +132,6 @@ class PhilosophyTrailComponent extends PositionComponent
 
     _targetAnchors[index].setValues(x, y, z);
     _targetRotations[index] = rotY;
-
-    // Initial State (Off-screen/Hidden) handles by updateTrailAnimation
   }
 
   @override
@@ -156,7 +154,6 @@ class PhilosophyTrailComponent extends PositionComponent
         _currentScroll = _targetScroll;
         onScrollUpdate?.call(_currentScroll);
       }
-      // Do not return early, as we must updateTrailAnimation for hover effects
     } else {
       // Only lerp if we haven't snapped
       _currentScroll += (_targetScroll - _currentScroll) * smoothingSpeed * dt;
@@ -170,7 +167,7 @@ class PhilosophyTrailComponent extends PositionComponent
     // Notify controller to update visuals (Title + Trail) based on smoothed value
     onScrollUpdate?.call(_currentScroll);
 
-    // CRITICAL FIX: Always update animation to apply hover flips (local matrix changes)
+    // Always update animation to apply hover flips (local matrix changes)
     updateTrailAnimation(_currentScroll);
   }
 
@@ -189,10 +186,6 @@ class PhilosophyTrailComponent extends PositionComponent
       final card = cards[i];
 
       // Define Range for this card
-      // Card 0: 1000-1500
-      // Card 1: 1500-2000
-      // Card 2: 2000-2500
-      // Card 3: 2500-3000
       final double rangeStart = 1000.0 + (i * 500.0);
       final double rangeEnd = rangeStart + 500.0;
 
@@ -239,9 +232,6 @@ class PhilosophyTrailComponent extends PositionComponent
         currentRot = targetRot;
       }
 
-      // --- Interaction Guard ---
-      // User Req: "do not start flip until cards are up"
-      // Wait until Lock Phase (Phase 3, t > 0.7) or at least Settle (t > 0.3)
       if (t > 0.5) {
         card.canFlip = true;
       } else {
@@ -250,7 +240,6 @@ class PhilosophyTrailComponent extends PositionComponent
         if (card.isFlipped) card.forceResetFlip();
       }
 
-      // --- Apply 3D Transform ---
       _apply3DTransform(card, currentPos, currentRot);
     }
   }
@@ -271,23 +260,20 @@ class PhilosophyTrailComponent extends PositionComponent
     // Construct Matrix
     final matrix = Matrix4.identity();
 
-    // 1. Translate to Position
     matrix.translate(pos.x, pos.y);
 
-    // 2. Perspective Scale (Simulating Z distance)
     matrix.scale(scale, scale, 1.0);
 
-    // 3. Rotation Y (Tilt + Hover Flip)
-    matrix.rotateY(rotY + (card.flipProgress * math.pi));
+    matrix.rotateY(rotY);
 
-    // 4. Center Anchor Adjustment
-    // Since we draw from (0,0), we must shift back by half size to center the card on 'pos'
+    final stableHitMatrix = matrix.clone();
+    stableHitMatrix.translate(-card.size.x / 2, -card.size.y / 2);
+    card.hitboxMatrix = stableHitMatrix;
+    matrix.rotateY(card.flipProgress * math.pi);
+
     matrix.translate(-card.size.x / 2, -card.size.y / 2);
 
-    // Apply to card
     card.transformMat = matrix;
-
-    // Reset standard properties to avoid conflict
     card.position = Vector2.zero();
     card.angle = 0;
     card.scale = Vector2.all(1.0);
