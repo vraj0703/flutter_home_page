@@ -7,23 +7,15 @@ import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 class LightningController extends Component with HasGameReference<MyGame> {
   double intensity = 0.0;
-  double _timer = 0.0;
   final math.Random _rng = math.Random();
 
   @override
   void update(double dt) {
     super.update(dt);
-    _timer -= dt;
-
-    if (_timer <= 0) {
-      _timer = 3.0 + _rng.nextDouble() * 7.0;
-      _triggerFlash();
-    }
-
     intensity = (intensity - dt * 1.2).clamp(0.0, 1.0);
   }
 
-  void _triggerFlash() {
+  void triggerFlash() {
     // The "Double Strike" logic
     intensity = 1.0;
 

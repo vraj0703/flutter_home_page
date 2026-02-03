@@ -172,6 +172,14 @@ class GameAudioSystem {
     // FlameAudio.play(GameAudioConfig.scrollTickSfx, volume: 0.1);
   }
 
+  /// Play whoosh sound when cards flip
+  void playWhooshSound() {
+    _safePlay(
+      GameAudioConfig.slideInSfx,
+      volume: GameAudioConfig.sfxVolume * 0.6,
+    );
+  }
+
   void playAsset(String file, {double volume = 1.0}) {
     _safePlay(file, volume: volume);
   }

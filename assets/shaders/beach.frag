@@ -16,6 +16,9 @@ uniform float uPixelRatio;  // 10
 uniform float uOpacity; // 11
 uniform float uLightning; // 12
 uniform float uPanic; // 13
+uniform vec2 uRippleOrigin; // 14, 15
+uniform float uRippleTime; // 16
+uniform float uScrollProgress; // 17 (0.0 = start, 1.0 = end of section)
 
 uniform sampler2D uTextTexture;
 
@@ -279,12 +282,19 @@ vec3 RenderPerspectiveReflection(vec2 logicalCoord) {
 
     // 1. VARIABLE JITTER (Stronger closer to the camera)
     float depthFactor = distToHorizon / uSize.y;
-    // Jitter speed increases with lightning
+    
+    // Ambient wave (always present, independent of lightning)
+    float ambientWave = sin(uTime * 0.5 + logicalCoord.x * 0.01) * 0.002;
+    
+    // Lightning jitter (speed increases with lightning)
     float timeSpeed = 30.0 * (1.0 + uLightning * 5.0);
     float jitterStrength = mix(0.01, 0.04, depthFactor);
 
     // High-frequency noise based on Y and Time
-    float jitter = Noisefv2(vec2(logicalCoord.y * 2.0, uTime * timeSpeed)) * jitterStrength;
+    float lightningJitter = Noisefv2(vec2(logicalCoord.y * 2.0, uTime * timeSpeed)) * jitterStrength * uLightning;
+    
+    // Combined displacement
+    float jitter = ambientWave + lightningJitter;
 
     // 2. WIDE-TO-NARROW PERSPECTIVE WARP
     float stretch = 0.45;
@@ -311,7 +321,22 @@ vec3 RenderPerspectiveReflection(vec2 logicalCoord) {
     float perspectiveWarp = narrowedU + 0.5;
     // --- END NARROWING LOGIC ---
     
-    vec2 distortedUV = vec2(perspectiveWarp + jitter, vCoord);
+    // --- RIPPLE EFFECT ---
+    // Radial wave that emanates from card lock position
+    float rippleDisplacement = 0.0;
+    if (uRippleTime >= 0.0 && uRippleTime < 2.0) {
+      float distToRipple = length(logicalCoord - uRippleOrigin);
+      // Wave propagation: rings move outward
+      float wave = sin(distToRipple * 10.0 - uRippleTime * 5.0) * 0.01;
+      // Fade in at start, fade out with distance and time
+      float fadeIn = smoothstep(0.0, 0.1, uRippleTime);
+      float fadeOut = 1.0 - smoothstep(0.0, 300.0, distToRipple);
+      float timeFade = 1.0 - smoothstep(1.5, 2.0, uRippleTime);
+      rippleDisplacement = wave * fadeIn * fadeOut * timeFade;
+    }
+    // --- END RIPPLE ---
+    
+    vec2 distortedUV = vec2(perspectiveWarp + jitter + rippleDisplacement, vCoord);
 
     // Ensure we don't sample outside bounds
     if (distortedUV.y < 0.0 || distortedUV.y > 1.0 || distortedUV.x < 0.0 || distortedUV.x > 1.0) {
@@ -328,9 +353,14 @@ vec3 RenderPerspectiveReflection(vec2 logicalCoord) {
     // 4. OVER-EXPOSURE (Neon look)
     // Multiply by a high factor 
     // Dynamic Boost from Lightning
-    float bloom = 4.0 * (1.0 + uLightning * 3.0); 
-
-    return tex.rgb * tex.a * uTextOpacity * fresnel * bloom;
+    float bloom = 5.0 + (uLightning * 20.0);
+    
+    // 5. COLOR GRADING - Water temperature tint
+    // Cool cyan tint for water reflection
+    vec3 waterTint = vec3(0.6, 0.8, 1.0);
+    vec3 gradedColor = mix(tex.rgb, tex.rgb * waterTint, 0.3);
+    
+    return gradedColor * tex.a * uTextOpacity * fresnel * bloom;
 }
 
 void main() {

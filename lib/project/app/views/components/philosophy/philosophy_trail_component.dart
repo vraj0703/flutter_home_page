@@ -212,13 +212,44 @@ class PhilosophyTrailComponent extends PositionComponent
       final targetRot = _targetRotations[i];
 
       if (t < 0.3) {
-        // PHASE 1: BURST
+        // PHASE 1: BURST with directional origins
         final phaseT = t / 0.3;
         final ease = Curves.easeOutExpo.transform(phaseT);
-        final direction = (target - center);
-        final overshootPos = center + (direction * 1.5);
-        currentPos = center + (overshootPos - center) * ease;
-        currentRot = targetRot + (1.0 - ease) * 2.0;
+
+        // Unique entrance direction per card
+        Vector3 entranceOrigin;
+        double entranceRotation = 0.0;
+
+        switch (i) {
+          case 0: // Crystal - from LEFT-BOTTOM with spin
+            entranceOrigin = Vector3(
+              center.x - size.x * 0.3,
+              center.y + 100,
+              -200,
+            );
+            entranceRotation = 0.26; // +15°
+            break;
+          case 1: // Chalice - from BOTTOM
+            entranceOrigin = Vector3(center.x, center.y + 150, -150);
+            break;
+          case 2: // Sword - from TOP-RIGHT
+            entranceOrigin = Vector3(
+              center.x + size.x * 0.3,
+              center.y - 100,
+              -200,
+            );
+            break;
+          case 3: // Book - from RIGHT
+            entranceOrigin = Vector3(center.x + size.x * 0.4, center.y, -250);
+            break;
+          default:
+            entranceOrigin = center;
+        }
+
+        final direction = (target - entranceOrigin);
+        final overshootPos = entranceOrigin + (direction * 1.3);
+        currentPos = entranceOrigin + (overshootPos - entranceOrigin) * ease;
+        currentRot = targetRot + (1.0 - ease) * (2.0 + entranceRotation);
       } else if (t < 0.7) {
         // PHASE 2: SETTLE
         final phaseT = (t - 0.3) / 0.4;

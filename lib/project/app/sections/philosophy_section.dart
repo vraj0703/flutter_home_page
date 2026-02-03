@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flutter/animation.dart';
@@ -30,6 +31,9 @@ class PhilosophySection implements GameSection {
   // Beach Scene Orchestrator (Section-Owned)
   late BeachSceneOrchestrator orchestrator;
   bool _orchestratorInitialized = false;
+
+  // Snap-to-Strike tracking
+  final Set<int> _triggeredSnaps = {};
 
   PhilosophySection({
     required this.titleComponent,
@@ -94,7 +98,29 @@ class PhilosophySection implements GameSection {
       _hasWarmedUpNext = true;
     }
 
+    // Snap-to-Strike: Check if we're in a snap region
+    _checkSnapLightning(_scrollProgress);
+
+    // Update shader scroll progress for sky gradient (0.0-1.0)
+    cloudBackground.setScrollProgress(_scrollProgress / _maxHeight);
+
     _updateVisuals(_scrollProgress);
+  }
+
+  /// Check if scroll entered a snap region and trigger lightning
+  void _checkSnapLightning(double offset) {
+    for (int i = 0; i < snapRegions.length; i++) {
+      final region = snapRegions[i];
+      // Check if offset is within snap region (Vector2 x=start, y=end)
+      if (offset >= region.x && offset <= region.y) {
+        if (!_triggeredSnaps.contains(i)) {
+          // Trigger lightning flash - this initiates the sync chain
+          orchestrator.lightning.triggerFlash();
+          _triggeredSnaps.add(i);
+        }
+        return; // Found the region, stop checking
+      }
+    }
   }
 
   void _updateVisuals(double offset) {
@@ -279,17 +305,32 @@ class PhilosophySection implements GameSection {
     titleComponent.showReflection = true;
     titleComponent.waterLineY = screenSize.y * 0.75;
 
-    // Easing
-    final eased = Curves.easeOutQuad.transform(titleProgress);
+    // Easing - elastic for premium feel
+    final eased = Curves.elasticOut.transform(titleProgress);
 
     // Visuals
     // Fade in 0->1
     titleComponent.opacity = titleProgress;
 
-    // Scale up
-    // Reduced max scale from 1.0 to 0.6 per user request
-    final scale = 0.1 + (eased * 0.5);
-    titleComponent.scale = Vector2.all(scale);
+    // Scale up with overshoot: 0.1 → 0.8 (overshoot) → 0.6 (settle)
+    double targetScale;
+    if (titleProgress < 0.7) {
+      // Overshoot phase
+      targetScale = lerpDouble(0.1, 0.8, titleProgress / 0.7)!;
+    } else {
+      // Settle phase
+      final settleProgress = (titleProgress - 0.7) / 0.3;
+      targetScale = lerpDouble(0.8, 0.6, settleProgress)!;
+    }
+
+    // Idle breathe animation (±2% when fully visible)
+    if (titleProgress >= 1.0) {
+      final breathe =
+          sin(DateTime.now().millisecondsSinceEpoch / 1000.0 * 0.5) * 0.02;
+      targetScale += targetScale * breathe;
+    }
+
+    titleComponent.scale = Vector2.all(targetScale);
 
     // Move Up
     final startY = screenSize.y * 0.7;

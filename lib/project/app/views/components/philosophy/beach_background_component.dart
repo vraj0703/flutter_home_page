@@ -17,6 +17,13 @@ class BeachBackgroundComponent extends PositionComponent
   double _waterY = 0.0;
   int _warmupFrames = 0;
 
+  // Ripple effect state
+  Vector2 _rippleOrigin = Vector2.zero();
+  double _rippleTime = -999.0; // Negative = no active ripple
+
+  // Scroll progress for sky gradient
+  double _scrollProgress = 0.0;
+
   BeachBackgroundComponent({super.size, required this.shader}) {
     opacity = 0.001;
   }
@@ -64,16 +71,31 @@ class BeachBackgroundComponent extends PositionComponent
         }
       }
     }
+
+    // Update time for shader animation
+    _time += dt;
+
+    // Update ripple animation time
+    if (_rippleTime >= 0.0) {
+      _rippleTime += dt;
+      if (_rippleTime > 2.0) _rippleTime = -999.0; // Reset after 2 seconds
+    }
+
+    // warmup auto-off after 120 frames (~2sec @ 60fps)
     if (_manualWarmup) {
       _manualWarmupFrames++;
-      if (_manualWarmupFrames > 10) {
+      if (_manualWarmupFrames > 120) {
         _manualWarmup = false;
       }
     }
 
     if (opacity <= 0.0 && !_manualWarmup) return;
+  }
 
-    _time += dt;
+  /// Emit a ripple at the given screen position
+  void emitRipple(Vector2 origin) {
+    _rippleOrigin = origin.clone();
+    _rippleTime = 0.0;
   }
 
   @override
@@ -111,8 +133,12 @@ class BeachBackgroundComponent extends PositionComponent
       final lightningIntensity = orchestrator?.lightning.intensity ?? 0.0;
       final panicLevel = orchestrator?.birds.panicLevel ?? 0.0;
 
-      shader.setFloat(12, lightningIntensity); // uLightning (New)
-      shader.setFloat(13, panicLevel); // uPanic (New)
+      shader.setFloat(12, lightningIntensity); // uLightning
+      shader.setFloat(13, panicLevel); // uPanic
+      shader.setFloat(14, _rippleOrigin.x); // uRippleOrigin.x
+      shader.setFloat(15, _rippleOrigin.y); // uRippleOrigin.y
+      shader.setFloat(16, _rippleTime); // uRippleTime
+      shader.setFloat(17, _scrollProgress); // uScrollProgress
 
       // Set sampler (safe image)
       shader.setImageSampler(0, samplerImage);
@@ -130,7 +156,11 @@ class BeachBackgroundComponent extends PositionComponent
     }
   }
 
-  void setWaterLevel(double waterY) {
-    _waterY = waterY;
+  void setWaterLevel(double y) {
+    _waterY = y;
+  }
+
+  void setScrollProgress(double progress) {
+    _scrollProgress = progress.clamp(0.0, 1.0);
   }
 }

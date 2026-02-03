@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flame/components.dart' hide Matrix4, Vector3;
 import 'package:flame/effects.dart';
@@ -23,6 +24,10 @@ class PhilosophyCard extends PositionComponent
   bool _isHovered = false;
   bool _isFlipped = false;
   double flipProgress = 0.0;
+
+  // Idle animation tracker
+  double _idleTime = 0.0;
+  Vector2? _lockedPosition; // Store position when locked for idle animation
 
   Matrix4? transformMat;
   Matrix4? hitboxMatrix;
@@ -142,7 +147,7 @@ class PhilosophyCard extends PositionComponent
     if (!canFlip) return;
     _isHovered = true;
     _isFlipped = true;
-    game.audio.playTrailCardSound(index);
+    //game.audio.playTrailCardSound(index);
     game.audio.playHover();
   }
 
@@ -185,12 +190,74 @@ class PhilosophyCard extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
-    const duration = 0.7;
+    const duration = 0.8; // Extended from 0.7s to 0.8s
+    final oldProgress = flipProgress;
 
     if (_isFlipped) {
       flipProgress = (flipProgress + dt / duration).clamp(0.0, 1.0);
     } else {
       flipProgress = (flipProgress - dt / duration).clamp(0.0, 1.0);
+    }
+
+    // Scale variation during flip for tactile feel
+    double flipScale;
+    if (flipProgress < 0.5) {
+      // Phase 1: Scale DOWN to 0.95 as we rotate to 90°
+      flipScale = 1.0 - (flipProgress * 2.0) * 0.05; // 1.0 → 0.95
+    } else {
+      // Phase 2: Scale UP to 1.05, then settle to 1.0
+      final settleProgress = (flipProgress - 0.5) * 2.0;
+      if (settleProgress < 0.5) {
+        flipScale = 0.95 + (settleProgress * 2.0) * 0.1; // 0.95 → 1.05
+      } else {
+        final finalProgress = (settleProgress - 0.5) * 2.0;
+        flipScale = 1.05 - (finalProgress * 0.05); // 1.05 → 1.0
+      }
+    }
+    scale = Vector2.all(flipScale);
+
+    // Trigger whoosh sound at flip peak (90°)
+    if ((oldProgress < 0.5 && flipProgress >= 0.5) ||
+        (oldProgress > 0.5 && flipProgress <= 0.5)) {
+      game.audio.playTrailCardSound(index);
+    }
+
+    // Idle animations when locked (opacity = 1.0 and canFlip = true)
+    if (opacity >= 0.99 && canFlip) {
+      _idleTime += dt;
+
+      // Store locked position on first frame
+      _lockedPosition ??= position.clone();
+
+      // Unique idle behavior per card index
+      switch (index) {
+        case 0: // Crystal - Gentle rotate
+          angle = sin(_idleTime * 0.5) * 0.035; // ±2° over 4s
+          break;
+        case 1: // Chalice - Vertical bob
+          if (_lockedPosition != null) {
+            position.y =
+                _lockedPosition!.y + sin(_idleTime * 0.7) * 5.0; // ±5px over 3s
+          }
+          break;
+        case 2: // Sword - Sharp micro-tilt
+          angle = sin(_idleTime * 2.0) * 0.01; // ±0.6° sharp edge
+          break;
+        case 3: // Book - Icon flutter (scale icon slightly)
+          if (iconComp.isLoaded && iconComp.scale.x > 0) {
+            final flutter = 1.0 + sin(_idleTime * 1.5) * 0.03; // ±3% over 2s
+            iconComp.scale = Vector2.all(flutter);
+          }
+          break;
+      }
+    } else {
+      // Reset idle state when scrolling away
+      _idleTime = 0.0;
+      _lockedPosition = null;
+      angle = 0.0;
+      if (index == 3 && iconComp.isLoaded && iconComp.scale.x != 1.0) {
+        iconComp.scale = Vector2.all(1.0);
+      }
     }
 
     final isBack = flipProgress > 0.5;
