@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flame/components.dart' hide Matrix4, Vector3;
 import 'package:flame/effects.dart';
 import 'package:flame/text.dart';
@@ -208,42 +209,33 @@ class PhilosophyCard extends PositionComponent
 
   @override
   void renderTree(Canvas canvas) {
+    final isReflectionPass = canvas is ui.PictureRecorder;
+
     if (transformMat != null) {
       canvas.save();
       canvas.transform(transformMat!.storage);
 
+      // Always render the card background (border and glass effect)
       render(canvas);
 
-      final curvedProgress = Curves.easeInOut.transform(flipProgress);
-
-      final pivot = Vector2(size.x / 2, size.y / 2);
-
-      final popMatrix = Matrix4.identity()
-        ..translateByVector3(Vector3(pivot.x, pivot.y, 0))
-        ..translateByVector3(Vector3(-pivot.x, -pivot.y, 0));
-
-      canvas.transform(popMatrix.storage);
-
-      if (curvedProgress <= 0.5) {
-        // Front Content
-
-        // Icon: Lower Priority (Sunk into card) -> Z = -50
-        canvas.save();
-        canvas.transform(Matrix4.translationValues(0, 0, -50.0).storage);
+      // Skip the back of the card in the reflection to save GPU cycles
+      if (flipProgress < 0.5) {
+        // Front side: Show icon and title
+        // Icon: Same plane as card background (Z=0)
         iconComp.renderTree(canvas);
-        canvas.restore();
 
         // Title: Higher Priority (Lifted off card) -> Z = +30
-        canvas.save();
-        canvas.transform(Matrix4.translationValues(0, 0, 30.0).storage);
-        titleComp.renderTree(canvas);
-        canvas.restore();
+        if (!isReflectionPass) {
+          canvas.save();
+          canvas.transform(Matrix4.translationValues(0, 0, 30.0).storage);
+          titleComp.renderTree(canvas);
+          canvas.restore();
+        }
 
         // Divider: Standard Plane (Z=0)
-        dividerComp.renderTree(canvas);
-      } else {
-        // Back Content
-        // descComp has scale(-1, 1) set in update(), so it un-mirrors itself.
+        // dividerComp.renderTree(canvas); // Hidden in layout anyway, but safe to skip
+      } else if (!isReflectionPass) {
+        // Back side: Show description
         descComp.renderTree(canvas);
       }
 
@@ -308,7 +300,7 @@ class PhilosophyCard extends PositionComponent
       titleComp.anchor = Anchor.bottomRight;
     }
 
-    dividerComp.size = Vector2.zero(); // Hidden
+    dividerComp.size = Vector2.zero();
   }
 
   void _updateVisuals() {

@@ -6,6 +6,7 @@ import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
 import 'package:flutter_home_page/project/app/models/scroll_result.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/beach_scene_orchestrator.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
 
@@ -26,6 +27,10 @@ class PhilosophySection implements GameSection {
   // Audio Phase Tracking
   int _currentPhase = 0;
 
+  // Beach Scene Orchestrator (Section-Owned)
+  late BeachSceneOrchestrator orchestrator;
+  bool _orchestratorInitialized = false;
+
   PhilosophySection({
     required this.titleComponent,
     required this.cloudBackground,
@@ -36,6 +41,11 @@ class PhilosophySection implements GameSection {
   }) {
     // Bind smoothing callback - legacy controller did this in constructor
     trailComponent.onScrollUpdate = _updateFloatingTitleAnimation;
+
+    // Initialize orchestrator immediately
+    orchestrator = BeachSceneOrchestrator(background: cloudBackground);
+    cloudBackground.setOrchestrator(orchestrator);
+    _orchestratorInitialized = true;
   }
 
   @override
@@ -51,8 +61,13 @@ class PhilosophySection implements GameSection {
 
   @override
   List<Vector2> get snapRegions => [
-    // Snap to End
-    Vector2(3000, _maxHeight),
+    // Snap for each card's "Locked" state (align with rangeEnd)
+    Vector2(1450, 1550), // Card 0 lock at 1500
+    Vector2(1950, 2050), // Card 1 lock at 2000
+    Vector2(2450, 2550), // Card 2 lock at 2500
+    Vector2(2950, 3050), // Card 3 lock at 3000
+    // Final section completion snap
+    Vector2(3400, _maxHeight),
   ];
 
   @override
@@ -139,7 +154,7 @@ class PhilosophySection implements GameSection {
     if (_scrollProgress <= 0) {
       _resetVisuals();
     }
-    // Pre-complile shader
+    // Pre-compile shader
     cloudBackground.warmUp();
     titleComponent.warmUp();
 
@@ -152,7 +167,7 @@ class PhilosophySection implements GameSection {
   Future<void> enter(ScrollSystem scrollSystem) async {
     _hasWarmedUpNext = false;
     _isActive = true;
-    _currentPhase = 0; // Reset phase tracker
+    _currentPhase = 0;
 
     // Configure ScrollSystem
     scrollSystem.resetScroll(0.0);
@@ -187,6 +202,10 @@ class PhilosophySection implements GameSection {
   @override
   Future<void> exit() async {
     _isActive = false;
+
+    // Clean up reflection resources to prevent memory leaks
+    orchestrator.reflection.clearTargets();
+
     // Architectural Visibility: Hide everything
     _resetVisuals();
     cloudBackground.opacity = 0.0;
@@ -202,9 +221,6 @@ class PhilosophySection implements GameSection {
   @override
   void onResize(Vector2 newSize) {
     screenSize = newSize;
-    // We might need to re-calculate positions if currently visible,
-    // but _updateFloatingTitleAnimation recalculates based on screenSize anyway whenever it runs.
-    // If we are idle/reset, we should update reset position.
     if (titleComponent.opacity == 0.0) {
       titleComponent.position = Vector2(screenSize.x / 2, screenSize.y * 0.7);
     }
@@ -261,7 +277,7 @@ class PhilosophySection implements GameSection {
 
     // Enable reflection
     titleComponent.showReflection = true;
-    titleComponent.waterLineY = screenSize.y * 0.55;
+    titleComponent.waterLineY = screenSize.y * 0.75;
 
     // Easing
     final eased = Curves.easeOutQuad.transform(titleProgress);
@@ -277,8 +293,8 @@ class PhilosophySection implements GameSection {
 
     // Move Up
     final startY = screenSize.y * 0.7;
-    // Target Y: Center Aligned with Cards (0.5) per user request
-    final endY = screenSize.y * 0.5;
+    // Target Y: Lifted above water line (0.4) per "Darkest Light" spec
+    final endY = screenSize.y * 0.4;
     final currentY = startY + (endY - startY) * eased;
 
     // Sway (subtle)
@@ -286,18 +302,19 @@ class PhilosophySection implements GameSection {
     final sway = sin(titleProgress * pi * 2) * swayAmount * (1 - eased);
     titleComponent.position = Vector2(screenSize.x / 2 + sway, currentY);
 
-    // Reflection Update
-    final reflectionOpacity = titleComponent.opacity;
+    // Reflection Registration
+    if (_orchestratorInitialized) {
+      // Register text component
+      orchestrator.reflection.registerTarget(titleComponent);
 
-    cloudBackground.setTextReflection(
-      texture: titleComponent.textTexture,
-      textX: titleComponent.position.x,
-      textY: currentY,
-      waterY: screenSize.y * 0.47,
-      textOpacity: reflectionOpacity,
-      textScale: titleComponent.scale.x * 1.5,
-      centerX: titleComponent.x,
-    );
+      // Register all cards from trail
+      for (final card in trailComponent.cards) {
+        orchestrator.reflection.registerTarget(card);
+      }
+    }
+
+    // Set water level for shader (procedural ocean boundary)
+    cloudBackground.setWaterLevel(screenSize.y * 0.72);
   }
 
   void _resetVisuals() {
@@ -309,15 +326,5 @@ class PhilosophySection implements GameSection {
 
     // Reset Trail (prevent leaks)
     trailComponent.updateTrailAnimation(0.0);
-
-    cloudBackground.setTextReflection(
-      texture: null,
-      textX: 0,
-      textY: 0,
-      waterY: 0,
-      textOpacity: 0,
-      textScale: 0,
-      centerX: 0,
-    );
   }
 }

@@ -29,7 +29,7 @@ class GameAudioSystem {
       ]);
     } catch (e) {
       // Ignore audio loading errors (likely format issues on web)
-      print('Audio load error: $e');
+      // Audio load error: $e
     }
 
     // Start BGM loop (can be toggled in settings later)
@@ -179,5 +179,37 @@ class GameAudioSystem {
   void playPhilosophyTitleHover() {
     // User requested specifically 'mi.wav' for title hover
     _safePlay('mi.wav', volume: GameAudioConfig.sfxVolume);
+  }
+
+  void playSpatialThunder(double intensity) {
+    // 1. Randomize the "Source" of the lightning
+    // -1.0 is far left, 1.0 is far right
+    // Note: FlameAudio doesn't support panning yet, reserved for future use
+    // double pan = (_rng.nextDouble() * 2.0) - 1.0;
+
+    // 2. Calculate Distance (Simulated)
+    // Higher intensity lightning sounds "closer" (louder, less delay)
+    double distance = 1.0 - intensity;
+    double volume = (intensity * 0.8).clamp(0.1, 1.0);
+
+    // 3. The "Speed of Sound" Delay
+    // Wait a few milliseconds before playing to simulate distance
+    int delayMs = (distance * 1000).toInt();
+
+    Future.delayed(Duration(milliseconds: delayMs), () async {
+      // Choose between a sharp 'crack' (close) or a long 'roll' (far)
+      String soundFile = intensity > 0.8
+          ? 'thunder_crack.mp3'
+          : 'thunder_roll.wav';
+
+      try {
+        // Play with calculated volume
+        // Note: FlameAudio.play doesn't support panning directly
+        // For full stereo control, would need audioplayers package directly
+        await FlameAudio.play(soundFile, volume: volume);
+      } catch (_) {
+        // Ignore if audio files don't exist yet
+      }
+    });
   }
 }

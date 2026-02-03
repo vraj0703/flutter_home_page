@@ -3,7 +3,6 @@
 
 precision highp float;
 
-// Standard Uniforms - Defined as individual floats to ensure alignment
 uniform vec2 uSize;         // 0, 1
 uniform float uTime;        // 2
 uniform float uTextY;       // 3
@@ -14,13 +13,14 @@ uniform float uTextWidth;   // 7  (Physical Texture Width)
 uniform float uTextHeight;  // 8  (Physical Texture Height)
 uniform float uTextX;       // 9  (Logical Center X)
 uniform float uPixelRatio;  // 10
-uniform float uOpacity;     // 11 - New Global Opacity
+uniform float uOpacity; // 11
+uniform float uLightning; // 12
+uniform float uPanic; // 13
 
 uniform sampler2D uTextTexture;
 
 out vec4 fragColor;
 
-// --- Original Shader Global Variables ---
 const float pi = 3.14159;
 int idObj, idObjGrp;
 mat3 bdMat, birdMat[2];
@@ -109,9 +109,19 @@ vec3 SkyCol (vec3 ro, vec3 rd) {
 // --- Bird Animation ---
 float AngQnt (float a, float s1, float s2, float nr) { return (s1 + floor (s2 + a * (nr / (2. * pi)))) * (2. * pi / nr); }
 float BdWingDf (vec3 p, float dHit) {
-    vec3 q, qh = vec3(0.); float d, dd, a, wr, wngFreq = 6., wSegLen = 0.18, wChord = 0.36, wSpar = 0.036, fTap = 8., tFac = 0.875;
+    vec3 q, qh = vec3(0.); float d, dd, a, wr, wSegLen = 0.18, wChord = 0.36, wSpar = 0.036, fTap = 8., tFac = 0.875;
+    
+    // Flapping speed increases with panic
+    float wngFreq = 6.0 + (uPanic * 12.0); 
+
     q = p - vec3 (0., 0., 0.36); q.x = abs (q.x) - 0.12;
-    float wf = 1.0; a = -0.1 + 0.2 * sin (wngFreq * tCur); d = dHit; qh = q;
+    float wf = 1.0; 
+    
+    // Add a slight 'tremor' to the wing amplitude during panic
+    float tremor = Noisefv2(vec2(uTime * 30.0, 0.0)) * uPanic * 0.1;
+    a = -0.1 + (0.2 + tremor) * sin (wngFreq * tCur); 
+    
+    d = dHit; qh = q;
     for (int k = 0; k < 5; k ++) {
         q.xy = Rot2D (q.xy, a); q.x -= wSegLen; wr = wf * (1. - 0.5 * q.x / (fTap * wSegLen));
         dd = PrFlatCylDf (q.zyx, wr * wChord, wr * wSpar, wSegLen);
@@ -170,7 +180,16 @@ vec4 BirdCol (vec3 n) {
         col = mix (mix (vec3 (1.), vec3 (0.1), smoothstep (0.5, 1., nn.y)), vec3 (1.), 1. - smoothstep (-1., -0.7, nn.y));
     } else if (id == idBk) { col = vec3 (1., 1., 0.); }
     else if (id == idLeg) { col = (0.5 + 0.4 * sin (100. * qHit.z)) * vec3 (0.6, 0.4, 0.); }
-    col.gb *= 0.7; return vec4 (col, spec);
+    col.gb *= 0.7; 
+    
+    // Add an electric rim light during panic/lightning
+    float rim = 1.0 - max(dot(n, -sunDir), 0.0);
+    rim = pow(rim, 3.0) * uLightning;
+    
+    vec3 electricGlow = vec3(0.7, 0.9, 1.0) * rim * 2.0;
+    col += electricGlow;
+    
+    return vec4 (col, spec);
 }
 float ObjDf (vec3 p) {
     float dHit = dstFar;
@@ -208,6 +227,13 @@ vec3 ShowScene (vec3 ro, vec3 rd) {
     return col;
 }
 vec3 BirdTrack (float t) {
+    // Add a chaotic offset to the flight path based on panic
+    vec3 chaoticOffset = vec3(
+        Noisefv3(vec3(t, 0.0, 0.0)),
+        Noisefv3(vec3(0.0, t, 0.0)),
+        Noisefv3(vec3(0.0, 0.0, t))
+    ) * uPanic * 2.0; // Birds veer off path by up to 2 units
+    
     t = -t; vec3 bp; float rdTurn = 0.45 * min (fltBox.x, fltBox.z), tC = 0.5 * pi * rdTurn / birdVel;
     vec3 tt = vec3 (fltBox.x - rdTurn, length (fltBox.xy), fltBox.z - rdTurn) * 2. / birdVel;
     float tCyc = 2. * (2. * tt.z + tt.x  + 4. * tC + tt.y), tSeq = mod (t, tCyc), ti[9];
@@ -229,7 +255,9 @@ vec3 BirdTrack (float t) {
         else { tf = (tSeq - ti[7]) / tC; rSeg = 3.; bp.xz *= fbR.xz * vec2 (1., -1.); bp.y = - h; }
     }
     if (rSeg >= 0.) { a = 0.5 * pi * (rSeg + tf); bp += rdTurn * vec3 (cos (a), 0., sin (a)); }
-    bp.y -= -1.1 * fltBox.y; return bp;
+    bp.y -= -1.1 * fltBox.y; 
+    
+    return bp + chaoticOffset;
 }
 void BirdPM (float t) {
     float dt = 1.; bdPos = BirdTrack (t); vec3 bpF = BirdTrack (t + dt), bpB = BirdTrack (t - dt);
@@ -245,34 +273,64 @@ void BirdPM (float t) {
 }
 
 // --- REFLECTION LOGIC ---
-vec3 RenderTextReflection(vec2 logicalPos) {
-    if (uTextOpacity <= 0.01 || uTextWidth <= 0.0) return vec3(0.0);
-
-    // Only render below the horizon line
-    float distToHorizon = logicalPos.y - uWaterY;
+vec3 RenderPerspectiveReflection(vec2 logicalCoord) {
+    float distToHorizon = logicalCoord.y - uWaterY;
     if (distToHorizon < 0.0) return vec3(0.0);
 
-    // TextWidth is already logical (from 1x texture). Do not divide by DPR.
-    float logicalW = uTextWidth * uTextScale;
-    float logicalH = uTextHeight * uTextScale;
+    // 1. VARIABLE JITTER (Stronger closer to the camera)
+    float depthFactor = distToHorizon / uSize.y;
+    // Jitter speed increases with lightning
+    float timeSpeed = 30.0 * (1.0 + uLightning * 5.0);
+    float jitterStrength = mix(0.01, 0.04, depthFactor);
 
-    // Smooth wobble to stop shredding
-    float wobble = sin(logicalPos.y * 0.1 + uTime * 3.0) * (8.0 / uPixelRatio);
+    // High-frequency noise based on Y and Time
+    float jitter = Noisefv2(vec2(logicalCoord.y * 2.0, uTime * timeSpeed)) * jitterStrength;
 
-    // Horizontal mapping centered on uTextX
-    float dx = (logicalPos.x + wobble) - uTextX;
-    float u = 0.5 + (dx / logicalW);
+    // 2. WIDE-TO-NARROW PERSPECTIVE WARP
+    float stretch = 0.45;
+    float vCoord = 1.0 - (distToHorizon / (uSize.y * stretch));
 
-    // Vertical stretching covering entire water area
-    float waterArea = uSize.y - uWaterY;
-    float v = 1.0 - (distToHorizon / waterArea);
+    // --- NARROWING LOGIC ---
+    // Calculate how much to narrow the reflection.
+    // 0.0 = no narrowing (at horizon), 1.0 = maximum narrowing (far away).
+    float narrowingProgress = 1.0 - vCoord;
+    
+    // 'strength' controls how drastic the narrowing is.
+    // 0.0 = straight reflection, 0.8 = very pointy triangle shape.
+    float narrowingStrength = 0.6; 
+    float currentNarrowing = narrowingProgress * narrowingStrength;
 
-    if (u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0) return vec3(0.0);
+    // Calculate the horizontal UV, centered around 0.0
+    float centeredU = (logicalCoord.x / uSize.x) - 0.5;
+    
+    // Apply the narrowing effect. As we get further from the horizon,
+    // we squeeze the U coordinate towards the center.
+    float narrowedU = centeredU * (1.0 - currentNarrowing);
+    
+    // Shift back to the 0.0-1.0 range
+    float perspectiveWarp = narrowedU + 0.5;
+    // --- END NARROWING LOGIC ---
+    
+    vec2 distortedUV = vec2(perspectiveWarp + jitter, vCoord);
 
-    vec4 tex = texture(uTextTexture, vec2(u, v));
-    float fade = smoothstep(uSize.y, uWaterY, logicalPos.y);
+    // Ensure we don't sample outside bounds
+    if (distortedUV.y < 0.0 || distortedUV.y > 1.0 || distortedUV.x < 0.0 || distortedUV.x > 1.0) {
+        return vec3(0.0);
+    }
 
-    return tex.rgb * tex.a * uTextOpacity * fade;
+    vec4 tex = texture(uTextTexture, distortedUV);
+    
+    // 3. FRESNEL-BASED OPACITY
+    // Reflections are stronger at grazing angles (further away -> near horizon)
+    // depthFactor is 0 at horizon. 
+    float fresnel = pow(1.0 - depthFactor, 2.0);
+    
+    // 4. OVER-EXPOSURE (Neon look)
+    // Multiply by a high factor 
+    // Dynamic Boost from Lightning
+    float bloom = 4.0 * (1.0 + uLightning * 3.0); 
+
+    return tex.rgb * tex.a * uTextOpacity * fresnel * bloom;
 }
 
 void main() {
@@ -301,7 +359,17 @@ void main() {
     vec3 col = ShowScene(ro, rd);
 
     // --- Add Reflection ---
-    //col += RenderTextReflection(logicalCoord);
+    vec3 reflection = RenderPerspectiveReflection(logicalCoord);
+    
+    // Ambient light: The reflection is always slightly visible, 
+    // but lightning makes it 5x stronger.
+    float dynamicBoost = 1.0 + (uLightning * 5.0);
+    
+    // Apply lightning to the whole scene color (Blue-ish sky flash)
+    col += vec3(0.8, 0.9, 1.0) * uLightning * 0.5;
+    
+    // Apply lightning to the reflection
+    col += reflection * dynamicBoost;
 
     fragColor = vec4(col, uOpacity);
 }

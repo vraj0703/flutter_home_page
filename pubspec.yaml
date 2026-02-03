@@ -129,6 +129,8 @@ flutter:
     - assets/audio/title_loaded.wav
     - assets/audio/slide_in.wav
     - assets/audio/bouncy_arrow.wav
+    - assets/audio/thunder_crack.mp3
+    - assets/audio/thunder_roll.wav
     - assets/audio/bold_text_swell.mp3
     - assets/audio/ting.wav
     - assets/audio/do.wav

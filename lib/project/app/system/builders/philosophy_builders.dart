@@ -40,6 +40,7 @@ class PhilosophyTextBuilder extends ComponentBuilder<PhilosophyTextComponent> {
     );
     component.priority = GameLayout.zContent;
     component.opacity = 0.0;
+
     return component;
   }
 }
@@ -83,13 +84,8 @@ class PhilosophyTrailBuilder
 
   @override
   Future<PhilosophyTrailComponent> build(ComponentContext context) async {
-    final component =
-        PhilosophyTrailComponent(); // Layout handled in onGameResize
-    component.priority = -1; // Behind bold text? Or above?
-    // Balloon is 20. Main content.
-    // Trail cards should be above background (0) but maybe below balloon?
-    // Or concurrent.
-    // Let's set priority to GameLayout.zContent constant if available, or just 10.
+    final component = PhilosophyTrailComponent();
+    component.priority = -1;
     component.priority = GameLayout.zContent;
     component.opacity = 0.0; // Start hidden
     return component;

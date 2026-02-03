@@ -1,43 +1,40 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
 
-class BeachBackgroundComponent extends PositionComponent with HasGameReference {
-  final FragmentShader shader;
+import 'package:flutter_home_page/project/app/views/my_game.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/beach_scene_orchestrator.dart';
 
-  /// 0.0 = Invisible, 1.0 = Fully Visible
+class BeachBackgroundComponent extends PositionComponent
+    with HasGameReference<MyGame> {
+  final FragmentShader shader;
+  BeachSceneOrchestrator? orchestrator;
   double opacity = 0.0;
 
   /// Time accumulator for shader animation
   double _time = 0.0;
-
   late Image _dummyTexture;
-
-  /// Text reflection data for shader
-  Image? _textTexture;
-  double _textX = 0.0;
-  double _textY = 0.0;
+  final List<PositionComponent> reflectionTargets = [];
   double _waterY = 0.0;
-  double _textOpacity = 0.0;
-  double _textScale = 1.0;
-  double _centerX = 1.0;
-
-  /// Warmup logic
   int _warmupFrames = 0;
 
   BeachBackgroundComponent({super.size, required this.shader}) {
-    // Start with tiny opacity to force a render path (warmup)
     opacity = 0.001;
+  }
+
+  /// Set the orchestrator and add it to component tree
+  void setOrchestrator(BeachSceneOrchestrator orch) {
+    orchestrator = orch;
+    // Add orchestrator to component tree so it gets update() calls
+    add(orch);
   }
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    // Set size to game size (full screen)
     final recorder = PictureRecorder();
     final _ = Canvas(recorder);
     final picture = recorder.endRecording();
     _dummyTexture = await picture.toImage(1, 1);
-
     size = game.size;
   }
 
@@ -47,7 +44,6 @@ class BeachBackgroundComponent extends PositionComponent with HasGameReference {
     this.size = size;
   }
 
-  // Manual warmup
   bool _manualWarmup = false;
   int _manualWarmupFrames = 0;
 
@@ -60,8 +56,6 @@ class BeachBackgroundComponent extends PositionComponent with HasGameReference {
   @override
   void update(double dt) {
     super.update(dt);
-
-    // Initial Load Warmup
     if (_warmupFrames < 3) {
       _warmupFrames++;
       if (_warmupFrames == 3) {
@@ -70,11 +64,8 @@ class BeachBackgroundComponent extends PositionComponent with HasGameReference {
         }
       }
     }
-
-    // Manual Warmup Logic (Keep Alive)
     if (_manualWarmup) {
       _manualWarmupFrames++;
-      // Keep alive for 10 frames without a call before turning off
       if (_manualWarmupFrames > 10) {
         _manualWarmup = false;
       }
@@ -87,80 +78,59 @@ class BeachBackgroundComponent extends PositionComponent with HasGameReference {
 
   @override
   void render(Canvas canvas) {
-    // Skip if invisible AND not warming up
     if (opacity <= 0.0 && !_manualWarmup) return;
-
-    // Use tiny opacity during warmup if actual opacity is zero
-    // 0.01 ensures visibility to driver while being mostly transparent
     final effectiveOpacity = (opacity <= 0.0 && _manualWarmup) ? 0.01 : opacity;
-
-    // Removed expensive saveLayer. Using uniform instead.
-
     double texW = 0.0;
     double texH = 0.0;
     Image samplerImage = _dummyTexture;
+    Image? reflTexture = orchestrator?.reflection.reflectionTexture;
 
     try {
-      if (_textTexture != null) {
-        texW = _textTexture!.width.toDouble();
-        texH = _textTexture!.height.toDouble();
-        samplerImage = _textTexture!;
+      if (reflTexture != null) {
+        texW = reflTexture.width.toDouble();
+        texH = reflTexture.height.toDouble();
+        samplerImage = reflTexture;
       }
-    } catch (_) {
-      // Texture was likely disposed, fallback to dummy
-    }
+    } catch (_) {}
 
     try {
-      // Set uniforms (always safe)
       double dpr = game.canvasSize.x / game.size.x;
-      final screenPos = game.camera.viewfinder.transform.globalToLocal(
-        Vector2(_centerX, _textY),
-      );
-      // ignore: unused_local_variable
-      final screenWaterY = game.camera.viewfinder.transform
-          .globalToLocal(Vector2(0, _waterY))
-          .y;
-
       shader.setFloat(0, size.x);
       shader.setFloat(1, size.y);
       shader.setFloat(2, _time);
-      shader.setFloat(3, _textY); // uTextY (Screen)
-      shader.setFloat(4, _waterY); // uWaterY (Screen)
-      shader.setFloat(5, _textOpacity);
-      shader.setFloat(6, _textScale);
+      shader.setFloat(3, 0.0);
+      shader.setFloat(4, _waterY);
+      shader.setFloat(5, 1.0);
+      shader.setFloat(6, 1.0);
       shader.setFloat(7, texW);
       shader.setFloat(8, texH);
-      shader.setFloat(9, screenPos.x); // uTextX (Screen)
-      shader.setFloat(10, dpr); // uPixelRatio
-      shader.setFloat(11, effectiveOpacity); // uOpacity (New)
+      shader.setFloat(9, 0.0);
+      shader.setFloat(10, dpr);
+      shader.setFloat(11, effectiveOpacity);
+
+      final lightningIntensity = orchestrator?.lightning.intensity ?? 0.0;
+      final panicLevel = orchestrator?.birds.panicLevel ?? 0.0;
+
+      shader.setFloat(12, lightningIntensity); // uLightning (New)
+      shader.setFloat(13, panicLevel); // uPanic (New)
 
       // Set sampler (safe image)
       shader.setImageSampler(0, samplerImage);
 
       // Always draw to prevent black screen
       canvas.drawRect(size.toRect(), Paint()..shader = shader);
-    } catch (_) {
-      // If shader draw fails, we might get black screen, but better than app crash
-      // print('Shader draw error: $e');
-    }
+    } catch (_) {}
   }
 
   /// Set text reflection data for shader rendering
-  void setTextReflection({
-    required Image? texture,
-    required double textX,
-    required double textY,
-    required double waterY,
-    required double textOpacity,
-    required double textScale,
-    required double centerX,
-  }) {
-    _textTexture = texture;
-    _textX = textX;
-    _textY = textY;
+  /// Register a component to be reflected
+  void registerReflectionTarget(PositionComponent target) {
+    if (!reflectionTargets.contains(target)) {
+      reflectionTargets.add(target);
+    }
+  }
+
+  void setWaterLevel(double waterY) {
     _waterY = waterY;
-    _textOpacity = textOpacity;
-    _textScale = textScale;
-    _centerX = centerX;
   }
 }
