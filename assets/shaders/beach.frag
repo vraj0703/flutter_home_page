@@ -280,8 +280,8 @@ vec3 RenderPerspectiveReflection(vec2 logicalCoord) {
     float distToHorizon = logicalCoord.y - uWaterY;
     if (distToHorizon < 0.0) return vec3(0.0);
 
-    // 1. VARIABLE JITTER (Stronger closer to the camera)
-    float depthFactor = distToHorizon / uSize.y;
+    // 1. VARIABLE JITTER    // Normalized depth: 0 at horizon, 1 at top
+    float depthFactor = clamp(distToHorizon / uWaterY, 0.0, 1.0);
     
     // Ambient wave (always present, independent of lightning)
     float ambientWave = sin(uTime * 0.5 + logicalCoord.x * 0.01) * 0.002;
@@ -297,7 +297,8 @@ vec3 RenderPerspectiveReflection(vec2 logicalCoord) {
     float jitter = ambientWave + lightningJitter;
 
     // 2. WIDE-TO-NARROW PERSPECTIVE WARP
-    float stretch = 0.45;
+    // Reduced stretch from 0.45 to 0.30 for tighter reflection spacing
+    float stretch = 0.30;
     float vCoord = 1.0 - (distToHorizon / (uSize.y * stretch));
 
     // --- NARROWING LOGIC ---
