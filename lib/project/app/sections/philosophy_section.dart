@@ -276,9 +276,17 @@ class PhilosophySection implements GameSection {
     // Sync Audio with smoothed scroll
     _updateAudio(scrollOffset);
 
-    // 1. Background Entrance (0 - 500)
-    // Handled by generic opacity, but maybe enforce full visibility here?
-    cloudBackground.opacity = 1.0;
+    // 1. Background Fade-in (0 - 500)
+    // Only show beach background during Philosophy scroll range
+    // Fade in from 0-500px to prevent visibility in logo state
+    if (scrollOffset >= 0 && scrollOffset <= 500) {
+      final fadeInProgress = (scrollOffset / 500.0).clamp(0.0, 1.0);
+      cloudBackground.opacity = fadeInProgress;
+    } else if (scrollOffset > 500) {
+      cloudBackground.opacity = 1.0;
+    } else {
+      cloudBackground.opacity = 0.0;
+    }
 
     // 2. Title Animation (500 - 1000)
     // Remapped per user request
@@ -303,7 +311,8 @@ class PhilosophySection implements GameSection {
 
     // Enable reflection
     titleComponent.showReflection = true;
-    titleComponent.waterLineY = screenSize.y * 0.75;
+    titleComponent.waterLineY =
+        screenSize.y * 0.55; // Tighter reflection spacing
 
     // Easing - elastic for premium feel
     final eased = Curves.elasticOut.transform(titleProgress);
@@ -334,7 +343,7 @@ class PhilosophySection implements GameSection {
 
     // Move Up
     final startY = screenSize.y * 0.7;
-    // Target Y: Lifted above water line (0.4) per "Darkest Light" spec
+    // Target Y: Align with cards at perspective point (horizon)
     final endY = screenSize.y * 0.4;
     final currentY = startY + (endY - startY) * eased;
 

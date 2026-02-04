@@ -16,7 +16,4 @@ class SceneState with _$SceneState {
   const factory SceneState.title() = Title;
 
   const factory SceneState.active({@Default(1.0) double uiOpacity}) = Active;
-
-  // Deprecated States (Kept temporarily if needed for immediate build fix, but usually safer to remove)
-  // Logic is now in GameSections
 }

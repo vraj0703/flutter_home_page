@@ -23,11 +23,8 @@ class BackgroundRunComponent extends PositionComponent
     // Shader Warmup: Render the first few frames to compile pipeline state
     if (_warmupFrames < 3) {
       _warmupFrames++;
-      if (_warmupFrames == 3) {
-        if (opacity <= 0.002) {
-          opacity = 0.0;
-        }
-      }
+      // Warmup complete - keep opacity as-is instead of resetting to 0
+      // This prevents flicker on first scroll transition
     }
   }
 

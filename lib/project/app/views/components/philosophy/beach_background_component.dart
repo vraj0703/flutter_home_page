@@ -25,7 +25,7 @@ class BeachBackgroundComponent extends PositionComponent
   double _scrollProgress = 0.0;
 
   BeachBackgroundComponent({super.size, required this.shader}) {
-    opacity = 0.001;
+    opacity = 0.0;
   }
 
   /// Set the orchestrator and add it to component tree

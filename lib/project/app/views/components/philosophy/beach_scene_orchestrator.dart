@@ -29,6 +29,6 @@ class BeachSceneOrchestrator extends Component with HasGameReference<MyGame> {
     super.update(dt);
     birds.syncWithLightning(lightning.intensity);
     reflection.updateReflectionTexture();
-    background.setWaterLevel(game.size.y * 0.75);
+    background.setWaterLevel(game.size.y * 0.55); // Tighter reflection spacing
   }
 }

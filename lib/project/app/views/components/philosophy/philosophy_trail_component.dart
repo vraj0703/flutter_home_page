@@ -54,7 +54,7 @@ class PhilosophyTrailComponent extends PositionComponent
     if (cards.isEmpty) return;
 
     final centerX = size.x / 2;
-    final centerY = size.y / 2;
+    final centerY = size.y * 0.4; // Moved up from 0.5 for better spacing
 
     // Card Base Dimensions
     // Wider Cards (0.20) for more presence
