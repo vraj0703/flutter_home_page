@@ -331,7 +331,7 @@ class GameAudioSystem {
       // For now, using a placeholder
       // The ring should decay over 800ms alongside the flash
       Future.delayed(const Duration(milliseconds: 150), () async {
-        // await FlameAudio.play('tinnitus_ring.mp3', volume: 0.1);
+         await FlameAudio.play(GameAudioConfig.glassBreakSfx, volume: 0.1);
       });
 
       // Camera shake for physical impact

@@ -33,7 +33,6 @@ import 'package:flutter_home_page/project/app/config/component_ids.dart';
 import 'package:flutter_home_page/project/app/system/builders/background_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/logo_layer_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/title_builders.dart';
-import 'package:flutter_home_page/project/app/system/builders/additional_builders.dart';
 import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
 import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
 import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
