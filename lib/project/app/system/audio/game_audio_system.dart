@@ -319,19 +319,18 @@ class GameAudioSystem {
   Future<void> playTransitionClimax() async {
     try {
       // Layer 1: Heavy shatter (glass + bass)
+      // Layer 1: Heavy shatter (Glass Crunch + Bass Thump) triggered immediately
       playHeavyShatter();
 
-      // Layer 2: Thunder crack for impact
-      Future.delayed(const Duration(milliseconds: 100), () async {
-        await FlameAudio.play(GameAudioConfig.thunderCrackSfx, volume: 0.5);
-      });
+      // Layer 2: Thunder crack for extra impact (Simultaneous)
+      // "Thump" layer reinforcement
+      FlameAudio.play(GameAudioConfig.thunderCrackSfx, volume: 0.5);
 
-      // Layer 3: High-pitched tinnitus ring
-      // TODO: Add actual tinnitus sound file (sine wave ~8kHz)
-      // For now, using a placeholder
-      // The ring should decay over 800ms alongside the flash
-      Future.delayed(const Duration(milliseconds: 150), () async {
-         await FlameAudio.play(GameAudioConfig.glassBreakSfx, volume: 0.1);
+      // Layer 3: High-pitched Tinkle (Tinnitus ring)
+      // "Tinkle" layer
+      // Reduced delay to 20ms to be effectively simultaneous but distinct
+      Future.delayed(const Duration(milliseconds: 20), () async {
+        await FlameAudio.play(GameAudioConfig.glassBreakSfx, volume: 0.1);
       });
 
       // Camera shake for physical impact

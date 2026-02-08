@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/services.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
@@ -48,35 +49,43 @@ class TransitionCoordinator {
     from.rainTransition.triggerShatter();
     from.orchestrator.lightning.triggerFlash(1.0);
     game.audio.playTransitionClimax();
+    // Master Epic: Haptics at exact moment of shatter
+    HapticFeedback.heavyImpact();
     _triggerCameraShake(intensity: 12.0, duration: 0.5);
 
     // 4. MOUNT FLASH OVERLAY
-    final flash = FlashTransitionComponent();
+    // 4. MOUNT FLASH OVERLAY
+    // Force a fresh capture for the refraction texture
+    await from.forceCaptureRefraction();
 
-    flash.onPeakReached = () async {
-      // === AT THE PEAK OF THE WHITE FLASH ===
+    final flash = FlashTransitionComponent(
+      texture: from.rainTransition.backgroundTexture,
+      onPeakReached: () async {
+        // === AT THE PEAK OF THE WHITE FLASH ===
 
-      // Stop Philosophy Runner & Hide components
-      await game.primarySequenceRunner.stop();
+        // Stop Philosophy Runner & Hide components
+        await game.primarySequenceRunner.stop();
 
-      // Update Global State to Experience
-      game.queuer.queue(event: const SceneEvent.enterExperience());
+        // Update Global State to Experience
+        game.queuer.queue(event: const SceneEvent.enterExperience());
 
-      // Reset the independent Experience Scroll System
-      game.experienceScrollSystem.resetScroll(0.0);
+        // Reset the independent Experience Scroll System
+        game.experienceScrollSystem.resetScroll(0.0);
 
-      // Start Experience Runner
-      await game.experienceSequenceRunner.start();
+        // Start Experience Runner
+        await game.experienceSequenceRunner.start();
 
-      // Trigger the Hero Entry Animation (Non-scroll dependent)
-      await to.animateEntry();
-    };
+        // Trigger the Hero Entry Animation (Non-scroll dependent)
+        await to.animateEntry();
+      },
+      onComplete: () {
+        // Flash fully decayed, unblock input
+        game.unblockInput();
+        _isTransitioning = false;
+      },
+    );
 
-    flash.onComplete = () {
-      // Flash fully decayed, unblock input
-      game.unblockInput();
-      _isTransitioning = false;
-    };
+    game.camera.viewport.add(flash);
 
     game.camera.viewport.add(flash);
   }

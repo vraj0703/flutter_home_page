@@ -91,7 +91,7 @@ void main() {
     
     // **BLOOM REVEAL PULSE**: Intensify colors during entry (uReveal: 0.0 → 1.0)
     // Creates a "powering on" effect as the world materializes
-    float bloomIntensity = mix(1.0, 1.4, uReveal);
+    float bloomIntensity = mix(1.0, 1.5, uReveal);
     finalColor *= bloomIntensity;
     
     finalColor = pow(finalColor, vec3(1.0 / 2.2));

@@ -325,7 +325,10 @@ class PhilosophySection implements GameSection {
     cloudBackground.opacity = 0.0;
     trailComponent.opacity = 0.0;
     nextButton.opacity = 0.0;
+
+    // Dispose resources to prevent GPU leaks
     rainTransition.opacity = 0.0;
+    rainTransition.disposeResources();
 
     // Clean up reflection resources to prevent memory leaks
     orchestrator.reflection.clearTargets();
@@ -365,6 +368,10 @@ class PhilosophySection implements GameSection {
         _captureRefractionFrame();
       }
     }
+  }
+
+  Future<void> forceCaptureRefraction() async {
+    await _captureRefractionFrame();
   }
 
   Future<void> _captureRefractionFrame() async {

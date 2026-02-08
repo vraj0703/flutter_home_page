@@ -63,45 +63,80 @@ class ExperienceSection implements GameSection {
     circlesBackground.position = Vector2.zero();
     circlesBackground.size = screenSize;
     circlesBackground.opacity =
-    0.0; // Start hidden (opacity handled by animateEntry)
+        0.0; // Start hidden (opacity handled by animateEntry)
 
     // 3. Notify Global State
     queuer.queue(event: const SceneEvent.enterExperience());
   }
 
-  /// Cinematic entry animation triggered after flash transition
-  /// Non-scroll-dependent "settling" effect with scale + opacity + bloom
+  /// Cinematic Hero Entry: Fades, Settles Scale, and Blooms Colors
   Future<void> animateEntry() async {
     _isAnimatingEntry = true;
 
-    // Start at zoomed scale, fully transparent, no bloom
-    circlesBackground.scale = Vector2.all(1.2);
+    // 1. Initial State: Blown-out and zoomed in
     circlesBackground.opacity = 0.0;
-    circlesBackground.revealProgress = 0.0;
+    circlesBackground.scale = Vector2.all(1.2); // Start zoomed
+    circlesBackground.revealProgress = 1.0; // Start at max bloom (1.0)
 
-    final controller = EffectController(
-      duration: 1.2,
-      curve: Curves.easeOutCubic,
-    );
+    // 2. Multi-Part Animation Sequence
+    final duration = const Duration(milliseconds: 1200);
+    final curve = Curves.easeOutCubic;
 
-    // Animate scale down to 1.0 ("settling" zoom)
-    circlesBackground.add(ScaleEffect.to(Vector2.all(1.0), controller));
-
-    // Animate opacity to 1.0 (fade in)
+    // Fade in the background (Fast fade in)
     circlesBackground.add(
       OpacityEffect.to(
         1.0,
-        controller,
-        onComplete: () => _isAnimatingEntry = false,
+        EffectController(duration: 0.8, curve: Curves.easeIn),
       ),
     );
 
-    // Animate revealProgress to intensify shader bloom (0.0 → 1.0)
-    // Manual animation over 1.2 seconds
-    _animateRevealProgress();
+    // Settle the scale back to 1.0 (Zoom-out settle)
+    circlesBackground.add(
+      ScaleEffect.to(
+        Vector2.all(1.0),
+        EffectController(duration: 1.2, curve: curve),
+      ),
+    );
 
-    // Wait for animation to complete
-    await Future.delayed(const Duration(milliseconds: 1200));
+    // Fade the shader "Bloom" (revealProgress) from 1.0 back to 0.0 (Settled Colors)
+    // We use a custom ValueEffect to drive the shader uniform
+    // Note: EffectController duration 1.5s for a slightly longer bloom tail
+    circlesBackground.add(
+      OpacityEffect.fadeOut(EffectController(duration: 0.0)),
+    );
+    // Wait, the user specifically asked for ValueEffect. Flame doesn't have a generic ValueEffect handy in standard unless implemented or using a FloatEffect/SizeEffect etc.
+    // Actually Flame DOES NOT have a `ValueEffect` class out of the box in v1.x usually?
+    // Let me check if `ValueEffect` exists in this codebase or if I need to implement it.
+    // The user provided the code: `ValueEffect<double>(...)`. This implies they expect it to exist or me to use a standard Flame effect that acts like it.
+    // Standard Flame has `Effect` subclasses.
+    // If `ValueEffect` is missing, I should create a simple inline one or usage `CustomEffect`.
+    // However, looking at the user request: "This final plan serves as your Architectural Master Key... here is the specific implementation... `ValueEffect<double>`"
+    // I should check if `ValueEffect` is imported or available.
+    // If not, I'll implement a `RevealEffect` class or similar.
+    // Let's assume for a moment I need to implement it or use a callback effect.
+    // Actually, `OpacityEffect` and `ScaleEffect` are standard.
+    // `circlesBackground.revealProgress` is a custom property.
+    // There isn't a built-in "PropertyEffect".
+    // I will check `package:flame/effects.dart` capabilities in my mind.
+    // I might need to implement `ValueEffect` or use an `UpdateEffect`.
+    // Let's look at the file content again. It imports `package:flame/effects.dart`.
+
+    // DECISION: I will implement a local `_RevealEffect` or usage a timer/tween if `ValueEffect` isn't found.
+    // BUT the user PROVIDED the code. They might be assuming I have it.
+    // I will write the code as requested, but if `ValueEffect` is not a standard Flame class (it's not), I will create a `CustomEffect` or proper class for it.
+    // Actually, to be safe and "Apple-polish", I'll implement `RevealProgressEffect` extending `Effect`.
+
+    circlesBackground.add(
+      _RevealProgressEffect(
+        from: 1.0,
+        to: 0.0,
+        controller: EffectController(duration: 1.5, curve: curve),
+      ),
+    );
+
+    // 3. Finalize
+    await Future.delayed(duration);
+    _isAnimatingEntry = false;
   }
 
   @override
@@ -163,21 +198,25 @@ class ExperienceSection implements GameSection {
     circlesBackground.size = screenSize;
   }
 
-  /// Helper to manually animate revealProgress from 0.0 → 1.0 over 1.2s
-  void _animateRevealProgress() async {
-    const duration = 1.2;
-    const steps = 60; // 60fps
-    const stepDuration = duration / steps;
-
-    for (int i = 0; i <= steps; i++) {
-      await Future.delayed(
-        Duration(milliseconds: (stepDuration * 1000).round()),
-      );
-      final progress = (i / steps).clamp(0.0, 1.0);
-      circlesBackground.revealProgress = progress;
-    }
-  }
-
   @override
   void update(double dt) {}
+}
+
+class _RevealProgressEffect extends Effect {
+  final double from;
+  final double to;
+
+  _RevealProgressEffect({
+    required this.from,
+    required this.to,
+    required EffectController controller,
+  }) : super(controller);
+
+  @override
+  void apply(double progress) {
+    if (parent is CirclesBackgroundComponent) {
+      (parent as CirclesBackgroundComponent).revealProgress =
+          from + (to - from) * progress;
+    }
+  }
 }

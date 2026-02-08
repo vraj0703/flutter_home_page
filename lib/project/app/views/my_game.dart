@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
@@ -178,6 +179,18 @@ class MyGame extends FlameGame
 
     // Initialize TransitionCoordinator
     transitionCoordinator = TransitionCoordinator(this);
+
+    // Pre-warm Flash Shader
+    await _loadFlashShader();
+  }
+
+  late final FragmentShader flashShader;
+
+  Future<void> _loadFlashShader() async {
+    final program = await FragmentProgram.fromAsset(
+      'assets/shaders/flash_transition.frag',
+    );
+    flashShader = program.fragmentShader();
   }
 
   // Compatibility getter for components accessing godRay via game reference

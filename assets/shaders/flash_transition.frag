@@ -34,7 +34,19 @@ void main() {
     vec3 flashColor = vec3(1.0);
     
     // Mix scene with flash based on intensity
-    vec3 finalColor = mix(sceneColor, flashColor, iFlashIntensity);
+    // Master Epic Requirement: Snappy white-out using pow(intensity, 3.0)
+    // Actually, to make it "snappy", the mix factor should be the curve result.
+    // The user requested: "Mix the sampled scene with vec3(1.0) using pow(uProgress, 3.0)"
+    float mixFactor = pow(iFlashIntensity, 3.0); 
+    // Wait, pow(0.5, 3) = 0.125. This makes the flash SOFTER/SLOWER to appear?
+    // If we want "snappy", maybe they meant the reverse or 1.0 - pow(1.0-x, 3.0)?
+    // Or maybe they WANT it to be subtle until the very end?
+    // "Blinding white-out" -> implies it gets very bright.
+    // Let's stick to the literal instruction: "using pow(uProgress, 3.0)".
+    // But since iFlashIntensity goes 0->1, pow(x, 3) makes it stay dark longer and snap to white at end.
+    // That sounds like a "climax" snap.
+    
+    vec3 finalColor = mix(sceneColor, flashColor, pow(iFlashIntensity, 3.0));
     
     // Vignette effect during flash (darker edges)
     float vignette = 1.0 - (dist * iFlashIntensity * 0.3);

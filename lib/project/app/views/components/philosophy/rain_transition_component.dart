@@ -71,6 +71,16 @@ class RainTransitionComponent extends PositionComponent
     oldImg?.dispose();
   }
 
+  ui.Image? get backgroundTexture => _backgroundTexture;
+
+  void disposeResources() {
+    _backgroundTexture?.dispose();
+    _backgroundTexture = null;
+    _noiseTexture?.dispose();
+    _noiseTexture = null;
+    _textureInitialized = false;
+  }
+
   @override
   void onDragUpdate(DragUpdateEvent event) {
     _mousePos = event.localEndPosition;
