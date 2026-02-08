@@ -15,7 +15,7 @@ class BeachBackgroundComponent extends PositionComponent
   late Image _dummyTexture;
   final List<PositionComponent> reflectionTargets = [];
   double _waterY = 0.0;
-  int _warmupFrames = 0;
+  double get waterY => _waterY;
 
   // Ripple effect state
   Vector2 _rippleOrigin = Vector2.zero();
@@ -31,7 +31,6 @@ class BeachBackgroundComponent extends PositionComponent
   /// Set the orchestrator and add it to component tree
   void setOrchestrator(BeachSceneOrchestrator orch) {
     orchestrator = orch;
-    // Add orchestrator to component tree so it gets update() calls
     add(orch);
   }
 
@@ -63,15 +62,6 @@ class BeachBackgroundComponent extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    if (_warmupFrames < 3) {
-      _warmupFrames++;
-      if (_warmupFrames == 3) {
-        if (opacity <= 0.002) {
-          opacity = 0.0;
-        }
-      }
-    }
-
     // Update time for shader animation
     _time += dt;
 
@@ -84,7 +74,7 @@ class BeachBackgroundComponent extends PositionComponent
     // warmup auto-off after 120 frames (~2sec @ 60fps)
     if (_manualWarmup) {
       _manualWarmupFrames++;
-      if (_manualWarmupFrames > 120) {
+      if (_manualWarmupFrames > 3) {
         _manualWarmup = false;
       }
     }

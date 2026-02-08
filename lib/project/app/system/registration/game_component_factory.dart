@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flutter/material.dart' as material;
+import 'package:flutter_home_page/project/app/system/builders/experience_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/god_ray_builder.dart';
 import 'package:flutter_home_page/project/app/system/builders/philosophy_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/shader_scene_builder.dart';
@@ -16,8 +17,12 @@ import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.d
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/next_button_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/rain_transition_component.dart';
+import 'package:flutter_home_page/project/app/views/components/experience/circles_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/experience/experience_rotator_component.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 
@@ -28,6 +33,10 @@ import 'package:flutter_home_page/project/app/config/component_ids.dart';
 import 'package:flutter_home_page/project/app/system/builders/background_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/logo_layer_builders.dart';
 import 'package:flutter_home_page/project/app/system/builders/title_builders.dart';
+import 'package:flutter_home_page/project/app/system/builders/additional_builders.dart';
+import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
+import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
 
 class GameComponentFactory {
   // Initialize all components
@@ -57,6 +66,16 @@ class GameComponentFactory {
 
     registry.register(PhilosophyTextBuilder());
     registry.register(PhilosophyTrailBuilder());
+    registry.register(NextButtonBuilder());
+    registry.register(RainTransitionBuilder());
+    // registry.register(RainTransitionBuilder()); // Duplicate removed
+    registry.register(CirclesBackgroundBuilder());
+    registry.register(ExperienceRotatorBuilder());
+    
+    // Additional Builders
+    //registry.register(SkillsKeyboardBuilder());
+    //registry.register(TestimonialPageBuilder());
+    //registry.register(ContactPageBuilder());
 
     final shaderCache = <String, FragmentProgram>{};
 
@@ -119,4 +138,24 @@ class GameComponentFactory {
 
   PhilosophyTrailComponent get philosophyTrail =>
       registry.get(ComponentIds.philosophyTrail);
+
+  NextButtonComponent get nextButton => registry.get(ComponentIds.nextButton);
+
+  RainTransitionComponent get rainTransition =>
+      registry.get(ComponentIds.rainTransition);
+
+  CirclesBackgroundComponent get circlesBackground =>
+      registry.get(ComponentIds.circlesBackground);
+
+  ExperienceRotatorComponent get experienceRotator =>
+      registry.get(ComponentIds.experienceRotator);
+
+  SkillsKeyboardComponent get skillsKeyboard =>
+      registry.get(ComponentIds.skillsKeyboard);
+
+  TestimonialPageComponent get testimonialPage =>
+      registry.get(ComponentIds.testimonialPage);
+
+  ContactPageComponent get contactPage =>
+      registry.get(ComponentIds.contactPage);
 }

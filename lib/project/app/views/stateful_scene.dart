@@ -128,6 +128,8 @@ class _StatefulSceneState extends State<StatefulScene>
           active: (_) {
             // Game is now fully active and scrolling
           },
+          loadingExperience: () {},
+          experience: (_) {},
         );
       },
       builder: (context, state) {

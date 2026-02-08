@@ -65,8 +65,6 @@ class BoldTextSection implements GameSection {
     boldTextComponent.opacity = 0.0;
     cinematicTitle.opacity = 0.0;
     cinematicSecondaryTitle.opacity = 0.0;
-    //logoOverlay.opacity = 0.0;
-    backgroundRun.opacity = 0.0;
 
     // Position resets can still happen here if needed, but visibility is strictly 0.
     cinematicTitle.position = centerPosition;
@@ -121,7 +119,6 @@ class BoldTextSection implements GameSection {
 
     _updateVisuals(_scrollProgress);
   }
-
 
   @override
   Future<void> enterReverse(ScrollSystem scrollSystem) async {

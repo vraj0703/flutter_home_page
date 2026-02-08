@@ -16,4 +16,9 @@ class SceneState with _$SceneState {
   const factory SceneState.title() = Title;
 
   const factory SceneState.active({@Default(1.0) double uiOpacity}) = Active;
+
+  const factory SceneState.loadingExperience() = LoadingExperience;
+
+  const factory SceneState.experience({@Default(1.0) double uiOpacity}) =
+      Experience;
 }

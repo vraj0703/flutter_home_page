@@ -32,6 +32,11 @@ class PhilosophyCard extends PositionComponent
   Matrix4? transformMat;
   Matrix4? hitboxMatrix;
 
+  // Tilt Logic
+  Vector2 _currentTilt = Vector2.zero();
+  Vector2 _targetTilt = Vector2.zero();
+  Vector2 get currentTilt => _currentTilt;
+
   @override
   double get opacity => _scrollOpacity;
 
@@ -259,6 +264,43 @@ class PhilosophyCard extends PositionComponent
         iconComp.scale = Vector2.all(1.0);
       }
     }
+
+    // Calculate Tilt
+    if (_isHovered && canFlip && !_isFlipped) {
+      final cursor = game.cursorPosition;
+      // We need to transform cursor to local space to get offset from center
+      // However, since we are using a custom matrix, 'toLocal' might be complex if we use the standard FLame one.
+      // But we have 'containsPoint' logic which does the inversion.
+      // Let's approximate using screen space relative to card center projected?
+      // Simpler: Use the last known position from 'manualHoverCheck' logic?
+      // The 'manualHoverCheck' uses 'containsPoint'.
+      // Let's re-use the matrix inversion logic here.
+      final matrix = hitboxMatrix ?? transformMat;
+      if (matrix != null) {
+        try {
+          final inverted = Matrix4.copy(matrix)..invert();
+          final localPoint = inverted.perspectiveTransform(
+            Vector3(cursor.x, cursor.y, 0),
+          );
+          // Local point is relative to top-left (0,0) of the card size
+          // Normalize to -1..1 relative to center
+          final centerX = size.x / 2;
+          final centerY = size.y / 2;
+          final normX = (localPoint.x - centerX) / centerX;
+          final normY = (localPoint.y - centerY) / centerY;
+          _targetTilt = Vector2(normX.clamp(-1.0, 1.0), normY.clamp(-1.0, 1.0));
+        } catch (e) {
+          _targetTilt = Vector2.zero();
+        }
+      }
+    } else {
+      _targetTilt = Vector2.zero();
+    }
+
+    // Smooth Tilt
+    const tiltSpeed = 5.0;
+    _currentTilt.x += (_targetTilt.x - _currentTilt.x) * dt * tiltSpeed;
+    _currentTilt.y += (_targetTilt.y - _currentTilt.y) * dt * tiltSpeed;
 
     final isBack = flipProgress > 0.5;
     if (isBack) {

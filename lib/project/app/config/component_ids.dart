@@ -14,8 +14,13 @@ class ComponentIds {
   static const String cardStack = 'card_stack';
   static const String workExperienceTitle = 'work_experience_title';
   static const String experiencePage = 'experience_page';
+  static const String skillsKeyboard = 'skills_keyboard';
   static const String testimonialPage = 'testimonial_page';
   static const String philosophyPage = 'philosophy_page';
   static const String contactPage = 'contact_page';
   static const String philosophyTrail = 'philosophy_trail';
+  static const String nextButton = 'next_button';
+  static const String rainTransition = 'rain_transition';
+  static const String circlesBackground = 'circles_background';
+  static const String experienceRotator = 'experience_rotator';
 }

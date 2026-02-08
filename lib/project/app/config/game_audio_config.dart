@@ -24,6 +24,10 @@ class GameAudioConfig {
   static const String trailCard2Sfx = 'fa.wav';
   static const String trailCard3Sfx = 'si.wav';
   static const String trailCard4Sfx = 'sol.wav';
+  static const String waterdropSfx = 'waterdrop.wav'; // User requested
+  static const String glassBreakSfx = 'glass_break.mp3';
+  static const String thunderCrackSfx = 'thunder_crack.mp3';
+  static const String thunderRollSfx = 'thunder_roll.wav';
 
   // Volumes
   static const double bgmVolume = 0.4;

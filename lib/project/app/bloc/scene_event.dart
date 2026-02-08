@@ -17,4 +17,8 @@ class SceneEvent with _$SceneEvent {
   const factory SceneEvent.onScroll() = OnScroll;
 
   const factory SceneEvent.updateUIOpacity(double opacity) = UpdateUIOpacity;
+
+  const factory SceneEvent.loadExperience() = LoadExperience;
+
+  const factory SceneEvent.enterExperience() = EnterExperience;
 }

@@ -1,7 +1,13 @@
+import 'dart:math' as math;
 import 'package:flame_audio/flame_audio.dart';
+import 'package:flutter/services.dart';
+import 'package:soundpool/soundpool.dart';
 import 'package:flutter_home_page/project/app/config/game_audio_config.dart';
 
 class GameAudioSystem {
+  late Soundpool _pool;
+  int _waterdropId = -1;
+
   Future<void> _safePlay(String file, {double volume = 1.0}) async {
     try {
       await FlameAudio.play(file, volume: volume);
@@ -11,6 +17,21 @@ class GameAudioSystem {
   }
 
   Future<void> initialize() async {
+    // 1. Initialize Soundpool for high-concurrency SFX (waterdrops)
+    _pool = Soundpool.fromOptions(
+      options: const SoundpoolOptions(streamType: StreamType.music),
+    );
+
+    try {
+      // Load waterdrop sound into pool
+      final data = await rootBundle.load(
+        'assets/audio/${GameAudioConfig.waterdropSfx}',
+      );
+      _waterdropId = await _pool.load(data);
+    } catch (e) {
+      // Handle loading error
+    }
+
     // Preload important SFX to avoid latency
     try {
       await FlameAudio.audioCache.loadAll([
@@ -26,6 +47,10 @@ class GameAudioSystem {
         GameAudioConfig.trailCard2Sfx,
         GameAudioConfig.trailCard3Sfx,
         GameAudioConfig.trailCard4Sfx,
+        GameAudioConfig.thunderRollSfx,
+        GameAudioConfig.thunderCrackSfx,
+        GameAudioConfig.glassBreakSfx,
+        GameAudioConfig.waterdropSfx,
       ]);
     } catch (e) {
       // Ignore audio loading errors (likely format issues on web)
@@ -219,5 +244,100 @@ class GameAudioSystem {
         // Ignore if audio files don't exist yet
       }
     });
+  }
+
+  void playWaterdrop() {
+    // Play with some pitch randomization for variety
+    if (_waterdropId != -1) {
+      _pool.play(_waterdropId);
+    }
+  }
+
+  // Inside GameAudioSystem class
+
+  void playSpatialWaterdrop(double normalizedX) {
+    if (_waterdropId == -1) return;
+
+    // Randomize rate slightly [0.9 - 1.1]
+    double rate = 0.9 + math.Random().nextDouble() * 0.2;
+
+    // Randomize volume [0.3 - 0.7]
+    double vol = 0.3 + math.Random().nextDouble() * 0.4;
+
+    // Calculate ID
+    // Note: Default soundpool might not support stereo balance directly via play
+    // but high concurrency is more important here.
+    // Also, soundpool doesn't support 'balance' or 'pan' in play parameters easily
+    // without using stream control, which is heavy.
+    // _pool.play returns a streamId, we can use it to set volume if needed,
+    // but currently soundpool 2.x supports volume in play?
+    // Actually, soundpool 2.4.1 has `play(soundId, rate: rate)`.
+    // Volume is set via `setVolume(streamId, volume)`.
+
+    _pool.play(_waterdropId, rate: rate).then((streamId) {
+      _pool.setVolume(streamId: streamId, volume: vol);
+    });
+  }
+
+  /// Duck ambient loops (beach wind, rain, birds) with linear volume ramp
+  /// Duration: 500ms, with "vacuum silence" low-pass effect at 400ms
+  Future<void> duckAmbientLoops({int durationMs = 500}) async {
+    // TODO: Implement when ambient loops are added
+    // For now, this is a placeholder for the ducking sequence
+    //
+    // Implementation would:
+    // 1. Ramp volume from current → 0.0 over durationMs using interpolation
+    // 2. At 400ms, apply low-pass filter (requires DSP library)
+    // 3. Fade to complete silence
+
+    // Placeholder delay to simulate ducking time
+    await Future.delayed(Duration(milliseconds: durationMs));
+  }
+
+  /// Play multi-layered heavy shatter sound effect
+  /// Combines glass break + bass thump + reverb tail
+  Future<void> playHeavyShatter() async {
+    try {
+      // Layer 1: Primary glass break
+      await FlameAudio.play(GameAudioConfig.glassBreakSfx, volume: 0.9);
+
+      // Layer 2: Bass thump (using thunder crack for low-end)
+      // Delayed by 50ms for depth
+      Future.delayed(const Duration(milliseconds: 50), () async {
+        await FlameAudio.play(GameAudioConfig.thunderCrackSfx, volume: 0.3);
+      });
+
+      // Add haptic feedback
+      HapticFeedback.heavyImpact();
+    } catch (_) {
+      // Ignore if audio files don't exist
+    }
+  }
+
+  /// Play the full transition climax sequence
+  /// Layers: Heavy shatter + Thunder + Tinnitus ring (10% volume, 800ms decay)
+  Future<void> playTransitionClimax() async {
+    try {
+      // Layer 1: Heavy shatter (glass + bass)
+      playHeavyShatter();
+
+      // Layer 2: Thunder crack for impact
+      Future.delayed(const Duration(milliseconds: 100), () async {
+        await FlameAudio.play(GameAudioConfig.thunderCrackSfx, volume: 0.5);
+      });
+
+      // Layer 3: High-pitched tinnitus ring
+      // TODO: Add actual tinnitus sound file (sine wave ~8kHz)
+      // For now, using a placeholder
+      // The ring should decay over 800ms alongside the flash
+      Future.delayed(const Duration(milliseconds: 150), () async {
+        // await FlameAudio.play('tinnitus_ring.mp3', volume: 0.1);
+      });
+
+      // Camera shake for physical impact
+      // This will be triggered from the component
+    } catch (_) {
+      // Ignore if audio files don't exist
+    }
   }
 }

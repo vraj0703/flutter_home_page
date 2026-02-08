@@ -19,7 +19,7 @@ class BackgroundRunBuilder extends ComponentBuilder<BackgroundRunComponent> {
 
   @override
   Future<BackgroundRunComponent> build(ComponentContext context) async {
-    final shader = await context.loadShader(GameAssets.backgroundShader);
+    final shader = await context.loadShader(GameAssets.backgroundRunShader);
     return BackgroundRunComponent(
       shader: shader,
       size: context.size,

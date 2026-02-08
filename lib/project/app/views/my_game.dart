@@ -24,7 +24,9 @@ import 'package:flutter_home_page/project/app/system/input/game_input_controller
 import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart';
 import 'package:flutter_home_page/project/app/system/sequence/sequence_runner.dart';
 import 'package:flutter_home_page/project/app/sections/bold_text_section.dart';
+import 'package:flutter_home_page/project/app/sections/experience_section.dart';
 import 'package:flutter_home_page/project/app/sections/philosophy_section.dart';
+import 'package:flutter_home_page/project/app/system/transition/transition_coordinator.dart';
 
 class MyGame extends FlameGame
     with
@@ -43,15 +45,34 @@ class MyGame extends FlameGame
     required this.stateProvider,
   });
 
-  final ScrollSystem scrollSystem = ScrollSystem();
+  // Dual Scroll Systems for independent Philosophy and Experience ranges
+  final ScrollSystem _philosophyScrollSystem = ScrollSystem();
+  final ScrollSystem _experienceScrollSystem = ScrollSystem();
   final ScrollOrchestrator scrollOrchestrator = ScrollOrchestrator();
-  late final SequenceRunner _sequenceRunner = SequenceRunner(
-    scrollSystem: scrollSystem,
+
+  // Legacy getter for compatibility
+  ScrollSystem get scrollSystem => _philosophyScrollSystem;
+
+  // Split Runners with dedicated scroll systems
+  late final SequenceRunner _primarySequenceRunner = SequenceRunner(
+    scrollSystem: _philosophyScrollSystem,
   );
+  late final SequenceRunner _experienceSequenceRunner = SequenceRunner(
+    scrollSystem: _experienceScrollSystem,
+  );
+
+  // Input blocking during flash transition
+  bool _isTransitioning = false;
 
   final GameAudioSystem _audioSystem = GameAudioSystem();
 
   GameAudioSystem get audio => _audioSystem;
+
+  SequenceRunner get primarySequenceRunner => _primarySequenceRunner;
+
+  SequenceRunner get experienceSequenceRunner => _experienceSequenceRunner;
+
+  ScrollSystem get experienceScrollSystem => _experienceScrollSystem;
   final GameComponentFactory _componentFactory = GameComponentFactory();
   final GameCursorSystem _cursorSystem = GameCursorSystem();
   final GameLogoAnimator logoAnimator = GameLogoAnimator();
@@ -59,6 +80,7 @@ class MyGame extends FlameGame
   late final GameInputController _inputController;
   late final GameComponents _gameComponents;
   GodRayController? _godRayController;
+  late final TransitionCoordinator transitionCoordinator;
 
   @override
   Future<void> onLoad() async {
@@ -115,6 +137,13 @@ class MyGame extends FlameGame
       beachBackground: _componentFactory.beachBackground,
       philosophyText: _componentFactory.philosophyText,
       philosophyTrail: _componentFactory.philosophyTrail,
+      nextButton: _componentFactory.nextButton,
+      rainTransition: _componentFactory.rainTransition,
+      circlesBackground: _componentFactory.circlesBackground,
+      experienceRotator: _componentFactory.experienceRotator,
+      //skillsKeyboard: _componentFactory.skillsKeyboard,
+      //testimonialPage: _componentFactory.testimonialPage,
+      //contactPage: _componentFactory.contactPage,
     );
 
     // Initialize Global Config
@@ -126,7 +155,7 @@ class MyGame extends FlameGame
     // Initialize and add Input Controller
     _inputController = GameInputController(
       queuer: queuer,
-      scrollSystem: scrollSystem,
+      scrollSystem: _philosophyScrollSystem,
       audioSystem: _audioSystem,
       cursorSystem: _cursorSystem,
       stateProvider: stateProvider,
@@ -135,11 +164,20 @@ class MyGame extends FlameGame
 
     // Warm up all sections (Shaders & Textures) via Runner
     // This architecturally ensures all current and future sections are primed.
-    await _sequenceRunner.warmUpAll();
+    await _primarySequenceRunner.warmUpAll();
+    await _experienceSequenceRunner.warmUpAll();
 
     queuer.queue(event: const SceneEvent.gameReady());
-    scrollSystem.register(scrollOrchestrator);
-    scrollSystem.register(_sequenceRunner);
+
+    // Register controllers to philosophy scroll system
+    _philosophyScrollSystem.register(scrollOrchestrator);
+    _philosophyScrollSystem.register(_primarySequenceRunner);
+
+    // Register experience scroll system
+    _experienceScrollSystem.register(_experienceSequenceRunner);
+
+    // Initialize TransitionCoordinator
+    transitionCoordinator = TransitionCoordinator(this);
   }
 
   // Compatibility getter for components accessing godRay via game reference
@@ -151,6 +189,11 @@ class MyGame extends FlameGame
 
   Vector2 get cursorPosition => _cursorSystem.lastKnownPosition;
 
+  // Input blocking control for flash transition
+  void blockInput() => _isTransitioning = true;
+
+  void unblockInput() => _isTransitioning = false;
+
   @override
   Color backgroundColor() => GameStyles.primaryBackground;
 
@@ -158,15 +201,20 @@ class MyGame extends FlameGame
   void onScroll(PointerScrollInfo info) {
     if (!isLoaded) return;
 
-    // Check if Active, if so, bypass standard input controller for scroll
-    // OR keep input controller updating scroll system, but use scroll system to drive runner?
-    // Plan says: "Explicit Entry when user scrolls... transitioning to first active section"
+    // Block input during flash transition
+    if (_isTransitioning) return;
 
     stateProvider.sceneState().maybeWhen(
       active: (_) {
-        // Direct control to ScrollSystem
-        // This allows physics (snapping/inertia) to run, which then updates SequenceRunner via observer
-        scrollSystem.onScroll(info.scrollDelta.global.y);
+        // Route to Philosophy scroll system
+        _philosophyScrollSystem.onScroll(info.scrollDelta.global.y);
+      },
+      loadingExperience: () {
+        // Block scroll during transition
+      },
+      experience: (_) {
+        // Route to Experience scroll system (independent range)
+        _experienceScrollSystem.onScroll(info.scrollDelta.global.y);
       },
       orElse: () {
         _inputController.handleScroll(info);
@@ -200,10 +248,20 @@ class MyGame extends FlameGame
     final state = stateProvider.sceneState();
 
     // Update Runner
-    state.maybeWhen(active: (_) => _sequenceRunner.update(dt), orElse: () {});
+    state.maybeWhen(
+      active: (_) => _primarySequenceRunner.update(dt),
+      loadingExperience: () => _primarySequenceRunner.update(dt),
+      experience: (_) => _experienceSequenceRunner.update(dt),
+      orElse: () {},
+    );
 
     // Listen to Start Trigger
-    state.maybeWhen(active: (_) => _sequenceRunner.start(), orElse: () {});
+    state.maybeWhen(
+      active: (_) => _primarySequenceRunner.start(),
+      loadingExperience: () => _primarySequenceRunner.start(),
+      experience: (_) => _experienceSequenceRunner.start(),
+      orElse: () {},
+    );
 
     // Base Updates
     _cursorSystem.update(
@@ -211,8 +269,15 @@ class MyGame extends FlameGame
       size,
       enableParallax: true,
     ); // Always enable parallax for consistency?
-    scrollSystem.update(dt);
-    _godRayController?.updatePulse(dt, scrollSystem.scrollOffset);
+
+    // Update active scroll system based on state
+    state.maybeWhen(
+      active: (_) => _philosophyScrollSystem.update(dt),
+      loadingExperience: () => _philosophyScrollSystem.update(dt),
+      experience: (_) => _experienceScrollSystem.update(dt),
+      orElse: () => _philosophyScrollSystem.update(dt),
+    );
+    _godRayController?.updatePulse(dt, _philosophyScrollSystem.scrollOffset);
 
     // Intro State Handlers
     state.maybeWhen(
@@ -248,7 +313,8 @@ class MyGame extends FlameGame
     super.onGameResize(size);
     final center = size / 2;
 
-    _sequenceRunner.onResize(size);
+    _primarySequenceRunner.onResize(size);
+    _experienceSequenceRunner.onResize(size);
 
     stateProvider.sceneState().maybeWhen(
       loading: (isSvgReady, isGameReady) {},
@@ -335,6 +401,8 @@ class MyGame extends FlameGame
       titleComponent: _gameComponents.philosophyText,
       cloudBackground: _gameComponents.beachBackground,
       trailComponent: _gameComponents.philosophyTrail,
+      nextButton: _gameComponents.nextButton,
+      rainTransition: _gameComponents.rainTransition,
       screenSize: size,
       playEntrySound: audio.playPhilosophyEntry,
       playCompletionSound: audio.playPhilosophyComplete,
@@ -349,6 +417,27 @@ class MyGame extends FlameGame
     _gameComponents.philosophyText.scale = Vector2.all(0.1);
     _gameComponents.philosophyText.opacity = 0.0;
 
-    _sequenceRunner.init([boldSection, philSection]);
+    // 3. Experience
+    final expSection = ExperienceSection(
+      circlesBackground: _gameComponents.circlesBackground,
+      queuer: queuer,
+      screenSize: size,
+    );
+
+    _primarySequenceRunner.init([boldSection, philSection]);
+    _experienceSequenceRunner.init([expSection]);
+
+    // Wiring Handoff
+    _primarySequenceRunner.onSequenceComplete = () async {
+      await _primarySequenceRunner.stop();
+      queuer.queue(event: const SceneEvent.enterExperience());
+    };
+
+    // Wiring Reverse Handoff (Experience -> Philosophy)
+    _experienceSequenceRunner.onSequenceReverse = () async {
+      await _experienceSequenceRunner.stop();
+      queuer.queue(event: const SceneEvent.titleLoaded());
+      await _primarySequenceRunner.resumeReverse();
+    };
   }
 }

@@ -1,15 +1,18 @@
-import 'dart:math';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flame/components.dart';
-import 'package:flutter/animation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
 import 'package:flutter_home_page/project/app/models/scroll_result.dart';
+import 'package:flutter_home_page/project/app/sections/experience_section.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_scene_orchestrator.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/next_button_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/rain_transition_component.dart';
 
 class PhilosophySection implements GameSection {
   @override
@@ -17,20 +20,18 @@ class PhilosophySection implements GameSection {
   final PhilosophyTextComponent titleComponent;
   final BeachBackgroundComponent cloudBackground;
   final PhilosophyTrailComponent trailComponent;
+  final NextButtonComponent nextButton;
+  final RainTransitionComponent rainTransition;
   Vector2 screenSize;
   final VoidCallback playEntrySound;
   final VoidCallback playCompletionSound;
-
-  // Internal State
   double _scrollProgress = 0.0;
   static const double _maxHeight = 3500.0;
-
-  // Audio Phase Tracking
   int _currentPhase = 0;
-
-  // Beach Scene Orchestrator (Section-Owned)
   late BeachSceneOrchestrator orchestrator;
   bool _orchestratorInitialized = false;
+  bool _freezeCapture = false;
+  bool _isShattering = false;
 
   // Snap-to-Strike tracking
   final Set<int> _triggeredSnaps = {};
@@ -39,6 +40,8 @@ class PhilosophySection implements GameSection {
     required this.titleComponent,
     required this.cloudBackground,
     required this.trailComponent,
+    required this.nextButton,
+    required this.rainTransition,
     required this.screenSize,
     required this.playEntrySound,
     required this.playCompletionSound,
@@ -47,9 +50,76 @@ class PhilosophySection implements GameSection {
     trailComponent.onScrollUpdate = _updateFloatingTitleAnimation;
 
     // Initialize orchestrator immediately
-    orchestrator = BeachSceneOrchestrator(background: cloudBackground);
+    orchestrator = BeachSceneOrchestrator(
+      background: cloudBackground,
+      rainTransition: rainTransition,
+    );
     cloudBackground.setOrchestrator(orchestrator);
     _orchestratorInitialized = true;
+
+    // Wire button callbacks
+    nextButton.onProgressChange = (progress) {
+      if (progress > 0) {
+        rainTransition.opacity = 1.0;
+      }
+      // Delegate everything to orchestrator
+      orchestrator.holdProgress = progress;
+
+      // Keep mouse tracking for wiping effect
+      rainTransition.updateMousePosition(nextButton.position);
+
+      if (math.Random().nextDouble() < progress * 0.3) {
+        trailComponent.game.audio.playSpatialWaterdrop(0.5);
+      }
+    };
+
+    // If your component doesn't have onReleased,
+    nextButton.onReleased = () {
+      rainTransition.reset(); // This triggers the lerp back to 0.0
+    };
+
+    nextButton.onHoldComplete = () {
+      // Hold complete → Delegate to TransitionCoordinator
+      if (!_isShattering) {
+        _isShattering = true;
+        print('PhilosophySection: Hold Complete! Triggering transition.');
+
+        // Delegate entire transition sequence to coordinator
+        // Retrieve ExperienceSection from runner
+        // Retrieve ExperienceSection directly from runner's list
+        // Note: currentSection is null because runner isn't active yet
+        final sections = trailComponent.game.experienceSequenceRunner.sections;
+        final to = sections.isNotEmpty ? sections.first : null;
+
+        print('PhilosophySection: Retrieved to section: $to');
+
+        if (to is ExperienceSection) {
+          trailComponent.game.transitionCoordinator.startPhilosophyToExperience(
+            from: this,
+            to: to,
+          );
+        } else {
+          print(
+            'PhilosophySection: ERROR - Could not find ExperienceSection (Count: ${sections.length})',
+          );
+        }
+      } else {
+        print('PhilosophySection: Already shattering, ignoring hold complete.');
+      }
+    };
+
+    rainTransition.onShatterComplete = () {
+      // Pre-warm next section if not already done
+      if (!_hasWarmedUpNext) {
+        onWarmUpNextSection?.call();
+        _hasWarmedUpNext = true;
+      }
+
+      // Delay 100ms before advancing to next section
+      Future.delayed(const Duration(milliseconds: 100), () {
+        onComplete?.call();
+      });
+    };
   }
 
   @override
@@ -62,6 +132,13 @@ class PhilosophySection implements GameSection {
   VoidCallback? onReverseComplete; // To previous section
 
   bool _hasWarmedUpNext = false;
+
+  // Public accessors for TransitionCoordinator
+  bool get hasWarmedUpNext => _hasWarmedUpNext;
+  set hasWarmedUpNext(bool value) => _hasWarmedUpNext = value;
+
+  bool get freezeCapture => _freezeCapture;
+  set freezeCapture(bool value) => _freezeCapture = value;
 
   @override
   List<Vector2> get snapRegions => [
@@ -79,7 +156,9 @@ class PhilosophySection implements GameSection {
     if (offset > _maxHeight) {
       _scrollProgress = _maxHeight;
       _updateVisuals(_scrollProgress);
-      onComplete?.call();
+      // Explicitly DO NOT call onComplete here.
+      // We want to force the user to use the "Hold" button to advance.
+      // onComplete?.call();
       return;
     }
 
@@ -98,33 +177,38 @@ class PhilosophySection implements GameSection {
       _hasWarmedUpNext = true;
     }
 
-    // Snap-to-Strike: Check if we're in a snap region
-    _checkSnapLightning(_scrollProgress);
-
     // Update shader scroll progress for sky gradient (0.0-1.0)
     cloudBackground.setScrollProgress(_scrollProgress / _maxHeight);
 
     _updateVisuals(_scrollProgress);
   }
 
-  /// Check if scroll entered a snap region and trigger lightning
-  void _checkSnapLightning(double offset) {
-    for (int i = 0; i < snapRegions.length; i++) {
-      final region = snapRegions[i];
-      // Check if offset is within snap region (Vector2 x=start, y=end)
-      if (offset >= region.x && offset <= region.y) {
-        if (!_triggeredSnaps.contains(i)) {
-          // Trigger lightning flash - this initiates the sync chain
-          orchestrator.lightning.triggerFlash();
-          _triggeredSnaps.add(i);
-        }
-        return; // Found the region, stop checking
-      }
-    }
-  }
-
   void _updateVisuals(double offset) {
     trailComponent.setTargetScroll(offset);
+
+    // Position and fade in button after title is visible (scrollOffset > 1000)
+    if (offset > 1000) {
+      // Position button below title
+      nextButton.position = Vector2(
+        screenSize.x / 2,
+        screenSize.y * 0.4 +
+            120, // 120px below title center (title is at 40% screen height)
+      );
+
+      // Fade in button over 500px (1000-1500)
+      final buttonFadeProgress = ((offset - 1000) / 500.0).clamp(0.0, 1.0);
+      nextButton.opacity = buttonFadeProgress;
+    } else {
+      nextButton.opacity = 0.0;
+    }
+
+    // Position rain transition component to cover full screen
+    rainTransition.position = Vector2.zero();
+    rainTransition.size = screenSize;
+
+    // Changes: Remove scroll-driven rain logic.
+    // Rain is now exclusively driven by nextButton.onProgressChange callback (in constructor).
+    // This ensures only "holding" the button triggers the rain effect.
   }
 
   void _updateAudio(double offset) {
@@ -187,6 +271,8 @@ class PhilosophySection implements GameSection {
     // Architectural Visibility: Ensure hidden after warmup
     //cloudBackground.opacity = 0.0;
     //titleComponent.opacity = 0.0;
+    nextButton.opacity = 0.0;
+    rainTransition.setTarget(0.0);
   }
 
   @override
@@ -194,6 +280,7 @@ class PhilosophySection implements GameSection {
     _hasWarmedUpNext = false;
     _isActive = true;
     _currentPhase = 0;
+    _freezeCapture = false;
 
     // Configure ScrollSystem
     scrollSystem.resetScroll(0.0);
@@ -202,6 +289,9 @@ class PhilosophySection implements GameSection {
     // Architectural Visibility: Reveal components
     trailComponent.opacity = 1.0;
     cloudBackground.opacity = 1.0;
+    titleComponent.opacity = 1.0; // Make title visible
+    nextButton.opacity = 0.0; // Will fade in at scroll > 1000
+    rainTransition.setTarget(0.0);
 
     // Trigger initial sound (Phase 1)
     _updateVisuals(0.0);
@@ -212,6 +302,7 @@ class PhilosophySection implements GameSection {
     _hasWarmedUpNext = false;
     _isActive = true;
     _currentPhase = 7;
+    _freezeCapture = false;
 
     // Configure ScrollSystem
     scrollSystem.resetScroll(_maxHeight);
@@ -229,20 +320,88 @@ class PhilosophySection implements GameSection {
   Future<void> exit() async {
     _isActive = false;
 
+    // Strict Visibility Reset - Hide all components
+    titleComponent.opacity = 0.0;
+    cloudBackground.opacity = 0.0;
+    trailComponent.opacity = 0.0;
+    nextButton.opacity = 0.0;
+    rainTransition.opacity = 0.0;
+
     // Clean up reflection resources to prevent memory leaks
     orchestrator.reflection.clearTargets();
 
-    // Architectural Visibility: Hide everything
+    // Stop background capture loop
+    _freezeCapture = true;
+
+    // Reset shader uniforms and state flags
+    _cleanupPhilosophyComponents();
+
+    // Reset visuals to initial state
     _resetVisuals();
-    cloudBackground.opacity = 0.0;
-    trailComponent.opacity = 0.0;
   }
+
+  int _frameCounter = 0;
+
+  // Called every frame by game loop (via `update` if we hooked it,
+  // but since PhilosophySection isn't a Component, we need to be called by MyGame or similar?
+  // Actually, wait. PhilosophySection is a pure class, it doesn't have an `update` called by the Game loop
+  // efficiently unless `MyGame` calls `currentSection.update(dt)`.
+  // Let's check `MyGame.dart` or `GameSection` interface...
+  // `GameSection` has `void update(double dt)`.
+  // So we can use that!
 
   @override
   void update(double dt) {
-    // Trail component has its own update(dt) called by game loop
-    // No specific section-controller updates needed here
+    // 1. Trail component has its own update(dt) called by game loop
+    // But we need to drive the refraction capture here.
+
+    // 2. Real-time Refraction Capture
+    // Only capture if we are interacting with the rain
+    if ((nextButton.isHovering || rainTransition.currentIntensity > 0.0) &&
+        !_freezeCapture) {
+      _frameCounter++;
+      // Throttle: Capture every 2nd frame (30fps effective) to save GPU/CPU
+      if (_frameCounter % 2 == 0) {
+        _captureRefractionFrame();
+      }
+    }
   }
+
+  Future<void> _captureRefractionFrame() async {
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder);
+
+    // OPTIMIZATION: Downscale by 50%
+    const double scale = 0.5;
+    canvas.scale(scale);
+
+    // Render the beach and the text/cards into the off-screen buffer
+    cloudBackground.render(canvas);
+    trailComponent.render(canvas);
+
+    final picture = recorder.endRecording();
+
+    // logical size * scale
+    final int w = (screenSize.x * scale).toInt();
+    final int h = (screenSize.y * scale).toInt();
+
+    // Use toImage (async) - toImageSync is better but might not be available in all older Flutter versions
+    // If the user's environment is very new, toImageSync is preferred.
+    // Given the context 2026, it definitely exists.
+    try {
+      final img = await picture.toImage(w, h);
+      rainTransition.updateBackgroundTexture(img);
+    } catch (e) {
+      // Handle disposal if error
+    }
+    // picture.dispose(); // Picture doesn't need explicit dispose if we endRecording?
+    // Actually `Picture` object normally should be disposed if not used?
+    // `toImage` consumes it? No.
+    // picture.dispose(); // Good practice.
+  }
+
+  // Deprecated single-shot
+  // Future<void> _updateRefractionBackground() async { ... }
 
   @override
   void onResize(Vector2 newSize) {
@@ -335,7 +494,7 @@ class PhilosophySection implements GameSection {
     // Idle breathe animation (±2% when fully visible)
     if (titleProgress >= 1.0) {
       final breathe =
-          sin(DateTime.now().millisecondsSinceEpoch / 1000.0 * 0.5) * 0.02;
+          math.sin(DateTime.now().millisecondsSinceEpoch / 1000.0 * 0.5) * 0.02;
       targetScale += targetScale * breathe;
     }
 
@@ -349,7 +508,8 @@ class PhilosophySection implements GameSection {
 
     // Sway (subtle)
     final swayAmount = 20.0;
-    final sway = sin(titleProgress * pi * 2) * swayAmount * (1 - eased);
+    final sway =
+        math.sin(titleProgress * math.pi * 2) * swayAmount * (1 - eased);
     titleComponent.position = Vector2(screenSize.x / 2 + sway, currentY);
 
     // Reflection Registration
@@ -367,6 +527,8 @@ class PhilosophySection implements GameSection {
     cloudBackground.setWaterLevel(screenSize.y * 0.72);
   }
 
+  // _updateRefractionBackground Replaced by _captureRefractionFrame in update loop
+
   void _resetVisuals() {
     titleComponent.opacity = 0.0;
     titleComponent.scale = Vector2.all(0.1);
@@ -376,5 +538,19 @@ class PhilosophySection implements GameSection {
 
     // Reset Trail (prevent leaks)
     trailComponent.updateTrailAnimation(0.0);
+  }
+
+  /// Cleanup Philosophy components and reset shader uniforms
+  void _cleanupPhilosophyComponents() {
+    // Reset shader uniforms to initial state
+    rainTransition.setTarget(0.0);
+    rainTransition.setShatterProgress(0.0);
+
+    // Reset state flags
+    _freezeCapture = false;
+    _isShattering = false;
+    _hasWarmedUpNext = false;
+
+    // Component removal and texture disposal happens in exit()
   }
 }

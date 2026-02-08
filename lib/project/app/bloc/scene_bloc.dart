@@ -26,6 +26,8 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     on<TitleLoaded>(_titleLoaded);
     on<OnScroll>(_onScroll);
     on<UpdateUIOpacity>(_updateUIOpacity);
+    on<LoadExperience>(_loadExperience);
+    on<EnterExperience>(_enterExperience);
   }
 
   @override
@@ -116,6 +118,20 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
         }
       },
     );
+  }
+
+  FutureOr<void> _loadExperience(
+    LoadExperience event,
+    Emitter<SceneState> emit,
+  ) {
+    emit(const SceneState.loadingExperience());
+  }
+
+  FutureOr<void> _enterExperience(
+    EnterExperience event,
+    Emitter<SceneState> emit,
+  ) {
+    emit(const SceneState.experience());
   }
 
   @override

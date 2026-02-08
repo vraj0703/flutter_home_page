@@ -17,7 +17,7 @@ class BoldTextRevealBuilder extends ComponentBuilder<BoldTextRevealComponent> {
 
   @override
   Future<BoldTextRevealComponent> build(ComponentContext context) async {
-    final shader = await context.loadShader(GameAssets.boldTextShader);
+    final shader = await context.loadShader(GameAssets.boldTextEntranceShader);
     final component = BoldTextRevealComponent(
       text: GameStrings.boldText,
       textStyle: material.TextStyle(

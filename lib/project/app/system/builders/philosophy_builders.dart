@@ -8,9 +8,11 @@ import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/interfaces/component_builder.dart';
 import 'package:flutter_home_page/project/app/models/component_context.dart';
 import 'package:flutter_home_page/project/app/config/component_ids.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/next_button_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/peeling_card_stack_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/rain_transition_component.dart';
 
 class PhilosophyTextBuilder extends ComponentBuilder<PhilosophyTextComponent> {
   @override
@@ -88,6 +90,43 @@ class PhilosophyTrailBuilder
     component.priority = -1;
     component.priority = GameLayout.zContent;
     component.opacity = 0.0; // Start hidden
+    return component;
+  }
+}
+
+class NextButtonBuilder extends ComponentBuilder<NextButtonComponent> {
+  @override
+  String get id => ComponentIds.nextButton;
+
+  @override
+  int get priority => 0;
+
+  @override
+  Future<NextButtonComponent> build(ComponentContext context) async {
+    final component = NextButtonComponent();
+    component.priority =
+        GameLayout.zContent + 1; // Above other philosophy components
+    component.opacity = 0.0; // Start hidden
+    return component;
+  }
+}
+
+class RainTransitionBuilder extends ComponentBuilder<RainTransitionComponent> {
+  @override
+  String get id => ComponentIds.rainTransition;
+
+  @override
+  int get priority => 0;
+
+  @override
+  Future<RainTransitionComponent> build(ComponentContext context) async {
+    final shader = await context.loadShader(GameAssets.rainShader);
+    final component = RainTransitionComponent(
+      shader: shader,
+      size: context.size,
+    );
+    component.priority = GameLayout.zContent; // On top of everything
+    component.opacity = 1.0; // Always visible when active
     return component;
   }
 }

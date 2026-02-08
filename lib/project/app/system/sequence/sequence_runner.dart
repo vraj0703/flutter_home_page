@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
@@ -14,6 +15,13 @@ class SequenceRunner implements ScrollObserver {
   bool _isActive = false;
 
   SequenceRunner({required this.scrollSystem});
+
+  /// Get currently active section (null if not started)
+  GameSection? get currentSection =>
+      _isActive && _sections.isNotEmpty ? _sections[_currentIndex] : null;
+
+  /// Access to full list of sections (for lookahead/transition logic)
+  List<GameSection> get sections => _sections;
 
   /// Initializes the runner with the defined chain of sections.
   void init(List<GameSection> sections) {
@@ -89,6 +97,18 @@ class SequenceRunner implements ScrollObserver {
     }
   }
 
+  /// Callback triggered when the sequence reaches the end of the last section.
+  VoidCallback? onSequenceComplete;
+
+  /// Stops the runner and exits the current section.
+  Future<void> stop() async {
+    if (!_isActive) return;
+    _isActive = false;
+    if (_sections.isNotEmpty) {
+      await _sections[_currentIndex].exit();
+    }
+  }
+
   Future<void> _advanceSection(int callingIndex) async {
     // Prevent double triggers
     if (callingIndex != _currentIndex) return;
@@ -96,6 +116,9 @@ class SequenceRunner implements ScrollObserver {
     if (_currentIndex < _sections.length - 1) {
       // 1. Exit old
       await _sections[_currentIndex].exit();
+
+      // RE-VERIFY index after async operation to prevent race conditions
+      if (_currentIndex != callingIndex) return;
 
       _currentIndex++;
       final nextSection = _sections[_currentIndex];
@@ -108,11 +131,29 @@ class SequenceRunner implements ScrollObserver {
       // Notify UI listener if needed (e.g., via Bloc event)
       // _onSectionChanged(_currentIndex);
     } else {
-      // End of game sequence: Clamp to max
-      // If we are at the last section and try to advance, just clamp the physics system.
-      // We use currentSection.maxScrollExtent.
-      final currentSection = _sections[_currentIndex];
-      scrollSystem.resetScroll(currentSection.maxScrollExtent);
+      // End of game sequence
+      if (onSequenceComplete != null) {
+        onSequenceComplete!();
+      } else {
+        // Default behavior: Clamp to max
+        final currentSection = _sections[_currentIndex];
+        scrollSystem.resetScroll(currentSection.maxScrollExtent);
+      }
+    }
+  }
+
+  /// Callback triggered when the sequence tries to reverse past the first section.
+  VoidCallback? onSequenceReverse;
+
+  /// Resumes the runner in reverse, starting at the end of the current (last) section.
+  Future<void> resumeReverse() async {
+    if (_isActive) return;
+    _isActive = true;
+    _currentIndex = _sections.length - 1;
+    if (_sections.isNotEmpty) {
+      scrollSystem.setSnapRegions(_sections[_currentIndex].snapRegions);
+      await _sections[_currentIndex].warmUp();
+      await _sections[_currentIndex].enterReverse(scrollSystem);
     }
   }
 
@@ -123,6 +164,9 @@ class SequenceRunner implements ScrollObserver {
       // 1. Exit current (which is now 'future')
       await _sections[_currentIndex].exit();
 
+      // RE-VERIFY index after async operation
+      if (_currentIndex != callingIndex) return;
+
       _currentIndex--;
       final prevSection = _sections[_currentIndex];
 
@@ -131,9 +175,13 @@ class SequenceRunner implements ScrollObserver {
       await prevSection.warmUp();
       await prevSection.enterReverse(scrollSystem);
     } else {
-      // Start of game sequence: Clamp to 0
-      // If we are at the first section and try to reverse, just clamp.
-      scrollSystem.resetScroll(0.0);
+      // Start of game sequence
+      if (onSequenceReverse != null) {
+        onSequenceReverse!();
+      } else {
+        // Default behavior: Clamp to 0
+        scrollSystem.resetScroll(0.0);
+      }
     }
   }
 }

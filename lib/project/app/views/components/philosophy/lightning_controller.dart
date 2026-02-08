@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:async';
+import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/animation.dart';
@@ -15,12 +16,22 @@ class LightningController extends Component with HasGameReference<MyGame> {
     intensity = (intensity - dt * 1.2).clamp(0.0, 1.0);
   }
 
-  void triggerFlash() {
+  void triggerFlash(double currentRainIntensity) {
     // The "Double Strike" logic
     intensity = 1.0;
 
+    double soundDelaySeconds = lerpDouble(3.0, 0.1, currentRainIntensity)!;
     // Trigger spatial audio with distance-based delay
-    game.audio.playSpatialThunder(intensity);
+    Future.delayed(
+      Duration(milliseconds: (soundDelaySeconds * 1000).toInt()),
+      () {
+        if (isMounted) {
+          game.audio.playSpatialThunder(
+            soundDelaySeconds,
+          ); // Pass delay for variety
+        }
+      },
+    );
 
     // Screen shake effect for strong lightning
     if (intensity > 0.9) {

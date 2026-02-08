@@ -1,6 +1,7 @@
 import 'package:flame/components.dart' hide Matrix4;
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'philosophy_card.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:flutter_home_page/project/app/views/my_game.dart';
@@ -265,6 +266,10 @@ class PhilosophyTrailComponent extends PositionComponent
       }
 
       if (t > 0.5) {
+        // Trigger haptic when unlocking flip
+        if (!card.canFlip) {
+          HapticFeedback.lightImpact();
+        }
         card.canFlip = true;
       } else {
         card.canFlip = false;
@@ -297,6 +302,11 @@ class PhilosophyTrailComponent extends PositionComponent
     matrix.scale(scale, scale, 1.0);
 
     matrix.rotateY(rotY);
+
+    // Apply Interactive Tilt (3D Hover)
+    // Map -1..1 tilt to approx +/- 11 degrees (0.2 rad)
+    matrix.rotateX(card.currentTilt.y * 0.25);
+    matrix.rotateY(card.currentTilt.x * 0.25);
 
     final stableHitMatrix = matrix.clone();
     stableHitMatrix.translate(-card.size.x / 2, -card.size.y / 2);
