@@ -141,9 +141,12 @@ class PhilosophyTrailComponent extends PositionComponent
     super.update(dt);
 
     // Manual Hover Check (Robust Fallback)
-    final cursor = game.cursorPosition;
-    for (final card in cards) {
-      card.manualHoverCheck(cursor);
+    // Only process inputs if we are actually visible
+    if (opacity > 0.01) {
+      final cursor = game.cursorPosition;
+      for (final card in cards) {
+        card.manualHoverCheck(cursor);
+      }
     }
 
     // Inertia Logic: Lerp current -> target

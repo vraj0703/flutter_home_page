@@ -46,23 +46,14 @@ class MyGame extends FlameGame
     required this.stateProvider,
   });
 
-  // Dual Scroll Systems for independent Philosophy and Experience ranges
   final ScrollSystem _philosophyScrollSystem = ScrollSystem();
-  final ScrollSystem _experienceScrollSystem = ScrollSystem();
   final ScrollOrchestrator scrollOrchestrator = ScrollOrchestrator();
 
-  // Legacy getter for compatibility
   ScrollSystem get scrollSystem => _philosophyScrollSystem;
 
-  // Split Runners with dedicated scroll systems
   late final SequenceRunner _primarySequenceRunner = SequenceRunner(
     scrollSystem: _philosophyScrollSystem,
   );
-  late final SequenceRunner _experienceSequenceRunner = SequenceRunner(
-    scrollSystem: _experienceScrollSystem,
-  );
-
-  // Input blocking during flash transition
   bool _isTransitioning = false;
 
   final GameAudioSystem _audioSystem = GameAudioSystem();
@@ -71,9 +62,8 @@ class MyGame extends FlameGame
 
   SequenceRunner get primarySequenceRunner => _primarySequenceRunner;
 
-  SequenceRunner get experienceSequenceRunner => _experienceSequenceRunner;
+  ExperienceSection get experienceSection => _experienceSection;
 
-  ScrollSystem get experienceScrollSystem => _experienceScrollSystem;
   final GameComponentFactory _componentFactory = GameComponentFactory();
   final GameCursorSystem _cursorSystem = GameCursorSystem();
   final GameLogoAnimator logoAnimator = GameLogoAnimator();
@@ -82,6 +72,10 @@ class MyGame extends FlameGame
   late final GameComponents _gameComponents;
   GodRayController? _godRayController;
   late final TransitionCoordinator transitionCoordinator;
+
+  // Keep reference to sections for direct access
+  late final PhilosophySection _philosophySection;
+  late final ExperienceSection _experienceSection;
 
   @override
   Future<void> onLoad() async {
@@ -166,7 +160,10 @@ class MyGame extends FlameGame
     // Warm up all sections (Shaders & Textures) via Runner
     // This architecturally ensures all current and future sections are primed.
     await _primarySequenceRunner.warmUpAll();
-    await _experienceSequenceRunner.warmUpAll();
+
+    // Explicitly warm up components not managed by the sequence runner's warmUp
+    _gameComponents.rainTransition.warmUp();
+    _gameComponents.circlesBackground.warmUp();
 
     queuer.queue(event: const SceneEvent.gameReady());
 
@@ -175,7 +172,7 @@ class MyGame extends FlameGame
     _philosophyScrollSystem.register(_primarySequenceRunner);
 
     // Register experience scroll system
-    _experienceScrollSystem.register(_experienceSequenceRunner);
+    // _experienceScrollSystem.register(_experienceSequenceRunner); // Removed
 
     // Initialize TransitionCoordinator
     transitionCoordinator = TransitionCoordinator(this);
@@ -214,9 +211,6 @@ class MyGame extends FlameGame
   void onScroll(PointerScrollInfo info) {
     if (!isLoaded) return;
 
-    // Block input during flash transition
-    if (_isTransitioning) return;
-
     stateProvider.sceneState().maybeWhen(
       active: (_) {
         // Route to Philosophy scroll system
@@ -226,8 +220,15 @@ class MyGame extends FlameGame
         // Block scroll during transition
       },
       experience: (_) {
-        // Route to Experience scroll system (independent range)
-        _experienceScrollSystem.onScroll(info.scrollDelta.global.y);
+        // Experience is now state-driven.
+        // List for Scroll UP to return to Philosophy.
+        if (info.scrollDelta.global.y < 0) {
+          // Scroll Up -> Return to Philosophy
+          transitionCoordinator.returnToPhilosophy(
+            from: _experienceSection,
+            to: _philosophySection,
+          );
+        }
       },
       orElse: () {
         _inputController.handleScroll(info);
@@ -264,7 +265,7 @@ class MyGame extends FlameGame
     state.maybeWhen(
       active: (_) => _primarySequenceRunner.update(dt),
       loadingExperience: () => _primarySequenceRunner.update(dt),
-      experience: (_) => _experienceSequenceRunner.update(dt),
+      // experience: (_) => _experienceSequenceRunner.update(dt), // Removed
       orElse: () {},
     );
 
@@ -272,7 +273,7 @@ class MyGame extends FlameGame
     state.maybeWhen(
       active: (_) => _primarySequenceRunner.start(),
       loadingExperience: () => _primarySequenceRunner.start(),
-      experience: (_) => _experienceSequenceRunner.start(),
+      // experience: (_) => _experienceSequenceRunner.start(), // Removed
       orElse: () {},
     );
 
@@ -287,7 +288,7 @@ class MyGame extends FlameGame
     state.maybeWhen(
       active: (_) => _philosophyScrollSystem.update(dt),
       loadingExperience: () => _philosophyScrollSystem.update(dt),
-      experience: (_) => _experienceScrollSystem.update(dt),
+      // experience: (_) => _experienceScrollSystem.update(dt), // Removed
       orElse: () => _philosophyScrollSystem.update(dt),
     );
     _godRayController?.updatePulse(dt, _philosophyScrollSystem.scrollOffset);
@@ -327,7 +328,10 @@ class MyGame extends FlameGame
     final center = size / 2;
 
     _primarySequenceRunner.onResize(size);
-    _experienceSequenceRunner.onResize(size);
+
+    if (isLoaded) {
+      _experienceSection.onResize(size);
+    }
 
     stateProvider.sceneState().maybeWhen(
       loading: (isSvgReady, isGameReady) {},
@@ -410,7 +414,7 @@ class MyGame extends FlameGame
     boldSection.onComplete = () {};
 
     // 2. Philosophy
-    final philSection = PhilosophySection(
+    _philosophySection = PhilosophySection(
       titleComponent: _gameComponents.philosophyText,
       cloudBackground: _gameComponents.beachBackground,
       trailComponent: _gameComponents.philosophyTrail,
@@ -431,26 +435,18 @@ class MyGame extends FlameGame
     _gameComponents.philosophyText.opacity = 0.0;
 
     // 3. Experience
-    final expSection = ExperienceSection(
+    _experienceSection = ExperienceSection(
       circlesBackground: _gameComponents.circlesBackground,
       queuer: queuer,
       screenSize: size,
     );
 
-    _primarySequenceRunner.init([boldSection, philSection]);
-    _experienceSequenceRunner.init([expSection]);
+    _primarySequenceRunner.init([boldSection, _philosophySection]);
 
     // Wiring Handoff
     _primarySequenceRunner.onSequenceComplete = () async {
       await _primarySequenceRunner.stop();
       queuer.queue(event: const SceneEvent.enterExperience());
-    };
-
-    // Wiring Reverse Handoff (Experience -> Philosophy)
-    _experienceSequenceRunner.onSequenceReverse = () async {
-      await _experienceSequenceRunner.stop();
-      queuer.queue(event: const SceneEvent.titleLoaded());
-      await _primarySequenceRunner.resumeReverse();
     };
   }
 }

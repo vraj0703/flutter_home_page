@@ -176,6 +176,14 @@ class RainTransitionComponent extends PositionComponent
     _textureInitialized = true;
   }
 
+  bool _manualWarmup = false;
+  int _manualWarmupFrames = 0;
+
+  void warmUp() {
+    _manualWarmup = true;
+    _manualWarmupFrames = 0;
+  }
+
   @override
   void render(ui.Canvas canvas) {
     // 1. Check for texture presence.
@@ -187,16 +195,23 @@ class RainTransitionComponent extends PositionComponent
     }
 
     // 2. Check for intensity. No point in drawing if it's invisible.
-    if (currentIntensity < 0.001) return;
+    // Allow rendering if manual warmup is active
+    if (currentIntensity < 0.001 && !_manualWarmup) return;
+
+    // effective intensity for warmup should be non-zero but invisible-ish if needed,
+    // though for this component, opacity handles visibility too.
+    // If resetting intensity, ensure we have something to draw.
+    final effectiveIntensity = _manualWarmup ? 0.01 : currentIntensity;
+    final effectiveOpacity = _manualWarmup ? 0.01 : opacity;
 
     // Uniforms
     shader.setFloat(0, size.x);
     shader.setFloat(1, size.y);
     shader.setFloat(2, _time);
-    shader.setFloat(3, currentIntensity);
+    shader.setFloat(3, effectiveIntensity);
     shader.setFloat(4, _mousePos.x);
     shader.setFloat(5, _mousePos.y);
-    shader.setFloat(6, opacity);
+    shader.setFloat(6, effectiveOpacity);
     shader.setFloat(7, lightningIntensity);
     shader.setFloat(8, _crackStrength); // From Orchestrator
     shader.setFloat(9, shatterProgress); // Driven by triggerShatter
@@ -214,6 +229,18 @@ class RainTransitionComponent extends PositionComponent
       ..filterQuality = ui.FilterQuality.medium;
 
     canvas.drawRect(size.toRect(), paint);
+
+    // Warmup auto-off
+    if (_manualWarmup) {
+      if (_manualWarmupFrames % 10 == 0) {
+        print('RainTransitionComponent: Warmup Frame $_manualWarmupFrames');
+      }
+      _manualWarmupFrames++;
+      if (_manualWarmupFrames > 20) {
+        print('RainTransitionComponent: Warmup Completed');
+        _manualWarmup = false;
+      }
+    }
   }
 
   Future<void> _initEmptyBackground() async {

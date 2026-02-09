@@ -104,6 +104,9 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
       // Transition directly to Active.
       // The MyGame listener will pick this up and start the SequenceRunner.
       emit(const SceneState.active());
+    } else if (state is Experience) {
+      // Return to Active (Philosophy) from Experience
+      emit(const SceneState.active(uiOpacity: 1));
     }
   }
 

@@ -69,11 +69,9 @@ class TransitionCoordinator {
         // Update Global State to Experience
         game.queuer.queue(event: const SceneEvent.enterExperience());
 
-        // Reset the independent Experience Scroll System
-        game.experienceScrollSystem.resetScroll(0.0);
-
-        // Start Experience Runner
-        await game.experienceSequenceRunner.start();
+        // Note: Experience is now state-driven, so we don't need to start a runner.
+        // The SceneBloc state change will make MyGame route inputs/updates correctly if needed.
+        // But primarily, Experience is an overlay state.
 
         // Trigger the Hero Entry Animation (Non-scroll dependent)
         await to.animateEntry();
@@ -86,8 +84,37 @@ class TransitionCoordinator {
     );
 
     game.camera.viewport.add(flash);
+  }
 
-    game.camera.viewport.add(flash);
+  /// Executes the return transition from Experience to Philosophy (Scroll Up)
+  Future<void> returnToPhilosophy({
+    required ExperienceSection from,
+    required PhilosophySection to,
+  }) async {
+    if (_isTransitioning) return;
+    _isTransitioning = true;
+    game.blockInput();
+
+    // 1. Animate Experience Exit
+    await from.exit();
+
+    // 2. Switch State back to Active (Philosophy)
+    // We assume Philosophy is still at the bottom (peak) where we left it.
+    game.queuer.queue(
+      event: const SceneEvent.onScroll(),
+    ); // RE-USED event to trigger Active state
+
+    // 3. Resume Philosophy Runner (in reverse capability if needed, or just standard start)
+    // Since we are at the bottom, the user will scroll up.
+    // We should probably ensure the runner is "active" again.
+    game.primarySequenceRunner.start();
+
+    // 4. Force a frame of update to ensure visuals are ready?
+    // Usually automatic.
+
+    // 5. Unblock
+    game.unblockInput();
+    _isTransitioning = false;
   }
 
   /// Triggers camera shake effect on climax

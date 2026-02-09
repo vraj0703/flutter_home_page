@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
+import 'package:flutter_home_page/project/app/config/game_styles.dart';
 
 class CirclesBackgroundComponent extends PositionComponent
     with HasGameReference<MyGame>, HasPaint {
@@ -23,18 +24,50 @@ class CirclesBackgroundComponent extends PositionComponent
     _time += dt;
   }
 
+  bool _manualWarmup = false;
+  int _manualWarmupFrames = 0;
+
+  void warmUp() {
+    _manualWarmup = true;
+    _manualWarmupFrames = 0;
+  }
+
   @override
   void render(Canvas canvas) {
-    if (opacity <= 0.0) return;
+    if (opacity <= 0.0 && !_manualWarmup) return;
 
     shader.setFloat(0, size.x); // uSize.x
     shader.setFloat(1, size.y); // uSize.y
     shader.setFloat(2, _time); // uTime
     shader.setFloat(3, revealProgress); // uReveal for entry bloom
 
+    // Pass Theme Color (uThemeColor) - Index 4
+    // Using GameStyles.primaryBackground (Gold/Bronze)
+    final color = GameStyles.primaryBackground;
+    shader.setFloat(4, color.red / 255.0);
+    shader.setFloat(5, color.green / 255.0);
+    shader.setFloat(6, color.blue / 255.0);
+
     final paint = Paint()..shader = shader;
-    paint.color = paint.color.withOpacity(opacity);
+    // During warmup, use a tiny non-zero opacity so the shader actually runs but isn't visible
+    paint.color = paint.color.withOpacity(_manualWarmup ? 0.01 : opacity);
 
     canvas.drawRect(size.toRect(), paint);
+
+    if (_manualWarmup) {
+      // Force a non-zero reveal during warmup to exercise that shader branch
+      shader.setFloat(3, 0.5);
+
+      if (_manualWarmupFrames % 10 == 0) {
+        print('CirclesBackgroundComponent: Warmup Frame $_manualWarmupFrames');
+      }
+      _manualWarmupFrames++;
+      if (_manualWarmupFrames > 20) {
+        print('CirclesBackgroundComponent: Warmup Completed');
+        _manualWarmup = false;
+        // Reset uniform
+        shader.setFloat(3, revealProgress);
+      }
+    }
   }
 }

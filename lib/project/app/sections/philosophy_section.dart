@@ -5,7 +5,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
 import 'package:flutter_home_page/project/app/models/scroll_result.dart';
-import 'package:flutter_home_page/project/app/sections/experience_section.dart';
+
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_scene_orchestrator.dart';
@@ -85,24 +85,16 @@ class PhilosophySection implements GameSection {
         print('PhilosophySection: Hold Complete! Triggering transition.');
 
         // Delegate entire transition sequence to coordinator
-        // Retrieve ExperienceSection from runner
-        // Retrieve ExperienceSection directly from runner's list
-        // Note: currentSection is null because runner isn't active yet
-        final sections = trailComponent.game.experienceSequenceRunner.sections;
-        final to = sections.isNotEmpty ? sections.first : null;
+        // We access MyGame to get the Experience Section (now state-driven)
+        // casting game reference to MyGame to access specific getters
+        final myGame = trailComponent.game;
+        final to = myGame.experienceSection;
 
-        print('PhilosophySection: Retrieved to section: $to');
-
-        if (to is ExperienceSection) {
-          trailComponent.game.transitionCoordinator.startPhilosophyToExperience(
-            from: this,
-            to: to,
-          );
-        } else {
-          print(
-            'PhilosophySection: ERROR - Could not find ExperienceSection (Count: ${sections.length})',
-          );
-        }
+        // to is verified non-null by getter (late final), but check anyway if logic changes
+        myGame.transitionCoordinator.startPhilosophyToExperience(
+          from: this,
+          to: to,
+        );
       } else {
         print('PhilosophySection: Already shattering, ignoring hold complete.');
       }
@@ -273,6 +265,9 @@ class PhilosophySection implements GameSection {
     //titleComponent.opacity = 0.0;
     nextButton.opacity = 0.0;
     rainTransition.setTarget(0.0);
+
+    // Primes the texture memory
+    forceCaptureRefraction();
   }
 
   @override
@@ -292,6 +287,10 @@ class PhilosophySection implements GameSection {
     titleComponent.opacity = 1.0; // Make title visible
     nextButton.opacity = 0.0; // Will fade in at scroll > 1000
     rainTransition.setTarget(0.0);
+
+    // Pre-capture refraction to prevent lag on first hover
+    // This primes the RainTransitionComponent with a valid texture
+    forceCaptureRefraction();
 
     // Trigger initial sound (Phase 1)
     _updateVisuals(0.0);

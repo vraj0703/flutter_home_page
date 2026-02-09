@@ -6,6 +6,7 @@ precision highp float;
 uniform vec2 uSize;
 uniform float uTime;
 uniform float uReveal; // 0.0 to 1.0 for entry bloom pulse
+uniform vec3 uThemeColor; // RGB normalized
 
 out vec4 fragColor;
 
@@ -42,7 +43,8 @@ void main() {
     vec3 finalColor = vec3(0.0);
     float sumWeights = 0.0;
 
-    vec3 bgColor = vec3(0.75);
+    // Use theme color for background tint
+    vec3 bgColor = uThemeColor * 0.2; // Darker version of theme
     float bgWeight = 0.025;
     finalColor += bgColor * bgWeight;
     sumWeights += bgWeight;
@@ -72,13 +74,27 @@ void main() {
         float decayRate = map(wave, 0.0, 1.0, 6.0, 16.0);
         float distanceFactor = exp(-1.0 * decayRate * distFragLight);
 
+        // Tinted Palette using uThemeColor
+        // a = 0.5, 0.5, 0.5 (Base grey)
+        // b = 0.5, 0.5, 0.5 (Amplitude)
+        // c = 1.0, 1.0, 1.0 (Frequency)
+        // d = uThemeColor (Phase shift based on theme)
+        // Actually, to tint it strongly, we should use uThemeColor in 'a' or 'd'
+        
+        // Let's try to make it glow with the theme color
+        // a = uThemeColor * 0.5 + 0.5
+        // b = 0.5
+        
         vec3 color = palette(
-        distanceFactor + angle,
-        vec3(0.5, 0.5, 0.5),
-        vec3(0.5, 0.5, 0.5),
-        vec3(1.0, 1.0, 1.0),
-        vec3(0.0, 0.10, 0.20)
+            distanceFactor + angle,
+            vec3(0.5),                // brightness
+            vec3(0.5),                // contrast
+            vec3(1.0),                // osc
+            uThemeColor * 0.8 + 0.2   // phase tint
         );
+        
+        // Mix with pure theme color to ensure valid branding
+        color = mix(color, uThemeColor, 0.6); 
 
         vec3 lightColor = color * distFragLight * distanceFactor;
 
