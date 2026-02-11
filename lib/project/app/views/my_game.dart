@@ -47,7 +47,6 @@ class MyGame extends FlameGame
   });
 
   final ScrollSystem _philosophyScrollSystem = ScrollSystem();
-  // ScrollOrchestrator absorbed into SequenceRunner
 
   ScrollSystem get scrollSystem => _philosophyScrollSystem;
 
@@ -79,6 +78,9 @@ class MyGame extends FlameGame
   late final ExperienceSection _experienceSection;
 
   late final FlameBlocProvider<SceneBloc, SceneState> _blocProvider;
+
+  bool _warmupComplete = false;
+  bool _gameReadyDispatched = false;
 
   @override
   Future<void> onLoad() async {
@@ -140,28 +142,22 @@ class MyGame extends FlameGame
       stateProvider: stateProvider,
     );
 
-    // Add input controller to Bloc Provider NOT game directly if it needs state interaction?
-    // Actually input controller uses stateProvider directly, it is NOT a FlameBlocListener.
-    // But for consistency let's add it to game.
-    // Wait, ExperienceSection DOES need it.
-    // Add input controller to game
     add(_inputController);
 
-    // Warm up all sections (Shaders & Textures) via Runner
-    // This architecturally ensures all current and future sections are primed.
-    await _primarySequenceRunner.warmUpAll();
+    // Progressive Warmup Strategy:
+    // Do NOT await here. We want the game loop to start running to render the
+    // "Loading" state (splash) AND to technically process the opaque warmup frames
+    // of the Philosophy section in the background.
+    _primarySequenceRunner.warmUpAll().whenComplete(() {
+      _warmupComplete = true;
+    });
 
     // Explicitly warm up components not managed by the sequence runner's warmUp
     _componentFactory.rainTransition.warmUp();
     _componentFactory.circlesBackground.warmUp();
 
-    queuer.queue(event: const SceneEvent.gameReady());
-
     // Register controllers to philosophy scroll system
     _philosophyScrollSystem.register(_primarySequenceRunner);
-
-    // Register experience scroll system
-    // _experienceScrollSystem.register(_experienceSequenceRunner); // Removed
 
     // Initialize TransitionCoordinator
     transitionCoordinator = TransitionCoordinator(this);
@@ -293,6 +289,15 @@ class MyGame extends FlameGame
         _centerTitles(size / 2);
         _componentFactory.logoOverlay.inactivityOpacity +=
             dt / ScrollSequenceConfig.uiFadeDuration;
+
+        // Drive the sequence runner to allow components to tick (if needed)
+        _primarySequenceRunner.update(dt);
+
+        // Dispatch Game Ready only when warmup is fully complete
+        if (_warmupComplete && !_gameReadyDispatched) {
+          _gameReadyDispatched = true;
+          queuer.queue(event: const SceneEvent.gameReady());
+        }
       },
       logo: () {
         _componentFactory.cinematicTitle.position = size / 2;

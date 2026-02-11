@@ -256,18 +256,33 @@ class PhilosophySection implements GameSection {
     if (_scrollProgress <= 0) {
       _resetVisuals();
     }
-    // Pre-compile shader
-    cloudBackground.warmUp();
-    titleComponent.warmUp();
 
-    // Architectural Visibility: Ensure hidden after warmup
-    //cloudBackground.opacity = 0.0;
-    //titleComponent.opacity = 0.0;
+    // Architectural Visibility: Set components to minimally visible
+    // This forces the standard Game Render Loop to process these components
+    // and upload their textures/shaders to the GPU on the REAL rendering context.
+    // NOTE: Opacity must be > 0.01 because PhilosophyCard skips render if alpha <= 0.01
+    cloudBackground.opacity = 0.02;
+    trailComponent.opacity = 0.02;
+    titleComponent.opacity = 0.02;
+    cloudBackground.warmUp();
+    await titleComponent.warmUp();
+
+    // Allow the game loop to cycle for a duration (e.g. 10-15 frames @ 60fps)
+    // This works because MyGame.onLoad will NO LONGER await this method synchronously.
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // Force Reflection Manager to initialize its texture from the "live" scene
+    await orchestrator.reflection.updateReflectionTexture();
+
+    // Capture the valid frame for the transition shader
+    forceCaptureRefraction();
+
+    // Hide components again
+    cloudBackground.opacity = 0.0;
+    trailComponent.opacity = 0.0;
+    titleComponent.opacity = 0.0;
     nextButton.opacity = 0.0;
     rainTransition.setTarget(0.0);
-
-    // Primes the texture memory (sync)
-    forceCaptureRefraction();
   }
 
   @override
@@ -385,7 +400,6 @@ class PhilosophySection implements GameSection {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
 
-    // OPTIMIZATION: Downscale by 50%
     const double scale = 0.5;
     canvas.scale(scale);
 
@@ -409,9 +423,6 @@ class PhilosophySection implements GameSection {
       picture.dispose(); // Prevent GPU memory leak
     }
   }
-
-  // Deprecated single-shot
-  // Future<void> _updateRefractionBackground() async { ... }
 
   @override
   void onResize(Vector2 newSize) {
@@ -536,8 +547,6 @@ class PhilosophySection implements GameSection {
     // Set water level for shader (procedural ocean boundary)
     cloudBackground.setWaterLevel(screenSize.y * 0.72);
   }
-
-  // _updateRefractionBackground Replaced by _captureRefractionFrame in update loop
 
   void _resetVisuals() {
     titleComponent.opacity = 0.0;

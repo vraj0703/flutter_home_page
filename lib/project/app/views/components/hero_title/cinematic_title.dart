@@ -140,4 +140,12 @@ class CinematicTitleComponent extends PositionComponent
   void hide() {
     _primaryTitle.opacity = 0;
   }
+
+  void reset() {
+    // Restore base state for scroll-driven visibility
+    opacity = 1.0;
+    _primaryTitle.opacity = 1.0;
+    _primaryTitle.scale = GameLayout.scaleOne.clone();
+    _primaryTitle.removeAll(_primaryTitle.children.query<Effect>());
+  }
 }
