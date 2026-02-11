@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/models/experience_node.dart';
 
 class GameData {
@@ -9,6 +10,7 @@ class GameData {
       duration: "09/2021 - Present",
       location: "Remote, Lucknow, India",
       url: "https://usa.twinhealth.com",
+      themeColor: Color(0xFF008080), // Medical Teal
       description: [
         "Architected scalable mobile frameworks (Daily Actions, Sensor Flows, Survey Integration), powering 35+ flows with exhaustive documentation, improving testability and time-to-production via JSON config.",
         "Built real-time communication bridges between Flutter, Android, and medical sensor SDKs using method and event channels, reducing development time by 50% through centralised UI/UX logic in flutter.",
@@ -24,6 +26,7 @@ class GameData {
       duration: "02/2017 - 08/2021",
       location: "Gurugram, India",
       url: "https://fieldassist.com",
+      themeColor: Color(0xFFE65100), // Orange/Bronze
       description: [
         "Contributed significantly to lay down the groundwork for 7+ Android apps, focusing on scalable architecture and setting up strong foundations for the team to build upon.",
         "Led and mentored a team of four engineers in building impactful sales automation and analytics apps, with over 100K+ downloads.",
@@ -38,6 +41,7 @@ class GameData {
       duration: "06/2016 - 02/2017",
       location: "Gurugram, India",
       url: "https://payu.in",
+      themeColor: Color(0xFF1A237E), // Deep Navy
       description: [
         "Worked on the PayU Cred Android app within a 15+ member team, focusing on secure credit card management and analytics capabilities.",
       ],
@@ -49,6 +53,7 @@ class GameData {
       duration: "05/2012 - 05/2016",
       location: "Prayagraj, India",
       url: "https://mnnit.ac.in",
+      themeColor: Color(0xFF880E4F), // Maroon
       description: [
         "Engineered a Variant Particle Swarm Optimization (VPSO) algorithm for cloud workflow scheduling, significantly reducing execution and communication costs. The optimized virtual machine utilization, delivering enhanced efficiency compared to standard methods.",
         "Composed an Android app over Bluetooth to control and automate home appliances connected to an Arduino board.",
@@ -63,6 +68,7 @@ class GameData {
       duration: "Until 2012",
       location: "",
       url: "",
+      themeColor: Color(0xFF4A148C), // Purple
       description: [],
     ),
   ];

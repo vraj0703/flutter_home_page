@@ -81,7 +81,7 @@ class BoldTextSection implements GameSection {
 
     // Architectural Visibility: Reveal all components
     boldTextComponent.opacity = 1.0;
-    cinematicTitle.opacity = 1.0;
+    cinematicTitle.reset();
     cinematicSecondaryTitle.opacity = 1.0;
     backgroundRun.opacity = 1.0;
 
@@ -143,7 +143,7 @@ class BoldTextSection implements GameSection {
     // So setting them to 1.0 here is safe as a baseline "active" state,
     // and _updateVisuals will immediately clamp them to the correct state for the scroll position.
 
-    cinematicTitle.opacity = 1.0;
+    cinematicTitle.reset();
     cinematicSecondaryTitle.opacity = 1.0;
     logoOverlay.opacity = 1.0;
     backgroundRun.opacity = 1.0;
@@ -222,5 +222,10 @@ class BoldTextSection implements GameSection {
     final textProgress = (scrollOffset / boldTextEnd).clamp(0.0, 1.0);
     boldTextComponent.scrollProgress = textProgress;
     boldTextComponent.position = centerPosition;
+  }
+
+  @override
+  void dispose() {
+    // No heavy resources to dispose currently
   }
 }

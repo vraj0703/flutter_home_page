@@ -33,7 +33,7 @@ class PhilosophyCard extends PositionComponent
   Matrix4? hitboxMatrix;
 
   // Tilt Logic
-  Vector2 _currentTilt = Vector2.zero();
+  final Vector2 _currentTilt = Vector2.zero();
   Vector2 _targetTilt = Vector2.zero();
   Vector2 get currentTilt => _currentTilt;
 

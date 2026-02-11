@@ -54,9 +54,8 @@ class TransitionCoordinator {
     _triggerCameraShake(intensity: 12.0, duration: 0.5);
 
     // 4. MOUNT FLASH OVERLAY
-    // 4. MOUNT FLASH OVERLAY
-    // Force a fresh capture for the refraction texture
-    await from.forceCaptureRefraction();
+    // Force a fresh capture for the refraction texture (sync)
+    from.forceCaptureRefraction();
 
     final flash = FlashTransitionComponent(
       texture: from.rainTransition.backgroundTexture,
@@ -74,7 +73,8 @@ class TransitionCoordinator {
         // But primarily, Experience is an overlay state.
 
         // Trigger the Hero Entry Animation (Non-scroll dependent)
-        await to.animateEntry();
+        // Handled by ExperienceSection.onNewState
+        // await to.animateEntry();
       },
       onComplete: () {
         // Flash fully decayed, unblock input
@@ -99,20 +99,16 @@ class TransitionCoordinator {
     await from.exit();
 
     // 2. Switch State back to Active (Philosophy)
-    // We assume Philosophy is still at the bottom (peak) where we left it.
-    game.queuer.queue(
-      event: const SceneEvent.onScroll(),
-    ); // RE-USED event to trigger Active state
+    game.queuer.queue(event: const SceneEvent.onScroll());
 
-    // 3. Resume Philosophy Runner (in reverse capability if needed, or just standard start)
-    // Since we are at the bottom, the user will scroll up.
-    // We should probably ensure the runner is "active" again.
-    game.primarySequenceRunner.start();
+    // 3. Resume Philosophy Runner in reverse mode
+    // This properly re-enters the last section (Philosophy) at max scroll,
+    // calling warmUp() and enterReverse() which restores all components.
+    // Unlike start(), resumeReverse() doesn't have the _isActive early-return
+    // and correctly positions the scroll at the section's maxScrollExtent.
+    await game.primarySequenceRunner.resumeReverse();
 
-    // 4. Force a frame of update to ensure visuals are ready?
-    // Usually automatic.
-
-    // 5. Unblock
+    // 4. Unblock
     game.unblockInput();
     _isTransitioning = false;
   }

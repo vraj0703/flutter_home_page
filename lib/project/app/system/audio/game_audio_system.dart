@@ -51,6 +51,9 @@ class GameAudioSystem {
         GameAudioConfig.thunderCrackSfx,
         GameAudioConfig.glassBreakSfx,
         GameAudioConfig.waterdropSfx,
+        GameAudioConfig.gearTickSfx,
+        GameAudioConfig.selectionClickSfx,
+        GameAudioConfig.ambientBreeze,
       ]);
     } catch (e) {
       // Ignore audio loading errors (likely format issues on web)
@@ -75,13 +78,10 @@ class GameAudioSystem {
   void playHover() {
     /*final now = DateTime.now();
     if (now.difference(_lastHoverTime).inMilliseconds >
-        GameAudioConfig.hoverThrottleMs) {
-      _safePlay(
-        GameAudioConfig.hoverSfx,
-        volume: GameAudioConfig.hoverVolume,
-      );
-      _lastHoverTime = now;
-    }*/
+        GameAudioConfig.hoverThrottleMs) {*/
+    //_safePlay(GameAudioConfig.hoverSfx, volume: GameAudioConfig.hoverVolume);
+    // _lastHoverTime = now;
+    //}
   }
 
   void playClick() {
@@ -195,6 +195,13 @@ class GameAudioSystem {
   void playScrollTick() {
     // Optional: Very quiet tick for scrolling
     // FlameAudio.play(GameAudioConfig.scrollTickSfx, volume: 0.1);
+  }
+
+  void playGearTick() {
+   /* _safePlay(
+      GameAudioConfig.gearTickSfx,
+      volume: GameAudioConfig.sfxVolume * 0.8,
+    );*/
   }
 
   /// Play whoosh sound when cards flip

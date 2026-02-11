@@ -59,5 +59,10 @@ abstract class GameSection {
   ///
   /// Returns [ScrollResult] to indicate if the scroll was consumed,
   /// or if it overflowed/underflowed to the next/previous section.
+  /// Scrolls to the offset.
   ScrollResult handleScroll(double delta);
+
+  /// Disposes of heavy resources (shaders, audio players) when the section is
+  /// no longer needed in the immediate sequence.
+  void dispose();
 }

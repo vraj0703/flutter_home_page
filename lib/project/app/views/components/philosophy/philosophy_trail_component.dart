@@ -13,6 +13,7 @@ class PhilosophyTrailComponent extends PositionComponent
   // Smoothing Logic
   double _targetScroll = 0.0;
   double _currentScroll = 0.0;
+  double _velocity = 0.0;
   void Function(double smoothedOffset)? onScrollUpdate;
 
   // 3D Anchors (X, Y, Depth)
@@ -140,6 +141,9 @@ class PhilosophyTrailComponent extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
+    // Optimization: Skip all logic if hidden
+    if (opacity <= 0.0) return;
+
     // Manual Hover Check (Robust Fallback)
     // Only process inputs if we are actually visible
     if (opacity > 0.01) {
@@ -149,24 +153,22 @@ class PhilosophyTrailComponent extends PositionComponent
       }
     }
 
-    // Inertia Logic: Lerp current -> target
-    // Smoothing factor of 2.0 (was 5.0) for "heavier/fluid" float
-    const double smoothingSpeed = 2.0;
+    // Spring Physics Logic
+    const double stiffness = 50.0;
+    const double damping = 15.0;
+    const double mass = 1.0;
 
-    // Optimization: Don't update SCROLL if close enough (but continue to update animation below)
-    if ((_targetScroll - _currentScroll).abs() < 0.01) {
-      if (_currentScroll != _targetScroll) {
-        _currentScroll = _targetScroll;
-        onScrollUpdate?.call(_currentScroll);
-      }
-    } else {
-      // Only lerp if we haven't snapped
-      _currentScroll += (_targetScroll - _currentScroll) * smoothingSpeed * dt;
-    }
+    final displacement = _targetScroll - _currentScroll;
+    final force = displacement * stiffness - _velocity * damping;
+    final acceleration = force / mass;
 
-    // If very close, snap to avoid jitter
-    if ((_targetScroll - _currentScroll).abs() < 0.5) {
+    _velocity += acceleration * dt;
+    _currentScroll += _velocity * dt;
+
+    // Snap if close and slow to prevent micro-jitter
+    if (displacement.abs() < 0.5 && _velocity.abs() < 10.0) {
       _currentScroll = _targetScroll;
+      _velocity = 0.0;
     }
 
     // Notify controller to update visuals (Title + Trail) based on smoothed value
@@ -300,7 +302,7 @@ class PhilosophyTrailComponent extends PositionComponent
     // Construct Matrix
     final matrix = Matrix4.identity();
 
-    matrix.translate(pos.x, pos.y);
+    matrix.translate(pos.x, pos.y, 0.0);
 
     matrix.scale(scale, scale, 1.0);
 
@@ -312,11 +314,11 @@ class PhilosophyTrailComponent extends PositionComponent
     matrix.rotateY(card.currentTilt.x * 0.25);
 
     final stableHitMatrix = matrix.clone();
-    stableHitMatrix.translate(-card.size.x / 2, -card.size.y / 2);
+    stableHitMatrix.translate(-card.size.x / 2, -card.size.y / 2, 0.0);
     card.hitboxMatrix = stableHitMatrix;
     matrix.rotateY(card.flipProgress * math.pi);
 
-    matrix.translate(-card.size.x / 2, -card.size.y / 2);
+    matrix.translate(-card.size.x / 2, -card.size.y / 2, 0.0);
 
     card.transformMat = matrix;
     card.position = Vector2.zero();

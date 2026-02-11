@@ -31,6 +31,11 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   }
 
   @override
+  void onChange(Change<SceneState> change) {
+    super.onChange(change);
+  }
+
+  @override
   SceneState sceneState() => state;
 
   @override

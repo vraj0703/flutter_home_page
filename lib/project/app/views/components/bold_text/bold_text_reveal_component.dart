@@ -63,8 +63,9 @@ class BoldTextRevealComponent extends PositionComponent
     final textPainter = TextPainter(
       text: TextSpan(text: text, style: paintStyle),
       textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
     );
-    textPainter.layout();
+    textPainter.layout(maxWidth: 800);
 
     const double padding = 60.0;
     final width = textPainter.width + padding * 2;

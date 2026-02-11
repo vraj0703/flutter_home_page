@@ -29,6 +29,7 @@ class RainTransitionComponent extends PositionComponent
   void triggerShatter() {
     if (_isShattering) return;
     _isShattering = true;
+    opacity = 1.0;
 
     // Add the ShatterEffect controller
     game.add(
@@ -54,7 +55,10 @@ class RainTransitionComponent extends PositionComponent
     _initEmptyBackground();
   }
 
-  void setTarget(double val) => _targetIntensity = val;
+  void setTarget(double val) {
+    _targetIntensity = val;
+    if (val > 0.0) opacity = 1.0;
+  }
 
   void reset() => _targetIntensity = 0.0;
 
@@ -98,6 +102,15 @@ class RainTransitionComponent extends PositionComponent
 
   @override
   void update(double dt) {
+    // Optimization: Skip update if dormant
+    if (opacity <= 0.0 &&
+        _targetIntensity <= 0.001 &&
+        !_manualWarmup &&
+        !_isShattering &&
+        currentIntensity <= 0.001) {
+      return;
+    }
+
     super.update(dt);
     _time += dt;
 
@@ -233,11 +246,11 @@ class RainTransitionComponent extends PositionComponent
     // Warmup auto-off
     if (_manualWarmup) {
       if (_manualWarmupFrames % 10 == 0) {
-        print('RainTransitionComponent: Warmup Frame $_manualWarmupFrames');
+        // print('RainTransitionComponent: Warmup Frame $_manualWarmupFrames');
       }
       _manualWarmupFrames++;
       if (_manualWarmupFrames > 20) {
-        print('RainTransitionComponent: Warmup Completed');
+        // print('RainTransitionComponent: Warmup Completed');
         _manualWarmup = false;
       }
     }

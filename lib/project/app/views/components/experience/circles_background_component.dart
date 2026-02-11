@@ -24,6 +24,11 @@ class CirclesBackgroundComponent extends PositionComponent
     _time += dt;
   }
 
+  void setScrollProgress(double progress) {
+    // visual feedback for scroll
+    angle = progress * 0.5;
+  }
+
   bool _manualWarmup = false;
   int _manualWarmupFrames = 0;
 
@@ -59,11 +64,11 @@ class CirclesBackgroundComponent extends PositionComponent
       shader.setFloat(3, 0.5);
 
       if (_manualWarmupFrames % 10 == 0) {
-        print('CirclesBackgroundComponent: Warmup Frame $_manualWarmupFrames');
+        // print('CirclesBackgroundComponent: Warmup Frame $_manualWarmupFrames');
       }
       _manualWarmupFrames++;
       if (_manualWarmupFrames > 20) {
-        print('CirclesBackgroundComponent: Warmup Completed');
+        // print('CirclesBackgroundComponent: Warmup Completed');
         _manualWarmup = false;
         // Reset uniform
         shader.setFloat(3, revealProgress);

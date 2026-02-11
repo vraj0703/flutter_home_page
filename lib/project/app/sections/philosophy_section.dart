@@ -34,7 +34,6 @@ class PhilosophySection implements GameSection {
   bool _isShattering = false;
 
   // Snap-to-Strike tracking
-  final Set<int> _triggeredSnaps = {};
 
   PhilosophySection({
     required this.titleComponent,
@@ -82,7 +81,6 @@ class PhilosophySection implements GameSection {
       // Hold complete → Delegate to TransitionCoordinator
       if (!_isShattering) {
         _isShattering = true;
-        print('PhilosophySection: Hold Complete! Triggering transition.');
 
         // Delegate entire transition sequence to coordinator
         // We access MyGame to get the Experience Section (now state-driven)
@@ -95,9 +93,7 @@ class PhilosophySection implements GameSection {
           from: this,
           to: to,
         );
-      } else {
-        print('PhilosophySection: Already shattering, ignoring hold complete.');
-      }
+      } else {}
     };
 
     rainTransition.onShatterComplete = () {
@@ -109,9 +105,13 @@ class PhilosophySection implements GameSection {
 
       // Delay 100ms before advancing to next section
       Future.delayed(const Duration(milliseconds: 100), () {
-        onComplete?.call();
+        _triggerComplete();
       });
     };
+  }
+
+  void _triggerComplete() {
+    onComplete?.call();
   }
 
   @override
@@ -266,7 +266,7 @@ class PhilosophySection implements GameSection {
     nextButton.opacity = 0.0;
     rainTransition.setTarget(0.0);
 
-    // Primes the texture memory
+    // Primes the texture memory (sync)
     forceCaptureRefraction();
   }
 
@@ -289,8 +289,8 @@ class PhilosophySection implements GameSection {
     rainTransition.setTarget(0.0);
 
     // Pre-capture refraction to prevent lag on first hover
-    // This primes the RainTransitionComponent with a valid texture
-    forceCaptureRefraction();
+    // This primes the RainTransitionComponent with a valid texture (sync)
+    // REMOVED: forceCaptureRefraction(); // Causes lag on entry. Rely on warmUp() instead.
 
     // Trigger initial sound (Phase 1)
     _updateVisuals(0.0);
@@ -331,6 +331,7 @@ class PhilosophySection implements GameSection {
 
     // Clean up reflection resources to prevent memory leaks
     orchestrator.reflection.clearTargets();
+    orchestrator.holdProgress = 0.0; // Stop thunder simulation
 
     // Stop background capture loop
     _freezeCapture = true;
@@ -359,21 +360,28 @@ class PhilosophySection implements GameSection {
 
     // 2. Real-time Refraction Capture
     // Only capture if we are interacting with the rain
-    if ((nextButton.isHovering || rainTransition.currentIntensity > 0.0) &&
+    if ((nextButton.isHovering ||
+            rainTransition.currentIntensity > 0.0 ||
+            _isShattering) &&
         !_freezeCapture) {
       _frameCounter++;
-      // Throttle: Capture every 2nd frame (30fps effective) to save GPU/CPU
-      if (_frameCounter % 2 == 0) {
+
+      // Optimization Logic:
+      // If we are SHATTERING or HOLDING, we need full 60fps for smoothness.
+      // If we are just idling with some intensity, we can throttle.
+      bool needsHighFPS = _isShattering || nextButton.isHovering;
+
+      if (needsHighFPS || _frameCounter % 2 == 0) {
         _captureRefractionFrame();
       }
     }
   }
 
-  Future<void> forceCaptureRefraction() async {
-    await _captureRefractionFrame();
+  void forceCaptureRefraction() {
+    _captureRefractionFrame();
   }
 
-  Future<void> _captureRefractionFrame() async {
+  void _captureRefractionFrame() {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
 
@@ -391,19 +399,15 @@ class PhilosophySection implements GameSection {
     final int w = (screenSize.x * scale).toInt();
     final int h = (screenSize.y * scale).toInt();
 
-    // Use toImage (async) - toImageSync is better but might not be available in all older Flutter versions
-    // If the user's environment is very new, toImageSync is preferred.
-    // Given the context 2026, it definitely exists.
+    // toImageSync avoids the raster thread roundtrip (available in Flutter 3.x+)
     try {
-      final img = await picture.toImage(w, h);
+      final img = picture.toImageSync(w, h);
       rainTransition.updateBackgroundTexture(img);
     } catch (e) {
-      // Handle disposal if error
+      // Silently handle disposal errors
+    } finally {
+      picture.dispose(); // Prevent GPU memory leak
     }
-    // picture.dispose(); // Picture doesn't need explicit dispose if we endRecording?
-    // Actually `Picture` object normally should be disposed if not used?
-    // `toImage` consumes it? No.
-    // picture.dispose(); // Good practice.
   }
 
   // Deprecated single-shot
@@ -412,7 +416,7 @@ class PhilosophySection implements GameSection {
   @override
   void onResize(Vector2 newSize) {
     screenSize = newSize;
-    if (titleComponent.opacity == 0.0) {
+    if (titleComponent.isLoaded && titleComponent.opacity == 0.0) {
       titleComponent.position = Vector2(screenSize.x / 2, screenSize.y * 0.7);
     }
   }
@@ -543,6 +547,7 @@ class PhilosophySection implements GameSection {
     _currentPhase = 0;
 
     // Reset Trail (prevent leaks)
+    trailComponent.setTargetScroll(0.0);
     trailComponent.updateTrailAnimation(0.0);
   }
 
@@ -556,7 +561,16 @@ class PhilosophySection implements GameSection {
     _freezeCapture = false;
     _isShattering = false;
     _hasWarmedUpNext = false;
+  }
 
-    // Component removal and texture disposal happens in exit()
+  @override
+  void dispose() {
+    // Strict Cleanup of Heavy Resources
+    rainTransition.disposeResources();
+    orchestrator.reflection.clearTargets();
+    orchestrator.holdProgress = 0.0;
+
+    // Stop all specific audio loops if any are running
+    // game.audio.stopPhilosophyLoops(); // If such a method existed
   }
 }

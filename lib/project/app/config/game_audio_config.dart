@@ -29,6 +29,13 @@ class GameAudioConfig {
   static const String thunderCrackSfx = 'thunder_crack.mp3';
   static const String thunderRollSfx = 'thunder_roll.wav';
 
+  // Glass Clockwork SFX
+  static const String gearTickSfx = 'ting.wav'; // Replaced missing gear_tick
+  static const String selectionClickSfx =
+      'bouncy_arrow.wav'; // Replaced missing selection_click
+  static const String ambientBreeze =
+      'space_ambient.mp3'; // Replaced missing ambient_breeze
+
   // Volumes
   static const double bgmVolume = 0.4;
   static const double sfxVolume = 0.6;

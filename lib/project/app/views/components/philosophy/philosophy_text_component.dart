@@ -88,7 +88,7 @@ class PhilosophyTextComponent extends PositionComponent
   }
 
   @override
-  double get opacity => _fadeText.opacity;
+  double get opacity => isLoaded ? _fadeText.opacity : 0.0;
 
   @override
   set opacity(double value) {

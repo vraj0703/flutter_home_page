@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 class ExperienceNode {
   final String year;
   final String title; // "Senior Software Engineer"
@@ -6,6 +8,7 @@ class ExperienceNode {
   final String location; // "Remote, Lucknow, India"
   final String url;
   final List<String> description;
+  final Color? themeColor;
 
   const ExperienceNode({
     required this.year,
@@ -15,5 +18,6 @@ class ExperienceNode {
     required this.location,
     required this.url,
     required this.description,
+    this.themeColor,
   });
 }

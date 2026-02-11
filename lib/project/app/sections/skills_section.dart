@@ -17,19 +17,16 @@ class SkillsSection implements GameSection {
   static const double _fadeOutEnd = _fadeOutStart + 800.0;
   static const double _totalHeight = _fadeOutEnd;
 
-  SkillsSection({
-    required this.keyboardComponent,
-    required this.screenSize,
-  });
+  SkillsSection({required this.keyboardComponent, required this.screenSize});
 
   @override
   double get maxScrollExtent => _totalHeight;
 
   @override
   List<Vector2> get snapRegions => [
-        Vector2(0, 0),
-        Vector2(_fadeInEnd, _fadeOutStart), // Snap while visible
-      ];
+    Vector2(0, 0),
+    Vector2(_fadeInEnd, _fadeOutStart), // Snap while visible
+  ];
 
   @override
   VoidCallback? onComplete;
@@ -117,4 +114,7 @@ class SkillsSection implements GameSection {
 
   @override
   void update(double dt) {}
+
+  @override
+  void dispose() {}
 }

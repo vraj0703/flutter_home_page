@@ -16,19 +16,16 @@ class ContactSection implements GameSection {
   static const double _fadeOutEnd = _fadeOutStart + 800.0;
   static const double _totalHeight = _fadeOutEnd;
 
-  ContactSection({
-    required this.contactComponent,
-    required this.screenSize,
-  });
+  ContactSection({required this.contactComponent, required this.screenSize});
 
   @override
   double get maxScrollExtent => _totalHeight;
 
   @override
   List<Vector2> get snapRegions => [
-        Vector2(0, 0),
-        Vector2(_fadeInEnd, _fadeOutStart),
-      ];
+    Vector2(0, 0),
+    Vector2(_fadeInEnd, _fadeOutStart),
+  ];
 
   @override
   VoidCallback? onComplete;
@@ -113,4 +110,7 @@ class ContactSection implements GameSection {
 
   @override
   void update(double dt) {}
+
+  @override
+  void dispose() {}
 }

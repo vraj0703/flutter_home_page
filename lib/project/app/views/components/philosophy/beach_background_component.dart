@@ -12,9 +12,11 @@ class BeachBackgroundComponent extends PositionComponent
 
   /// Time accumulator for shader animation
   double _time = 0.0;
-  late Image _dummyTexture;
+  Image? _dummyTexture;
   final List<PositionComponent> reflectionTargets = [];
   double _waterY = 0.0;
+  int _warmupFrames = 0;
+
   double get waterY => _waterY;
 
   // Ripple effect state
@@ -62,7 +64,14 @@ class BeachBackgroundComponent extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    // Update time for shader animation
+    if (_warmupFrames < 3) {
+      _warmupFrames++;
+      if (_warmupFrames == 3) {
+        if (opacity <= 0.002) {
+          opacity = 0.0;
+        }
+      }
+    }
     _time += dt;
 
     // Update ripple animation time
@@ -94,7 +103,11 @@ class BeachBackgroundComponent extends PositionComponent
     final effectiveOpacity = (opacity <= 0.0 && _manualWarmup) ? 0.01 : opacity;
     double texW = 0.0;
     double texH = 0.0;
-    Image samplerImage = _dummyTexture;
+
+    // Safety check for texture
+    if (_dummyTexture == null) return;
+
+    Image samplerImage = _dummyTexture!;
     Image? reflTexture = orchestrator?.reflection.reflectionTexture;
 
     try {

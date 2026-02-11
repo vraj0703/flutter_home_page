@@ -818,8 +818,8 @@ return experience(_that.uiOpacity);case _:
 /// @nodoc
 
 
-class Loading implements SceneState {
-  const Loading({this.isSvgReady = false, this.isGameReady = false});
+class Loading extends SceneState {
+  const Loading({this.isSvgReady = false, this.isGameReady = false}): super._();
   
 
 @JsonKey() final  bool isSvgReady;
@@ -886,8 +886,8 @@ as bool,
 /// @nodoc
 
 
-class Logo implements SceneState {
-  const Logo();
+class Logo extends SceneState {
+  const Logo(): super._();
   
 
 
@@ -918,8 +918,8 @@ String toString() {
 /// @nodoc
 
 
-class LogoOverlayRemoving implements SceneState {
-  const LogoOverlayRemoving();
+class LogoOverlayRemoving extends SceneState {
+  const LogoOverlayRemoving(): super._();
   
 
 
@@ -950,8 +950,8 @@ String toString() {
 /// @nodoc
 
 
-class TitleLoading implements SceneState {
-  const TitleLoading();
+class TitleLoading extends SceneState {
+  const TitleLoading(): super._();
   
 
 
@@ -982,8 +982,8 @@ String toString() {
 /// @nodoc
 
 
-class Title implements SceneState {
-  const Title();
+class Title extends SceneState {
+  const Title(): super._();
   
 
 
@@ -1014,8 +1014,8 @@ String toString() {
 /// @nodoc
 
 
-class Active implements SceneState {
-  const Active({this.uiOpacity = 1.0});
+class Active extends SceneState {
+  const Active({this.uiOpacity = 1.0}): super._();
   
 
 @JsonKey() final  double uiOpacity;
@@ -1080,8 +1080,8 @@ as double,
 /// @nodoc
 
 
-class LoadingExperience implements SceneState {
-  const LoadingExperience();
+class LoadingExperience extends SceneState {
+  const LoadingExperience(): super._();
   
 
 
@@ -1112,8 +1112,8 @@ String toString() {
 /// @nodoc
 
 
-class Experience implements SceneState {
-  const Experience({this.uiOpacity = 1.0});
+class Experience extends SceneState {
+  const Experience({this.uiOpacity = 1.0}): super._();
   
 
 @JsonKey() final  double uiOpacity;

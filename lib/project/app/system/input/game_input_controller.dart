@@ -24,6 +24,8 @@ class GameInputController extends Component {
 
   // Handle Scroll (Delegated from Game)
   void handleScroll(PointerScrollInfo info) {
+    if (!_shouldHandleInput) return;
+
     queuer.queue(event: const SceneEvent.onScroll());
 
     final delta = info.scrollDelta.global.y;
@@ -32,17 +34,33 @@ class GameInputController extends Component {
   }
 
   void handleTapDown(TapDownEvent event) {
+    if (!_shouldHandleInput) {
+      return;
+    }
+
     audioSystem.playClick();
     queuer.queue(event: SceneEvent.tapDown(event));
   }
 
   void handlePointerMove(PointerMoveEvent event) {
+    // Cursor updates might be allowed even during transitions, but audio triggering should be guarded
     cursorSystem.setCursorPosition(event.localPosition);
-    audioSystem.playHover();
+
+    if (_shouldHandleInput) {
+      audioSystem.playHover();
+    }
   }
 
   void handleMouseMove(PointerHoverInfo info) {
     cursorSystem.setCursorPosition(info.eventPosition.global);
-    audioSystem.playHover();
+
+    if (_shouldHandleInput) {
+      audioSystem.playHover();
+    }
+  }
+
+  bool get _shouldHandleInput {
+    final state = stateProvider.sceneState();
+    return state.isScrollable || state.isInteractable;
   }
 }

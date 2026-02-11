@@ -2,6 +2,8 @@ part of 'scene_bloc.dart';
 
 @freezed
 class SceneState with _$SceneState {
+  const SceneState._();
+
   const factory SceneState.loading({
     @Default(false) bool isSvgReady,
     @Default(false) bool isGameReady,
@@ -21,4 +23,8 @@ class SceneState with _$SceneState {
 
   const factory SceneState.experience({@Default(1.0) double uiOpacity}) =
       Experience;
+
+  bool get isScrollable => this is Active;
+  bool get isInteractable =>
+      this is Experience || this is Logo || this is Title;
 }

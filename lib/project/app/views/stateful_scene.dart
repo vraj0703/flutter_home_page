@@ -115,6 +115,7 @@ class _StatefulSceneState extends State<StatefulScene>
             }
           },
           logoOverlayRemoving: () {
+            _game.startLogoRemoval();
             _game.audio.playEnterSound();
             _game.loadTitleBackground();
           },
@@ -127,9 +128,15 @@ class _StatefulSceneState extends State<StatefulScene>
           },
           active: (_) {
             // Game is now fully active and scrolling
+            _game.unblockInput();
+            _game.primarySequenceRunner.start();
           },
-          loadingExperience: () {},
-          experience: (_) {},
+          loadingExperience: () {
+            // Handled by MyGame listener
+          },
+          experience: (_) {
+            // Handled by MyGame listener
+          },
         );
       },
       builder: (context, state) {

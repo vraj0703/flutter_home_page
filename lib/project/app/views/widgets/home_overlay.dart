@@ -40,14 +40,18 @@ class HomeOverlay extends StatelessWidget {
           bottom: GameLayout.arrowBottomMargin,
           left: 0,
           right: 0,
-          child: Center(
-            child: Opacity(
-              opacity: opacity,
-              child: BouncingArrow(
-                key: ValueKey("bouncing_arrow"),
-                bounceAnimation: bounceAnimation,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Opacity(
+                opacity: opacity,
+                child: BouncingArrow(
+                  key: ValueKey("bouncing_arrow"),
+                  bounceAnimation: bounceAnimation,
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ],

@@ -9,9 +9,10 @@ class NextButtonComponent extends PositionComponent
     with HasGameReference, HoverCallbacks, HasPaint {
   bool _isHovering = false;
   double _holdProgress = 0.0;
-  static const double holdDuration = 3.0;
+  static const double holdDuration = 1.0;
 
   static const double radius = 40.0;
+  static const Color accentColor = Color(0xFF00FFFF); // Neon Cyan
 
   bool get isHovering => _isHovering;
 
@@ -26,6 +27,11 @@ class NextButtonComponent extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+    if (opacity <= 0.0) {
+      _holdProgress = 0.0;
+      _isHovering = false;
+      return;
+    }
     final previousProgress = _holdProgress;
 
     if (isHovered) {
@@ -53,7 +59,8 @@ class NextButtonComponent extends PositionComponent
 
     if (_holdProgress > 0.0) {
       final progressPaint = Paint()
-        ..color = Colors.white.withOpacity(0.6 * opacity)
+        ..color = accentColor
+            .withOpacity(0.8 * opacity) // Use Accent
         ..style = PaintingStyle.stroke
         ..strokeWidth = 4.0;
 
@@ -66,8 +73,10 @@ class NextButtonComponent extends PositionComponent
       canvas.drawArc(rect, -3.14159 / 2, sweepAngle, false, progressPaint);
     }
 
+    final borderColor = _isHovering ? accentColor : Colors.white;
+
     final borderPaint = Paint()
-      ..color = Colors.white.withOpacity(opacity)
+      ..color = borderColor.withOpacity(opacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
 

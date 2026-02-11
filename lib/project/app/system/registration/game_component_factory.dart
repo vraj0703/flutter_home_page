@@ -2,14 +2,13 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flutter/material.dart' as material;
-import 'package:flutter_home_page/project/app/system/builders/experience_builders.dart';
-import 'package:flutter_home_page/project/app/system/builders/god_ray_builder.dart';
-import 'package:flutter_home_page/project/app/system/builders/philosophy_builders.dart';
-import 'package:flutter_home_page/project/app/system/builders/shader_scene_builder.dart';
-import 'package:flutter_home_page/project/app/system/scroll/scroll_orchestrator.dart';
+import 'package:flutter_home_page/project/app/config/game_assets.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/game_strings.dart';
+import 'package:flutter_home_page/project/app/config/game_styles.dart';
+
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_tint_component.dart';
-import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_background.dart';
 import 'package:flutter_home_page/project/app/views/components/bold_text/bold_text_reveal_component.dart';
 import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_secondary_title.dart';
 import 'package:flutter_home_page/project/app/views/components/hero_title/cinematic_title.dart';
@@ -22,139 +21,224 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/philos
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/rain_transition_component.dart';
 import 'package:flutter_home_page/project/app/views/components/experience/circles_background_component.dart';
-import 'package:flutter_home_page/project/app/views/components/experience/experience_rotator_component.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 
-// Registration imports
-import 'package:flutter_home_page/project/app/system/registration/component_registry.dart';
-import 'package:flutter_home_page/project/app/models/component_context.dart';
-import 'package:flutter_home_page/project/app/config/component_ids.dart';
-import 'package:flutter_home_page/project/app/system/builders/background_builders.dart';
-import 'package:flutter_home_page/project/app/system/builders/logo_layer_builders.dart';
-import 'package:flutter_home_page/project/app/system/builders/title_builders.dart';
-import 'package:flutter_home_page/project/app/views/components/skills/skills_keyboard_component.dart';
-import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_page_component.dart';
-import 'package:flutter_home_page/project/app/views/components/contact/contact_page_component.dart';
-
 class GameComponentFactory {
-  // Initialize all components
-  final registry = ComponentRegistry();
+  // Shader cache to avoid duplicate loads
+  final Map<String, FragmentProgram> _shaderCache = {};
 
+  // ── Private component fields ──────────────────────────────────────────
+  late final RayMarchingShadowComponent _shadowScene;
+  late final LogoComponent _logoComponent;
+  late final LogoOverlayComponent _logoOverlay;
+  late final GodRayComponent _godRay;
+  late final BackgroundRunComponent _backgroundRun;
+  late final BackgroundTintComponent _backgroundTint;
+  late final BeachBackgroundComponent _beachBackground;
+  late final CinematicTitleComponent _cinematicTitle;
+  late final CinematicSecondaryTitleComponent _cinematicSecondaryTitle;
+  late final BoldTextRevealComponent _boldTextReveal;
+  late final PhilosophyTextComponent _philosophyText;
+  late final PhilosophyTrailComponent _philosophyTrail;
+  late final NextButtonComponent _nextButton;
+  late final RainTransitionComponent _rainTransition;
+  late final CirclesBackgroundComponent _circlesBackground;
+
+  // ── Typed public getters ──────────────────────────────────────────────
+  RayMarchingShadowComponent get shadowScene => _shadowScene;
+  LogoComponent get logoComponent => _logoComponent;
+  LogoOverlayComponent get logoOverlay => _logoOverlay;
+  GodRayComponent get godRay => _godRay;
+  BackgroundRunComponent get backgroundRun => _backgroundRun;
+  BackgroundTintComponent get backgroundTint => _backgroundTint;
+  BeachBackgroundComponent get beachBackground => _beachBackground;
+  CinematicTitleComponent get cinematicTitle => _cinematicTitle;
+  CinematicSecondaryTitleComponent get cinematicSecondaryTitle =>
+      _cinematicSecondaryTitle;
+  BoldTextRevealComponent get boldTextReveal => _boldTextReveal;
+  PhilosophyTextComponent get philosophyText => _philosophyText;
+  PhilosophyTrailComponent get philosophyTrail => _philosophyTrail;
+  NextButtonComponent get nextButton => _nextButton;
+  RainTransitionComponent get rainTransition => _rainTransition;
+  CirclesBackgroundComponent get circlesBackground => _circlesBackground;
+
+  /// All components in render-priority order for adding to the game tree.
+  List<Component> get allComponents => [
+    _shadowScene,
+    _logoComponent,
+    _logoOverlay,
+    _godRay,
+    _backgroundRun,
+    _backgroundTint,
+    _beachBackground,
+    _cinematicTitle,
+    _cinematicSecondaryTitle,
+    _boldTextReveal,
+    _philosophyText,
+    _philosophyTrail,
+    _nextButton,
+    _rainTransition,
+    _circlesBackground,
+  ];
+
+  // ── Shader helper ─────────────────────────────────────────────────────
+  Future<FragmentShader> _loadShader(String path) async {
+    if (!_shaderCache.containsKey(path)) {
+      _shaderCache[path] = await FragmentProgram.fromAsset(path);
+    }
+    return _shaderCache[path]!.fragmentShader();
+  }
+
+  // ── Initialize all components directly ────────────────────────────────
   Future<void> initializeComponents({
     required Vector2 size,
     required StateProvider stateProvider,
     required Queuer queuer,
-    required ScrollOrchestrator scrollOrchestrator,
     required material.Color Function() backgroundColorCallback,
     void Function(int section)? onSectionTap,
   }) async {
-    // Register all builders
-    registry.register(ShadowSceneBuilder());
-    registry.register(LogoComponentBuilder());
-    registry.register(LogoOverlayBuilder());
-    registry.register(GodRayBuilder());
+    // ─── Shadow Scene ───
+    final logoImage = await Flame.images.load(GameAssets.logo);
+    final godRaysShader = await _loadShader(GameAssets.godRaysShader);
+    final startZoom = GameLayout.logoInitialScale;
+    final baseLogoSize = Vector2(
+      logoImage.width.toDouble(),
+      logoImage.height.toDouble(),
+    );
+    final logoSize = baseLogoSize * startZoom;
 
-    registry.register(BackgroundRunBuilder());
-    registry.register(BackgroundTintBuilder());
-    registry.register(CloudBackgroundBuilder());
+    _shadowScene = RayMarchingShadowComponent(
+      fragmentShader: godRaysShader,
+      logoImage: logoImage,
+      logoSize: logoSize,
+    );
+    _shadowScene.logoPosition = size / 2;
 
-    registry.register(CinematicTitleBuilder());
-    registry.register(CinematicSecondaryTitleBuilder());
-    registry.register(BoldTextRevealBuilder());
+    // ─── Logo ───
+    final logoShader = await _loadShader(GameAssets.logoShader);
+    final tintColor = backgroundColorCallback();
 
-    registry.register(PhilosophyTextBuilder());
-    registry.register(PhilosophyTrailBuilder());
-    registry.register(NextButtonBuilder());
-    registry.register(RainTransitionBuilder());
-    // registry.register(RainTransitionBuilder()); // Duplicate removed
-    registry.register(CirclesBackgroundBuilder());
-    registry.register(ExperienceRotatorBuilder());
-    
-    // Additional Builders
-    //registry.register(SkillsKeyboardBuilder());
-    //registry.register(TestimonialPageBuilder());
-    //registry.register(ContactPageBuilder());
+    _logoComponent = LogoComponent(
+      shader: logoShader,
+      logoTexture: logoImage,
+      tintColor: tintColor,
+      size: logoSize,
+      position: size / 2,
+    );
+    _logoComponent.priority = GameLayout.zLogo;
 
-    final shaderCache = <String, FragmentProgram>{};
-
-    final context = ComponentContext(
-      size: size,
+    // ─── Logo Overlay ───
+    _logoOverlay = LogoOverlayComponent(
       stateProvider: stateProvider,
       queuer: queuer,
-      scrollOrchestrator: scrollOrchestrator,
-      backgroundColorCallback: backgroundColorCallback,
-      loadShader: (path) async {
-        if (!shaderCache.containsKey(path)) {
-          shaderCache[path] = await FragmentProgram.fromAsset(path);
-        }
-        return shaderCache[path]!.fragmentShader();
-      },
-      loadImage: (path) async {
-        return Flame.images.load(path);
-      },
+    );
+    _logoOverlay.position = size / 2;
+    _logoOverlay.priority = GameLayout.zLogoOverlay;
+    _logoOverlay.gameSize = size;
+
+    // ─── God Ray ───
+    _godRay = GodRayComponent();
+    _godRay.priority = GameLayout.zGodRay;
+    _godRay.position = size / 2;
+
+    // ─── Background Run ───
+    final bgRunShader = await _loadShader(GameAssets.backgroundRunShader);
+    _backgroundRun = BackgroundRunComponent(
+      shader: bgRunShader,
+      size: size,
+      priority: GameLayout.zBackground,
     );
 
-    // Initialize all components via registry
-    await registry.initializeAll(context);
+    // ─── Background Tint ───
+    _backgroundTint = BackgroundTintComponent();
+    _backgroundTint.size = size;
+    _backgroundTint.priority = GameLayout.zBackground + 1;
+
+    // ─── Beach Background ───
+    final beachShader = await _loadShader(GameAssets.beachShader);
+    _beachBackground = BeachBackgroundComponent(
+      size: size,
+      shader: beachShader,
+    );
+    _beachBackground.opacity = 0.0;
+    _beachBackground.priority = 10;
+
+    // ─── Cinematic Title ───
+    final metallicShader = await _loadShader(GameAssets.metallicShader);
+    _cinematicTitle = CinematicTitleComponent(
+      primaryText: GameStrings.primaryTitle,
+      shader: metallicShader,
+      position: size / 2,
+    );
+    _cinematicTitle.priority = GameLayout.zTitle;
+
+    // ─── Cinematic Secondary Title ───
+    final metallicShader2 = await _loadShader(GameAssets.metallicShader);
+    _cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
+      text: GameStrings.secondaryTitle,
+      shader: metallicShader2,
+      position: size / 2 + GameLayout.secTitleOffsetVector,
+    );
+    _cinematicSecondaryTitle.priority = GameLayout.zSecondaryTitle;
+
+    // ─── Bold Text Reveal ───
+    final boldShader = await _loadShader(GameAssets.boldTextEntranceShader);
+    _boldTextReveal = BoldTextRevealComponent(
+      text: GameStrings.boldText,
+      textStyle: material.TextStyle(
+        fontSize: GameStyles.titleFontSize,
+        fontWeight: material.FontWeight.w500,
+        fontFamily: GameStyles.fontInconsolata,
+        letterSpacing: 2.0,
+      ),
+      shader: boldShader,
+      position: size / 2,
+    );
+    _boldTextReveal.priority = GameLayout.zBoldText;
+    _boldTextReveal.opacity = 0.0;
+
+    // ─── Philosophy Text ───
+    final philoShader = await _loadShader(GameAssets.metallicShader);
+    _philosophyText = PhilosophyTextComponent(
+      text: GameStrings.philosophyTitle,
+      style: material.TextStyle(
+        fontFamily: GameStyles.fontModernUrban,
+        fontSize: GameStyles.philosophyFontSize,
+        fontWeight: material.FontWeight.bold,
+        color: GameStyles.philosophyText,
+        letterSpacing: 1.5,
+      ),
+      shader: philoShader,
+      anchor: Anchor.centerLeft,
+      position: Vector2(size.x * GameLayout.philosophyTextXRatio, size.y / 2),
+    );
+    _philosophyText.priority = GameLayout.zContent;
+    _philosophyText.opacity = 0.0;
+
+    // ─── Philosophy Trail ───
+    _philosophyTrail = PhilosophyTrailComponent();
+    _philosophyTrail.priority = GameLayout.zContent;
+    _philosophyTrail.opacity = 0.0;
+
+    // ─── Next Button ───
+    _nextButton = NextButtonComponent();
+    _nextButton.priority = GameLayout.zContent + 1;
+    _nextButton.opacity = 0.0;
+
+    // ─── Rain Transition ───
+    final rainShader = await _loadShader(GameAssets.rainShader);
+    _rainTransition = RainTransitionComponent(shader: rainShader, size: size);
+    _rainTransition.priority = GameLayout.zContent;
+    _rainTransition.opacity = 1.0;
+
+    // ─── Circles Background ───
+    final circlesShader = await _loadShader(GameAssets.circlesShader);
+    _circlesBackground = CirclesBackgroundComponent(
+      shader: circlesShader,
+      size: size,
+    );
+    _circlesBackground.priority = GameLayout.zBackground - 1;
+    _circlesBackground.opacity = 0.0;
   }
-
-  Component component(String id) => registry.get(id);
-
-  // Get all components for easy addition
-  List<Component> get allComponents => registry.allComponents;
-
-  RayMarchingShadowComponent get shadowScene =>
-      registry.get(ComponentIds.shadowScene);
-
-  LogoComponent get logoComponent => registry.get(ComponentIds.logo);
-
-  GodRayComponent get godRay => registry.get(ComponentIds.godRay);
-
-  LogoOverlayComponent get logoOverlay =>
-      registry.get(ComponentIds.logoOverlay);
-
-  BackgroundRunComponent get backgroundRun =>
-      registry.get(ComponentIds.backgroundRun);
-
-  BackgroundTintComponent get backgroundTint =>
-      registry.get(ComponentIds.backgroundTint);
-
-  BeachBackgroundComponent get beachBackground =>
-      registry.get(ComponentIds.cloudBackground);
-
-  CinematicTitleComponent get cinematicTitle =>
-      registry.get(ComponentIds.cinematicTitle);
-
-  CinematicSecondaryTitleComponent get cinematicSecondaryTitle =>
-      registry.get(ComponentIds.cinematicSecondaryTitle);
-
-  BoldTextRevealComponent get boldTextReveal =>
-      registry.get(ComponentIds.boldTextReveal);
-
-  PhilosophyTextComponent get philosophyText =>
-      registry.get(ComponentIds.philosophyText);
-
-  PhilosophyTrailComponent get philosophyTrail =>
-      registry.get(ComponentIds.philosophyTrail);
-
-  NextButtonComponent get nextButton => registry.get(ComponentIds.nextButton);
-
-  RainTransitionComponent get rainTransition =>
-      registry.get(ComponentIds.rainTransition);
-
-  CirclesBackgroundComponent get circlesBackground =>
-      registry.get(ComponentIds.circlesBackground);
-
-  ExperienceRotatorComponent get experienceRotator =>
-      registry.get(ComponentIds.experienceRotator);
-
-  SkillsKeyboardComponent get skillsKeyboard =>
-      registry.get(ComponentIds.skillsKeyboard);
-
-  TestimonialPageComponent get testimonialPage =>
-      registry.get(ComponentIds.testimonialPage);
-
-  ContactPageComponent get contactPage =>
-      registry.get(ComponentIds.contactPage);
 }

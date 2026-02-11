@@ -4,15 +4,15 @@ import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/models/cursor_dependent_components.dart';
-import 'package:flutter_home_page/project/app/models/game_components.dart';
-import 'package:flutter_home_page/project/app/system/scroll/scroll_orchestrator.dart';
+
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
-import 'package:flutter/animation.dart';
+import 'package:flame_bloc/flame_bloc.dart';
+
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
@@ -47,7 +47,7 @@ class MyGame extends FlameGame
   });
 
   final ScrollSystem _philosophyScrollSystem = ScrollSystem();
-  final ScrollOrchestrator scrollOrchestrator = ScrollOrchestrator();
+  // ScrollOrchestrator absorbed into SequenceRunner
 
   ScrollSystem get scrollSystem => _philosophyScrollSystem;
 
@@ -66,16 +66,19 @@ class MyGame extends FlameGame
 
   final GameComponentFactory _componentFactory = GameComponentFactory();
   final GameCursorSystem _cursorSystem = GameCursorSystem();
+  GameCursorSystem get cursorSystem => _cursorSystem;
   final GameLogoAnimator logoAnimator = GameLogoAnimator();
   late final Timer _inactivityTimer;
   late final GameInputController _inputController;
-  late final GameComponents _gameComponents;
+
   GodRayController? _godRayController;
   late final TransitionCoordinator transitionCoordinator;
 
   // Keep reference to sections for direct access
   late final PhilosophySection _philosophySection;
   late final ExperienceSection _experienceSection;
+
+  late final FlameBlocProvider<SceneBloc, SceneState> _blocProvider;
 
   @override
   Future<void> onLoad() async {
@@ -93,15 +96,17 @@ class MyGame extends FlameGame
       size: size,
       stateProvider: stateProvider,
       queuer: queuer,
-      scrollOrchestrator: scrollOrchestrator,
       backgroundColorCallback: backgroundColor,
       onSectionTap: _handleSectionTap,
     );
 
-    // Add all components to scene
-    for (final component in _componentFactory.allComponents) {
-      add(component);
-    }
+    // Create and store FlameBlocProvider
+    _blocProvider = FlameBlocProvider<SceneBloc, SceneState>.value(
+      value: stateProvider as SceneBloc,
+      children: _componentFactory.allComponents,
+    );
+
+    await add(_blocProvider);
 
     logoAnimator.initialize(
       _componentFactory.logoComponent.size / 3.0,
@@ -120,27 +125,6 @@ class MyGame extends FlameGame
       ),
     );
 
-    // Initialize GameComponents helper
-    _gameComponents = GameComponents(
-      cinematicTitle: _componentFactory.cinematicTitle,
-      cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
-      logoOverlay: _componentFactory.logoOverlay,
-      godRay: _componentFactory.godRay,
-      backgroundTint: _componentFactory.backgroundTint,
-      backgroundRun: _componentFactory.backgroundRun,
-      boldTextReveal: _componentFactory.boldTextReveal,
-      beachBackground: _componentFactory.beachBackground,
-      philosophyText: _componentFactory.philosophyText,
-      philosophyTrail: _componentFactory.philosophyTrail,
-      nextButton: _componentFactory.nextButton,
-      rainTransition: _componentFactory.rainTransition,
-      circlesBackground: _componentFactory.circlesBackground,
-      experienceRotator: _componentFactory.experienceRotator,
-      //skillsKeyboard: _componentFactory.skillsKeyboard,
-      //testimonialPage: _componentFactory.testimonialPage,
-      //contactPage: _componentFactory.contactPage,
-    );
-
     // Initialize Global Config
     _configureGlobal();
 
@@ -155,6 +139,12 @@ class MyGame extends FlameGame
       cursorSystem: _cursorSystem,
       stateProvider: stateProvider,
     );
+
+    // Add input controller to Bloc Provider NOT game directly if it needs state interaction?
+    // Actually input controller uses stateProvider directly, it is NOT a FlameBlocListener.
+    // But for consistency let's add it to game.
+    // Wait, ExperienceSection DOES need it.
+    // Add input controller to game
     add(_inputController);
 
     // Warm up all sections (Shaders & Textures) via Runner
@@ -162,13 +152,12 @@ class MyGame extends FlameGame
     await _primarySequenceRunner.warmUpAll();
 
     // Explicitly warm up components not managed by the sequence runner's warmUp
-    _gameComponents.rainTransition.warmUp();
-    _gameComponents.circlesBackground.warmUp();
+    _componentFactory.rainTransition.warmUp();
+    _componentFactory.circlesBackground.warmUp();
 
     queuer.queue(event: const SceneEvent.gameReady());
 
     // Register controllers to philosophy scroll system
-    _philosophyScrollSystem.register(scrollOrchestrator);
     _philosophyScrollSystem.register(_primarySequenceRunner);
 
     // Register experience scroll system
@@ -179,6 +168,15 @@ class MyGame extends FlameGame
 
     // Pre-warm Flash Shader
     await _loadFlashShader();
+
+    // State Listener for One-Shot Events (State Purity)
+    stateProvider.stream.listen((state) {
+      state.maybeWhen(
+        loadingExperience: () => hideTitles(),
+        experience: (_) => hideTitles(),
+        orElse: () {},
+      );
+    });
   }
 
   late final FragmentShader flashShader;
@@ -210,6 +208,7 @@ class MyGame extends FlameGame
   @override
   void onScroll(PointerScrollInfo info) {
     if (!isLoaded) return;
+    if (_isTransitioning) return; // Block ALL scroll during transitions
 
     stateProvider.sceneState().maybeWhen(
       active: (_) {
@@ -220,10 +219,12 @@ class MyGame extends FlameGame
         // Block scroll during transition
       },
       experience: (_) {
-        // Experience is now state-driven.
-        // List for Scroll UP to return to Philosophy.
-        if (info.scrollDelta.global.y < 0) {
-          // Scroll Up -> Return to Philosophy
+        // Feed Scroll Physics
+        _experienceSection.handleScroll(info.scrollDelta.global.y);
+
+        // Scroll UP → Return to Philosophy
+        // Threshold (< -10) prevents accidental micro-scroll triggers
+        if (info.scrollDelta.global.y < -10) {
           transitionCoordinator.returnToPhilosophy(
             from: _experienceSection,
             to: _philosophySection,
@@ -261,19 +262,21 @@ class MyGame extends FlameGame
     // Check State
     final state = stateProvider.sceneState();
 
+    // Update Systems based on State Flags
+    if (state.isScrollable) {
+      _godRayController?.updatePulse(dt, _philosophyScrollSystem.scrollOffset);
+    }
+
     // Update Runner
     state.maybeWhen(
-      active: (_) => _primarySequenceRunner.update(dt),
-      loadingExperience: () => _primarySequenceRunner.update(dt),
-      // experience: (_) => _experienceSequenceRunner.update(dt), // Removed
-      orElse: () {},
-    );
-
-    // Listen to Start Trigger
-    state.maybeWhen(
-      active: (_) => _primarySequenceRunner.start(),
-      loadingExperience: () => _primarySequenceRunner.start(),
-      // experience: (_) => _experienceSequenceRunner.start(), // Removed
+      active: (_) {
+        _philosophyScrollSystem.update(dt);
+        _primarySequenceRunner.update(dt);
+      },
+      loadingExperience: () {
+        _philosophyScrollSystem.update(dt);
+        _primarySequenceRunner.update(dt);
+      },
       orElse: () {},
     );
 
@@ -283,15 +286,6 @@ class MyGame extends FlameGame
       size,
       enableParallax: true,
     ); // Always enable parallax for consistency?
-
-    // Update active scroll system based on state
-    state.maybeWhen(
-      active: (_) => _philosophyScrollSystem.update(dt),
-      loadingExperience: () => _philosophyScrollSystem.update(dt),
-      // experience: (_) => _experienceScrollSystem.update(dt), // Removed
-      orElse: () => _philosophyScrollSystem.update(dt),
-    );
-    _godRayController?.updatePulse(dt, _philosophyScrollSystem.scrollOffset);
 
     // Intro State Handlers
     state.maybeWhen(
@@ -304,17 +298,17 @@ class MyGame extends FlameGame
         _componentFactory.cinematicTitle.position = size / 2;
       },
       logoOverlayRemoving: () {
-        logoAnimator.setTarget(
-          position: GameLayout.logoRemovingTargetVector,
-          scale: GameLayout.logoRemovingScale,
-        );
-        logoAnimator.update(
+        final isDone = logoAnimator.update(
           dt,
           LogoAnimationComponents(
             logoComponent: _componentFactory.logoComponent,
             shadowScene: _componentFactory.shadowScene,
           ),
         );
+
+        if (isDone) {
+          queuer.queue(event: const SceneEvent.loadTitle());
+        }
       },
       orElse: () {},
     );
@@ -378,6 +372,15 @@ class MyGame extends FlameGame
     _componentFactory.logoOverlay.opacity = 1.0;
   }
 
+  /// One-shot: sets the logo animator target for the logo→title shrink.
+  /// Called by StatefulScene.listener on logoOverlayRemoving entry.
+  void startLogoRemoval() {
+    logoAnimator.setTarget(
+      position: GameLayout.logoRemovingTargetVector,
+      scale: GameLayout.logoRemovingScale,
+    );
+  }
+
   void enterTitle() {
     Future.delayed(ScrollSequenceConfig.enterTitleDelayDuration, () {
       audio.playTitleLoaded(); // Play sound when main title starts entering
@@ -393,9 +396,18 @@ class MyGame extends FlameGame
     _cursorSystem.activate(size / 2);
   }
 
+  /// Hides the cinematic title and secondary title components.
+  /// Called when transitioning away from the Title/BoldText states
+  /// to ensure they don't bleed into Philosophy or Experience sections.
+  void hideTitles() {
+    _componentFactory.cinematicTitle.opacity = 0.0;
+    _componentFactory.cinematicTitle.hide();
+    _componentFactory.cinematicSecondaryTitle.opacity = 0.0;
+  }
+
   void _configureGlobal() {
     _godRayController = GodRayController(
-      component: _gameComponents.godRay,
+      component: _componentFactory.godRay,
       screenSize: size,
     );
     scrollSystem.register(_godRayController!);
@@ -404,42 +416,46 @@ class MyGame extends FlameGame
   void _initSequence() {
     // 1. Bold Text
     final boldSection = BoldTextSection(
-      boldTextComponent: _gameComponents.boldTextReveal,
-      backgroundRun: _gameComponents.backgroundRun,
-      cinematicTitle: _gameComponents.cinematicTitle,
-      cinematicSecondaryTitle: _gameComponents.cinematicSecondaryTitle,
-      logoOverlay: _gameComponents.logoOverlay,
+      boldTextComponent: _componentFactory.boldTextReveal,
+      backgroundRun: _componentFactory.backgroundRun,
+      cinematicTitle: _componentFactory.cinematicTitle,
+      cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
+      logoOverlay: _componentFactory.logoOverlay,
       centerPosition: size / 2,
     );
     boldSection.onComplete = () {};
 
     // 2. Philosophy
     _philosophySection = PhilosophySection(
-      titleComponent: _gameComponents.philosophyText,
-      cloudBackground: _gameComponents.beachBackground,
-      trailComponent: _gameComponents.philosophyTrail,
-      nextButton: _gameComponents.nextButton,
-      rainTransition: _gameComponents.rainTransition,
+      titleComponent: _componentFactory.philosophyText,
+      cloudBackground: _componentFactory.beachBackground,
+      trailComponent: _componentFactory.philosophyTrail,
+      nextButton: _componentFactory.nextButton,
+      rainTransition: _componentFactory.rainTransition,
       screenSize: size,
       playEntrySound: audio.playPhilosophyEntry,
       playCompletionSound: audio.playPhilosophyComplete,
     );
 
     // Configure components via binding-like logic (formerly addBoldTextBindings)
-    _gameComponents.boldTextReveal.opacity = 0.0;
+    _componentFactory.boldTextReveal.opacity = 0.0;
     // Philosophy text setup
-    _gameComponents.philosophyText.priority = 20;
-    _gameComponents.philosophyText.anchor = Anchor.center;
-    _gameComponents.philosophyText.position = Vector2(size.x / 2, size.y * 0.7);
-    _gameComponents.philosophyText.scale = Vector2.all(0.1);
-    _gameComponents.philosophyText.opacity = 0.0;
+    _componentFactory.philosophyText.priority = 20;
+    _componentFactory.philosophyText.anchor = Anchor.center;
+    _componentFactory.philosophyText.position = Vector2(
+      size.x / 2,
+      size.y * 0.7,
+    );
+    _componentFactory.philosophyText.scale = Vector2.all(0.1);
+    _componentFactory.philosophyText.opacity = 0.0;
 
     // 3. Experience
     _experienceSection = ExperienceSection(
-      circlesBackground: _gameComponents.circlesBackground,
+      circlesBackground: _componentFactory.circlesBackground,
       queuer: queuer,
       screenSize: size,
     );
+    _blocProvider.add(_experienceSection);
 
     _primarySequenceRunner.init([boldSection, _philosophySection]);
 

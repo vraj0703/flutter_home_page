@@ -1,45 +1,37 @@
 import 'dart:math';
+import 'dart:ui' show Color;
 
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart'
-    show
-    Colors,
-    TextStyle,
-    FontWeight;
-import 'package:flutter_home_page/project/app/config/game_curves.dart';
-import 'package:flutter_home_page/project/app/config/game_layout.dart';
+    show Colors, TextStyle, FontWeight, Canvas, Curves;
+
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
-import 'package:flutter_home_page/project/app/config/game_physics.dart';
-import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/config/game_data.dart';
 import 'package:flutter_home_page/project/app/models/experience_node.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
-import 'package:flutter_home_page/project/app/views/components/experience/orbital_arcs_component.dart';
-import 'package:flutter_home_page/project/app/views/components/experience/satellite_component.dart';
 import 'package:flutter_home_page/project/app/views/components/experience/experience_details_component.dart';
+import 'package:flutter_home_page/project/app/views/components/experience/gear_next_button.dart';
 
-class ExperienceRotatorComponent extends PositionComponent
+class ChronosGearComponent extends PositionComponent
     with HasGameReference<MyGame>, HasPaint {
-  late OrbitalArcsComponent arcs;
-  final List<SatelliteComponent> satellites = [];
-
   // Text components
   late TextComponent companyText;
   late TextComponent roleText;
   late TextComponent durationText;
 
-  late ExperienceDetailsComponent detailsComponent;
+  late DetailCanvas detailsComponent;
+  late NavigationTrigger nextBtn;
 
   final List<ExperienceNode> data = GameData.experienceNodes;
 
   int _currentIndex = 0;
+
+  double _visualRotation = 0.0;
   double _opacity = 0.0;
 
-  late Vector2 initialPosition;
-
-  ExperienceRotatorComponent({super.size});
+  ChronosGearComponent({super.size});
 
   @override
   double get opacity => _opacity;
@@ -48,171 +40,88 @@ class ExperienceRotatorComponent extends PositionComponent
   set opacity(double val) {
     _opacity = val;
     if (isLoaded) {
-      arcs.opacity = val;
-      _updateSatellites(arcs.rotation);
       _updateTextOpacity(val);
+      nextBtn.opacity = val;
     }
   }
 
-  double _targetRotation = 0.0;
-  double _currentRotation = 0.0;
-  double _warpScale = 1.0;
-
+  // Light Mode Styles
+  // Company: Dark Grey, Spaced
   final companyStyle = TextStyle(
     fontFamily: GameStyles.fontInter,
     fontSize: GameStyles.companyFontSize,
-    letterSpacing: 1.5,
+    letterSpacing: 2.0,
+    fontWeight: FontWeight.w600,
+    color: const Color(0xFF424242), // Grey 800
   );
 
+  // Role: Black, Bold, Modern
   final roleStyle = TextStyle(
     fontFamily: GameStyles.fontModernUrban,
     fontSize: GameStyles.philosophyFontSize,
     fontWeight: FontWeight.bold,
+    color: Colors.black,
   );
 
+  // Duration: Light Grey, Thin
   final durationStyle = TextStyle(
     fontFamily: GameStyles.fontInter,
     fontSize: GameStyles.durationFontSize,
+    fontWeight: FontWeight.w300,
+    color: const Color(0xFF757575), // Grey 600
   );
 
+  void nextExperience() {
+    _currentIndex = (_currentIndex + 1) % data.length;
+
+    // Animate Rotation: "Mechanical Inertia" (Overshoot)
+    final double step = (2 * pi / data.length);
+    final double target = _visualRotation + step;
+
+    add(
+      GearRotationEffect(
+        from: _visualRotation,
+        to: target,
+        controller: EffectController(duration: 0.8, curve: Curves.easeOutBack),
+        onUpdate: (val) => _visualRotation = val,
+      ),
+    );
+
+    // Audio
+    game.audio.playGearTick(); // To be replaced with "zip" sound later
+
+    // Text Reveal
+    _updateContent(forceUpdate: true, op: _opacity);
+    detailsComponent.show(_currentIndex);
+  }
+
   @override
-  void update(double dt) {
-    super.update(dt);
-    if (!isLoaded) return;
+  void render(Canvas canvas) {
+    // Drive the shader uniforms from here
+    final shader = game.experienceSection.circlesBackground.shader;
 
-    final double smoothing = GamePhysics.expSmoothing * dt;
-    _currentRotation += (_targetRotation - _currentRotation) * smoothing;
+    // Index 7: uRotation
+    shader.setFloat(7, _visualRotation);
+    // Index 8: uActiveNode (passing index as float)
+    shader.setFloat(8, _currentIndex.toDouble());
 
-    if ((_targetRotation - _currentRotation).abs() < 0.001) {
-      _currentRotation = _targetRotation;
-    }
-
-    arcs.rotation = _currentRotation;
-    _updateSatellites(_currentRotation);
-    detailsComponent.updateRotation(_currentRotation);
-
-    if (_warpScale != 1.0) {
-      scale = Vector2.all(_warpScale);
-      position = (game.size / 2) - ((game.size / 2) * _warpScale);
-    } else {
-      scale = Vector2.all(1.0);
-    }
-  }
-
-  void updateInteraction(double localScroll) {
-    if (!isLoaded) return;
-
-    // Map scroll to node index logic
-    // Assuming roughly 500px per item?
-    // Config: experienceScrollDivisor
-    final index = (localScroll / ScrollSequenceConfig.experienceScrollDivisor)
-        .floor()
-        .clamp(0, data.length - 1);
-
-    final spacing = GameLayout.expSatelliteSpacing;
-    final double rawProgress =
-        localScroll / ScrollSequenceConfig.experienceScrollDivisor;
-    final int baseIndex = rawProgress.floor();
-
-    double applySmoothing(double t) {
-      if (t <= 0 || t >= 1) return t;
-      // Using standard curve
-      return GameCurves.smoothDecel.transform(t);
-    }
-
-    final double curvedT = applySmoothing(rawProgress - baseIndex);
-    final double curvedProgress = baseIndex + curvedT;
-
-    _targetRotation = -(curvedProgress * spacing);
-
-    if (index != _currentIndex) {
-      final bool isReverse = index < _currentIndex;
-      _currentIndex = index;
-      _updateContent(forceUpdate: true, op: _opacity, isReverse: isReverse);
-    }
-  }
-
-  // Helper to sync warp effect from section logic if needed
-  void setWarp(double progress) {
-    final t = progress.clamp(0.0, 1.0);
-    _warpScale = 1.0 + (pow(t, 3) * (GameLayout.expWarpMaxScale - 1.0));
-  }
-
-  void _updateSatellites(double systemRotation) {
-    // Positioning logic relative to screen center/left
-    // Or relative to this component?
-    // This component is size = screen size ideally.
-    final center = Vector2(0, size.y / 2);
-    final orbitRadius = (size.y * 1) * GameLayout.expOrbitRadiusRatio;
-    final spacing = GameLayout.expSatelliteSpacing;
-
-    for (int i = 0; i < satellites.length; i++) {
-      final s = satellites[i];
-      final baseAngle = i * spacing;
-      final currentAngle = baseAngle + systemRotation;
-      final x = center.x + orbitRadius * cos(currentAngle);
-      final y = center.y + orbitRadius * sin(currentAngle);
-      s.position = Vector2(x, y);
-      s.angle = currentAngle + (pi / 2);
-
-      double diff = (currentAngle % (2 * pi));
-      if (diff > pi) diff -= 2 * pi;
-      if (diff < -pi) diff += 2 * pi;
-
-      final dist = diff.abs();
-      final globalFade = _opacity;
-
-      if (dist < GameLayout.expActiveThreshold) {
-        final t = 1.0 - (dist / GameLayout.expActiveThreshold);
-        s.scale = Vector2.all(
-          GameLayout.expInactiveScale +
-              ((GameLayout.expActiveScale - GameLayout.expInactiveScale) * t),
-        );
-        s.opacity =
-            (GameStyles.expInactiveOpacity +
-                ((GameStyles.expActiveOpacity - GameStyles.expInactiveOpacity) *
-                    t)) *
-                globalFade;
-      } else {
-        s.scale = Vector2.all(GameLayout.expInactiveScale);
-        s.opacity = GameStyles.expInactiveOpacity * globalFade;
-      }
-    }
+    // Debug visualization of gear anchor (optional)
+    // canvas.drawCircle(Offset(0, size.y/2), 10, Paint()..color = Colors.red);
   }
 
   @override
   Future<void> onLoad() async {
-    initialPosition = position.clone();
+    // Gear Logic: Anchor at (0, size.y / 2) -> Left Centered
+    // The shader handles the gear rendering based on UVs.
+
     final halfHeight = size.y / 2;
-
-    arcs = OrbitalArcsComponent(
-      accentColor: GameStyles.accentGold,
-      size: Vector2(size.x * GameLayout.experienceOrbitRelW, size.y),
-    );
-    arcs.position = Vector2(0, 0);
-    add(arcs);
-
-    for (var node in data) {
-      final s = SatelliteComponent(
-        year: node.year,
-        color: GameStyles.accentGold,
-      );
-      s.anchor = Anchor.center;
-      satellites.add(s);
-      add(s);
-    }
-
-    final textX = size.x * GameLayout.experienceTextRelX;
+    // Shift text to the right side of the screen
+    final textX = size.x * 0.55;
 
     // Create Text Components
-    // Note: Colors should handle opacity
     companyText = TextComponent(
       text: data[0].company.toUpperCase(),
-      textRenderer: TextPaint(
-        style: companyStyle.copyWith(
-          color: Colors.white.withValues(alpha: 0.6),
-        ),
-      ),
+      textRenderer: TextPaint(style: companyStyle),
       position: Vector2(textX, halfHeight - 40),
     );
     add(companyText);
@@ -226,27 +135,61 @@ class ExperienceRotatorComponent extends PositionComponent
 
     durationText = TextComponent(
       text: "${data[0].duration} | ${data[0].location}",
-      textRenderer: TextPaint(
-        style: durationStyle.copyWith(
-          color: Colors.white.withValues(alpha: 0.5),
-        ),
-      ),
+      textRenderer: TextPaint(style: durationStyle),
       position: Vector2(textX, halfHeight + 60),
     );
     add(durationText);
 
-    detailsComponent = ExperienceDetailsComponent(data: data)..size = size;
+    // Title: EXPERIENCE
+    // Centered in the "half circle" on the left
+    final titleStyle = TextStyle(
+      fontFamily: GameStyles.fontModernUrban,
+      fontSize: 24,
+      letterSpacing: 8.0,
+      fontWeight: FontWeight.bold,
+      color: GameStyles.accentGold,
+    );
+
+    final titleText = TextComponent(
+      text: "EXPERIENCE",
+      textRenderer: TextPaint(style: titleStyle),
+      position: Vector2(60, halfHeight), // Left aligned, centered vertically
+      anchor: Anchor.centerLeft,
+      angle:
+          -pi /
+          2, // Rotated vertically? Or horizontal? User said "center of half circle".
+      // If it's a gear, text running along the radius or vertical looks cool.
+      // Let's try vertical (-90 deg) to fit inside the left edge nicely.
+    );
+    add(titleText);
+
+    detailsComponent = DetailCanvas(data: data)..size = size;
+    // Details component needs to be positioned/styled?
+    // It currently assumes full screen overlay?
     add(detailsComponent);
 
     // Init state
     _opacity = 0.0;
-    arcs.opacity = 0.0;
-    for (final s in satellites) {
-      s.opacity = 0.0;
-    }
     _updateContent(forceUpdate: false, op: 0.0);
     detailsComponent.opacity = 0.0;
-    detailsComponent.updateRotation(_currentRotation);
+
+    // Add Next Button (NavigationTrigger)
+    nextBtn = NavigationTrigger(
+      gear: this,
+      position: Vector2(size.x - 80, size.y - 80),
+      anchor: Anchor.bottomRight,
+    );
+    add(nextBtn);
+
+    _updateTextPositions();
+  }
+
+  void _updateTextPositions() {
+    final halfHeight = size.y / 2;
+    final textX = size.x * 0.55;
+    companyText.position = Vector2(textX, halfHeight - 40);
+    roleText.position = Vector2(textX, halfHeight - 10);
+    durationText.position = Vector2(textX, halfHeight + 60);
   }
 
   void _updateTextOpacity(double parentOpacity) {
@@ -255,70 +198,90 @@ class ExperienceRotatorComponent extends PositionComponent
     _updateContent(forceUpdate: false, op: parentOpacity);
   }
 
-  void _updateContent({
-    bool forceUpdate = false,
-    double? op,
-    bool isReverse = false,
-  }) {
+  void _updateContent({bool forceUpdate = false, double? op}) {
     double alpha = op ?? _opacity;
+    if (_currentIndex >= data.length) _currentIndex = 0;
     final item = data[_currentIndex];
 
-    final white = Colors.white.withValues(alpha: alpha);
-    final dim = Colors.white.withValues(alpha: 0.6 * alpha);
+    // Light Mode Opacity Logic
+    final textColor = Colors.black.withValues(alpha: alpha);
+    final dimColor = const Color(0xFF757575).withValues(alpha: alpha);
+    final accentColor = const Color(0xFF424242).withValues(alpha: alpha);
 
     if (forceUpdate) {
-      final startOffset =
-          GameLayout.expTextAnimOffset * (isReverse ? -1.0 : 1.0);
+      // Re-trigger reveal animation for text (Slide Up & In)
+      final textX = size.x * 0.55;
       final halfHeight = size.y / 2;
-      final textX = size.x * GameLayout.experienceTextRelX; // Consistent X
 
-      companyText.position = Vector2(textX, halfHeight - 40 + startOffset);
-      roleText.position = Vector2(textX, halfHeight - 10 + startOffset);
-      durationText.position = Vector2(textX, halfHeight + 60 + startOffset);
-
+      // Staggered Slide Up
+      companyText.position = Vector2(textX, halfHeight - 20); // Start lower
       companyText.add(
         MoveToEffect(
-          Vector2(textX, halfHeight - 40),
-          EffectController(duration: 0.4, curve: GameCurves.standardReveal),
+          Vector2(textX, halfHeight - 40), // Move up to target
+          EffectController(duration: 0.4, curve: Curves.easeOutCubic),
         ),
       );
 
+      roleText.position = Vector2(textX, halfHeight + 10);
       roleText.add(
         MoveToEffect(
           Vector2(textX, halfHeight - 10),
           EffectController(
             duration: 0.4,
-            curve: GameCurves.standardReveal,
+            curve: Curves.easeOutCubic,
             startDelay: 0.1,
           ),
         ),
       );
 
+      durationText.position = Vector2(textX, halfHeight + 80);
       durationText.add(
         MoveToEffect(
           Vector2(textX, halfHeight + 60),
           EffectController(
             duration: 0.4,
-            curve: GameCurves.standardReveal,
+            curve: Curves.easeOutCubic,
             startDelay: 0.2,
           ),
         ),
       );
+
+      game.audio.playSlideIn();
     }
 
     companyText.text = item.company.toUpperCase();
     companyText.textRenderer = TextPaint(
-      style: companyStyle.copyWith(color: dim),
+      style: companyStyle.copyWith(color: accentColor),
     );
 
     roleText.text = item.title;
     roleText.textRenderer = TextPaint(
-      style: roleStyle.copyWith(color: white, height: 1.1),
+      style: roleStyle.copyWith(color: textColor, height: 1.1),
     );
 
     durationText.text = "${item.duration} | ${item.location}";
     durationText.textRenderer = TextPaint(
-      style: durationStyle.copyWith(color: dim),
+      style: durationStyle.copyWith(color: dimColor),
     );
+  }
+}
+
+// Custom Effect for Gear Rotation
+class GearRotationEffect extends Effect {
+  final double from;
+  final double to;
+  final Function(double) onUpdate;
+
+  GearRotationEffect({
+    required this.from,
+    required this.to,
+    required this.onUpdate,
+    required EffectController controller,
+  }) : super(controller);
+
+  @override
+  void apply(double progress) {
+    final val = from + (to - from) * progress;
+    onUpdate(val);
   }
 }

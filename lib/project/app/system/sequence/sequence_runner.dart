@@ -4,6 +4,7 @@ import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/models/scroll_result.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/scroll_effect.dart';
 
 /// Orchestrates the execution of [GameSection]s in a linear sequence.
 ///
@@ -13,6 +14,7 @@ class SequenceRunner implements ScrollObserver {
   List<GameSection> _sections = [];
   int _currentIndex = 0;
   bool _isActive = false;
+  final Map<PositionComponent, List<ScrollEffect>> _bindings = {};
 
   SequenceRunner({required this.scrollSystem});
 
@@ -68,6 +70,26 @@ class SequenceRunner implements ScrollObserver {
   void onScroll(double scrollOffset) {
     if (!_isActive || _sections.isEmpty) return;
     _sections[_currentIndex].setScrollOffset(scrollOffset);
+
+    // Apply bindings
+    _bindings.forEach((component, effects) {
+      for (final effect in effects) {
+        effect.apply(component, scrollOffset);
+      }
+    });
+  }
+
+  /// Bind a component to a single effect (Absorbed from ScrollOrchestrator)
+  void addBinding(PositionComponent component, ScrollEffect effect) {
+    if (!_bindings.containsKey(component)) {
+      _bindings[component] = [];
+    }
+    _bindings[component]!.add(effect);
+  }
+
+  /// Remove all effects for a component.
+  void removeBinding(PositionComponent component) {
+    _bindings.remove(component);
   }
 
   /// Routes scroll input to the current active section.
