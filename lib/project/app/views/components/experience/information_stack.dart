@@ -1,4 +1,3 @@
-
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
@@ -43,7 +42,7 @@ class InformationStack extends PositionComponent with HasPaint {
           shadows: [
             Shadow(
               blurRadius: 15.0,
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               offset: const Offset(2.0, 2.0),
             ),
           ],
@@ -83,7 +82,7 @@ class InformationStack extends PositionComponent with HasPaint {
     _company.text = node.company.toUpperCase();
     _company.textRenderer = TextPaint(
       style: (_company.textRenderer as TextPaint).style.copyWith(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
       ),
     );
 
@@ -148,7 +147,7 @@ class InformationStack extends PositionComponent with HasPaint {
             shadows: [
               Shadow(
                 blurRadius: 4.0,
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 offset: const Offset(1, 1),
               ),
             ],
@@ -163,7 +162,7 @@ class InformationStack extends PositionComponent with HasPaint {
         textRenderer: TextPaint(
           style: GameStyles.experienceDescStyle.copyWith(
             fontSize: 13.0,
-            color: GameStyles.white70.withOpacity(0.4),
+            color: GameStyles.white70.withValues(alpha: 0.4),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -296,16 +295,14 @@ class ImpactBadgeComponent extends PositionComponent with HasPaint {
     _bg = RectangleComponent(
       size: Vector2(width, height),
       paint: Paint()
-        ..color = Colors.white
-            .withOpacity(0.03) // Barely visible fill
+        ..color = Colors.white.withValues(alpha: 0.03)
         ..style = PaintingStyle.fill,
     );
 
     _border = RectangleComponent(
       size: Vector2(width, height),
       paint: Paint()
-        ..color = accentColor
-            .withOpacity(0.5) // The thin glowing orange border
+        ..color = accentColor.withValues(alpha: 0.5)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.0,
     );
@@ -355,13 +352,15 @@ class ImpactBadgeComponent extends PositionComponent with HasPaint {
   void update(double dt) {
     super.update(dt);
     // Propagate opacity
-    _bg.paint.color = accentColor.withOpacity(0.1 * opacity);
+    _bg.paint.color = accentColor.withValues(alpha: 0.1 * opacity);
     for (final child in children) {
       if (child is TextComponent) {
         // naive opacity prop
         final tp = child.textRenderer as TextPaint;
         child.textRenderer = TextPaint(
-          style: tp.style.copyWith(color: tp.style.color?.withOpacity(opacity)),
+          style: tp.style.copyWith(
+            color: tp.style.color?.withValues(alpha: opacity),
+          ),
         );
       }
     }

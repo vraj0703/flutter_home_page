@@ -42,7 +42,6 @@ class ExperienceContentComponent extends PositionComponent
     // Start hidden, ExperienceSection handles entry
     opacity = 0.0;
   }
-  // ... (maintain existing methods)
 
   void _updateLayout(Vector2 screenSize) {
     size = screenSize;
@@ -116,27 +115,14 @@ class ExperienceContentComponent extends PositionComponent
     // Shader Uniforms: 4, 5, 6 are RGB
     if (node.themeColor != null) {
       final c = node.themeColor!;
-      game.experienceSection.circlesBackground.shader.setFloat(
-        4,
-        c.red / 255.0,
-      );
-      game.experienceSection.circlesBackground.shader.setFloat(
-        5,
-        c.green / 255.0,
-      );
-      game.experienceSection.circlesBackground.shader.setFloat(
-        6,
-        c.blue / 255.0,
-      );
+      game.experienceSection.circlesBackground.shader.setFloat(4, c.r / 255.0);
+      game.experienceSection.circlesBackground.shader.setFloat(5, c.g / 255.0);
+      game.experienceSection.circlesBackground.shader.setFloat(6, c.b / 255.0);
     }
   }
 
   void _updateContent(ExperienceNode node) {
     _yearMarker.text = node.year;
-    // Explicitly set year marker color if needed, but it uses primaryBackground currently.
-    // We could tint it too?
-    // For now requirements just say shader.
-
     _informationStack.updateData(node);
   }
 

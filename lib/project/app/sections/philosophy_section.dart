@@ -33,8 +33,6 @@ class PhilosophySection implements GameSection {
   bool _freezeCapture = false;
   bool _isShattering = false;
 
-  // Snap-to-Strike tracking
-
   PhilosophySection({
     required this.titleComponent,
     required this.cloudBackground,
@@ -125,11 +123,6 @@ class PhilosophySection implements GameSection {
 
   bool _hasWarmedUpNext = false;
 
-  // Public accessors for TransitionCoordinator
-  bool get hasWarmedUpNext => _hasWarmedUpNext;
-  set hasWarmedUpNext(bool value) => _hasWarmedUpNext = value;
-
-  bool get freezeCapture => _freezeCapture;
   set freezeCapture(bool value) => _freezeCapture = value;
 
   @override

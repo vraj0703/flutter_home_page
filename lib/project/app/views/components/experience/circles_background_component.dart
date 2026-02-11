@@ -49,13 +49,13 @@ class CirclesBackgroundComponent extends PositionComponent
     // Pass Theme Color (uThemeColor) - Index 4
     // Using GameStyles.primaryBackground (Gold/Bronze)
     final color = GameStyles.primaryBackground;
-    shader.setFloat(4, color.red / 255.0);
-    shader.setFloat(5, color.green / 255.0);
-    shader.setFloat(6, color.blue / 255.0);
+    shader.setFloat(4, color.r / 255.0);
+    shader.setFloat(5, color.g / 255.0);
+    shader.setFloat(6, color.b / 255.0);
 
     final paint = Paint()..shader = shader;
     // During warmup, use a tiny non-zero opacity so the shader actually runs but isn't visible
-    paint.color = paint.color.withOpacity(_manualWarmup ? 0.01 : opacity);
+    paint.color = paint.color.withValues(alpha: _manualWarmup ? 0.01 : opacity);
 
     canvas.drawRect(size.toRect(), paint);
 

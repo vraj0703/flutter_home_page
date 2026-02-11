@@ -52,15 +52,14 @@ class NextButtonComponent extends PositionComponent
     if (opacity <= 0.0) return;
 
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.2 * opacity)
+      ..color = Colors.white.withValues(alpha: 0.2 * opacity)
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(size.toOffset() / 2, radius, paint);
 
     if (_holdProgress > 0.0) {
       final progressPaint = Paint()
-        ..color = accentColor
-            .withOpacity(0.8 * opacity) // Use Accent
+        ..color = accentColor.withValues(alpha: 0.8 * opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 4.0;
 
@@ -76,7 +75,7 @@ class NextButtonComponent extends PositionComponent
     final borderColor = _isHovering ? accentColor : Colors.white;
 
     final borderPaint = Paint()
-      ..color = borderColor.withOpacity(opacity)
+      ..color = borderColor.withValues(alpha: opacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
 
@@ -97,15 +96,6 @@ class NextButtonComponent extends PositionComponent
     add(ScaleEffect.to(Vector2.all(1.0), EffectController(duration: 0.2)));
   }
 
-  /* void _handleRelease() {
-    if (_isHolding) {
-      _isHolding = false;
-      _holdProgress = 0.0;
-      onReleased?.call(); // Trigger the reset in the RainTransitionComponent
-      onProgressChange?.call(0.0); // Immediately tell the shader to target 0
-    }
-  }
-*/
   @override
   bool containsLocalPoint(Vector2 point) {
     final center = size / 2;

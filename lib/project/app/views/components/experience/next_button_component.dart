@@ -29,7 +29,7 @@ class NextButtonComponent extends PositionComponent
       textRenderer: TextPaint(
         style: style.copyWith(
           foreground: Paint()
-            ..color = GameStyles.accentGold.withOpacity(0.6)
+            ..color = GameStyles.accentGold.withValues(alpha: 0.6)
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10.0),
         ),
       ),
@@ -109,14 +109,14 @@ class NextButtonComponent extends PositionComponent
     if (comp == _glow) {
       // Handle foreground paint
       final p = Paint()
-        ..color = GameStyles.accentGold.withOpacity(combined)
+        ..color = GameStyles.accentGold.withValues(alpha: combined)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10.0);
 
       comp.textRenderer = TextPaint(style: style.copyWith(foreground: p));
     } else {
       comp.textRenderer = TextPaint(
         style: style.copyWith(
-          color: GameStyles.accentGold.withOpacity(combined),
+          color: GameStyles.accentGold.withValues(alpha: combined),
         ),
       );
     }
