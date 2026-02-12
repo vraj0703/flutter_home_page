@@ -126,28 +126,12 @@ class BoldTextSection implements GameSection {
     // Configure ScrollSystem for reverse entry
     scrollSystem.resetScroll(_maxHeight);
     scrollSystem.setSnapRegions(snapRegions);
-
-    // Set internal state to end
     setScrollOffset(_maxHeight);
-
-    // Architectural Visibility: Reveal all components
     boldTextComponent.opacity = 1.0;
-    // Note: In reverse (coming from Philosophy), we might want these hidden if we are at the bottom?
-    // But enterReverse usually implies we are "activating" the section.
-    // If we enterReverse at _maxHeight, we are at the BOTTOM of the section.
-    // At the bottom of BoldTextSection, the titles should be FADED OUT (scrollProgress > titleFadeEnd).
-    // So setting them to 1.0 here might be wrong if we are immediately setting scroll to max.
-
-    // However, setScrollOffset(_maxHeight) is called right after.
-    // _updateVisuals(_maxHeight) will set their opacity to 0.0 correctly.
-    // So setting them to 1.0 here is safe as a baseline "active" state,
-    // and _updateVisuals will immediately clamp them to the correct state for the scroll position.
-
     cinematicTitle.reset();
     cinematicSecondaryTitle.opacity = 1.0;
     logoOverlay.opacity = 1.0;
     backgroundRun.opacity = 1.0;
-
     boldTextComponent.position = centerPosition;
   }
 

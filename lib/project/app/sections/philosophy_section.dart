@@ -43,10 +43,7 @@ class PhilosophySection implements GameSection {
     required this.playEntrySound,
     required this.playCompletionSound,
   }) {
-    // Bind smoothing callback - legacy controller did this in constructor
     trailComponent.onScrollUpdate = _updateFloatingTitleAnimation;
-
-    // Initialize orchestrator immediately
     orchestrator = BeachSceneOrchestrator(
       background: cloudBackground,
       rainTransition: rainTransition,
@@ -54,15 +51,11 @@ class PhilosophySection implements GameSection {
     cloudBackground.setOrchestrator(orchestrator);
     _orchestratorInitialized = true;
 
-    // Wire button callbacks
     nextButton.onProgressChange = (progress) {
       if (progress > 0) {
         rainTransition.opacity = 1.0;
       }
-      // Delegate everything to orchestrator
       orchestrator.holdProgress = progress;
-
-      // Keep mouse tracking for wiping effect
       rainTransition.updateMousePosition(nextButton.position);
 
       if (math.Random().nextDouble() < progress * 0.3) {
@@ -70,23 +63,15 @@ class PhilosophySection implements GameSection {
       }
     };
 
-    // If your component doesn't have onReleased,
     nextButton.onReleased = () {
-      rainTransition.reset(); // This triggers the lerp back to 0.0
+      rainTransition.reset();
     };
 
     nextButton.onHoldComplete = () {
-      // Hold complete → Delegate to TransitionCoordinator
       if (!_isShattering) {
         _isShattering = true;
-
-        // Delegate entire transition sequence to coordinator
-        // We access MyGame to get the Experience Section (now state-driven)
-        // casting game reference to MyGame to access specific getters
         final myGame = trailComponent.game;
         final to = myGame.experienceSection;
-
-        // to is verified non-null by getter (late final), but check anyway if logic changes
         myGame.transitionCoordinator.startPhilosophyToExperience(
           from: this,
           to: to,
@@ -95,13 +80,11 @@ class PhilosophySection implements GameSection {
     };
 
     rainTransition.onShatterComplete = () {
-      // Pre-warm next section if not already done
       if (!_hasWarmedUpNext) {
         onWarmUpNextSection?.call();
         _hasWarmedUpNext = true;
       }
 
-      // Delay 100ms before advancing to next section
       Future.delayed(const Duration(milliseconds: 100), () {
         _triggerComplete();
       });
@@ -113,13 +96,13 @@ class PhilosophySection implements GameSection {
   }
 
   @override
-  VoidCallback? onComplete; // To next section
+  VoidCallback? onComplete;
 
   @override
   VoidCallback? onWarmUpNextSection;
 
   @override
-  VoidCallback? onReverseComplete; // To previous section
+  VoidCallback? onReverseComplete;
 
   bool _hasWarmedUpNext = false;
 
@@ -141,9 +124,6 @@ class PhilosophySection implements GameSection {
     if (offset > _maxHeight) {
       _scrollProgress = _maxHeight;
       _updateVisuals(_scrollProgress);
-      // Explicitly DO NOT call onComplete here.
-      // We want to force the user to use the "Hold" button to advance.
-      // onComplete?.call();
       return;
     }
 
@@ -174,11 +154,7 @@ class PhilosophySection implements GameSection {
     // Position and fade in button after title is visible (scrollOffset > 1000)
     if (offset > 1000) {
       // Position button below title
-      nextButton.position = Vector2(
-        screenSize.x / 2,
-        screenSize.y * 0.4 +
-            120, // 120px below title center (title is at 40% screen height)
-      );
+      nextButton.position = Vector2(screenSize.x / 2, screenSize.y * 0.4 + 120);
 
       // Fade in button over 500px (1000-1500)
       final buttonFadeProgress = ((offset - 1000) / 500.0).clamp(0.0, 1.0);
@@ -190,10 +166,6 @@ class PhilosophySection implements GameSection {
     // Position rain transition component to cover full screen
     rainTransition.position = Vector2.zero();
     rainTransition.size = screenSize;
-
-    // Changes: Remove scroll-driven rain logic.
-    // Rain is now exclusively driven by nextButton.onProgressChange callback (in constructor).
-    // This ensures only "holding" the button triggers the rain effect.
   }
 
   void _updateAudio(double offset) {
@@ -250,24 +222,13 @@ class PhilosophySection implements GameSection {
       _resetVisuals();
     }
 
-    // Architectural Visibility: Set components to minimally visible
-    // This forces the standard Game Render Loop to process these components
-    // and upload their textures/shaders to the GPU on the REAL rendering context.
-    // NOTE: Opacity must be > 0.01 because PhilosophyCard skips render if alpha <= 0.01
     cloudBackground.opacity = 0.02;
     trailComponent.opacity = 0.02;
     titleComponent.opacity = 0.02;
     cloudBackground.warmUp();
     await titleComponent.warmUp();
-
-    // Allow the game loop to cycle for a duration (e.g. 10-15 frames @ 60fps)
-    // This works because MyGame.onLoad will NO LONGER await this method synchronously.
     await Future.delayed(const Duration(milliseconds: 300));
-
-    // Force Reflection Manager to initialize its texture from the "live" scene
     await orchestrator.reflection.updateReflectionTexture();
-
-    // Capture the valid frame for the transition shader
     forceCaptureRefraction();
 
     // Hide components again
@@ -284,8 +245,6 @@ class PhilosophySection implements GameSection {
     _isActive = true;
     _currentPhase = 0;
     _freezeCapture = false;
-
-    // Configure ScrollSystem
     scrollSystem.resetScroll(0.0);
     scrollSystem.setSnapRegions(snapRegions);
 
@@ -295,11 +254,6 @@ class PhilosophySection implements GameSection {
     titleComponent.opacity = 1.0; // Make title visible
     nextButton.opacity = 0.0; // Will fade in at scroll > 1000
     rainTransition.setTarget(0.0);
-
-    // Pre-capture refraction to prevent lag on first hover
-    // This primes the RainTransitionComponent with a valid texture (sync)
-    // REMOVED: forceCaptureRefraction(); // Causes lag on entry. Rely on warmUp() instead.
-
     // Trigger initial sound (Phase 1)
     _updateVisuals(0.0);
   }
@@ -353,30 +307,14 @@ class PhilosophySection implements GameSection {
 
   int _frameCounter = 0;
 
-  // Called every frame by game loop (via `update` if we hooked it,
-  // but since PhilosophySection isn't a Component, we need to be called by MyGame or similar?
-  // Actually, wait. PhilosophySection is a pure class, it doesn't have an `update` called by the Game loop
-  // efficiently unless `MyGame` calls `currentSection.update(dt)`.
-  // Let's check `MyGame.dart` or `GameSection` interface...
-  // `GameSection` has `void update(double dt)`.
-  // So we can use that!
-
   @override
   void update(double dt) {
-    // 1. Trail component has its own update(dt) called by game loop
-    // But we need to drive the refraction capture here.
-
-    // 2. Real-time Refraction Capture
-    // Only capture if we are interacting with the rain
     if ((nextButton.isHovering ||
             rainTransition.currentIntensity > 0.0 ||
             _isShattering) &&
         !_freezeCapture) {
       _frameCounter++;
 
-      // Optimization Logic:
-      // If we are SHATTERING or HOLDING, we need full 60fps for smoothness.
-      // If we are just idling with some intensity, we can throttle.
       bool needsHighFPS = _isShattering || nextButton.isHovering;
 
       if (needsHighFPS || _frameCounter % 2 == 0) {
@@ -571,8 +509,5 @@ class PhilosophySection implements GameSection {
     rainTransition.disposeResources();
     orchestrator.reflection.clearTargets();
     orchestrator.holdProgress = 0.0;
-
-    // Stop all specific audio loops if any are running
-    // game.audio.stopPhilosophyLoops(); // If such a method existed
   }
 }

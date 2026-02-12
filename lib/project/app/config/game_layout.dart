@@ -25,9 +25,6 @@ class GameLayout {
   static const double testimonialButtonW = 200.0;
   static const double testimonialButtonH = 50.0;
 
-  // --- Experience Page ---
-  static const double experienceOrbitRelW = 0.4;
-  static const double experienceTextRelX = 0.05;
 
   // --- God Ray ---
   static const double godRayCoreSize = 0.0;
@@ -192,27 +189,15 @@ class GameLayout {
 
   // Sizes
   static final Vector2 cardSize = Vector2(cardWidth, cardHeight);
-  static final Vector2 contactButtonSize = Vector2(
-    contactButtonW,
-    contactButtonH,
-  );
   static final Vector2 testimonialButtonSize = Vector2(
     testimonialButtonW,
     testimonialButtonH,
   );
   static final Vector2 testiCardSize = Vector2(testiCardWidth, testiCardHeight);
-  static final Vector2 menuSizeVector = Vector2.all(menuSize);
-  static final Vector2 arrowSizeVector = Vector2.all(arrowSize);
 
   // Offsets
   static final Vector2 titleHeatDriftVector = Vector2(0, titleHeatDriftY);
-  static final Vector2 philosophyStackLiftVector = Vector2(0, philStackLift);
 
-  // Exit Vectors (Scroll Controllers)
-  static final Vector2 testiExitVector = Vector2(0, testiExitY);
-  static final Vector2 skillsExitVector = Vector2(0, skillsExitY);
-  static final Vector2 philExitVector = Vector2(0, philExitY);
-  static final Vector2 expExitVector = Vector2(0, expExitY);
   static final Vector2 parallaxEndVector = Vector2(0, standardParallaxY);
   static final Vector2 secTitleOffsetVector = Vector2(0, secTitleYOffset);
   static final Vector2 logoRemovingTargetVector = Vector2(

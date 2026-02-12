@@ -10,35 +10,6 @@ class GameCurves {
   static const double _bouncyLineDamping = 70.0;
   static const double bouncyLineMass = 20.0;
 
-  // Contact Page
-  static const double _contactEntranceMass = 1.2;
-  static const double _contactEntranceStiffness = 150.0;
-  static const double _contactEntranceDamping = 14.0;
-
-  static const double _contactExitMass = 1.0;
-  static const double _contactExitStiffness = 160.0;
-  static const double _contactExitDamping = 12.0;
-
-  // Experience Page
-  static const double _expExitMass = 1.0;
-  static const double _expExitStiffness = 170.0;
-  static const double _expExitDamping = 12.0;
-
-  // Philosophy Page
-  static const double _philSpringMass = 0.8;
-  static const double _philSpringStiffness = 140.0;
-  static const double _philSpringDamping = 16.0;
-
-  // Skills Page
-  static const double _skillsSpringMass = 1.0;
-  static const double _skillsSpringStiffness = 140.0;
-  static const double _skillsSpringDamping = 18.0;
-
-  // Testimonial Page
-  static const double _testiExitMass = 1.0;
-  static const double _testiExitStiffness = 160.0;
-  static const double _testiExitDamping = 13.0;
-
   // Default Curves
   static const double _defaultSpringMass = 1.0;
   static const double _defaultSpringStiffness = 180.0;
@@ -70,7 +41,6 @@ class GameCurves {
   static const double _logoSpringDamping = 15.0;
 
   // --- Initialized Curves ---
-
   // Springs
   static const SpringCurve defaultSpring = SpringCurve(
     mass: _defaultSpringMass,
@@ -82,42 +52,6 @@ class GameCurves {
     mass: bouncyLineMass,
     stiffness: _bouncyLineStiffness,
     damping: _bouncyLineDamping,
-  );
-
-  static const SpringCurve contactEntranceSpring = SpringCurve(
-    mass: _contactEntranceMass,
-    stiffness: _contactEntranceStiffness,
-    damping: _contactEntranceDamping,
-  );
-
-  static const SpringCurve contactExitSpring = SpringCurve(
-    mass: _contactExitMass,
-    stiffness: _contactExitStiffness,
-    damping: _contactExitDamping,
-  );
-
-  static const SpringCurve expExitSpring = SpringCurve(
-    mass: _expExitMass,
-    stiffness: _expExitStiffness,
-    damping: _expExitDamping,
-  );
-
-  static const SpringCurve philosophySpring = SpringCurve(
-    mass: _philSpringMass,
-    stiffness: _philSpringStiffness,
-    damping: _philSpringDamping,
-  );
-
-  static const SpringCurve skillsSpring = SpringCurve(
-    mass: _skillsSpringMass,
-    stiffness: _skillsSpringStiffness,
-    damping: _skillsSpringDamping,
-  );
-
-  static const SpringCurve testimonialExitSpring = SpringCurve(
-    mass: _testiExitMass,
-    stiffness: _testiExitStiffness,
-    damping: _testiExitDamping,
   );
 
   static const SpringCurve logoSpring = SpringCurve(
@@ -171,7 +105,6 @@ class GameCurves {
   static const Curve tabTransition = Curves.easeInOutCubic;
 
   static const Curve backgroundFade = Curves.easeInOut;
-  static const Curve smoothDecel = Curves.easeOutQuart;
   static const Curve carouselIn = Curves.easeIn;
   static const Curve standardReveal = Curves.easeOut;
 }

@@ -23,19 +23,9 @@ class ExperienceSection extends Component
     required this.screenSize,
   }) {
     content = ExperienceContentComponent();
-    // Add content on top of background
-    // Since ExperienceSection is a Component, we can add children to IT,
-    // but circlesBackground is passed in.
-    // If we add content to circlesBackground, it moves with it?
-    // circlesBackground scales/rotates. Content should probably be separate?
-    // Previous code: circlesBackground.add(content);
-    // Let's stick to that for now or add to this component.
-    // If we add to this, we need to ensure this component is mounted.
-    // MyGame adds ExperienceSection to BlocProvider.
     add(content);
 
     _controller.onScrollUpdate = (scroll) {
-      // Drive parallax or background rotation with scroll
       circlesBackground.setScrollProgress(scroll / 1000.0);
     };
   }
@@ -46,8 +36,6 @@ class ExperienceSection extends Component
   }
 
   void handleScroll(double delta) {
-    // Feed delta to controller as target change
-    // We treat it as accumulation
     _controller.setTargetScroll(_controller.targetScroll + delta);
   }
 
