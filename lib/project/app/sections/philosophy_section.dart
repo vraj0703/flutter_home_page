@@ -13,6 +13,8 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/next_b
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/rain_transition_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/white_overlay_component.dart';
+import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 
 class PhilosophySection implements GameSection {
   @override
@@ -22,16 +24,21 @@ class PhilosophySection implements GameSection {
   final PhilosophyTrailComponent trailComponent;
   final NextButtonComponent nextButton;
   final RainTransitionComponent rainTransition;
+  final WhiteOverlayComponent whiteOverlay;
   Vector2 screenSize;
   final VoidCallback playEntrySound;
   final VoidCallback playCompletionSound;
   double _scrollProgress = 0.0;
-  static const double _maxHeight = 3500.0;
+  double get _maxHeight => trailComponent.maxScrollExtent;
   int _currentPhase = 0;
   late BeachSceneOrchestrator orchestrator;
   bool _orchestratorInitialized = false;
   bool _freezeCapture = false;
   bool _isShattering = false;
+
+  // Button state (decoupled from scroll)
+  bool _buttonVisible = false;
+  double _buttonOpacity = 0.0;
 
   PhilosophySection({
     required this.titleComponent,
@@ -39,11 +46,11 @@ class PhilosophySection implements GameSection {
     required this.trailComponent,
     required this.nextButton,
     required this.rainTransition,
+    required this.whiteOverlay,
     required this.screenSize,
     required this.playEntrySound,
     required this.playCompletionSound,
   }) {
-    trailComponent.onScrollUpdate = _updateFloatingTitleAnimation;
     orchestrator = BeachSceneOrchestrator(
       background: cloudBackground,
       rainTransition: rainTransition,
@@ -67,15 +74,14 @@ class PhilosophySection implements GameSection {
       rainTransition.reset();
     };
 
+    // Initialize visibility
+    nextButton.opacity = 0.0;
+
     nextButton.onHoldComplete = () {
       if (!_isShattering) {
         _isShattering = true;
         final myGame = trailComponent.game;
-        final to = myGame.experienceSection;
-        myGame.transitionCoordinator.startPhilosophyToExperience(
-          from: this,
-          to: to,
-        );
+        myGame.transitionCoordinator.startPhilosophyToExperience(from: this);
       } else {}
     };
 
@@ -105,6 +111,7 @@ class PhilosophySection implements GameSection {
   VoidCallback? onReverseComplete;
 
   bool _hasWarmedUpNext = false;
+  bool _hasScrolledPastEntry = false;
 
   set freezeCapture(bool value) => _freezeCapture = value;
 
@@ -114,22 +121,56 @@ class PhilosophySection implements GameSection {
     Vector2(1450, 1550), // Card 0 lock at 1500
     Vector2(1950, 2050), // Card 1 lock at 2000
     Vector2(2450, 2550), // Card 2 lock at 2500
-    Vector2(2950, 3050), // Card 3 lock at 3000
-    // Final section completion snap
-    Vector2(3400, _maxHeight),
+    Vector2(2650, 2750), // Card 3 lock at 2700
+    Vector2(_maxHeight - 100, _maxHeight + 100), // Snap to end
   ];
 
   @override
   void setScrollOffset(double offset) {
+    if (!_isActive) return;
+
+    // Button visibility: show when last card settles, hide on ANY reverse scroll
+    if (offset < _scrollProgress && _buttonVisible) {
+      // Reverse scroll detected — hide button immediately
+      if (_buttonVisible) {
+        LoggerUtil.log(
+          'PhilosophySection',
+          'Reverse Scroll Detected (Offset: ${offset.toStringAsFixed(1)}) -> Hiding Button',
+        );
+      }
+      _buttonVisible = false;
+    } else if (offset >= 2700 && !_buttonVisible && !_isShattering) {
+      // All cards settled — show button
+      LoggerUtil.log(
+        'PhilosophySection',
+        'Scroll Target Reached (Offset: ${offset.toStringAsFixed(1)}) -> Showing Button',
+      );
+      _buttonVisible = true;
+    }
+
+    // Log significant scroll milestones (every 500px)
+    if ((offset ~/ 500) != (_scrollProgress ~/ 500)) {
+      LoggerUtil.log(
+        'PhilosophySection',
+        'Scroll Milestone: ${offset.toStringAsFixed(1)}',
+      );
+    }
+
     if (offset > _maxHeight) {
+      if (offset > _maxHeight + 500 && _frameCounter % 60 == 0) {
+        LoggerUtil.log(
+          'PhilosophySection',
+          'OVERSHOOT: Offset ${offset.toStringAsFixed(1)} > Max ${_maxHeight.toStringAsFixed(1)}',
+        );
+      }
       _scrollProgress = _maxHeight;
-      _updateVisuals(_scrollProgress);
+      _applyScrollEffects(_scrollProgress);
       return;
     }
 
     if (offset < 0) {
       _scrollProgress = 0;
-      _updateVisuals(_scrollProgress);
+      _applyScrollEffects(_scrollProgress);
       onReverseComplete?.call();
       return;
     }
@@ -145,27 +186,81 @@ class PhilosophySection implements GameSection {
     // Update shader scroll progress for sky gradient (0.0-1.0)
     cloudBackground.setScrollProgress(_scrollProgress / _maxHeight);
 
-    _updateVisuals(_scrollProgress);
+    _applyScrollEffects(_scrollProgress);
   }
 
-  void _updateVisuals(double offset) {
-    trailComponent.setTargetScroll(offset);
+  void _applyScrollEffects(double offset) {
+    _updateAudio(offset);
 
-    // Position and fade in button after title is visible (scrollOffset > 1000)
-    if (offset > 1000) {
-      // Position button below title
-      nextButton.position = Vector2(screenSize.x / 2, screenSize.y * 0.4 + 120);
-
-      // Fade in button over 500px (1000-1500)
-      final buttonFadeProgress = ((offset - 1000) / 500.0).clamp(0.0, 1.0);
-      nextButton.opacity = buttonFadeProgress;
-    } else {
-      nextButton.opacity = 0.0;
+    // 0. White Overlay
+    // Logic: Only show during initial entry. Once user scrolls deep (> 200), disable it.
+    // This prevents "White Screen" when scrolling back up.
+    if (!_hasScrolledPastEntry && offset > 200) {
+      _hasScrolledPastEntry = true;
     }
 
-    // Position rain transition component to cover full screen
-    rainTransition.position = Vector2.zero();
-    rainTransition.size = screenSize;
+    if (_hasScrolledPastEntry) {
+      whiteOverlay.opacity = 0.0;
+    } else {
+      final overlayProgress = (offset / 150.0).clamp(0.0, 1.0);
+      whiteOverlay.opacity = 1.0 - overlayProgress;
+    }
+
+    // 1. Scene Entry (0 - 500) - "Curtain Reveal"
+    // Instead of linear scale, use Parallax + Ease
+    double entryProgress = (offset / 500.0).clamp(0.0, 1.0);
+    final entryCurve = Curves.easeOutCubic.transform(entryProgress);
+
+    // Background: Parallax (slower) + Fade
+    // Moves from 0 to -100 (Upwards) to prevent top gap
+    // Requires scale > 1.0 (handled here or in component)
+    cloudBackground.opacity = entryCurve;
+    cloudBackground.scale = Vector2.all(1.2); // 20% Overscan
+    // Center X (offset by 10%), Move Y (0 -> -100)
+    cloudBackground.position = Vector2(
+      -(screenSize.x * 0.1),
+      -(entryCurve * 100),
+    );
+
+    // Content Container (Trail): aligned with card rangeStart (1000px)
+    if (offset > 1000) {
+      double trailProgress = ((offset - 1000) / 200.0).clamp(0.0, 1.0);
+      final trailCurve = Curves.easeOutCubic.transform(trailProgress);
+
+      trailComponent.opacity = trailCurve;
+      trailComponent.scale = Vector2.all(0.95 + (0.05 * trailCurve));
+      trailComponent.position = Vector2(0, (1.0 - trailCurve) * 200);
+    } else {
+      trailComponent.opacity = 0.0;
+      trailComponent.scale = Vector2.all(0.95);
+      trailComponent.position = Vector2(0, 200);
+    }
+
+    // 2. Title Animation (500 - 1000)
+    if (offset > 500) {
+      // Remapped per user request
+      const double titleStart = 500.0;
+      const double titleEnd = 1000.0;
+
+      // Title Progress
+      final titleProgress = ((offset - titleStart) / (titleEnd - titleStart))
+          .clamp(0.0, 1.0);
+
+      if (titleProgress > 0) {
+        _updateFloatingTitleAnimation(titleProgress);
+      } else {
+        titleComponent.opacity = 0.0;
+      }
+    } else {
+      titleComponent.opacity = 0.0;
+    }
+
+    // 3. Trail (Cards) Animation
+    trailComponent.setTargetScroll(offset);
+    trailComponent.updateTrailAnimation(offset);
+
+    // 4. Button Position (visibility handled in setScrollOffset)
+    nextButton.position = Vector2(screenSize.x / 2, screenSize.y * 0.8);
   }
 
   void _updateAudio(double offset) {
@@ -237,48 +332,62 @@ class PhilosophySection implements GameSection {
     titleComponent.opacity = 0.0;
     nextButton.opacity = 0.0;
     rainTransition.setTarget(0.0);
+    whiteOverlay.opacity = 0.0;
   }
 
   @override
   Future<void> enter(ScrollSystem scrollSystem) async {
+    LoggerUtil.log('PhilosophySection', 'ENTER -> Activating Section');
     _hasWarmedUpNext = false;
     _isActive = true;
+    _hasScrolledPastEntry = false; // Reset for new entry
     _currentPhase = 0;
     _freezeCapture = false;
+    _buttonVisible = false;
+    _buttonOpacity = 0.0;
+    LoggerUtil.log(
+      'PhilosophySection',
+      'ENTER -> Max Height: ${_maxHeight.toStringAsFixed(1)}',
+    );
+    // Allow small overshoot (-10 to max+10) to trigger exit navigation logic
     scrollSystem.resetScroll(0.0);
+    scrollSystem.setBounds(-10.0, _maxHeight + 10.0);
     scrollSystem.setSnapRegions(snapRegions);
 
-    // Architectural Visibility: Reveal components
-    trailComponent.opacity = 1.0;
-    cloudBackground.opacity = 1.0;
-    titleComponent.opacity = 1.0; // Make title visible
-    nextButton.opacity = 0.0; // Will fade in at scroll > 1000
+    // Ensure all components start hidden
+    nextButton.opacity = 0.0;
+    rainTransition.opacity = 0.0;
     rainTransition.setTarget(0.0);
-    // Trigger initial sound (Phase 1)
-    _updateVisuals(0.0);
+    whiteOverlay.opacity = 1.0; // Bridge from Bold Text flash
+
+    // Apply scroll effects at 0.0 to set all initial opacities
+    _applyScrollEffects(0.0);
   }
 
   @override
   Future<void> enterReverse(ScrollSystem scrollSystem) async {
     _hasWarmedUpNext = false;
     _isActive = true;
+    _hasScrolledPastEntry = true; // Don't show white overlay on reverse entry
     _currentPhase = 7;
     _freezeCapture = false;
+    _buttonVisible = true;
+    _buttonOpacity = 1.0;
 
     // Configure ScrollSystem
+    // Configure ScrollSystem with overshoot margin
     scrollSystem.resetScroll(_maxHeight);
+    scrollSystem.setBounds(-10.0, _maxHeight + 10.0);
     scrollSystem.setSnapRegions(snapRegions);
 
-    // Set internal state
-    setScrollOffset(_maxHeight);
-
-    // Architectural Visibility: Reveal components
-    trailComponent.opacity = 1.0;
-    cloudBackground.opacity = 1.0;
+    // Use _applyScrollEffects to calculate correct visibility
+    // instead of manually setting opacities (which caused leaking)
+    _applyScrollEffects(_maxHeight);
   }
 
   @override
   Future<void> exit() async {
+    LoggerUtil.log('PhilosophySection', 'EXIT -> Deactivating Section');
     _isActive = false;
 
     // Strict Visibility Reset - Hide all components
@@ -286,6 +395,10 @@ class PhilosophySection implements GameSection {
     cloudBackground.opacity = 0.0;
     trailComponent.opacity = 0.0;
     nextButton.opacity = 0.0;
+    whiteOverlay.opacity = 0.0;
+    rainTransition.opacity = 0.0;
+    _buttonVisible = false;
+    _buttonOpacity = 0.0;
 
     // Dispose resources to prevent GPU leaks
     rainTransition.opacity = 0.0;
@@ -309,6 +422,24 @@ class PhilosophySection implements GameSection {
 
   @override
   void update(double dt) {
+    if (!_isActive) return;
+
+    // Smooth button fade (decoupled from scroll)
+    final targetButtonOpacity = _buttonVisible ? 1.0 : 0.0;
+    if ((_buttonOpacity - targetButtonOpacity).abs() > 0.01) {
+      // Fast fade-out (8.0), slower fade-in (3.0) for cinematic feel
+      final speed = _buttonVisible ? 3.0 : 8.0;
+      _buttonOpacity = lerpDouble(
+        _buttonOpacity,
+        targetButtonOpacity,
+        dt * speed,
+      )!;
+    } else {
+      _buttonOpacity = targetButtonOpacity;
+    }
+    nextButton.opacity = _buttonOpacity;
+    nextButton.scale = Vector2.all(0.5 + (0.5 * _buttonOpacity));
+
     if ((nextButton.isHovering ||
             rainTransition.currentIntensity > 0.0 ||
             _isShattering) &&
@@ -317,7 +448,12 @@ class PhilosophySection implements GameSection {
 
       bool needsHighFPS = _isShattering || nextButton.isHovering;
 
-      if (needsHighFPS || _frameCounter % 2 == 0) {
+      // Throttle capture:
+      // High FPS needed? Capture every 2nd frame (30fps effective)
+      // Low FPS needed? Capture every 3rd frame (20fps effective)
+      int throttle = needsHighFPS ? 2 : 3;
+
+      if (_frameCounter % throttle == 0) {
         _captureRefractionFrame();
       }
     }
@@ -331,7 +467,9 @@ class PhilosophySection implements GameSection {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
 
-    const double scale = 0.5;
+    // Performance: Reduced from 0.5 to 0.2 for mobile optimization.
+    // Rain distortion doesn't need high-res crispness, just color data.
+    const double scale = 0.2;
     canvas.scale(scale);
 
     // Render the beach and the text/cards into the off-screen buffer
@@ -345,6 +483,7 @@ class PhilosophySection implements GameSection {
     final int h = (screenSize.y * scale).toInt();
 
     // toImageSync avoids the raster thread roundtrip (available in Flutter 3.x+)
+    // RISK: blocking UI thread. Kept low res (0.2) to mitigate.
     try {
       final img = picture.toImageSync(w, h);
       rainTransition.updateBackgroundTexture(img);
@@ -381,44 +520,9 @@ class PhilosophySection implements GameSection {
     return ScrollConsumed(newScroll);
   }
 
-  void _updateFloatingTitleAnimation(double scrollOffset) {
+  // Consolidated into _applyScrollEffects, this now just handles the specific Title Visuals
+  void _updateFloatingTitleAnimation(double titleProgress) {
     if (!_isActive) return;
-
-    // Sync Audio with smoothed scroll
-    _updateAudio(scrollOffset);
-
-    // 1. Background Fade-in (0 - 500)
-    // Only show beach background during Philosophy scroll range
-    // Fade in from 0-500px to prevent visibility in logo state
-    if (scrollOffset >= 0 && scrollOffset <= 500) {
-      final fadeInProgress = (scrollOffset / 500.0).clamp(0.0, 1.0);
-      cloudBackground.opacity = fadeInProgress;
-    } else if (scrollOffset > 500) {
-      cloudBackground.opacity = 1.0;
-    } else {
-      cloudBackground.opacity = 0.0;
-    }
-
-    // 2. Title Animation (500 - 1000)
-    // Remapped per user request
-    const double titleStart = 500.0;
-    const double titleEnd = 1000.0;
-
-    // Pass raw offset to trail (it handles its own 1000-3000 ranges now)
-    trailComponent.updateTrailAnimation(scrollOffset);
-
-    // Title Progress
-    final titleProgress =
-        ((scrollOffset - titleStart) / (titleEnd - titleStart)).clamp(0.0, 1.0);
-
-    if (titleProgress <= 0.0) {
-      // Reset position/opacity if below range
-      if (scrollOffset < titleStart) {
-        titleComponent.opacity = 0.0;
-        titleComponent.showReflection = false;
-      }
-      return;
-    }
 
     // Enable reflection
     titleComponent.showReflection = true;
@@ -485,10 +589,17 @@ class PhilosophySection implements GameSection {
     titleComponent.position = Vector2(screenSize.x / 2, screenSize.y * 0.7);
     titleComponent.showReflection = false;
     _currentPhase = 0;
+    _buttonVisible = false;
+    _buttonOpacity = 0.0;
 
     // Reset Trail (prevent leaks)
+    trailComponent.opacity = 0.0;
     trailComponent.setTargetScroll(0.0);
     trailComponent.updateTrailAnimation(0.0);
+
+    // Reset button
+    nextButton.opacity = 0.0;
+    nextButton.scale = Vector2.all(0.5);
   }
 
   /// Cleanup Philosophy components and reset shader uniforms

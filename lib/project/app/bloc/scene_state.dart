@@ -17,7 +17,10 @@ class SceneState with _$SceneState {
 
   const factory SceneState.title() = Title;
 
-  const factory SceneState.active({@Default(1.0) double uiOpacity}) = Active;
+  const factory SceneState.active({
+    @Default(1.0) double uiOpacity,
+    @Default(true) bool isArrowVisible,
+  }) = Active;
 
   const factory SceneState.loadingExperience() = LoadingExperience;
 

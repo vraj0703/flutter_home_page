@@ -4,10 +4,10 @@ import 'package:flame/components.dart' hide Matrix4, Vector3;
 import 'package:flame/effects.dart';
 import 'package:flame/text.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
+import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 import 'package:vector_math/vector_math_64.dart' hide Vector2, Colors;
 
 class PhilosophyCard extends PositionComponent
@@ -35,6 +35,7 @@ class PhilosophyCard extends PositionComponent
   // Tilt Logic
   final Vector2 _currentTilt = Vector2.zero();
   Vector2 _targetTilt = Vector2.zero();
+
   Vector2 get currentTilt => _currentTilt;
 
   @override
@@ -58,7 +59,7 @@ class PhilosophyCard extends PositionComponent
   late SpriteComponent iconComp;
   late TextComponent titleComp;
   late RectangleComponent dividerComp;
-  late TextBoxComponent descComp;
+  late TextComponent descComp; // Changed to TextComponent
 
   PhilosophyCard({
     required this.data,
@@ -105,25 +106,18 @@ class PhilosophyCard extends PositionComponent
       );
       add(dividerComp);
 
-      descComp = TextBoxComponent(
-        text: '',
+      descComp = TextComponent(
+        text: '', // Set in _updateLayout
         textRenderer: TextPaint(
           style: TextStyle(
             fontFamily: GameStyles.fontModernUrban,
             fontSize: GameStyles.cardDescVisibleSize,
-            color: GameStyles.cardDesc,
+            color: GameStyles.cardDesc, // Will be updated by _updateVisuals
             height: 1.4,
           ),
         ),
-        boxConfig: TextBoxConfig(
-          maxWidth: (size.x - 32.0).clamp(
-            1.0,
-            10000.0,
-          ), // 16px padding on each side
-          growingBox: false,
-          timePerChar: 0.0,
-        ),
-        position: GameLayout.cardDescPosVector,
+        anchor: Anchor.center,
+        position: size / 2,
       );
       add(descComp);
     }
@@ -140,6 +134,7 @@ class PhilosophyCard extends PositionComponent
     }
   }
 
+  double _lastAlpha = -1.0;
   bool canFlip = false;
 
   bool get isFlipped => _isFlipped;
@@ -195,6 +190,13 @@ class PhilosophyCard extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
+    // Update visuals if opacity changes (Text rendering needs explicit alpha update)
+    final currentAlpha = _finalOpacity;
+    if ((currentAlpha - _lastAlpha).abs() > 0.01) {
+      _lastAlpha = currentAlpha;
+      _updateVisuals();
+    }
+
     const duration = 0.8; // Extended from 0.7s to 0.8s
     final oldProgress = flipProgress;
 
@@ -225,6 +227,10 @@ class PhilosophyCard extends PositionComponent
     if ((oldProgress < 0.5 && flipProgress >= 0.5) ||
         (oldProgress > 0.5 && flipProgress <= 0.5)) {
       game.audio.playTrailCardSound(index);
+      LoggerUtil.log(
+        'PhilosophyCard',
+        'Card $index Flip -> ${flipProgress >= 0.5 ? "Back" : "Front"}',
+      );
     }
 
     // Idle animations when locked (opacity = 1.0 and canFlip = true)
@@ -306,19 +312,30 @@ class PhilosophyCard extends PositionComponent
     if (isBack) {
       iconComp.scale = Vector2.zero();
       titleComp.scale = Vector2.zero();
-      // Use Scale -1 to flip text back to normal (un-mirror)
-      descComp.scale = Vector2(-1.0, 1.0);
-      descComp.text = data!.description;
+      // Keep scale positive — un-mirroring handled in renderTree
+      descComp.scale = Vector2.all(1.0);
+
+      // Debug log for opacity/scale
+      if (index == 3 && _idleTime % 60 < 1) {
+        // Throttle logs
+        // LoggerUtil.log('PhilosophyCard', 'Card $index Back Update: Scale ${descComp.scale.x}, Alpha $_finalOpacity');
+      }
     } else {
       iconComp.scale = Vector2.all(1.0);
       titleComp.scale = Vector2.all(1.0);
       descComp.scale = Vector2.zero();
+    }
+
+    // Debug log for opacity/scale in update
+    if (_isFlipped && index == 2 && _idleTime % 1.0 < 0.05) {
+      // LoggerUtil.log('PhilosophyCard', 'Update: Card $index Back. Opacity: $_finalOpacity, Scale: ${descComp.scale}');
     }
   }
 
   @override
   void renderTree(Canvas canvas) {
     final isReflectionPass = canvas is ui.PictureRecorder;
+    final alpha = _finalOpacity; // Define alpha for logging
 
     if (transformMat != null) {
       canvas.save();
@@ -344,8 +361,21 @@ class PhilosophyCard extends PositionComponent
         // Divider: Standard Plane (Z=0)
         // dividerComp.renderTree(canvas); // Hidden in layout anyway, but safe to skip
       } else if (!isReflectionPass) {
-        // Back side: Show description
+        // Back side: Un-mirror text by flipping canvas horizontally
+
+        // Debug render check
+        if (index == 2 && flipProgress > 0.51 && flipProgress < 0.53) {
+          LoggerUtil.log(
+            'PhilosophyCard',
+            'Rendering Back Card $index. Text len: ${descComp.text.length}, Alpha: $alpha',
+          );
+        }
+
+        canvas.save();
+        canvas.scale(-1.0, 1.0);
+        canvas.translate(-size.x, 0);
         descComp.renderTree(canvas);
+        canvas.restore();
       }
 
       canvas.restore();
@@ -364,32 +394,21 @@ class PhilosophyCard extends PositionComponent
       height: 1.4,
     );
 
-    // Mirror logic
-    final textAlign = isLeftSide ? TextAlign.left : TextAlign.right;
     // Fill parent with 16.0 padding (16 left + 16 right = 32)
     final descWidth = size.x - 16.0;
 
-    final textPainter = TextPainter(
-      text: TextSpan(text: data?.description ?? '', style: style),
-      textDirection: TextDirection.ltr,
-      textAlign: textAlign,
-    );
-    textPainter.layout(maxWidth: descWidth);
-    final descHeight = textPainter.height;
+    // Wrap text manually
+    final wrappedText = _wrapText(data?.description ?? '', style, descWidth);
+    descComp.text = wrappedText;
 
     // Position Description at CENTER
-    descComp.size = Vector2(descWidth, descHeight + 10);
-    descComp.position = size / 2; // Back to center
+    descComp.position = size / 2;
     descComp.anchor = Anchor.center;
-    descComp.align = isLeftSide ? Anchor.centerLeft : Anchor.centerRight;
 
-    // Critical: Update boxConfig so text wraps at the new width
-    descComp.boxConfig = TextBoxConfig(
-      maxWidth: descWidth,
-      timePerChar: 0.0,
-      growingBox: false,
-      margins: EdgeInsets.zero,
-    );
+    // Note: TextComponent doesn't support boxConfig wrapping.
+    // We rely on newlines in the string for now.
+
+    // descComp.boxConfig... REMOVED
 
     if (isLeftSide) {
       // Icon: Top-Right
@@ -487,5 +506,43 @@ class PhilosophyCard extends PositionComponent
     // Bottom-Left
     canvas.drawLine(Offset(0, size.y), Offset(cornerLength, size.y), paint);
     canvas.drawLine(Offset(0, size.y), Offset(0, size.y - cornerLength), paint);
+  }
+
+  String _wrapText(String text, TextStyle style, double maxWidth) {
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout(maxWidth: maxWidth);
+
+    // Flame TextComponent doesn't wrap, so we need to insert newlines manually.
+    // Since TextPainter handles layout, we can use computeLineMetrics to find where lines break?
+    // Actually, TextPainter doesn't easily give back the string with newlines.
+    // Helper approach: Simple greedy word wrap.
+
+    final words = text.split(' ');
+    final sb = StringBuffer();
+    String currentLine = '';
+
+    for (final word in words) {
+      final potentialLine = currentLine.isEmpty ? word : '$currentLine $word';
+      textPainter.text = TextSpan(text: potentialLine, style: style);
+      textPainter.layout(maxWidth: double.infinity);
+
+      if (textPainter.width <= maxWidth) {
+        currentLine = potentialLine;
+      } else {
+        if (sb.isNotEmpty) sb.write('\n');
+        sb.write(currentLine);
+        currentLine = word;
+      }
+    }
+
+    if (currentLine.isNotEmpty) {
+      if (sb.isNotEmpty) sb.write('\n');
+      sb.write(currentLine);
+    }
+
+    return sb.toString();
   }
 }

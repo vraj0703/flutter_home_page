@@ -61,10 +61,13 @@ class MyGame extends FlameGame
 
   SequenceRunner get primarySequenceRunner => _primarySequenceRunner;
 
-  ExperienceSection get experienceSection => _experienceSection;
-
   final GameComponentFactory _componentFactory = GameComponentFactory();
+
+  // Component Accessors (Decoupled Lookup)
+  ExperienceSection get experienceSection =>
+      _primarySequenceRunner.sections.whereType<ExperienceSection>().first;
   final GameCursorSystem _cursorSystem = GameCursorSystem();
+
   GameCursorSystem get cursorSystem => _cursorSystem;
   final GameLogoAnimator logoAnimator = GameLogoAnimator();
   late final Timer _inactivityTimer;
@@ -72,10 +75,6 @@ class MyGame extends FlameGame
 
   GodRayController? _godRayController;
   late final TransitionCoordinator transitionCoordinator;
-
-  // Keep reference to sections for direct access
-  late final PhilosophySection _philosophySection;
-  late final ExperienceSection _experienceSection;
 
   late final FlameBlocProvider<SceneBloc, SceneState> _blocProvider;
 
@@ -144,10 +143,6 @@ class MyGame extends FlameGame
 
     add(_inputController);
 
-    // Progressive Warmup Strategy:
-    // Do NOT await here. We want the game loop to start running to render the
-    // "Loading" state (splash) AND to technically process the opaque warmup frames
-    // of the Philosophy section in the background.
     _primarySequenceRunner.warmUpAll().whenComplete(() {
       _warmupComplete = true;
     });
@@ -206,31 +201,35 @@ class MyGame extends FlameGame
     if (!isLoaded) return;
     if (_isTransitioning) return; // Block ALL scroll during transitions
 
-    stateProvider.sceneState().maybeWhen(
-      active: (_) {
-        // Route to Philosophy scroll system
-        _philosophyScrollSystem.onScroll(info.scrollDelta.global.y);
-      },
-      loadingExperience: () {
-        // Block scroll during transition
-      },
-      experience: (_) {
-        // Feed Scroll Physics
-        _experienceSection.handleScroll(info.scrollDelta.global.y);
+    final state = stateProvider.sceneState();
 
-        // Scroll UP → Return to Philosophy
-        // Threshold (< -10) prevents accidental micro-scroll triggers
-        if (info.scrollDelta.global.y < -10) {
-          transitionCoordinator.returnToPhilosophy(
-            from: _experienceSection,
-            to: _philosophySection,
-          );
-        }
-      },
-      orElse: () {
-        _inputController.handleScroll(info);
-      },
+    bool isGameState = false;
+    state.maybeWhen(
+      active: (_, __) => isGameState = true,
+      experience: (_) => isGameState = true,
+      loadingExperience: () =>
+          isGameState = true, // Still allow scroll processing? Usually blocked.
+      orElse: () => isGameState = false,
     );
+
+    if (isGameState) {
+      // centralized routing via SequenceRunner
+      _philosophyScrollSystem.onScroll(info.scrollDelta.global.y);
+
+      // UI Visibility Logic
+      // Hide Arrow in Philosophy Section
+      if (primarySequenceRunner.currentSection is PhilosophySection) {
+        queuer.queue(event: const SceneEvent.toggleArrow(false));
+      } else {
+        queuer.queue(event: const SceneEvent.toggleArrow(true));
+      }
+      if (primarySequenceRunner.currentSection is ExperienceSection &&
+          info.scrollDelta.global.y < -10) {
+        transitionCoordinator.returnToPhilosophy();
+      }
+    } else {
+      _inputController.handleScroll(info);
+    }
   }
 
   @override
@@ -265,7 +264,7 @@ class MyGame extends FlameGame
 
     // Update Runner
     state.maybeWhen(
-      active: (_) {
+      active: (_, __) {
         _philosophyScrollSystem.update(dt);
         _primarySequenceRunner.update(dt);
       },
@@ -327,10 +326,6 @@ class MyGame extends FlameGame
     final center = size / 2;
 
     _primarySequenceRunner.onResize(size);
-
-    if (isLoaded) {
-      _experienceSection.onResize(size);
-    }
 
     stateProvider.sceneState().maybeWhen(
       loading: (isSvgReady, isGameReady) {},
@@ -431,12 +426,13 @@ class MyGame extends FlameGame
     boldSection.onComplete = () {};
 
     // 2. Philosophy
-    _philosophySection = PhilosophySection(
+    final philosophySection = PhilosophySection(
       titleComponent: _componentFactory.philosophyText,
       cloudBackground: _componentFactory.beachBackground,
       trailComponent: _componentFactory.philosophyTrail,
       nextButton: _componentFactory.nextButton,
       rainTransition: _componentFactory.rainTransition,
+      whiteOverlay: _componentFactory.whiteOverlay,
       screenSize: size,
       playEntrySound: audio.playPhilosophyEntry,
       playCompletionSound: audio.playPhilosophyComplete,
@@ -455,14 +451,18 @@ class MyGame extends FlameGame
     _componentFactory.philosophyText.opacity = 0.0;
 
     // 3. Experience
-    _experienceSection = ExperienceSection(
+    final experienceSection = ExperienceSection(
       circlesBackground: _componentFactory.circlesBackground,
       queuer: queuer,
       screenSize: size,
     );
-    _blocProvider.add(_experienceSection);
+    _blocProvider.add(experienceSection);
 
-    _primarySequenceRunner.init([boldSection, _philosophySection]);
+    _primarySequenceRunner.init([
+      boldSection,
+      philosophySection,
+      experienceSection,
+    ]);
 
     // Wiring Handoff
     _primarySequenceRunner.onSequenceComplete = () async {

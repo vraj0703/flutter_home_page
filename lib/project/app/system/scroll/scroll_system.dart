@@ -3,6 +3,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:flame/components.dart';
 
 import 'package:flutter_home_page/project/app/config/game_physics.dart';
+import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 
 /// Manages the global scroll state and notifies observers.
@@ -19,6 +20,9 @@ class ScrollSystem {
   bool _isSnapping = false;
   double _snapTarget = 0.0;
 
+  double? _minScroll;
+  double? _maxScroll;
+
   static const double snapVelocityThreshold = GamePhysics.snapVelocityThreshold;
 
   double get scrollOffset => _currentScrollOffset;
@@ -27,6 +31,17 @@ class ScrollSystem {
 
   void setSnapRegions(List<Vector2> regions) {
     _snapRegions = regions;
+  }
+
+  void setBounds(double? min, double? max) {
+    _minScroll = min;
+    _maxScroll = max;
+    LoggerUtil.log('ScrollSystem', 'setBounds($min, $max)');
+
+    // Clamp current target immediately if out of bounds
+    if (_minScroll != null && _maxScroll != null) {
+      _targetScrollOffset = _targetScrollOffset.clamp(_minScroll!, _maxScroll!);
+    }
   }
 
   void register(ScrollObserver observer) {
@@ -62,6 +77,18 @@ class ScrollSystem {
     }
 
     _targetScrollOffset += delta;
+    if (_minScroll != null && _maxScroll != null) {
+      _targetScrollOffset = _targetScrollOffset.clamp(_minScroll!, _maxScroll!);
+    }
+
+    // Log if scroll system is running away (e.g. > 4000)
+    if (_targetScrollOffset.abs() > 4000 &&
+        _targetScrollOffset.abs() % 1000 < 50) {
+      LoggerUtil.log(
+        'ScrollSystem',
+        'High Scroll Value Warning: ${_targetScrollOffset.toStringAsFixed(1)}',
+      );
+    }
 
     final currentTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
     if (_lastUpdateTime > 0) {
@@ -101,7 +128,10 @@ class ScrollSystem {
   }
 
   /// Main update loop with spring physics.
-  void update(double dt) {
+  void update(double originalDt) {
+    // Cap DT to prevent physics explosion on lag spikes
+    final dt = originalDt.clamp(0.0, 0.05);
+
     // 1. Handle snapping with SPRING physics
     if (_isSnapping) {
       // Spring simulation: F = -kx - cv
@@ -124,6 +154,24 @@ class ScrollSystem {
         _targetScrollOffset = _snapTarget;
         _springVelocity = 0.0;
         _isSnapping = false;
+      }
+    }
+
+    // Safety Clamp: Prevent physics from overshooting bounds
+    if (_minScroll != null && _maxScroll != null) {
+      final oldTarget = _targetScrollOffset;
+      _targetScrollOffset = _targetScrollOffset.clamp(_minScroll!, _maxScroll!);
+      if (oldTarget != _targetScrollOffset) {
+        // Kill momentum if we hit the wall
+        _springVelocity = 0.0;
+        _isSnapping = false; // Stop snapping if we hit bounds
+
+        if (oldTarget.abs() > 3000) {
+          LoggerUtil.log(
+            'ScrollSystem',
+            'Clamped target & Killed Velocity: $oldTarget -> $_targetScrollOffset',
+          );
+        }
       }
     }
 

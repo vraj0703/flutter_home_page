@@ -53,7 +53,9 @@ class GameAudioSystem {
         GameAudioConfig.waterdropSfx,
         GameAudioConfig.gearTickSfx,
         GameAudioConfig.selectionClickSfx,
+        GameAudioConfig.selectionClickSfx,
         GameAudioConfig.ambientBreeze,
+        GameAudioConfig.philosophyButtonSfx,
       ]);
     } catch (e) {
       // Ignore audio loading errors (likely format issues on web)
@@ -171,6 +173,13 @@ class GameAudioSystem {
     );
   }
 
+  void playPhilosophyButtonSound() {
+    _safePlay(
+      GameAudioConfig.philosophyButtonSfx,
+      volume: GameAudioConfig.sfxVolume,
+    );
+  }
+
   void playTrailCardSound(int index) {
     String sfx;
     switch (index) {
@@ -198,7 +207,7 @@ class GameAudioSystem {
   }
 
   void playGearTick() {
-   /* _safePlay(
+    /* _safePlay(
       GameAudioConfig.gearTickSfx,
       volume: GameAudioConfig.sfxVolume * 0.8,
     );*/

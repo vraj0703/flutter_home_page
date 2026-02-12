@@ -21,6 +21,7 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/philos
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/rain_transition_component.dart';
 import 'package:flutter_home_page/project/app/views/components/experience/circles_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/philosophy/white_overlay_component.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 
@@ -43,6 +44,7 @@ class GameComponentFactory {
   late final PhilosophyTrailComponent _philosophyTrail;
   late final NextButtonComponent _nextButton;
   late final RainTransitionComponent _rainTransition;
+  late final WhiteOverlayComponent _whiteOverlay;
   late final CirclesBackgroundComponent _circlesBackground;
 
   // ── Typed public getters ──────────────────────────────────────────────
@@ -61,6 +63,7 @@ class GameComponentFactory {
   PhilosophyTrailComponent get philosophyTrail => _philosophyTrail;
   NextButtonComponent get nextButton => _nextButton;
   RainTransitionComponent get rainTransition => _rainTransition;
+  WhiteOverlayComponent get whiteOverlay => _whiteOverlay;
   CirclesBackgroundComponent get circlesBackground => _circlesBackground;
 
   /// All components in render-priority order for adding to the game tree.
@@ -78,6 +81,7 @@ class GameComponentFactory {
     _philosophyText,
     _philosophyTrail,
     _nextButton,
+    _whiteOverlay,
     _rainTransition,
     _circlesBackground,
   ];
@@ -230,7 +234,12 @@ class GameComponentFactory {
     final rainShader = await _loadShader(GameAssets.rainShader);
     _rainTransition = RainTransitionComponent(shader: rainShader, size: size);
     _rainTransition.priority = GameLayout.zContent;
-    _rainTransition.opacity = 1.0;
+    _rainTransition.opacity = 0.0;
+
+    // ─── White Overlay ───
+    _whiteOverlay = WhiteOverlayComponent();
+    _whiteOverlay.size = size;
+    _whiteOverlay.opacity = 0.0; // Default hidden
 
     // ─── Circles Background ───
     final circlesShader = await _loadShader(GameAssets.circlesShader);

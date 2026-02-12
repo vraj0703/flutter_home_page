@@ -126,7 +126,7 @@ class _StatefulSceneState extends State<StatefulScene>
             _game.audio.playBouncyArrow();
             _game.activateTitleCursorSystem();
           },
-          active: (_) {
+          active: (_, _) {
             // Game is now fully active and scrolling
             _game.unblockInput();
             _game.primarySequenceRunner.start();

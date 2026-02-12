@@ -3,6 +3,9 @@ import 'package:flame/effects.dart';
 import 'package:flame_bloc/flame_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
+import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
+import 'package:flutter_home_page/project/app/models/scroll_result.dart';
+import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/views/components/experience/circles_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/experience/experience_content_component.dart';
@@ -10,12 +13,27 @@ import 'package:flutter_home_page/project/app/views/components/experience/experi
 import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/experience_page_controller.dart';
 
 class ExperienceSection extends Component
-    with FlameBlocListenable<SceneBloc, SceneState> {
+    with FlameBlocListenable<SceneBloc, SceneState>
+    implements GameSection {
   final CirclesBackgroundComponent circlesBackground;
   final Queuer queuer;
   late final ExperienceContentComponent content;
   final ExperiencePageController _controller = ExperiencePageController();
   Vector2 screenSize;
+
+  // GameSection Interface Implementation
+  @override
+  VoidCallback? onComplete;
+  @override
+  VoidCallback? onReverseComplete;
+  @override
+  VoidCallback? onWarmUpNextSection;
+
+  @override
+  double get maxScrollExtent => 2000.0; // Allow some scroll play for background effect
+
+  @override
+  List<Vector2> get snapRegions => []; // No snapping for free-flow background interaction
 
   ExperienceSection({
     required this.circlesBackground,
@@ -26,17 +44,81 @@ class ExperienceSection extends Component
     add(content);
 
     _controller.onScrollUpdate = (scroll) {
-      circlesBackground.setScrollProgress(scroll / 1000.0);
+      circlesBackground.setScrollProgress(scroll / maxScrollExtent);
     };
+  }
+
+  @override
+  Future<void> warmUp() async {
+    // Ensure assets are loaded
+    // Typically redundant if handled by factory, but good for safety
+    circlesBackground.warmUp();
+  }
+
+  @override
+  Future<void> enter(ScrollSystem scrollSystem) async {
+    // Reset internal state
+    _controller.reset();
+
+    // Configure system
+    scrollSystem.resetScroll(0.0);
+    scrollSystem.setSnapRegions(snapRegions);
+
+    // Trigger visual entry
+    await animateEntry();
+  }
+
+  @override
+  Future<void> enterReverse(ScrollSystem scrollSystem) async {
+    // Entering from below (future section)? Not applicable as this is last section.
+    // BUT, if we add a section AFTER this, we'd need this.
+    _controller.reset();
+    _controller.setTargetScroll(maxScrollExtent); // Start at bottom?
+
+    scrollSystem.resetScroll(maxScrollExtent);
+    scrollSystem.setSnapRegions(snapRegions);
+
+    // Make visible immediately
+    circlesBackground.opacity = 1.0;
+    circlesBackground.scale = Vector2.all(1.0);
+    content.opacity = 1.0;
+  }
+
+  @override
+  void setScrollOffset(double offset) {
+    if (offset < 0) {
+      onReverseComplete?.call();
+      return;
+    }
+    if (offset > maxScrollExtent) {
+      onComplete?.call();
+      // Clamp visual
+      _controller.setTargetScroll(maxScrollExtent);
+      return;
+    }
+    _controller.setTargetScroll(offset);
+  }
+
+  @override
+  ScrollResult handleScroll(double delta) {
+    final newTarget = _controller.targetScroll + delta;
+
+    if (newTarget < -10.0) {
+      // Slight threshold for underflow
+      return ScrollUnderflow(newTarget);
+    }
+
+    if (newTarget > maxScrollExtent) {
+      return ScrollOverflow(newTarget - maxScrollExtent);
+    }
+
+    _controller.setTargetScroll(newTarget);
+    return ScrollConsumed(newTarget);
   }
 
   @override
   void onNewState(SceneState state) {
     state.maybeMap(experience: (_) => animateEntry(), orElse: () {});
-  }
-
-  void handleScroll(double delta) {
-    _controller.setTargetScroll(_controller.targetScroll + delta);
   }
 
   @override
@@ -122,6 +204,7 @@ class ExperienceSection extends Component
     );
   }
 
+  @override
   Future<void> exit() async {
     // Fade out for return transition
     circlesBackground.add(
@@ -137,12 +220,14 @@ class ExperienceSection extends Component
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
+  @override
   void onResize(Vector2 newSize) {
     screenSize = newSize;
     circlesBackground.size = screenSize;
     content.size = screenSize; // Ensure content gets resized
   }
 
+  @override
   void dispose() {
     // Clean up circles background or other resources if needed later
     circlesBackground.removeFromParent();

@@ -55,7 +55,7 @@ extension SceneEventPatterns on SceneEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Initialize value)?  initialize,TResult Function( CloseCurtain value)?  closeCurtain,TResult Function( TapDown value)?  tapDown,TResult Function( LoadTitle value)?  loadTitle,TResult Function( TitleLoaded value)?  titleLoaded,TResult Function( GameReady value)?  gameReady,TResult Function( OnScroll value)?  onScroll,TResult Function( UpdateUIOpacity value)?  updateUIOpacity,TResult Function( LoadExperience value)?  loadExperience,TResult Function( EnterExperience value)?  enterExperience,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Initialize value)?  initialize,TResult Function( CloseCurtain value)?  closeCurtain,TResult Function( TapDown value)?  tapDown,TResult Function( LoadTitle value)?  loadTitle,TResult Function( TitleLoaded value)?  titleLoaded,TResult Function( GameReady value)?  gameReady,TResult Function( OnScroll value)?  onScroll,TResult Function( UpdateUIOpacity value)?  updateUIOpacity,TResult Function( LoadExperience value)?  loadExperience,TResult Function( EnterExperience value)?  enterExperience,TResult Function( ToggleArrow value)?  toggleArrow,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
@@ -68,7 +68,8 @@ return gameReady(_that);case OnScroll() when onScroll != null:
 return onScroll(_that);case UpdateUIOpacity() when updateUIOpacity != null:
 return updateUIOpacity(_that);case LoadExperience() when loadExperience != null:
 return loadExperience(_that);case EnterExperience() when enterExperience != null:
-return enterExperience(_that);case _:
+return enterExperience(_that);case ToggleArrow() when toggleArrow != null:
+return toggleArrow(_that);case _:
   return orElse();
 
 }
@@ -86,7 +87,7 @@ return enterExperience(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Initialize value)  initialize,required TResult Function( CloseCurtain value)  closeCurtain,required TResult Function( TapDown value)  tapDown,required TResult Function( LoadTitle value)  loadTitle,required TResult Function( TitleLoaded value)  titleLoaded,required TResult Function( GameReady value)  gameReady,required TResult Function( OnScroll value)  onScroll,required TResult Function( UpdateUIOpacity value)  updateUIOpacity,required TResult Function( LoadExperience value)  loadExperience,required TResult Function( EnterExperience value)  enterExperience,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Initialize value)  initialize,required TResult Function( CloseCurtain value)  closeCurtain,required TResult Function( TapDown value)  tapDown,required TResult Function( LoadTitle value)  loadTitle,required TResult Function( TitleLoaded value)  titleLoaded,required TResult Function( GameReady value)  gameReady,required TResult Function( OnScroll value)  onScroll,required TResult Function( UpdateUIOpacity value)  updateUIOpacity,required TResult Function( LoadExperience value)  loadExperience,required TResult Function( EnterExperience value)  enterExperience,required TResult Function( ToggleArrow value)  toggleArrow,}){
 final _that = this;
 switch (_that) {
 case Initialize():
@@ -99,7 +100,8 @@ return gameReady(_that);case OnScroll():
 return onScroll(_that);case UpdateUIOpacity():
 return updateUIOpacity(_that);case LoadExperience():
 return loadExperience(_that);case EnterExperience():
-return enterExperience(_that);case _:
+return enterExperience(_that);case ToggleArrow():
+return toggleArrow(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -116,7 +118,7 @@ return enterExperience(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Initialize value)?  initialize,TResult? Function( CloseCurtain value)?  closeCurtain,TResult? Function( TapDown value)?  tapDown,TResult? Function( LoadTitle value)?  loadTitle,TResult? Function( TitleLoaded value)?  titleLoaded,TResult? Function( GameReady value)?  gameReady,TResult? Function( OnScroll value)?  onScroll,TResult? Function( UpdateUIOpacity value)?  updateUIOpacity,TResult? Function( LoadExperience value)?  loadExperience,TResult? Function( EnterExperience value)?  enterExperience,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Initialize value)?  initialize,TResult? Function( CloseCurtain value)?  closeCurtain,TResult? Function( TapDown value)?  tapDown,TResult? Function( LoadTitle value)?  loadTitle,TResult? Function( TitleLoaded value)?  titleLoaded,TResult? Function( GameReady value)?  gameReady,TResult? Function( OnScroll value)?  onScroll,TResult? Function( UpdateUIOpacity value)?  updateUIOpacity,TResult? Function( LoadExperience value)?  loadExperience,TResult? Function( EnterExperience value)?  enterExperience,TResult? Function( ToggleArrow value)?  toggleArrow,}){
 final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
@@ -129,7 +131,8 @@ return gameReady(_that);case OnScroll() when onScroll != null:
 return onScroll(_that);case UpdateUIOpacity() when updateUIOpacity != null:
 return updateUIOpacity(_that);case LoadExperience() when loadExperience != null:
 return loadExperience(_that);case EnterExperience() when enterExperience != null:
-return enterExperience(_that);case _:
+return enterExperience(_that);case ToggleArrow() when toggleArrow != null:
+return toggleArrow(_that);case _:
   return null;
 
 }
@@ -146,7 +149,7 @@ return enterExperience(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initialize,TResult Function()?  closeCurtain,TResult Function( TapDownEvent tapDownEvent)?  tapDown,TResult Function()?  loadTitle,TResult Function()?  titleLoaded,TResult Function()?  gameReady,TResult Function()?  onScroll,TResult Function( double opacity)?  updateUIOpacity,TResult Function()?  loadExperience,TResult Function()?  enterExperience,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initialize,TResult Function()?  closeCurtain,TResult Function( TapDownEvent tapDownEvent)?  tapDown,TResult Function()?  loadTitle,TResult Function()?  titleLoaded,TResult Function()?  gameReady,TResult Function()?  onScroll,TResult Function( double opacity)?  updateUIOpacity,TResult Function()?  loadExperience,TResult Function()?  enterExperience,TResult Function( bool isVisible)?  toggleArrow,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
 return initialize();case CloseCurtain() when closeCurtain != null:
@@ -158,7 +161,8 @@ return gameReady();case OnScroll() when onScroll != null:
 return onScroll();case UpdateUIOpacity() when updateUIOpacity != null:
 return updateUIOpacity(_that.opacity);case LoadExperience() when loadExperience != null:
 return loadExperience();case EnterExperience() when enterExperience != null:
-return enterExperience();case _:
+return enterExperience();case ToggleArrow() when toggleArrow != null:
+return toggleArrow(_that.isVisible);case _:
   return orElse();
 
 }
@@ -176,7 +180,7 @@ return enterExperience();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initialize,required TResult Function()  closeCurtain,required TResult Function( TapDownEvent tapDownEvent)  tapDown,required TResult Function()  loadTitle,required TResult Function()  titleLoaded,required TResult Function()  gameReady,required TResult Function()  onScroll,required TResult Function( double opacity)  updateUIOpacity,required TResult Function()  loadExperience,required TResult Function()  enterExperience,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initialize,required TResult Function()  closeCurtain,required TResult Function( TapDownEvent tapDownEvent)  tapDown,required TResult Function()  loadTitle,required TResult Function()  titleLoaded,required TResult Function()  gameReady,required TResult Function()  onScroll,required TResult Function( double opacity)  updateUIOpacity,required TResult Function()  loadExperience,required TResult Function()  enterExperience,required TResult Function( bool isVisible)  toggleArrow,}) {final _that = this;
 switch (_that) {
 case Initialize():
 return initialize();case CloseCurtain():
@@ -188,7 +192,8 @@ return gameReady();case OnScroll():
 return onScroll();case UpdateUIOpacity():
 return updateUIOpacity(_that.opacity);case LoadExperience():
 return loadExperience();case EnterExperience():
-return enterExperience();case _:
+return enterExperience();case ToggleArrow():
+return toggleArrow(_that.isVisible);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -205,7 +210,7 @@ return enterExperience();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initialize,TResult? Function()?  closeCurtain,TResult? Function( TapDownEvent tapDownEvent)?  tapDown,TResult? Function()?  loadTitle,TResult? Function()?  titleLoaded,TResult? Function()?  gameReady,TResult? Function()?  onScroll,TResult? Function( double opacity)?  updateUIOpacity,TResult? Function()?  loadExperience,TResult? Function()?  enterExperience,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initialize,TResult? Function()?  closeCurtain,TResult? Function( TapDownEvent tapDownEvent)?  tapDown,TResult? Function()?  loadTitle,TResult? Function()?  titleLoaded,TResult? Function()?  gameReady,TResult? Function()?  onScroll,TResult? Function( double opacity)?  updateUIOpacity,TResult? Function()?  loadExperience,TResult? Function()?  enterExperience,TResult? Function( bool isVisible)?  toggleArrow,}) {final _that = this;
 switch (_that) {
 case Initialize() when initialize != null:
 return initialize();case CloseCurtain() when closeCurtain != null:
@@ -217,7 +222,8 @@ return gameReady();case OnScroll() when onScroll != null:
 return onScroll();case UpdateUIOpacity() when updateUIOpacity != null:
 return updateUIOpacity(_that.opacity);case LoadExperience() when loadExperience != null:
 return loadExperience();case EnterExperience() when enterExperience != null:
-return enterExperience();case _:
+return enterExperience();case ToggleArrow() when toggleArrow != null:
+return toggleArrow(_that.isVisible);case _:
   return null;
 
 }
@@ -614,6 +620,72 @@ String toString() {
 
 
 /// @nodoc
+
+
+class ToggleArrow implements SceneEvent {
+  const ToggleArrow(this.isVisible);
+  
+
+ final  bool isVisible;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ToggleArrowCopyWith<ToggleArrow> get copyWith => _$ToggleArrowCopyWithImpl<ToggleArrow>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToggleArrow&&(identical(other.isVisible, isVisible) || other.isVisible == isVisible));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,isVisible);
+
+@override
+String toString() {
+  return 'SceneEvent.toggleArrow(isVisible: $isVisible)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $ToggleArrowCopyWith<$Res> implements $SceneEventCopyWith<$Res> {
+  factory $ToggleArrowCopyWith(ToggleArrow value, $Res Function(ToggleArrow) _then) = _$ToggleArrowCopyWithImpl;
+@useResult
+$Res call({
+ bool isVisible
+});
+
+
+
+
+}
+/// @nodoc
+class _$ToggleArrowCopyWithImpl<$Res>
+    implements $ToggleArrowCopyWith<$Res> {
+  _$ToggleArrowCopyWithImpl(this._self, this._then);
+
+  final ToggleArrow _self;
+  final $Res Function(ToggleArrow) _then;
+
+/// Create a copy of SceneEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? isVisible = null,}) {
+  return _then(ToggleArrow(
+null == isVisible ? _self.isVisible : isVisible // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$SceneState {
 
 
@@ -742,7 +814,7 @@ return experience(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isSvgReady,  bool isGameReady)?  loading,TResult Function()?  logo,TResult Function()?  logoOverlayRemoving,TResult Function()?  titleLoading,TResult Function()?  title,TResult Function( double uiOpacity)?  active,TResult Function()?  loadingExperience,TResult Function( double uiOpacity)?  experience,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isSvgReady,  bool isGameReady)?  loading,TResult Function()?  logo,TResult Function()?  logoOverlayRemoving,TResult Function()?  titleLoading,TResult Function()?  title,TResult Function( double uiOpacity,  bool isArrowVisible)?  active,TResult Function()?  loadingExperience,TResult Function( double uiOpacity)?  experience,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Loading() when loading != null:
 return loading(_that.isSvgReady,_that.isGameReady);case Logo() when logo != null:
@@ -750,7 +822,7 @@ return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
 return titleLoading();case Title() when title != null:
 return title();case Active() when active != null:
-return active(_that.uiOpacity);case LoadingExperience() when loadingExperience != null:
+return active(_that.uiOpacity,_that.isArrowVisible);case LoadingExperience() when loadingExperience != null:
 return loadingExperience();case Experience() when experience != null:
 return experience(_that.uiOpacity);case _:
   return orElse();
@@ -770,7 +842,7 @@ return experience(_that.uiOpacity);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isSvgReady,  bool isGameReady)  loading,required TResult Function()  logo,required TResult Function()  logoOverlayRemoving,required TResult Function()  titleLoading,required TResult Function()  title,required TResult Function( double uiOpacity)  active,required TResult Function()  loadingExperience,required TResult Function( double uiOpacity)  experience,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isSvgReady,  bool isGameReady)  loading,required TResult Function()  logo,required TResult Function()  logoOverlayRemoving,required TResult Function()  titleLoading,required TResult Function()  title,required TResult Function( double uiOpacity,  bool isArrowVisible)  active,required TResult Function()  loadingExperience,required TResult Function( double uiOpacity)  experience,}) {final _that = this;
 switch (_that) {
 case Loading():
 return loading(_that.isSvgReady,_that.isGameReady);case Logo():
@@ -778,7 +850,7 @@ return logo();case LogoOverlayRemoving():
 return logoOverlayRemoving();case TitleLoading():
 return titleLoading();case Title():
 return title();case Active():
-return active(_that.uiOpacity);case LoadingExperience():
+return active(_that.uiOpacity,_that.isArrowVisible);case LoadingExperience():
 return loadingExperience();case Experience():
 return experience(_that.uiOpacity);case _:
   throw StateError('Unexpected subclass');
@@ -797,7 +869,7 @@ return experience(_that.uiOpacity);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isSvgReady,  bool isGameReady)?  loading,TResult? Function()?  logo,TResult? Function()?  logoOverlayRemoving,TResult? Function()?  titleLoading,TResult? Function()?  title,TResult? Function( double uiOpacity)?  active,TResult? Function()?  loadingExperience,TResult? Function( double uiOpacity)?  experience,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isSvgReady,  bool isGameReady)?  loading,TResult? Function()?  logo,TResult? Function()?  logoOverlayRemoving,TResult? Function()?  titleLoading,TResult? Function()?  title,TResult? Function( double uiOpacity,  bool isArrowVisible)?  active,TResult? Function()?  loadingExperience,TResult? Function( double uiOpacity)?  experience,}) {final _that = this;
 switch (_that) {
 case Loading() when loading != null:
 return loading(_that.isSvgReady,_that.isGameReady);case Logo() when logo != null:
@@ -805,7 +877,7 @@ return logo();case LogoOverlayRemoving() when logoOverlayRemoving != null:
 return logoOverlayRemoving();case TitleLoading() when titleLoading != null:
 return titleLoading();case Title() when title != null:
 return title();case Active() when active != null:
-return active(_that.uiOpacity);case LoadingExperience() when loadingExperience != null:
+return active(_that.uiOpacity,_that.isArrowVisible);case LoadingExperience() when loadingExperience != null:
 return loadingExperience();case Experience() when experience != null:
 return experience(_that.uiOpacity);case _:
   return null;
@@ -1015,10 +1087,11 @@ String toString() {
 
 
 class Active extends SceneState {
-  const Active({this.uiOpacity = 1.0}): super._();
+  const Active({this.uiOpacity = 1.0, this.isArrowVisible = true}): super._();
   
 
 @JsonKey() final  double uiOpacity;
+@JsonKey() final  bool isArrowVisible;
 
 /// Create a copy of SceneState
 /// with the given fields replaced by the non-null parameter values.
@@ -1030,16 +1103,16 @@ $ActiveCopyWith<Active> get copyWith => _$ActiveCopyWithImpl<Active>(this, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Active&&(identical(other.uiOpacity, uiOpacity) || other.uiOpacity == uiOpacity));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Active&&(identical(other.uiOpacity, uiOpacity) || other.uiOpacity == uiOpacity)&&(identical(other.isArrowVisible, isArrowVisible) || other.isArrowVisible == isArrowVisible));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,uiOpacity);
+int get hashCode => Object.hash(runtimeType,uiOpacity,isArrowVisible);
 
 @override
 String toString() {
-  return 'SceneState.active(uiOpacity: $uiOpacity)';
+  return 'SceneState.active(uiOpacity: $uiOpacity, isArrowVisible: $isArrowVisible)';
 }
 
 
@@ -1050,7 +1123,7 @@ abstract mixin class $ActiveCopyWith<$Res> implements $SceneStateCopyWith<$Res> 
   factory $ActiveCopyWith(Active value, $Res Function(Active) _then) = _$ActiveCopyWithImpl;
 @useResult
 $Res call({
- double uiOpacity
+ double uiOpacity, bool isArrowVisible
 });
 
 
@@ -1067,10 +1140,11 @@ class _$ActiveCopyWithImpl<$Res>
 
 /// Create a copy of SceneState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? uiOpacity = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? uiOpacity = null,Object? isArrowVisible = null,}) {
   return _then(Active(
 uiOpacity: null == uiOpacity ? _self.uiOpacity : uiOpacity // ignore: cast_nullable_to_non_nullable
-as double,
+as double,isArrowVisible: null == isArrowVisible ? _self.isArrowVisible : isArrowVisible // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

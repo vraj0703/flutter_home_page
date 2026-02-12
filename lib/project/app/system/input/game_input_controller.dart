@@ -6,6 +6,7 @@ import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart';
 import 'package:flutter_home_page/project/app/system/cursor/game_cursor_system.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
+import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 
 class GameInputController extends Component {
   final Queuer queuer;
@@ -29,6 +30,7 @@ class GameInputController extends Component {
     queuer.queue(event: const SceneEvent.onScroll());
 
     final delta = info.scrollDelta.global.y;
+    LoggerUtil.log('Input', 'Scroll Delta: ${delta.toStringAsFixed(1)}');
     scrollSystem.onScroll(delta);
     audioSystem.playScrollTick();
   }
@@ -39,6 +41,7 @@ class GameInputController extends Component {
     }
 
     audioSystem.playClick();
+    LoggerUtil.log('Input', 'Tap Down at ${event.localPosition}');
     queuer.queue(event: SceneEvent.tapDown(event));
   }
 

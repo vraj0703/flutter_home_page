@@ -9,6 +9,7 @@ import 'package:flutter_home_page/project/app/views/components/hero_title/cinema
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';
 import 'package:flutter_home_page/project/app/views/components/background/background_run_component.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 
 class BoldTextSection implements GameSection {
   @override
@@ -51,12 +52,16 @@ class BoldTextSection implements GameSection {
 
   @override
   List<Vector2> get snapRegions => [
-    // Snap to Start (Rubber band effect)
+    // 1. Snap to Title (Start)
+    // Range: -500 to 500 -> Snaps to 0
     Vector2(-500, 0),
-    Vector2(200, 0), // Also snap if slightly positive
-    // Snap to Focus (Center)
-    Vector2(1200, 1500),
-    Vector2(1800, 1500),
+    Vector2(500, 0),
+
+    // 2. Snap to Bold Text Focus (Center)
+    // Range: 1000 to 2000 -> Snaps to 1500 (ScrollSequenceConfig.boldTextFocus)
+    // This creates a strong "magnetic" zone around the fully visible text.
+    Vector2(1000, ScrollSequenceConfig.boldTextFocus),
+    Vector2(2000, ScrollSequenceConfig.boldTextFocus),
   ];
 
   @override
@@ -203,7 +208,7 @@ class BoldTextSection implements GameSection {
       cinematicSecondaryTitle.opacity = 0.0;
     }
 
-    final textProgress = (scrollOffset / boldTextEnd).clamp(0.0, 1.0);
+    final textProgress = (scrollOffset / boldTextEnd).clamp(0.0, 2.0);
     boldTextComponent.scrollProgress = textProgress;
     boldTextComponent.position = centerPosition;
   }

@@ -33,7 +33,7 @@ class ScrollSequenceConfig {
 
   // --- 1. Bold Text Section (0 - 3000) ---
   // The bold text sequence covers a large area for the 3-pass animation
-  static const double boldTextStart = 0.0;// Extended from 1700
+  static const double boldTextStart = 0.0; // Extended from 1700
 
   // Relative Progress Ranges (0.0 - 1.0)
   // Entrance (0.0 - 0.4): 0 - 1200
@@ -169,4 +169,28 @@ class ScrollSequenceConfig {
     testimonialInteractionStart, // Section 4: Testimonials
     contactEntranceStart, // Section 5: Contact
   ];
+  // --- Transition Configurations ---
+  static const PhilosophyTransitionConfig philosophyTransition =
+      PhilosophyTransitionConfig();
+}
+
+class PhilosophyTransitionConfig {
+  const PhilosophyTransitionConfig();
+
+  /// Duration to hold the button to fill the screen with rain (1.0 -> 2.5s)
+  final double buttonHoldDuration = 2.5;
+
+  /// Time to wait at max intensity before shattering (The "Tensor" moment)
+  final int sustainDurationMs = 500;
+
+  /// Delay from Shatter Trigger to Flash Trigger
+  /// Allows the crack to be visible before the whiteout
+  final int shatterToFlashDelayMs = 400;
+
+  /// Duration of the Flash Attack phase (White out)
+  /// Should match FlashTransitionComponent's internal logic roughly
+  final int flashAttackDurationMs = 400;
+
+  /// Total duration of the flash effect
+  final double flashTotalDuration = 1.5;
 }

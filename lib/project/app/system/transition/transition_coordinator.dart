@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
-import 'package:flutter_home_page/project/app/sections/experience_section.dart';
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
+
 import 'package:flutter_home_page/project/app/sections/philosophy_section.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/flash_transition_component.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
@@ -26,10 +27,20 @@ class TransitionCoordinator {
   /// - 1600ms: Flash complete → unblock input
   Future<void> startPhilosophyToExperience({
     required PhilosophySection from,
-    required ExperienceSection to,
   }) async {
     if (_isTransitioning) return;
     _isTransitioning = true;
+
+    // Lookup Experience Index (assuming it follows Philosophy)
+    final sections = game.primarySequenceRunner.sections;
+    final philosophyIndex = sections.indexOf(from);
+    final experienceIndex = philosophyIndex + 1;
+
+    // Validate
+    if (experienceIndex >= sections.length) {
+      _isTransitioning = false;
+      return;
+    }
 
     // 1. SNAPSHOT & CLIMAX PREP
     from.freezeCapture = true;
@@ -42,8 +53,9 @@ class TransitionCoordinator {
     // 2. AUDIO DUCK (0-400ms)
     game.audio.duckAmbientLoops(durationMs: 400);
 
-    // Small delay for audio duck to start
-    await Future.delayed(const Duration(milliseconds: 100));
+    // Sustain Phase: Wait for the user to "feel" the full rain intensity
+    final config = ScrollSequenceConfig.philosophyTransition;
+    await Future.delayed(Duration(milliseconds: config.sustainDurationMs));
 
     // 3. VISUAL CLIMAX (Shatter + Lightning)
     from.rainTransition.triggerShatter();
@@ -52,6 +64,9 @@ class TransitionCoordinator {
     // Master Epic: Haptics at exact moment of shatter
     HapticFeedback.heavyImpact();
     _triggerCameraShake(intensity: 12.0, duration: 0.5);
+
+    // Wait for "Visible Crack" phase before flashing white
+    await Future.delayed(Duration(milliseconds: config.shatterToFlashDelayMs));
 
     // 4. MOUNT FLASH OVERLAY
     // Force a fresh capture for the refraction texture (sync)
@@ -62,19 +77,10 @@ class TransitionCoordinator {
       onPeakReached: () async {
         // === AT THE PEAK OF THE WHITE FLASH ===
 
-        // Stop Philosophy Runner & Hide components
-        await game.primarySequenceRunner.stop();
+        await game.primarySequenceRunner.jumpToSection(experienceIndex);
 
-        // Update Global State to Experience
+        // Update Global State to Experience (keep this for UI overlays/Bloc)
         game.queuer.queue(event: const SceneEvent.enterExperience());
-
-        // Note: Experience is now state-driven, so we don't need to start a runner.
-        // The SceneBloc state change will make MyGame route inputs/updates correctly if needed.
-        // But primarily, Experience is an overlay state.
-
-        // Trigger the Hero Entry Animation (Non-scroll dependent)
-        // Handled by ExperienceSection.onNewState
-        // await to.animateEntry();
       },
       onComplete: () {
         // Flash fully decayed, unblock input
@@ -87,28 +93,19 @@ class TransitionCoordinator {
   }
 
   /// Executes the return transition from Experience to Philosophy (Scroll Up)
-  Future<void> returnToPhilosophy({
-    required ExperienceSection from,
-    required PhilosophySection to,
-  }) async {
+  Future<void> returnToPhilosophy() async {
     if (_isTransitioning) return;
     _isTransitioning = true;
     game.blockInput();
 
-    // 1. Animate Experience Exit
-    await from.exit();
-
-    // 2. Switch State back to Active (Philosophy)
+    // 1. Switch State back to Active (Philosophy)
     game.queuer.queue(event: const SceneEvent.onScroll());
 
-    // 3. Resume Philosophy Runner in reverse mode
-    // This properly re-enters the last section (Philosophy) at max scroll,
-    // calling warmUp() and enterReverse() which restores all components.
-    // Unlike start(), resumeReverse() doesn't have the _isActive early-return
-    // and correctly positions the scroll at the section's maxScrollExtent.
-    await game.primarySequenceRunner.resumeReverse();
+    // 2. Resume Philosophy Runner in reverse mode
+    // SequenceRunner handles the exit of current (Experience) and entry of previous (Philosophy)
+    await game.primarySequenceRunner.previous();
 
-    // 4. Unblock
+    // 3. Unblock
     game.unblockInput();
     _isTransitioning = false;
   }

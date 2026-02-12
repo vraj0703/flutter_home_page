@@ -1,4 +1,5 @@
 import 'package:flame/components.dart' hide Matrix4;
+import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'philosophy_card.dart';
 import 'package:flutter/services.dart';
@@ -19,6 +20,22 @@ class PhilosophyTrailComponent extends PositionComponent
   // 3D Anchors (X, Y, Depth)
   final List<Vector3> _targetAnchors = [];
   final List<double> _targetRotations = [];
+
+  // Global Hover Management
+  int? _hoveredCardIndex;
+
+  double get maxScrollExtent {
+    if (cards.isEmpty) {
+      LoggerUtil.log('PhilosophyTrail', 'maxScrollExtent -> 3000.0 (No Cards)');
+      return 3000.0;
+    }
+    // Last card lock point + padding
+    // rangeEnd = 1500 + i*400
+    final lastIndex = cards.length - 1;
+    final lastCardLock = 1500.0 + (lastIndex * 400.0);
+    // LoggerUtil.log('PhilosophyTrail', 'maxScrollExtent -> ${lastCardLock + 100.0} (Cards: ${cards.length})');
+    return lastCardLock + 100.0; // 100px padding
+  }
 
   PhilosophyTrailComponent() : super(anchor: Anchor.topLeft);
 
@@ -148,14 +165,29 @@ class PhilosophyTrailComponent extends PositionComponent
     // Only process inputs if we are actually visible
     if (opacity > 0.01) {
       final cursor = game.cursorPosition;
-      for (final card in cards) {
-        card.manualHoverCheck(cursor);
+      bool foundHover = false;
+
+      // Reverse check for z-order (topmost first)
+      for (int i = cards.length - 1; i >= 0; i--) {
+        final card = cards[i];
+        if (!foundHover && card.containsPoint(cursor)) {
+          if (_hoveredCardIndex != i) {
+            _hoveredCardIndex = i;
+            LoggerUtil.log('PhilosophyTrail', 'Hover Enter -> Card $i');
+          }
+          card.onHoverEnter(); // Force hover
+          foundHover = true;
+        } else {
+          card.onHoverExit(); // Force exit
+        }
       }
+
+      if (!foundHover) _hoveredCardIndex = null;
     }
 
-    // Spring Physics Logic
+    // Spring Physics Logic (Under-Damped for Organic Bounce)
     const double stiffness = 50.0;
-    const double damping = 15.0;
+    const double damping = 8.0; // Reduced from 15.0 to allow overshoot
     const double mass = 1.0;
 
     final displacement = _targetScroll - _currentScroll;
@@ -186,15 +218,14 @@ class PhilosophyTrailComponent extends PositionComponent
   /// Tri-Phase Animation: Burst (0-0.3) -> Settle (0.3-0.7) -> Lock (0.7-1.0)
   /// Tri-Phase Animation driven by specific scroll ranges
   void updateTrailAnimation(double scrollOffset) {
-    // Shared center for burst origin
-    final center = Vector3(size.x / 2, size.y / 2, 0);
-
     for (int i = 0; i < cards.length; i++) {
       final card = cards[i];
 
-      // Define Range for this card
-      final double rangeStart = 1000.0 + (i * 500.0);
-      final double rangeEnd = rangeStart + 500.0;
+      // Parallax Overlap Logic
+      // Shifted to 1000.0 to allow Title to finish entering first (500-1000)
+      final double rangeStart = 1000.0;
+      // Stagger the 'Lock' point (End of animation)
+      final double rangeEnd = 1500.0 + (i * 400.0);
 
       // Calculate progress 0.0 -> 1.0 within range
       double t = ((scrollOffset - rangeStart) / (rangeEnd - rangeStart)).clamp(
@@ -210,65 +241,40 @@ class PhilosophyTrailComponent extends PositionComponent
       // Explicit fade in
       card.opacity = (t * 4.0).clamp(0.0, 1.0);
 
-      // --- Tri-Phase Logic ---
+      // --- Monotonic Interpolation (Physics-Driven) ---
       Vector3 currentPos;
       double currentRot;
 
       final target = _targetAnchors[i];
       final targetRot = _targetRotations[i];
 
-      if (t < 0.3) {
-        // PHASE 1: BURST with directional origins
-        final phaseT = t / 0.3;
-        final ease = Curves.easeOutExpo.transform(phaseT);
+      // Use a single smooth curve for the entire travel
+      // EaseOutCubic gives a nice strong start and soft landing
+      final ease = Curves.easeOutCubic.transform(t);
 
-        // Unique entrance direction per card
-        Vector3 entranceOrigin;
-        double entranceRotation = 0.0;
+      // Unified Entrance (Same for all cards)
+      // "Rise Up from Below" - simple, clean, and consistent
+      const double verticalOffset = 300.0;
+      const double zOffset = 50.0; // Slightly behind
 
-        switch (i) {
-          case 0: // Crystal - from LEFT-BOTTOM with spin
-            entranceOrigin = Vector3(
-              center.x - size.x * 0.3,
-              center.y + 100,
-              -200,
-            );
-            entranceRotation = 0.26; // +15°
-            break;
-          case 1: // Chalice - from BOTTOM
-            entranceOrigin = Vector3(center.x, center.y + 150, -150);
-            break;
-          case 2: // Sword - from TOP-RIGHT
-            entranceOrigin = Vector3(
-              center.x + size.x * 0.3,
-              center.y - 100,
-              -200,
-            );
-            break;
-          case 3: // Book - from RIGHT
-            entranceOrigin = Vector3(center.x + size.x * 0.4, center.y, -250);
-            break;
-          default:
-            entranceOrigin = center;
-        }
+      final entranceOrigin = Vector3(
+        target.x,
+        target.y + verticalOffset,
+        target.z - zOffset,
+      );
 
-        final direction = (target - entranceOrigin);
-        final overshootPos = entranceOrigin + (direction * 1.3);
-        currentPos = entranceOrigin + (overshootPos - entranceOrigin) * ease;
-        currentRot = targetRot + (1.0 - ease) * (2.0 + entranceRotation);
-      } else if (t < 0.7) {
-        // PHASE 2: SETTLE
-        final phaseT = (t - 0.3) / 0.4;
-        final ease = Curves.easeInOutSine.transform(phaseT);
-        final direction = (target - center);
-        final overshootPos = center + (direction * 1.5);
-        currentPos = overshootPos + (target - overshootPos) * ease;
-        currentRot = targetRot;
-      } else {
-        // PHASE 3: LOCK
-        currentPos = target;
-        currentRot = targetRot;
-      }
+      const double entranceRotation = 0.05; // Subtle unified tilt
+
+      // Interpolate Position: Entrance -> Target
+      currentPos = entranceOrigin + (target - entranceOrigin) * ease;
+
+      // Interpolate Rotation: (Target + EntranceRot) -> Target
+      // Note: We want to spin *into* the target rotation
+      final startRot = targetRot + (2.0 + entranceRotation);
+      currentRot = startRot + (targetRot - startRot) * ease;
+
+      // No manual overshoot math here!
+      // The `t` itself will overshoot because `_currentScroll` overshoots due to physics.
 
       if (t > 0.5) {
         // Trigger haptic when unlocking flip
@@ -302,9 +308,9 @@ class PhilosophyTrailComponent extends PositionComponent
     // Construct Matrix
     final matrix = Matrix4.identity();
 
-    matrix.translate(pos.x, pos.y, 0.0);
+    matrix.multiply(Matrix4.translationValues(pos.x, pos.y, 0.0));
 
-    matrix.scale(scale, scale, 1.0);
+    matrix.multiply(Matrix4.diagonal3Values(scale, scale, 1.0));
 
     matrix.rotateY(rotY);
 
@@ -314,11 +320,15 @@ class PhilosophyTrailComponent extends PositionComponent
     matrix.rotateY(card.currentTilt.x * 0.25);
 
     final stableHitMatrix = matrix.clone();
-    stableHitMatrix.translate(-card.size.x / 2, -card.size.y / 2, 0.0);
+    stableHitMatrix.multiply(
+      Matrix4.translationValues(-card.size.x / 2, -card.size.y / 2, 0.0),
+    );
     card.hitboxMatrix = stableHitMatrix;
     matrix.rotateY(card.flipProgress * math.pi);
 
-    matrix.translate(-card.size.x / 2, -card.size.y / 2, 0.0);
+    matrix.multiply(
+      Matrix4.translationValues(-card.size.x / 2, -card.size.y / 2, 0.0),
+    );
 
     card.transformMat = matrix;
     card.position = Vector2.zero();

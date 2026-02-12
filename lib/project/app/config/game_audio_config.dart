@@ -15,15 +15,17 @@ class GameAudioConfig {
   static const String boldTextSwell = 'bold_text_swell.mp3';
   static const String tingSfx = 'ting.wav';
   static const String scrollTickSfx = 'scroll_tick.mp3'; // Optional
-  static const String philosophyEntrySfx = 'do.wav'; // Philosophy section entry
+  static const String philosophyEntrySfx = 'do.wav'; // Title (Do)
   static const String philosophyCompleteSfx =
-      're.wav'; // Philosophy title complete
+      're.wav'; // (Deprecated reuse, or re-purpose)
 
-  // Trail Card SFX
-  static const String trailCard1Sfx = 'mi.wav';
-  static const String trailCard2Sfx = 'fa.wav';
-  static const String trailCard3Sfx = 'si.wav';
-  static const String trailCard4Sfx = 'sol.wav';
+  // Trail Card SFX (Sequential Scale)
+  static const String trailCard1Sfx = 're.wav'; // Card 1 (Re)
+  static const String trailCard2Sfx = 'mi.wav'; // Card 2 (Mi)
+  static const String trailCard3Sfx = 'fa.wav'; // Card 3 (Fa)
+  static const String trailCard4Sfx = 'si.wav'; // Card 4 (Si)
+
+  static const String philosophyButtonSfx = 'sol.wav'; // Button (Sol)
   static const String waterdropSfx = 'waterdrop.wav'; // User requested
   static const String glassBreakSfx = 'glass_break.mp3';
   static const String thunderCrackSfx = 'thunder_crack.mp3';

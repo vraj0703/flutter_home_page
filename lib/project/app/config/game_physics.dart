@@ -29,6 +29,9 @@ class GamePhysics {
 
   // --- Scroll Inertia ---
   static const double scrollInertia = 8.0;
-  static const double snapSpringStiffness = 180.0; // Higher = faster snap
-  static const double snapSpringDamping = 12.0; // Higher = less bounce
+  // Natural Spring Physics (Critically Damped-ish)
+  // Lower stiffness = softer spring
+  // Higher damping = less oscillation
+  static const double snapSpringStiffness = 120.0;
+  static const double snapSpringDamping = 20.0;
 }

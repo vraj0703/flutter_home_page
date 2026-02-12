@@ -17,14 +17,15 @@ class HomeOverlay extends StatelessWidget {
       builder: (context, state) {
         return state.maybeWhen(
           orElse: () => SizedBox.shrink(key: ValueKey("home_overlay")),
-          title: () => _buildOverlay(1.0),
-          active: (uiOpacity) => _buildOverlay(uiOpacity),
+          title: () => _buildOverlay(1.0, true),
+          active: (uiOpacity, isArrowVisible) =>
+              _buildOverlay(uiOpacity, isArrowVisible),
         );
       },
     );
   }
 
-  Widget _buildOverlay(double opacity) {
+  Widget _buildOverlay(double opacity, bool isArrowVisible) {
     return Stack(
       key: ValueKey("home_overlay_stack"),
       children: [
@@ -44,8 +45,9 @@ class HomeOverlay extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Opacity(
-                opacity: opacity,
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: isArrowVisible ? opacity : 0.0,
                 child: BouncingArrow(
                   key: ValueKey("bouncing_arrow"),
                   bounceAnimation: bounceAnimation,

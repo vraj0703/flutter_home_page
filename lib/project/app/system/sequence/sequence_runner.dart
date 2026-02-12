@@ -5,6 +5,7 @@ import 'package:flutter_home_page/project/app/interfaces/scroll_observer.dart';
 import 'package:flutter_home_page/project/app/models/scroll_result.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_effects/scroll_effect.dart';
+import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 
 /// Orchestrates the execution of [GameSection]s in a linear sequence.
 ///
@@ -138,11 +139,17 @@ class SequenceRunner implements ScrollObserver {
     if (_currentIndex < _sections.length - 1) {
       // 1. Exit old
       await _sections[_currentIndex].exit();
+      scrollSystem.setBounds(null, null);
+      scrollSystem.resetScroll(0.0); // Kill momentum immediately
 
       // RE-VERIFY index after async operation to prevent race conditions
       if (_currentIndex != callingIndex) return;
 
       _currentIndex++;
+      LoggerUtil.log(
+        'SequenceRunner',
+        'Advancing Section: $callingIndex -> $_currentIndex',
+      );
       final nextSection = _sections[_currentIndex];
 
       // 2. Enter new
@@ -179,17 +186,60 @@ class SequenceRunner implements ScrollObserver {
     }
   }
 
+  /// Manually advance to the next section.
+  /// Useful for buttons or events that trigger a section change before scroll overflow.
+  Future<void> advance() async {
+    await _advanceSection(_currentIndex);
+  }
+
+  /// Manually return to the previous section.
+  Future<void> previous() async {
+    await _reverseSection(_currentIndex);
+  }
+
+  /// Jumps to a specific section index.
+  Future<void> jumpToSection(int index) async {
+    if (index < 0 || index >= _sections.length || index == _currentIndex) {
+      return;
+    }
+
+    if (!_isActive) {
+      _isActive = true;
+    }
+
+    // Exit current
+    if (_sections.isNotEmpty) {
+      await _sections[_currentIndex].exit();
+      scrollSystem.setBounds(null, null);
+      scrollSystem.resetScroll(0.0);
+    }
+
+    _currentIndex = index;
+    final nextSection = _sections[_currentIndex];
+
+    // Enter new
+    scrollSystem.setSnapRegions(nextSection.snapRegions);
+    await nextSection.warmUp();
+    await nextSection.enter(scrollSystem);
+  }
+
   Future<void> _reverseSection(int callingIndex) async {
     if (callingIndex != _currentIndex) return;
 
     if (_currentIndex > 0) {
       // 1. Exit current (which is now 'future')
       await _sections[_currentIndex].exit();
+      scrollSystem.setBounds(null, null);
+      scrollSystem.resetScroll(0.0); // Kill momentum immediately
 
       // RE-VERIFY index after async operation
       if (_currentIndex != callingIndex) return;
 
       _currentIndex--;
+      LoggerUtil.log(
+        'SequenceRunner',
+        'Reversing Section: $callingIndex -> $_currentIndex',
+      );
       final prevSection = _sections[_currentIndex];
 
       // 2. Re-enter previous

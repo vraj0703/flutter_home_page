@@ -191,15 +191,25 @@ class LogoOverlayComponent extends PositionComponent
 
   void _updateRemovingStartState(double dt) {
     _textAnimationProgress += _textAnimationSpeed * dt;
-    final charsToRemove = (_textAnimationProgress * fullText.length).floor();
+    final progress = _textAnimationProgress.clamp(0.0, 1.0);
+
+    // Fade out text opacity
+    final opacity = (1.0 - progress).clamp(0.0, 1.0);
+    _textComponent.textRenderer = TextPaint(
+      style: style.copyWith(color: uiColor.withValues(alpha: opacity)),
+    );
+
+    final charsToRemove = (progress * fullText.length).floor();
     final remainingChars = fullText.length - charsToRemove;
 
     if (remainingChars > 0) {
       _textComponent.text = fullText.substring(0, remainingChars);
     } else {
       _textComponent.text = '';
-      queuer.queue(event: SceneEvent.loadTitle());
+      queuer.queue(event: const SceneEvent.loadTitle());
       _textAnimationProgress = 0.0;
+      // Restore opacity for next time (though typically this component might be reset)
+      _textComponent.textRenderer = TextPaint(style: style);
     }
 
     _rightLine.targetPosition = GamePhysics.bouncyLineMaxScale;

@@ -28,6 +28,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     on<UpdateUIOpacity>(_updateUIOpacity);
     on<LoadExperience>(_loadExperience);
     on<EnterExperience>(_enterExperience);
+    on<ToggleArrow>(_toggleArrow);
   }
 
   @override
@@ -145,5 +146,15 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   @override
   void updateRevealProgress(double progress) {
     _revealProgress = progress;
+  }
+
+  FutureOr<void> _toggleArrow(ToggleArrow event, Emitter<SceneState> emit) {
+    state.mapOrNull(
+      active: (s) {
+        if (s.isArrowVisible != event.isVisible) {
+          emit(s.copyWith(isArrowVisible: event.isVisible));
+        }
+      },
+    );
   }
 }
