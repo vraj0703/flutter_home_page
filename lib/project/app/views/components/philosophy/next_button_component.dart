@@ -180,6 +180,9 @@ class NextButtonComponent extends PositionComponent
   void onHoverEnter() {
     _isHovering = true;
     game.audio.playPhilosophyButtonHover();
+    // Trigger lightning/panic
+    game.philosophySection.triggerLightningEffect();
+
     // On Hover: Remove pulse, scale up slightly and hold
     children.whereType<ScaleEffect>().forEach((e) => e.removeFromParent());
     add(ScaleEffect.to(Vector2.all(1.2), EffectController(duration: 0.1)));

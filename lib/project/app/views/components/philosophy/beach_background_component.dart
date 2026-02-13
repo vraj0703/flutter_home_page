@@ -97,6 +97,13 @@ class BeachBackgroundComponent extends PositionComponent
     _rippleTime = 0.0;
   }
 
+  void triggerLightningEffect() {
+    // Trigger intense lightning
+    orchestrator?.lightning.triggerFlash(1.0);
+    // Trigger bird panic
+    orchestrator?.birds.syncWithLightning(1.0);
+  }
+
   @override
   void render(Canvas canvas) {
     if (opacity <= 0.0 && !_manualWarmup) return;

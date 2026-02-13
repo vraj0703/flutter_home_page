@@ -66,6 +66,9 @@ class MyGame extends FlameGame
   // Component Accessors (Decoupled Lookup)
   ExperienceSection get experienceSection =>
       _primarySequenceRunner.sections.whereType<ExperienceSection>().first;
+
+  PhilosophySection get philosophySection =>
+      _primarySequenceRunner.sections.whereType<PhilosophySection>().first;
   final GameCursorSystem _cursorSystem = GameCursorSystem();
 
   GameCursorSystem get cursorSystem => _cursorSystem;

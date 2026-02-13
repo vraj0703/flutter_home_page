@@ -258,7 +258,11 @@ class GameAudioSystem {
 
     // 2. Calculate Distance (Simulated)
     // Higher intensity lightning sounds "closer" (louder, less delay)
-    double distance = 1.0 - intensity;
+    double distance = (1.0 - intensity).clamp(
+      0.0,
+      1.0,
+    ); // Ensure non-negative distance
+    // Allow volume to reach 1.0 if intensity > 1.0
     double volume = (intensity * 0.8).clamp(0.1, 1.0);
 
     // 3. The "Speed of Sound" Delay
@@ -268,16 +272,22 @@ class GameAudioSystem {
     Future.delayed(Duration(milliseconds: delayMs), () async {
       // Choose between a sharp 'crack' (close) or a long 'roll' (far)
       String soundFile = intensity > 0.8
-          ? 'thunder_crack.mp3'
-          : 'thunder_roll.wav';
+          ? GameAudioConfig.thunderCrackSfx
+          : GameAudioConfig.thunderRollSfx;
+
+      LoggerUtil.log(
+        'Audio',
+        'Playing Spatial Thunder: $soundFile (Vol: $volume)',
+      );
 
       try {
         // Play with calculated volume
         // Note: FlameAudio.play doesn't support panning directly
         // For full stereo control, would need audioplayers package directly
         await FlameAudio.play(soundFile, volume: volume);
-      } catch (_) {
-        // Ignore if audio files don't exist yet
+        LoggerUtil.log('Audio', 'Thunder Play Request Sent');
+      } catch (e) {
+        LoggerUtil.log('Audio', 'Error playing thunder: $e');
       }
     });
   }

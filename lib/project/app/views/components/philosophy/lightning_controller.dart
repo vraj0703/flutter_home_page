@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/animation.dart';
+import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 class LightningController extends Component with HasGameReference<MyGame> {
@@ -16,7 +17,24 @@ class LightningController extends Component with HasGameReference<MyGame> {
     intensity = (intensity - dt * 1.2).clamp(0.0, 1.0);
   }
 
+  DateTime _lastTriggerTime = DateTime.fromMillisecondsSinceEpoch(0);
+  int _consecutiveStrikes = 0;
+
   void triggerFlash(double currentRainIntensity) {
+    final now = DateTime.now();
+    if (now.difference(_lastTriggerTime).inMilliseconds < 2000) {
+      _consecutiveStrikes++;
+    } else {
+      _consecutiveStrikes = 0;
+    }
+    _lastTriggerTime = now;
+
+    double intensityBoost = 1.0 + (_consecutiveStrikes * 0.2);
+
+    LoggerUtil.log(
+      'LightningController',
+      'Trigger Flash. Intensity: $currentRainIntensity (Consecutive: $_consecutiveStrikes, Boost: $intensityBoost)',
+    );
     // The "Double Strike" logic
     intensity = 1.0;
 
@@ -27,8 +45,8 @@ class LightningController extends Component with HasGameReference<MyGame> {
       () {
         if (isMounted) {
           game.audio.playSpatialThunder(
-            soundDelaySeconds,
-          ); // Pass delay for variety
+            currentRainIntensity * intensityBoost,
+          ); // Pass intensity, NOT delay
         }
       },
     );

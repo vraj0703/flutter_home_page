@@ -151,6 +151,8 @@ class PhilosophyCard extends PositionComponent
     _isFlipped = true;
     //game.audio.playTrailCardSound(index);
     game.audio.playPhilosophyCardHover(index);
+    // Trigger lightning/panic
+    game.philosophySection.triggerLightningEffect();
   }
 
   void onHoverExit() {

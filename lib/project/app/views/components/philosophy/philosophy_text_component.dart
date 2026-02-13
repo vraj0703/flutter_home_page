@@ -38,6 +38,8 @@ class PhilosophyTextComponent extends PositionComponent
   @override
   void onHoverEnter() {
     game.audio.playPhilosophyTitleHover();
+    // Trigger lightning/panic
+    game.philosophySection.triggerLightningEffect();
   }
 
   @override

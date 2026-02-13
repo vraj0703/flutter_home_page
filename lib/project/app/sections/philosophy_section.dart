@@ -189,6 +189,10 @@ class PhilosophySection implements GameSection {
     _applyScrollEffects(_scrollProgress);
   }
 
+  void triggerLightningEffect() {
+    cloudBackground.triggerLightningEffect();
+  }
+
   void _applyScrollEffects(double offset) {
     _updateAudio(offset);
 
@@ -558,8 +562,8 @@ class PhilosophySection implements GameSection {
 
     // Move Up
     final startY = screenSize.y * 0.7;
-    // Target Y: Align with cards at perspective point (horizon)
-    final endY = screenSize.y * 0.4;
+    // Target Y: Just above center cards (Cards top at ~0.2)
+    final endY = screenSize.y * 0.15;
     final currentY = startY + (endY - startY) * eased;
 
     // Sway (subtle)
