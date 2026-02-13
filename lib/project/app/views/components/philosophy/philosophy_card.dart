@@ -41,6 +41,8 @@ class PhilosophyCard extends PositionComponent
   @override
   double get opacity => _scrollOpacity;
 
+  bool _hasPlayedEntrySound = false;
+
   @override
   set opacity(double value) {
     _scrollOpacity = value;
@@ -148,7 +150,7 @@ class PhilosophyCard extends PositionComponent
     _isHovered = true;
     _isFlipped = true;
     //game.audio.playTrailCardSound(index);
-    game.audio.playHover();
+    game.audio.playPhilosophyCardHover(index);
   }
 
   void onHoverExit() {
@@ -197,6 +199,25 @@ class PhilosophyCard extends PositionComponent
       _updateVisuals();
     }
 
+    // Play entry sound (Re/Mi/Fa/Si) when becoming visible
+    if (currentAlpha > 0.1 && !_hasPlayedEntrySound) {
+      LoggerUtil.log(
+        'PhilosophyCard',
+        'Card $index Entry -> Alpha: $currentAlpha',
+      );
+      game.audio.playPhilosophyCardHover(
+        index,
+      ); // Reusing hover sound method which maps to correct note
+      _hasPlayedEntrySound = true;
+    } else if (currentAlpha < 0.05 && _hasPlayedEntrySound) {
+      LoggerUtil.log(
+        'PhilosophyCard',
+        'Card $index Exit -> Alpha: $currentAlpha',
+      );
+      game.audio.playPhilosophyCardHover(index); // Play on exit
+      _hasPlayedEntrySound = false;
+    }
+
     const duration = 0.8; // Extended from 0.7s to 0.8s
     final oldProgress = flipProgress;
 
@@ -226,7 +247,7 @@ class PhilosophyCard extends PositionComponent
     // Trigger whoosh sound at flip peak (90°)
     if ((oldProgress < 0.5 && flipProgress >= 0.5) ||
         (oldProgress > 0.5 && flipProgress <= 0.5)) {
-      game.audio.playTrailCardSound(index);
+      // Sound removed as per user request
       LoggerUtil.log(
         'PhilosophyCard',
         'Card $index Flip -> ${flipProgress >= 0.5 ? "Back" : "Front"}',

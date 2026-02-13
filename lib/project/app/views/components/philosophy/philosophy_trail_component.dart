@@ -172,17 +172,36 @@ class PhilosophyTrailComponent extends PositionComponent
         final card = cards[i];
         if (!foundHover && card.containsPoint(cursor)) {
           if (_hoveredCardIndex != i) {
+            // Previous card exit
+            if (_hoveredCardIndex != null) {
+              cards[_hoveredCardIndex!].onHoverExit();
+            }
             _hoveredCardIndex = i;
             LoggerUtil.log('PhilosophyTrail', 'Hover Enter -> Card $i');
+            card.onHoverEnter(); // Only call once on enter
           }
-          card.onHoverEnter(); // Force hover
           foundHover = true;
         } else {
-          card.onHoverExit(); // Force exit
+          // Ensure non-hovered cards are reset if they were previously hovered
+          // But since we track _hoveredCardIndex, we handle exit strictly there or when foundHover is false
+          if (_hoveredCardIndex == i) {
+            // If this was the hovered card and now we lost it (or logic changed), handled by foundHover check below?
+            // Actually, the loop continues.
+            // Simpler logic: Just use onHoverExit for everyone else?
+            // PhilosophyCard.onHoverExit is cheap (sets bools). Is it?
+            // It doesn't play sound. So calling it repeatedly is fine?
+            // Let's check PhilosophyCard.onHoverExit.
+            card.onHoverExit();
+          }
         }
       }
 
-      if (!foundHover) _hoveredCardIndex = null;
+      if (!foundHover) {
+        if (_hoveredCardIndex != null) {
+          cards[_hoveredCardIndex!].onHoverExit();
+          _hoveredCardIndex = null;
+        }
+      }
     }
 
     // Spring Physics Logic (Under-Damped for Organic Bounce)
@@ -222,8 +241,9 @@ class PhilosophyTrailComponent extends PositionComponent
       final card = cards[i];
 
       // Parallax Overlap Logic
-      // Shifted to 1000.0 to allow Title to finish entering first (500-1000)
-      final double rangeStart = 1000.0;
+      // Parallax Overlap Logic
+      // Stagger start points to create rhythm (Sound triggers when opacity > 0.1)
+      final double rangeStart = 1000.0 + (i * 200.0);
       // Stagger the 'Lock' point (End of animation)
       final double rangeEnd = 1500.0 + (i * 400.0);
 

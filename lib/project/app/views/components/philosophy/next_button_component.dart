@@ -9,11 +9,14 @@ import 'package:flutter/material.dart' show Colors, Curves;
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 
+import 'package:flutter_home_page/project/app/views/my_game.dart';
+
 class NextButtonComponent extends PositionComponent
-    with HasGameReference, HoverCallbacks, HasPaint {
+    with HasGameReference<MyGame>, HoverCallbacks, HasPaint {
   bool _isHovering = false;
   double _holdProgress = 0.0;
   late SvgComponent _arrowIcon;
+  bool _hasPlayedEntrySound = false;
 
   @override
   set opacity(double value) {
@@ -97,8 +100,19 @@ class NextButtonComponent extends PositionComponent
     if (opacity <= 0.0) {
       _holdProgress = 0.0;
       _isHovering = false;
+      _hasPlayedEntrySound = false; // Reset when invisible
       return;
     }
+
+    // Play entry sound (Sol)
+    if (opacity > 0.1 && !_hasPlayedEntrySound) {
+      game.audio.playPhilosophyButtonHover();
+      _hasPlayedEntrySound = true;
+    } else if (opacity < 0.05 && _hasPlayedEntrySound) {
+      game.audio.playPhilosophyButtonHover(); // Play on exit
+      _hasPlayedEntrySound = false;
+    }
+
     final previousProgress = _holdProgress;
 
     if (isHovered) {
@@ -165,6 +179,7 @@ class NextButtonComponent extends PositionComponent
   @override
   void onHoverEnter() {
     _isHovering = true;
+    game.audio.playPhilosophyButtonHover();
     // On Hover: Remove pulse, scale up slightly and hold
     children.whereType<ScaleEffect>().forEach((e) => e.removeFromParent());
     add(ScaleEffect.to(Vector2.all(1.2), EffectController(duration: 0.1)));

@@ -90,11 +90,23 @@ class PhilosophyTextComponent extends PositionComponent
   @override
   double get opacity => isLoaded ? _fadeText.opacity : 0.0;
 
+  bool _hasPlayedEntrySound = false;
+
   @override
   set opacity(double value) {
     if (value == super.opacity) return;
     if (isLoaded) {
       _fadeText.opacity = value;
+
+      // Play entry sound (Do) when becoming visible
+      if (value > 0.1 && !_hasPlayedEntrySound) {
+        game.audio.playPhilosophyEntry();
+        _hasPlayedEntrySound = true;
+      } else if (value < 0.05 && _hasPlayedEntrySound) {
+        // Play exit sound (Do) - User requested sound on entry AND exit
+        game.audio.playPhilosophyEntry();
+        _hasPlayedEntrySound = false;
+      }
 
       // Mark texture for update if opacity changed significantly
       if ((value - _lastOpacity).abs() > 0.1) {
