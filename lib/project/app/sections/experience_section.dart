@@ -20,6 +20,7 @@ class ExperienceSection extends Component
   late final ExperienceContentComponent content;
   final ExperiencePageController _controller = ExperiencePageController();
   Vector2 screenSize;
+  bool _isAnimatingEntry = false;
 
   // GameSection Interface Implementation
   @override
@@ -41,7 +42,7 @@ class ExperienceSection extends Component
     required this.screenSize,
   }) {
     content = ExperienceContentComponent();
-    add(content);
+     add(content);
 
     _controller.onScrollUpdate = (scroll) {
       circlesBackground.setScrollProgress(scroll / maxScrollExtent);
@@ -129,51 +130,53 @@ class ExperienceSection extends Component
 
   /// Cinematic Hero Entry: Fades, Settles Scale, and Blooms Colors
   Future<void> animateEntry() async {
-    // 1. Initial State: Blown-out and zoomed in
-    circlesBackground.opacity = 0.0;
-    circlesBackground.scale = Vector2.all(1.2); // Start zoomed
-    circlesBackground.revealProgress = 1.0; // Start at max bloom (1.0)
+    if (_isAnimatingEntry) return;
+    _isAnimatingEntry = true;
 
-    // Ensure content is loaded and ready
-    content.opacity = 0.0;
+    try {
+      // Clear any stale effects from previous calls to prevent stacking
+      circlesBackground.children.whereType<Effect>().toList().forEach(
+        (e) => e.removeFromParent(),
+      );
 
-    // 2. Multi-Part Animation Sequence
-    final duration = const Duration(milliseconds: 1200);
-    final curve = Curves.easeOutCubic;
+      // 1. Initial State: Blown-out and zoomed in
+      circlesBackground.opacity = 0.0;
+      circlesBackground.scale = Vector2.all(1.2); // Start zoomed
 
-    // Fade in the background (Fast fade in)
-    circlesBackground.add(
-      OpacityEffect.to(
-        1.0,
-        EffectController(duration: 0.8, curve: Curves.easeIn),
-      ),
-    );
+      // 2. Multi-Part Animation Sequence
+      final duration = const Duration(milliseconds: 1200);
+      final curve = Curves.easeOutCubic;
 
-    // Settle the scale back to 1.0 (Zoom-out settle)
-    circlesBackground.add(
-      ScaleEffect.to(
-        Vector2.all(1.0),
-        EffectController(duration: 1.2, curve: curve),
-      ),
-    );
+      // Fade in the background
+      circlesBackground.add(
+        OpacityEffect.to(
+          1.0,
+          EffectController(duration: 0.8, curve: Curves.easeIn),
+        ),
+      );
 
-    // Fade the shader "Bloom" (revealProgress) from 1.0 back to 0.0 (Settled Colors)
-    circlesBackground.add(
-      _RevealProgressEffect(
-        from: 1.0,
-        to: 0.0,
-        controller: EffectController(duration: 1.5, curve: curve),
-        onComplete: () {
-          // Bloom settled.
-        },
-      ),
-    );
+      // Settle the scale back to 1.0 (Zoom-out settle)
+      circlesBackground.add(
+        ScaleEffect.to(
+          Vector2.all(1.0),
+          EffectController(duration: 1.2, curve: curve),
+        ),
+      );
 
-    // Animate Content In
-    content.animateEntry();
+      // Fade the shader "Bloom" (revealProgress) from 1.0 back to 0.0
+      circlesBackground.add(
+        _RevealProgressEffect(
+          from: 1.0,
+          to: 0.0,
+          controller: EffectController(duration: 1.5, curve: curve),
+        ),
+      );
 
-    // 3. Finalize
-    await Future.delayed(duration);
+      // 3. Finalize
+      await Future.delayed(duration);
+    } finally {
+      _isAnimatingEntry = false;
+    }
   }
 
   Future<void> nextExperience() async {
@@ -249,8 +252,8 @@ class _RevealProgressEffect extends Effect {
   @override
   void apply(double progress) {
     if (parent is CirclesBackgroundComponent) {
-      (parent as CirclesBackgroundComponent).revealProgress =
-          from + (to - from) * progress;
+      /*(parent as CirclesBackgroundComponent).revealProgress =
+          from + (to - from) * progress;*/
     }
   }
 }

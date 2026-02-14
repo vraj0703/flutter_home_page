@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 import 'package:flame/components.dart' hide Matrix4, Vector3;
 import 'package:flame/effects.dart';
 import 'package:flame/text.dart';
@@ -56,9 +55,7 @@ class PhilosophyCard extends PositionComponent
 
   double get _finalOpacity => _scrollOpacity * _parentOpacity;
 
-  late RectangleComponent bgComp;
-
-  late SpriteComponent iconComp;
+late SpriteComponent iconComp;
   late TextComponent titleComp;
   late RectangleComponent dividerComp;
   late TextComponent descComp; // Changed to TextComponent
@@ -139,6 +136,31 @@ class PhilosophyCard extends PositionComponent
   double _lastAlpha = -1.0;
   bool canFlip = false;
 
+  @override
+  void render(Canvas canvas) {
+    if (_scrollOpacity <= 0) return;
+
+    final RRect rrect = RRect.fromRectAndRadius(
+      size.toRect(),
+      const Radius.circular(15.0),
+    );
+
+    // 1. Background Fill
+    final bgPaint = Paint()
+      ..color = Color.fromRGBO(255, 255, 255, 0.06 * _finalOpacity)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(rrect, bgPaint);
+
+    // 2. Border Stroke
+    final borderPaint = Paint()
+      ..color = Color.fromRGBO(255, 255, 255, 0.1 * _finalOpacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawRRect(rrect, borderPaint);
+
+    super.render(canvas);
+  }
+
   bool get isFlipped => _isFlipped;
 
   void forceResetFlip() {
@@ -149,10 +171,8 @@ class PhilosophyCard extends PositionComponent
     if (!canFlip) return;
     _isHovered = true;
     _isFlipped = true;
-    //game.audio.playTrailCardSound(index);
     game.audio.playPhilosophyCardHover(index);
-    // Trigger lightning/panic
-    game.philosophySection.triggerLightningEffect();
+   game.philosophySection.triggerLightningEffect();
   }
 
   void onHoverExit() {
@@ -207,16 +227,12 @@ class PhilosophyCard extends PositionComponent
         'PhilosophyCard',
         'Card $index Entry -> Alpha: $currentAlpha',
       );
-      game.audio.playPhilosophyCardHover(
-        index,
-      ); // Reusing hover sound method which maps to correct note
       _hasPlayedEntrySound = true;
     } else if (currentAlpha < 0.05 && _hasPlayedEntrySound) {
       LoggerUtil.log(
         'PhilosophyCard',
         'Card $index Exit -> Alpha: $currentAlpha',
       );
-      game.audio.playPhilosophyCardHover(index); // Play on exit
       _hasPlayedEntrySound = false;
     }
 
@@ -294,25 +310,15 @@ class PhilosophyCard extends PositionComponent
       }
     }
 
-    // Calculate Tilt
-    if (_isHovered && canFlip && !_isFlipped) {
+   if (_isHovered && canFlip && !_isFlipped) {
       final cursor = game.cursorPosition;
-      // We need to transform cursor to local space to get offset from center
-      // However, since we are using a custom matrix, 'toLocal' might be complex if we use the standard FLame one.
-      // But we have 'containsPoint' logic which does the inversion.
-      // Let's approximate using screen space relative to card center projected?
-      // Simpler: Use the last known position from 'manualHoverCheck' logic?
-      // The 'manualHoverCheck' uses 'containsPoint'.
-      // Let's re-use the matrix inversion logic here.
-      final matrix = hitboxMatrix ?? transformMat;
+     final matrix = hitboxMatrix ?? transformMat;
       if (matrix != null) {
         try {
           final inverted = Matrix4.copy(matrix)..invert();
           final localPoint = inverted.perspectiveTransform(
             Vector3(cursor.x, cursor.y, 0),
           );
-          // Local point is relative to top-left (0,0) of the card size
-          // Normalize to -1..1 relative to center
           final centerX = size.x / 2;
           final centerY = size.y / 2;
           final normX = (localPoint.x - centerX) / centerX;
@@ -335,10 +341,8 @@ class PhilosophyCard extends PositionComponent
     if (isBack) {
       iconComp.scale = Vector2.zero();
       titleComp.scale = Vector2.zero();
-      // Keep scale positive — un-mirroring handled in renderTree
-      descComp.scale = Vector2.all(1.0);
+     descComp.scale = Vector2.all(1.0);
 
-      // Debug log for opacity/scale
       if (index == 3 && _idleTime % 60 < 1) {
         // Throttle logs
         // LoggerUtil.log('PhilosophyCard', 'Card $index Back Update: Scale ${descComp.scale.x}, Alpha $_finalOpacity');
@@ -357,9 +361,6 @@ class PhilosophyCard extends PositionComponent
 
   @override
   void renderTree(Canvas canvas) {
-    final isReflectionPass = canvas is ui.PictureRecorder;
-    final alpha = _finalOpacity; // Define alpha for logging
-
     if (transformMat != null) {
       canvas.save();
       canvas.transform(transformMat!.storage);
@@ -367,32 +368,21 @@ class PhilosophyCard extends PositionComponent
       // Always render the card background (border and glass effect)
       render(canvas);
 
-      // Skip the back of the card in the reflection to save GPU cycles
       if (flipProgress < 0.5) {
         // Front side: Show icon and title
         // Icon: Same plane as card background (Z=0)
         iconComp.renderTree(canvas);
 
         // Title: Higher Priority (Lifted off card) -> Z = +30
-        if (!isReflectionPass) {
-          canvas.save();
-          canvas.transform(Matrix4.translationValues(0, 0, 30.0).storage);
-          titleComp.renderTree(canvas);
-          canvas.restore();
-        }
+        canvas.save();
+        canvas.transform(Matrix4.translationValues(0, 0, 30.0).storage);
+        titleComp.renderTree(canvas);
+        canvas.restore();
 
         // Divider: Standard Plane (Z=0)
         // dividerComp.renderTree(canvas); // Hidden in layout anyway, but safe to skip
-      } else if (!isReflectionPass) {
+      } else {
         // Back side: Un-mirror text by flipping canvas horizontally
-
-        // Debug render check
-        if (index == 2 && flipProgress > 0.51 && flipProgress < 0.53) {
-          LoggerUtil.log(
-            'PhilosophyCard',
-            'Rendering Back Card $index. Text len: ${descComp.text.length}, Alpha: $alpha',
-          );
-        }
 
         canvas.save();
         canvas.scale(-1.0, 1.0);
@@ -427,11 +417,6 @@ class PhilosophyCard extends PositionComponent
     // Position Description at CENTER
     descComp.position = size / 2;
     descComp.anchor = Anchor.center;
-
-    // Note: TextComponent doesn't support boxConfig wrapping.
-    // We rely on newlines in the string for now.
-
-    // descComp.boxConfig... REMOVED
 
     if (isLeftSide) {
       // Icon: Top-Right
@@ -480,57 +465,6 @@ class PhilosophyCard extends PositionComponent
     }
   }
 
-  @override
-  void render(Canvas canvas) {
-    final alpha = _finalOpacity;
-    if (alpha <= 0.01) return;
-
-    final rrect = RRect.fromRectAndRadius(
-      size.toRect(),
-      const Radius.circular(16),
-    );
-    canvas.clipRRect(rrect);
-    canvas.drawRRect(
-      rrect.shift(const Offset(0, 10)),
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.15 * alpha)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15),
-    );
-
-    // Technical "Crop Marks" (Corner Brackets)
-    final borderAlpha = GameStyles.testiBorderAlphaBase * alpha;
-    final cornerLength = 20.0;
-    final strokeWidth = 2.0;
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: borderAlpha)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-
-    // Top-Left
-    canvas.drawLine(Offset(0, 0), Offset(cornerLength, 0), paint);
-    canvas.drawLine(Offset(0, 0), Offset(0, cornerLength), paint);
-
-    // Top-Right
-    canvas.drawLine(Offset(size.x, 0), Offset(size.x - cornerLength, 0), paint);
-    canvas.drawLine(Offset(size.x, 0), Offset(size.x, cornerLength), paint);
-
-    // Bottom-Right
-    canvas.drawLine(
-      Offset(size.x, size.y),
-      Offset(size.x - cornerLength, size.y),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(size.x, size.y),
-      Offset(size.x, size.y - cornerLength),
-      paint,
-    );
-
-    // Bottom-Left
-    canvas.drawLine(Offset(0, size.y), Offset(cornerLength, size.y), paint);
-    canvas.drawLine(Offset(0, size.y), Offset(0, size.y - cornerLength), paint);
-  }
-
   String _wrapText(String text, TextStyle style, double maxWidth) {
     final textPainter = TextPainter(
       text: TextSpan(text: text, style: style),
@@ -538,12 +472,7 @@ class PhilosophyCard extends PositionComponent
     );
     textPainter.layout(maxWidth: maxWidth);
 
-    // Flame TextComponent doesn't wrap, so we need to insert newlines manually.
-    // Since TextPainter handles layout, we can use computeLineMetrics to find where lines break?
-    // Actually, TextPainter doesn't easily give back the string with newlines.
-    // Helper approach: Simple greedy word wrap.
-
-    final words = text.split(' ');
+   final words = text.split(' ');
     final sb = StringBuffer();
     String currentLine = '';
 

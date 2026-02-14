@@ -13,6 +13,7 @@ uniform float iCrackStrength; // 8
 uniform float iShatterProgress; // 9
 uniform float uWaterY; // 10 - Horizon line for lightning
 uniform float iStrikeSeed; // 11 - Randomize bolts
+uniform float uPixelRatio; // 12 - DPR
 
 out vec4 fragColor;
 
@@ -165,7 +166,7 @@ vec3 ProceduralLightning(vec2 uv, float strikeIntensity) {
 }
 
 void main() {
-    vec2 c = FlutterFragCoord().xy;
+    vec2 c = FlutterFragCoord().xy / uPixelRatio;
     vec2 u = vec2(c.x, iResolution.y - c.y) / iResolution.xy;
 
     // 1. SHATTER: Distort UVs and capture fractional position for normals

@@ -15,7 +15,7 @@ class BirdController extends Component {
   void syncWithLightning(double lightningIntensity) {
     // Panic spikes instantly but lingers via decay in update()
     if (lightningIntensity > panicLevel) {
-      panicLevel = lightningIntensity;
+      panicLevel = 2 * lightningIntensity;
     }
   }
 }

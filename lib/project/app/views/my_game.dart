@@ -260,10 +260,7 @@ class MyGame extends FlameGame
     // Check State
     final state = stateProvider.sceneState();
 
-    // Update Systems based on State Flags
-    if (state.isScrollable) {
-      _godRayController?.updatePulse(dt, _philosophyScrollSystem.scrollOffset);
-    }
+    _godRayController?.updatePulse(dt);
 
     // Update Runner
     state.maybeWhen(

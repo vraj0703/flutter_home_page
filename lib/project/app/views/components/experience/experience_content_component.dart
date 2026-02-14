@@ -83,8 +83,8 @@ class ExperienceContentComponent extends PositionComponent
     _informationStack.position = infoBase + (offset * -_infoParallaxFactor);
 
     // Pass reveal progress to year marker
-    final reveal = game.experienceSection.circlesBackground.revealProgress;
-    _yearMarker.animateReveal(reveal);
+    //final reveal = game.experienceSection.circlesBackground.revealProgress;
+    //_yearMarker.animateReveal(reveal);
 
     // Apply Opacity Propagation
     _informationStack.opacity = opacity;

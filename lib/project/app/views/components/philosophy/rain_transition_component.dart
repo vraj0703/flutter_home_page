@@ -22,8 +22,11 @@ class RainTransitionComponent extends PositionComponent
   bool _isShattering = false;
 
   void setCrackStrength(double val) => _crackStrength = val;
+
   void setShatterProgress(double val) => shatterProgress = val;
+
   void setWaterY(double val) => _waterY = val;
+
   void setStrikeSeed(double val) => _strikeSeed = val;
 
   void triggerShatter() {
@@ -44,11 +47,16 @@ class RainTransitionComponent extends PositionComponent
     );
   }
 
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    this.size = size;
+  }
+
   bool _textureInitialized = false;
   ui.Image? _backgroundTexture;
-  final double _lerpFactor = 4.0;
+  final double _lerpFactor = 0.8;
 
-  // Track finger position for the shader
   Vector2 _mousePos = Vector2(-1000, -1000); // Start off-screen
 
   RainTransitionComponent({required this.shader, super.size}) {
@@ -63,15 +71,13 @@ class RainTransitionComponent extends PositionComponent
   void reset() => _targetIntensity = 0.0;
 
   void setBackground(ui.Image image) {
-    _backgroundTexture
-        ?.dispose(); // Ensure we don't leak if called multiple times
+    _backgroundTexture?.dispose();
     _backgroundTexture = image;
   }
 
   void updateBackgroundTexture(ui.Image newImg) {
     final oldImg = _backgroundTexture;
     _backgroundTexture = newImg;
-    // Critical: Immediately release GPU handle of the previous frame
     oldImg?.dispose();
   }
 
@@ -102,7 +108,6 @@ class RainTransitionComponent extends PositionComponent
 
   @override
   void update(double dt) {
-    // Optimization: Skip update if dormant
     if (opacity <= 0.0 &&
         _targetIntensity <= 0.001 &&
         !_manualWarmup &&
@@ -122,15 +127,19 @@ class RainTransitionComponent extends PositionComponent
 
     // Smoothly chase target (Spring-like lerp)
     if ((currentIntensity - _targetIntensity).abs() > 0.001) {
+      // Slow fill (0.8), Fast clear (6.0)
+      final effectiveLerp = _targetIntensity > currentIntensity
+          ? _lerpFactor
+          : 6.0;
+
       currentIntensity = ui.lerpDouble(
         currentIntensity,
         _targetIntensity,
-        dt * _lerpFactor,
+        dt * effectiveLerp,
       )!;
     } else {
       currentIntensity = _targetIntensity;
 
-      // NEW: If intensity reached zero and we aren't holding anymore, hide the component
       if (currentIntensity <= 0.001) {
         opacity = 0.0;
       }
@@ -138,15 +147,10 @@ class RainTransitionComponent extends PositionComponent
 
     // Audio Logic
     if (currentIntensity > 0.1) {
-      // Scalar for how many drops we want at 1.0 intensity
-      // 0.25 at 60fps = ~15 sounds per second
       double spawnChance = currentIntensity * 0.25;
 
       if (math.Random().nextDouble() < spawnChance) {
-        // Logic for Panning:
-        // If finger is active, 50% chance to pan to finger, 50% to random screen width
         double panX;
-        // _mousePos is (-1000, -1000) when inactive
         if (_mousePos.x > 0 && math.Random().nextBool()) {
           panX = (_mousePos.x / size.x).clamp(0.0, 1.0);
         } else {
@@ -163,7 +167,6 @@ class RainTransitionComponent extends PositionComponent
   }
 
   Future<void> _generateNoiseTexture() async {
-    // Creating a more reliable noise texture for the shader
     final int width = 512;
     final int height = 512;
     final math.Random rng = math.Random();
@@ -199,21 +202,14 @@ class RainTransitionComponent extends PositionComponent
 
   @override
   void render(ui.Canvas canvas) {
-    // 1. Check for texture presence.
-    // If either sampler is null, CanvasKit throws the 'Sd' error.
     if (!_textureInitialized ||
         _noiseTexture == null ||
         _backgroundTexture == null) {
       return;
     }
 
-    // 2. Check for intensity. No point in drawing if it's invisible.
-    // Allow rendering if manual warmup is active
     if (currentIntensity < 0.001 && !_manualWarmup) return;
 
-    // effective intensity for warmup should be non-zero but invisible-ish if needed,
-    // though for this component, opacity handles visibility too.
-    // If resetting intensity, ensure we have something to draw.
     final effectiveIntensity = _manualWarmup ? 0.01 : currentIntensity;
     final effectiveOpacity = _manualWarmup ? 0.01 : opacity;
 
@@ -231,9 +227,10 @@ class RainTransitionComponent extends PositionComponent
     shader.setFloat(10, _waterY); // Horizon Anchor
     shader.setFloat(11, _strikeSeed); // Lightning Randomization
 
-    // 3. SET SAMPLERS (Order must match the shader's uniform layout)
-    // iChannel0: Background (Refraction)
-    // iChannel1: Noise
+    // NEW: Pass DPR for coordinate normalization
+    final dpr = game.canvasSize.x / game.size.x;
+    shader.setFloat(12, dpr);
+
     shader.setImageSampler(0, _backgroundTexture!);
     shader.setImageSampler(1, _noiseTexture!);
 

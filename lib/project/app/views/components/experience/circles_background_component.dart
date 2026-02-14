@@ -2,13 +2,11 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
-import 'package:flutter_home_page/project/app/config/game_styles.dart';
 
 class CirclesBackgroundComponent extends PositionComponent
     with HasGameReference<MyGame>, HasPaint {
   final FragmentShader shader;
   double _time = 0.0;
-  double revealProgress = 0.0; // 0.0 to 1.0 for entry bloom effect
 
   CirclesBackgroundComponent({
     required this.shader,
@@ -24,10 +22,13 @@ class CirclesBackgroundComponent extends PositionComponent
     _time += dt;
   }
 
-  void setScrollProgress(double progress) {
-    // visual feedback for scroll
-    angle = progress * 0.5;
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    this.size = size;
   }
+
+  void setScrollProgress(double progress) {}
 
   bool _manualWarmup = false;
   int _manualWarmupFrames = 0;
@@ -41,28 +42,20 @@ class CirclesBackgroundComponent extends PositionComponent
   void render(Canvas canvas) {
     if (opacity <= 0.0 && !_manualWarmup) return;
 
-    shader.setFloat(0, size.x); // uSize.x
-    shader.setFloat(1, size.y); // uSize.y
+    shader.setFloat(0, size.x); // uSize.x (logical)
+    shader.setFloat(1, size.y); // uSize.y (logical)
     shader.setFloat(2, _time); // uTime
-    shader.setFloat(3, revealProgress); // uReveal for entry bloom
+    shader.setFloat(3, 1.0); // uPixelRatio (unused, kept for uniform slot)
 
-    // Pass Theme Color (uThemeColor) - Index 4
-    // Using GameStyles.primaryBackground (Gold/Bronze)
-    final color = GameStyles.primaryBackground;
-    shader.setFloat(4, color.r / 255.0);
-    shader.setFloat(5, color.g / 255.0);
-    shader.setFloat(6, color.b / 255.0);
-
-    final paint = Paint()..shader = shader;
+    final paint = Paint()
+      ..shader = shader
+      ..filterQuality = FilterQuality.medium;
     // During warmup, use a tiny non-zero opacity so the shader actually runs but isn't visible
     paint.color = paint.color.withValues(alpha: _manualWarmup ? 0.01 : opacity);
 
     canvas.drawRect(size.toRect(), paint);
 
     if (_manualWarmup) {
-      // Force a non-zero reveal during warmup to exercise that shader branch
-      shader.setFloat(3, 0.5);
-
       if (_manualWarmupFrames % 10 == 0) {
         // print('CirclesBackgroundComponent: Warmup Frame $_manualWarmupFrames');
       }
@@ -70,8 +63,6 @@ class CirclesBackgroundComponent extends PositionComponent
       if (_manualWarmupFrames > 20) {
         // print('CirclesBackgroundComponent: Warmup Completed');
         _manualWarmup = false;
-        // Reset uniform
-        shader.setFloat(3, revealProgress);
       }
     }
   }

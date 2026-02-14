@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/animation.dart';
+import 'package:flutter_home_page/project/app/config/game_audio_config.dart';
 import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
@@ -22,7 +23,12 @@ class LightningController extends Component with HasGameReference<MyGame> {
 
   void triggerFlash(double currentRainIntensity) {
     final now = DateTime.now();
-    if (now.difference(_lastTriggerTime).inMilliseconds < 2000) {
+    final diffMs = now.difference(_lastTriggerTime).inMilliseconds;
+
+    // Throttle to prevent chaos (max 4 strikes/sec)
+    if (diffMs < 250) return;
+
+    if (diffMs < 3000) {
       _consecutiveStrikes++;
     } else {
       _consecutiveStrikes = 0;
@@ -47,6 +53,13 @@ class LightningController extends Component with HasGameReference<MyGame> {
           game.audio.playSpatialThunder(
             currentRainIntensity * intensityBoost,
           ); // Pass intensity, NOT delay
+
+          // Also play thunder roll for ambience
+          LoggerUtil.log('LightningController', 'Playing Thunder Roll Asset');
+          game.audio.playAsset(
+            GameAudioConfig.thunderRollSfx,
+            volume: 0.6 * intensityBoost.clamp(0.5, 1.0),
+          );
         }
       },
     );

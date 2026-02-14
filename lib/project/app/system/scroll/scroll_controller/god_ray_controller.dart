@@ -18,7 +18,7 @@ class GodRayController implements ScrollObserver {
 
   GodRayController({required this.component, required this.screenSize});
 
-  void updatePulse(double dt, double currentScroll) {
+  void updatePulse(double dt) {
     _pulseTime += dt;
     if (_pulseTime >= _pulseCycleTime) {
       _pulseTime -= _pulseCycleTime;

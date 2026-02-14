@@ -16,7 +16,7 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/rain_t
 import 'package:flutter_home_page/project/app/views/components/philosophy/white_overlay_component.dart';
 import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 
-class PhilosophySection implements GameSection {
+class PhilosophySection extends Component implements GameSection {
   @override
   double get maxScrollExtent => _maxHeight;
   final PhilosophyTextComponent titleComponent;
@@ -29,6 +29,7 @@ class PhilosophySection implements GameSection {
   final VoidCallback playEntrySound;
   final VoidCallback playCompletionSound;
   double _scrollProgress = 0.0;
+
   double get _maxHeight => trailComponent.maxScrollExtent;
   int _currentPhase = 0;
   late BeachSceneOrchestrator orchestrator;
@@ -36,7 +37,6 @@ class PhilosophySection implements GameSection {
   bool _freezeCapture = false;
   bool _isShattering = false;
 
-  // Button state (decoupled from scroll)
   bool _buttonVisible = false;
   double _buttonOpacity = 0.0;
 
@@ -177,13 +177,11 @@ class PhilosophySection implements GameSection {
 
     _scrollProgress = offset;
 
-    // Warm up next section if nearing completion
     if (_scrollProgress > _maxHeight - 500 && !_hasWarmedUpNext) {
       onWarmUpNextSection?.call();
       _hasWarmedUpNext = true;
     }
 
-    // Update shader scroll progress for sky gradient (0.0-1.0)
     cloudBackground.setScrollProgress(_scrollProgress / _maxHeight);
 
     _applyScrollEffects(_scrollProgress);
@@ -195,10 +193,6 @@ class PhilosophySection implements GameSection {
 
   void _applyScrollEffects(double offset) {
     _updateAudio(offset);
-
-    // 0. White Overlay
-    // Logic: Only show during initial entry. Once user scrolls deep (> 200), disable it.
-    // This prevents "White Screen" when scrolling back up.
     if (!_hasScrolledPastEntry && offset > 200) {
       _hasScrolledPastEntry = true;
     }
@@ -209,24 +203,14 @@ class PhilosophySection implements GameSection {
       final overlayProgress = (offset / 150.0).clamp(0.0, 1.0);
       whiteOverlay.opacity = 1.0 - overlayProgress;
     }
-
-    // 1. Scene Entry (0 - 500) - "Curtain Reveal"
-    // Instead of linear scale, use Parallax + Ease
     double entryProgress = (offset / 500.0).clamp(0.0, 1.0);
     final entryCurve = Curves.easeOutCubic.transform(entryProgress);
-
-    // Background: Parallax (slower) + Fade
-    // Moves from 0 to -100 (Upwards) to prevent top gap
-    // Requires scale > 1.0 (handled here or in component)
     cloudBackground.opacity = entryCurve;
     cloudBackground.scale = Vector2.all(1.2); // 20% Overscan
-    // Center X (offset by 10%), Move Y (0 -> -100)
     cloudBackground.position = Vector2(
       -(screenSize.x * 0.1),
       -(entryCurve * 100),
     );
-
-    // Content Container (Trail): aligned with card rangeStart (1000px)
     if (offset > 1000) {
       double trailProgress = ((offset - 1000) / 200.0).clamp(0.0, 1.0);
       final trailCurve = Curves.easeOutCubic.transform(trailProgress);
@@ -240,13 +224,10 @@ class PhilosophySection implements GameSection {
       trailComponent.position = Vector2(0, 200);
     }
 
-    // 2. Title Animation (500 - 1000)
-    if (offset > 500) {
-      // Remapped per user request
-      const double titleStart = 500.0;
+   if (offset > 500) {
+       const double titleStart = 500.0;
       const double titleEnd = 1000.0;
 
-      // Title Progress
       final titleProgress = ((offset - titleStart) / (titleEnd - titleStart))
           .clamp(0.0, 1.0);
 
@@ -259,12 +240,11 @@ class PhilosophySection implements GameSection {
       titleComponent.opacity = 0.0;
     }
 
-    // 3. Trail (Cards) Animation
     trailComponent.setTargetScroll(offset);
     trailComponent.updateTrailAnimation(offset);
 
-    // 4. Button Position (visibility handled in setScrollOffset)
-    nextButton.position = Vector2(screenSize.x / 2, screenSize.y * 0.8);
+    _updateAudio(offset);
+   nextButton.position = Vector2(screenSize.x / 2, screenSize.y * 0.8);
   }
 
   void _updateAudio(double offset) {
@@ -287,33 +267,87 @@ class PhilosophySection implements GameSection {
       newPhase = 7;
     }
 
-    if (newPhase != _currentPhase) {
-      _currentPhase = newPhase;
-      // Play sound for the NEW phase we just ALIGHTED upon
-      switch (newPhase) {
-        case 1:
-          playEntrySound(); // Do
-          break;
-        case 2:
-          playCompletionSound(); // Re
-          break;
-        case 3:
-          trailComponent.game.audio.playTrailCardSound(0); // Mi
-          break;
-        case 4:
-          trailComponent.game.audio.playTrailCardSound(1); // Fa
-          break;
-        case 5:
-          trailComponent.game.audio.playTrailCardSound(2); // Si
-          break;
-        case 6:
-          trailComponent.game.audio.playTrailCardSound(3); // Sol
-          break;
+    if (newPhase > _currentPhase) {
+      for (int i = _currentPhase + 1; i <= newPhase; i++) {
+        if (i == 2) continue;
+        LoggerUtil.log('PhilosophySection', 'Queueing Audio Phase (FWD): $i');
+        _audioQueue.add(i);
       }
+      _currentPhase = newPhase;
+    } else if (newPhase < _currentPhase) {
+      for (int i = _currentPhase - 1; i >= newPhase; i--) {
+        if (i == 2) continue;
+        LoggerUtil.log('PhilosophySection', 'Queueing Audio Phase (REV): $i');
+        _audioQueue.add(i);
+      }
+      _currentPhase = newPhase;
+    }
+  }
+
+  final List<int> _audioQueue = [];
+  double _timeSinceLastNote = 0.0;
+  static const double _noteInterval = 0.2; // 200ms spacing
+
+  void _processAudioQueue(double dt) {
+    if (_audioQueue.isEmpty) return;
+
+    _timeSinceLastNote += dt;
+    if (_timeSinceLastNote >= _noteInterval) {
+      final phase = _audioQueue.removeAt(0);
+      LoggerUtil.log('PhilosophySection', 'Processing Audio Queue: $phase');
+      _playPhaseSound(phase);
+      _timeSinceLastNote = 0.0;
+    }
+  }
+
+  void _playPhaseSound(int phase) {
+    LoggerUtil.log('PhilosophySection', 'Playing Phase Sound: $phase');
+    switch (phase) {
+      case 1:
+        playEntrySound(); // Do
+        break;
+      case 2:
+        break;
+      case 3:
+        trailComponent.game.audio.playTrailCardSound(0); // Card 1: Re
+        break;
+      case 4:
+        trailComponent.game.audio.playTrailCardSound(1); // Card 2: Mi
+        break;
+      case 5:
+        trailComponent.game.audio.playTrailCardSound(2); // Card 3: Fa
+        break;
+      case 6:
+        trailComponent.game.audio.playTrailCardSound(3); // Card 4: Si
+        break;
     }
   }
 
   bool _isActive = false;
+
+  @override
+  Future<void> onLoad() async {
+    if (_scrollProgress <= 0) {
+      _resetVisuals();
+    }
+
+    cloudBackground.opacity = 0.02;
+    trailComponent.opacity = 0.02;
+    titleComponent.opacity = 0.02;
+    cloudBackground.warmUp();
+    await titleComponent.warmUp();
+    await Future.delayed(const Duration(milliseconds: 300));
+    await orchestrator.reflection.updateReflectionTexture();
+    forceCaptureRefraction();
+
+    // Hide components again
+    cloudBackground.opacity = 0.0;
+    trailComponent.opacity = 0.0;
+    titleComponent.opacity = 0.0;
+    nextButton.opacity = 0.0;
+    rainTransition.setTarget(0.0);
+    whiteOverlay.opacity = 0.0;
+  }
 
   @override
   Future<void> warmUp() async {
@@ -428,6 +462,9 @@ class PhilosophySection implements GameSection {
   void update(double dt) {
     if (!_isActive) return;
 
+    // Process audio queue (Moved from scroll loop to time loop)
+    _processAudioQueue(dt);
+
     // Smooth button fade (decoupled from scroll)
     final targetButtonOpacity = _buttonVisible ? 1.0 : 0.0;
     if ((_buttonOpacity - targetButtonOpacity).abs() > 0.01) {
@@ -471,9 +508,9 @@ class PhilosophySection implements GameSection {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
 
-    // Performance: Reduced from 0.5 to 0.2 for mobile optimization.
-    // Rain distortion doesn't need high-res crispness, just color data.
-    const double scale = 0.2;
+    // Performance: Increased for quality.
+    // Rain distortion needs high-res to keep cards visible/readable.
+    const double scale = 1.0;
     canvas.scale(scale);
 
     // Render the beach and the text/cards into the off-screen buffer
@@ -584,7 +621,8 @@ class PhilosophySection implements GameSection {
     }
 
     // Set water level for shader (procedural ocean boundary)
-    cloudBackground.setWaterLevel(screenSize.y * 0.72);
+    // Adjusted to 0.45 to match card horizon so reflections are visible
+    cloudBackground.setWaterLevel(screenSize.y * 0.6);
   }
 
   void _resetVisuals() {

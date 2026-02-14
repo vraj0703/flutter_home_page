@@ -4,13 +4,15 @@
 uniform vec2 iResolution;
 uniform float iTime;
 uniform float iFlashIntensity; // 0.0 = no flash, 1.0 = full white
+uniform float uPixelRatio;
 uniform sampler2D iChannel0; // Scene beneath
 
 out vec4 fragColor;
 
 void main() {
     vec2 c = FlutterFragCoord().xy;
-    vec2 uv = vec2(c.x, iResolution.y - c.y) / iResolution.xy;
+    vec2 pos = c / uPixelRatio;
+    vec2 uv = vec2(pos.x, iResolution.y - pos.y) / iResolution.xy;
     
     // Center distance for chromatic aberration
     vec2 center = vec2(0.5);

@@ -160,4 +160,4 @@ flutter:
     - assets/shaders/bold_text_entrance.frag
     - assets/shaders/flash_transition.frag
     - assets/shaders/rain.frag
-    - assets/shaders/circles.frag
+    - assets/shaders/orbiting_lights.frag

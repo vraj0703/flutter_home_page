@@ -38,23 +38,18 @@ class PhilosophyTextComponent extends PositionComponent
   @override
   void onHoverEnter() {
     game.audio.playPhilosophyTitleHover();
-    // Trigger lightning/panic
     game.philosophySection.triggerLightningEffect();
   }
 
   @override
   Future<void> onLoad() async {
-    // 1. Calculate intrinsic size of text
     final textPainter = material.TextPainter(
       text: material.TextSpan(text: text, style: style),
       textDirection: material.TextDirection.ltr,
     );
     textPainter.layout();
-
-    // Set component size to text size + padding
     size = Vector2(textPainter.width + 40, textPainter.height + 40);
 
-    // 2. Create child component
     _fadeText = FadeTextComponent(
       text: text,
       textStyle: style,
@@ -62,8 +57,8 @@ class PhilosophyTextComponent extends PositionComponent
       baseColor: GameStyles.boldTextBase,
     );
     _fadeText.anchor = Anchor.center;
-    _fadeText.position = size / 2; // Center in parent
-    _fadeText.opacity = 0.0; // Invisible initially
+    _fadeText.position = size / 2;
+    _fadeText.opacity = 0.0;
 
     add(_fadeText);
     opacity = 0.0;
@@ -73,18 +68,15 @@ class PhilosophyTextComponent extends PositionComponent
   Future<void> warmUp() async {
     if (!isLoaded) return;
     if (textTexture != null) {
-      return; // Skip if already generated (Startup optimization)
+      return;
     }
 
     _needsTextureUpdate = true;
-    // Temporarily set opacity > 0 for _updateTextTexture check (safe because _fadeText.opacity is 0)
     final oldOpacity = opacity;
     opacity = 0.01;
-    _fadeText.opacity = 1.0; // Needs to be visible for render capture
+    _fadeText.opacity = 1.0;
 
     await _updateTextTexture();
-
-    // Restore
     opacity = oldOpacity;
     _fadeText.opacity = 0.0;
   }
@@ -100,17 +92,13 @@ class PhilosophyTextComponent extends PositionComponent
     if (isLoaded) {
       _fadeText.opacity = value;
 
-      // Play entry sound (Do) when becoming visible
       if (value > 0.1 && !_hasPlayedEntrySound) {
         game.audio.playPhilosophyEntry();
         _hasPlayedEntrySound = true;
       } else if (value < 0.05 && _hasPlayedEntrySound) {
-        // Play exit sound (Do) - User requested sound on entry AND exit
-        game.audio.playPhilosophyEntry();
         _hasPlayedEntrySound = false;
       }
 
-      // Mark texture for update if opacity changed significantly
       if ((value - _lastOpacity).abs() > 0.1) {
         _needsTextureUpdate = true;
         _lastOpacity = value;
@@ -121,8 +109,6 @@ class PhilosophyTextComponent extends PositionComponent
   @override
   void render(ui.Canvas canvas) {
     super.render(canvas);
-
-    // Update texture if needed
     if (showReflection && opacity > 0 && _needsTextureUpdate) {
       _updateTextTexture();
     }
@@ -133,14 +119,12 @@ class PhilosophyTextComponent extends PositionComponent
     if (!isLoaded || opacity <= 0) return;
 
     try {
-      // Re-measure text to ensure correct size (fonts might have loaded)
       final textPainter = material.TextPainter(
         text: material.TextSpan(text: text, style: style),
         textDirection: material.TextDirection.ltr,
       );
       textPainter.layout();
 
-      // Expand size if needed (preserve center anchor)
       final neededW = textPainter.width + 40;
       final neededH = textPainter.height + 40;
 
@@ -149,27 +133,20 @@ class PhilosophyTextComponent extends PositionComponent
         _fadeText.position = size / 2; // Re-center child
       }
 
-      // Create a picture recorder to capture the text rendering
       final recorder = ui.PictureRecorder();
       final canvas = ui.Canvas(recorder);
 
-      // Render the fade text component
       canvas.save();
       canvas.translate(size.x / 2, size.y / 2); // Center it in the texture
       _fadeText.render(canvas);
       canvas.restore();
-
-      // Convert to picture
       final picture = recorder.endRecording();
 
-      // Convert picture to image
       final image = await picture.toImage(
         size.x.toInt().clamp(1, 2048),
         size.y.toInt().clamp(1, 2048),
       );
 
-      // Store texture
-      // Defer disposal of old texture to allow shader to finish rendering
       final oldTexture = textTexture;
       if (oldTexture != null) {
         Future.delayed(const Duration(milliseconds: 100), () {
@@ -180,9 +157,7 @@ class PhilosophyTextComponent extends PositionComponent
       }
       textTexture = image;
       _needsTextureUpdate = false;
-    } catch (e) {
-      // Ignore texture error
-    }
+    } catch (e) {}
   }
 
   @override

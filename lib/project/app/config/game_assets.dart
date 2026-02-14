@@ -13,5 +13,5 @@ class GameAssets {
       'assets/shaders/bold_text_entrance.frag';
   static const String beachShader = 'assets/shaders/beach.frag';
   static const String rainShader = 'assets/shaders/rain.frag';
-  static const String circlesShader = 'assets/shaders/circles.frag';
+  static const String circlesShader = 'assets/shaders/orbiting_lights.frag';
 }

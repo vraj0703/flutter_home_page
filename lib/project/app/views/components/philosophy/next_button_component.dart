@@ -38,8 +38,8 @@ class NextButtonComponent extends PositionComponent
 
   // Pill Dimensions
   static const double buttonWidth = 200.0;
-  static const double buttonHeight = 80.0;
-  static const double borderRadius = 40.0;
+  static const double buttonHeight = 60.0; // Reduced from 80.0
+  static const double borderRadius = 30.0; // Adjusted for new height
 
   static const Color accentColor = Color(0xFF00FFFF); // Neon Cyan
 
@@ -139,8 +139,9 @@ class NextButtonComponent extends PositionComponent
       const Radius.circular(borderRadius),
     );
 
+    final bgAlpha = _isHovering ? 0.2 : 0.1; // Subtle highlight on hover
     final bgPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.1 * opacity)
+      ..color = Colors.white.withValues(alpha: bgAlpha * opacity)
       ..style = PaintingStyle.fill;
 
     // Use isHovering to determine border - brighter when hovered
@@ -185,7 +186,13 @@ class NextButtonComponent extends PositionComponent
 
     // On Hover: Remove pulse, scale up slightly and hold
     children.whereType<ScaleEffect>().forEach((e) => e.removeFromParent());
-    add(ScaleEffect.to(Vector2.all(1.2), EffectController(duration: 0.1)));
+    // Reduced scale from 1.2 to 1.05 for subtle hint
+    add(
+      ScaleEffect.to(
+        Vector2.all(1.05),
+        EffectController(duration: 0.2, curve: Curves.easeOut),
+      ),
+    );
   }
 
   @override
