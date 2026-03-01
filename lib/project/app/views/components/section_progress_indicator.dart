@@ -26,7 +26,6 @@ class SectionProgressIndicator extends PositionComponent
   double _velocityDecay = 0.0; // Smooth velocity decay for visuals
 
   final Paint _inactivePaint = Paint()..color = inactiveColor;
-  final Paint _activePaint = Paint()..color = activeColor;
   final Paint _dropletPaint = Paint()
     ..color = dropletColor
     ..style = PaintingStyle.fill;
