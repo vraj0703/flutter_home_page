@@ -49,3 +49,4 @@ build/
 
 # Agent Artifacts
 .agent/
+.claude/
