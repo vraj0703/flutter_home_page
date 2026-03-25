@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../data/data_sources/linkedin_data_source.dart';
+import '../../domain/data_sources/linkedin_data_source.dart';
 import '../../domain/exception/failures.dart';
 import '../../domain/use_cases/authenticate_linkedin.dart';
 import '../../domain/use_cases/fetch_testimonials.dart';
@@ -11,16 +13,25 @@ class TestimonialBloc extends Bloc<TestimonialEvent, TestimonialState> {
   final FetchTestimonials fetchTestimonials;
   final SubmitTestimonial submitTestimonial;
   final AuthenticateLinkedIn authenticateLinkedIn;
+  final ILinkedInDataSource linkedInDataSource;
 
   TestimonialBloc({
     required this.fetchTestimonials,
     required this.submitTestimonial,
     required this.authenticateLinkedIn,
+    required this.linkedInDataSource,
   }) : super(const TestimonialInitial()) {
     on<LoadTestimonials>(_onLoad);
     on<SubmitTestimonialRequested>(_onSubmit);
+    on<LinkedInAuthStarted>(_onLinkedInAuthStarted);
     on<LinkedInAuthCompleted>(_onLinkedInAuth);
     on<ClearSubmissionFeedback>(_onClearFeedback);
+  }
+
+  /// Returns the LinkedIn OAuth authorization URL for the user to visit.
+  String getLinkedInAuthUrl() {
+    final state = LinkedInDataSource.generateState();
+    return linkedInDataSource.getAuthorizationUrl(state: state);
   }
 
   Future<void> _onLoad(
@@ -84,6 +95,15 @@ class TestimonialBloc extends Bloc<TestimonialEvent, TestimonialState> {
           submissionError: details ?? error.message,
         ));
     }
+  }
+
+  void _onLinkedInAuthStarted(
+    LinkedInAuthStarted event,
+    Emitter<TestimonialState> emit,
+  ) {
+    // The actual URL opening is handled by the UI layer.
+    // This event is a no-op in the bloc; the UI calls getLinkedInAuthUrl()
+    // and opens it via url_launcher.
   }
 
   Future<void> _onLinkedInAuth(

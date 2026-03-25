@@ -1,47 +1,50 @@
+import '../../domain/data_sources/linkedin_data_source.dart';
 import '../../domain/entities/linkedin_profile.dart';
 import '../../domain/exception/failures.dart';
 import '../../domain/repositories/linkedin_repository.dart';
+import '../data_sources/linkedin_data_source.dart';
 
-/// Production LinkedIn repository.
+/// Production LinkedIn repository backed by [ILinkedInDataSource].
 ///
-/// TODO: Wire to actual LinkedIn OAuth API when credentials are configured.
+/// Manages OAuth state (token, CSRF state) and delegates all network
+/// calls to the injected data source.
 class ReleaseLinkedInRepository implements ILinkedInRepository {
-  final String profileOwnerVanity;
+  final ILinkedInDataSource _dataSource;
 
   String? _accessToken;
 
+  /// The CSRF state string for the current OAuth flow (if any).
+  String? _pendingState;
+
   ReleaseLinkedInRepository({
-    this.profileOwnerVanity = 'vraj0703',
-  });
+    required ILinkedInDataSource dataSource,
+  }) : _dataSource = dataSource;
 
   @override
   String getAuthorizationUrl() {
-    // Stub: returns recommendation page directly.
-    return getRecommendationUrl();
+    _pendingState = LinkedInDataSource.generateState();
+    return _dataSource.getAuthorizationUrl(state: _pendingState!);
   }
 
   @override
   Future<Result<String>> exchangeCodeForToken(
     String authorizationCode,
   ) async {
-    // Stub: LinkedIn OAuth not yet configured.
-    return const Failure(
-      TestimonialFailure.authFailed,
-      'LinkedIn OAuth not configured yet',
+    final result = await _dataSource.exchangeCodeForToken(authorizationCode);
+    result.fold(
+      onSuccess: (token) => _accessToken = token,
+      onFailure: (_, __) {},
     );
+    return result;
   }
 
   @override
   Future<Result<LinkedInProfile>> getUserProfile(String accessToken) async {
-    return const Failure(
-      TestimonialFailure.authFailed,
-      'LinkedIn OAuth not configured yet',
-    );
+    return _dataSource.getUserProfile(accessToken);
   }
 
   @override
-  String getRecommendationUrl() =>
-      'https://www.linkedin.com/in/$profileOwnerVanity/details/recommendations/write/';
+  String getRecommendationUrl() => _dataSource.getRecommendationUrl();
 
   @override
   bool get isAuthenticated => _accessToken != null;
@@ -49,6 +52,15 @@ class ReleaseLinkedInRepository implements ILinkedInRepository {
   @override
   String? get currentToken => _accessToken;
 
+  /// The CSRF state value sent with the last authorization URL.
+  ///
+  /// Callers should verify the `state` query parameter from the OAuth
+  /// callback matches this value before exchanging the code.
+  String? get pendingState => _pendingState;
+
   @override
-  void logout() => _accessToken = null;
+  void logout() {
+    _accessToken = null;
+    _pendingState = null;
+  }
 }

@@ -42,6 +42,9 @@ dependencies:
   vector_math: ^2.2.0
   soundpool: ^2.4.1
   flame_bloc: ^1.12.20
+  firebase_core: ^3.13.0
+  cloud_firestore: ^5.6.7
+  http: ^1.2.2
 
 dependency_overrides:
   build_runner: ^2.10.3

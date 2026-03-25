@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_strings.dart';
@@ -16,7 +17,12 @@ class TestimonialPageComponent extends PositionComponent
   final FragmentShader shader;
   late FadeTextComponent titleText;
   late TestimonialCarouselComponent carousel;
-  late RectangleComponent addButton;
+  // ignore: library_private_types_in_public_api
+  late _TappableButton addButton;
+
+  /// Convenience accessor — delegates to the game-level notifier so the
+  /// Flutter overlay in [StatefulScene] can listen to the same instance.
+  ValueNotifier<bool> get showFormNotifier => game.showTestimonialForm;
 
   @override
   set opacity(double val) {
@@ -64,8 +70,9 @@ class TestimonialPageComponent extends PositionComponent
     titleText.opacity = opacity;
     add(titleText);
 
-    // Carousel
-    carousel = TestimonialCarouselComponent(data: testimonialData);
+    // Carousel — use live data from BLoC if available, else hardcoded fallback.
+    final liveData = game.testimonialNodes;
+    carousel = TestimonialCarouselComponent(data: liveData ?? testimonialData);
     carousel.position = Vector2(
       size.x / 2,
       size.y * GameLayout.testimonialCarouselRelY,
@@ -74,11 +81,12 @@ class TestimonialPageComponent extends PositionComponent
     carousel.opacity = opacity;
     add(carousel);
 
-    // Add Button
-    addButton = RectangleComponent(
+    // Add Button (tappable)
+    addButton = _TappableButton(
       size: GameLayout.testimonialButtonSize,
       paint: Paint()..color = GameStyles.accentGold,
       position: Vector2(size.x / 2, size.y * GameLayout.testimonialButtonRelY),
+      onTap: () => showFormNotifier.value = true,
     );
     addButton.anchor = Anchor.center;
     addButton.opacity = opacity;
@@ -108,4 +116,41 @@ class TestimonialPageComponent extends PositionComponent
   }
 
   bool get allTestimonialsFocused => isLoaded && carousel.allFocused;
+
+  /// Replace the carousel data with fresh nodes from the BLoC.
+  ///
+  /// Removes the old carousel, creates a new one with the updated data,
+  /// and adds it back to the component tree.
+  void updateData(List<TestimonialNode> data) {
+    if (!isLoaded) return;
+
+    final oldOpacity = carousel.opacity;
+    remove(carousel);
+
+    carousel = TestimonialCarouselComponent(data: data);
+    carousel.position = Vector2(
+      size.x / 2,
+      size.y * GameLayout.testimonialCarouselRelY,
+    );
+    carousel.anchor = Anchor.center;
+    carousel.opacity = oldOpacity;
+    add(carousel);
+  }
+}
+
+/// A [RectangleComponent] that responds to taps within the Flame game tree.
+class _TappableButton extends RectangleComponent with TapCallbacks {
+  final VoidCallback onTap;
+
+  _TappableButton({
+    required super.size,
+    required super.paint,
+    required super.position,
+    required this.onTap,
+  });
+
+  @override
+  void onTapUp(TapUpEvent event) {
+    onTap();
+  }
 }
