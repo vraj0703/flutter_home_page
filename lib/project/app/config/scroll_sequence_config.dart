@@ -174,6 +174,58 @@ class ScrollSequenceConfig {
       PhilosophyTransitionConfig();
 }
 
+/// Layout and animation constants for [PhilosophySection].
+///
+/// Extracted from inline magic numbers to improve readability and allow
+/// centralized tuning of the philosophy scroll experience.
+class PhilosophySectionLayout {
+  // ── Scroll thresholds ──────────────────────────────────────────────
+  static const double entryScrollThreshold = 200.0;
+  static const double whiteOverlayFadeDistance = 150.0;
+  static const double backgroundFadeDistance = 500.0;
+  static const double trailAppearOffset = 1000.0;
+  static const double trailFadeDistance = 200.0;
+  static const double titleStartOffset = 500.0;
+  static const double titleEndOffset = 1000.0;
+  static const double buttonShowThreshold = 2700.0;
+  static const double audioPhaseWidth = 500.0;
+  static const double warmUpLookahead = 500.0;
+
+  // ── Background ─────────────────────────────────────────────────────
+  static const double backgroundOverscan = 1.2;
+  static const double backgroundOverscanMargin = 0.1;
+  static const double backgroundYShift = 100.0;
+
+  // ── Trail ──────────────────────────────────────────────────────────
+  static const double trailInitialScale = 0.95;
+  static const double trailScaleRange = 0.05;
+  static const double trailInitialY = 200.0;
+
+  // ── Title floating animation ───────────────────────────────────────
+  static const double titleInitialScale = 0.1;
+  static const double titleOvershootScale = 0.8;
+  static const double titleSettleScale = 0.6;
+  static const double titleOvershootThreshold = 0.7;
+  static const double breatheAmplitude = 0.02;
+  static const double breatheFrequency = 0.5;
+  static const double swayAmount = 20.0;
+  static const double titleStartYRatio = 0.7;
+  static const double titleEndYRatio = 0.15;
+  static const double waterLineYRatio = 0.55;
+  static const double waterLevelRatio = 0.6;
+
+  // ── Button fade ────────────────────────────────────────────────────
+  static const double buttonFadeInSpeed = 3.0;
+  static const double buttonFadeOutSpeed = 8.0;
+  static const double buttonMinScale = 0.5;
+  static const double buttonYRatio = 0.8;
+
+  // ── Refraction capture ─────────────────────────────────────────────
+  static const double refractionScale = 0.3;
+  static const int highFpsThrottle = 2;
+  static const int lowFpsThrottle = 3;
+}
+
 class PhilosophyTransitionConfig {
   const PhilosophyTransitionConfig();
 

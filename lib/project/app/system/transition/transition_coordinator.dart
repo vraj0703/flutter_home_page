@@ -1,19 +1,18 @@
 import 'dart:math' as math;
+import 'package:flame/camera.dart';
 import 'package:flutter/services.dart';
 import 'package:flame/components.dart';
-import 'package:flame/game.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 
+import 'package:flutter_home_page/project/app/interfaces/transition_context.dart';
 import 'package:flutter_home_page/project/app/sections/philosophy_section.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/flash_transition_component.dart';
-import 'package:flutter_home_page/project/app/views/my_game.dart';
 
 /// Coordinates the seamless transition from Philosophy to Experience section
 /// with precise timing of audio, visual effects, and section lifecycle management.
 class TransitionCoordinator {
-  final MyGame game;
-  final math.Random _random = math.Random();
+  final TransitionContext game;
   bool _isTransitioning = false;
 
   TransitionCoordinator(this.game);
@@ -53,7 +52,8 @@ class TransitionCoordinator {
     // 2. AUDIO DUCK (0-400ms)
     game.audio.duckAmbientLoops(durationMs: 400);
 
-    // Sustain Phase: Wait for the user to "feel" the full rain intensity
+    // Sustain Phase: Wait for the user to "feel" the full rain intensity.
+    // This is an awaited delay in a linear async sequence — safe from lifecycle issues.
     final config = ScrollSequenceConfig.philosophyTransition;
     await Future.delayed(Duration(milliseconds: config.sustainDurationMs));
 
@@ -63,9 +63,10 @@ class TransitionCoordinator {
     game.audio.playTransitionClimax();
     // Master Epic: Haptics at exact moment of shatter
     HapticFeedback.heavyImpact();
-    _triggerCameraShake(intensity: 12.0, duration: 0.5);
+    _triggerCameraShake(intensity: 8.0, duration: 0.5);
 
-    // Wait for "Visible Crack" phase before flashing white
+    // Wait for "Visible Crack" phase before flashing white.
+    // Awaited — blocks this method until the delay completes.
     await Future.delayed(Duration(milliseconds: config.shatterToFlashDelayMs));
 
     // 4. MOUNT FLASH OVERLAY
@@ -110,44 +111,60 @@ class TransitionCoordinator {
     _isTransitioning = false;
   }
 
-  /// Triggers camera shake effect on climax
+  /// Triggers camera shake by adding a [_CameraShakeComponent] to the viewport.
+  /// Tied to the component tree — auto-cleans up if the viewport is removed.
   void _triggerCameraShake({
     required double intensity,
     required double duration,
   }) {
-    final totalDuration = (duration * 1000).toInt(); // Convert to milliseconds
-    const frames = 10;
-    const initialIntensity = 8.0;
+    game.camera.viewport.add(
+      _CameraShakeComponent(
+        intensity: intensity,
+        duration: duration,
+        viewfinder: game.camera.viewfinder,
+      ),
+    );
+  }
+}
 
-    int currentFrame = 0;
+/// Self-removing component that applies decaying random offsets to the camera
+/// viewfinder. Lives in the viewport's component tree, so it is automatically
+/// disposed if the viewport (or game) is removed — no orphaned timers.
+class _CameraShakeComponent extends Component {
+  final double intensity;
+  final double duration;
+  final Viewfinder viewfinder;
+  final math.Random _random = math.Random();
 
-    void shakeFrame() {
-      if (currentFrame >= frames) return;
+  double _elapsed = 0.0;
 
-      final progress = currentFrame / frames;
-      final intensity = initialIntensity * (1.0 - progress);
+  _CameraShakeComponent({
+    required this.intensity,
+    required this.duration,
+    required this.viewfinder,
+  });
 
-      game.camera.viewfinder.position.setFrom(
-        game.camera.viewfinder.position +
-            Vector2(
-              (_random.nextDouble() - 0.5) * intensity,
-              (_random.nextDouble() - 0.5) * intensity,
-            ),
-      );
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _elapsed += dt;
 
-      currentFrame++;
-
-      if (currentFrame < frames) {
-        Future.delayed(
-          Duration(milliseconds: totalDuration ~/ frames),
-          shakeFrame,
-        );
-      } else {
-        // Reset camera to center
-        game.camera.viewfinder.position.setZero();
-      }
+    if (_elapsed >= duration) {
+      // Shake complete — reset camera and self-remove
+      viewfinder.position.setZero();
+      removeFromParent();
+      return;
     }
 
-    shakeFrame();
+    // Decay intensity linearly over duration
+    final progress = _elapsed / duration;
+    final currentIntensity = intensity * (1.0 - progress);
+
+    viewfinder.position.setFrom(
+      Vector2(
+        (_random.nextDouble() - 0.5) * currentIntensity,
+        (_random.nextDouble() - 0.5) * currentIntensity,
+      ),
+    );
   }
 }

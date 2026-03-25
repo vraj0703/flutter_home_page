@@ -32,11 +32,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   }
 
   @override
-  void onChange(Change<SceneState> change) {
-    super.onChange(change);
-  }
-
-  @override
   SceneState sceneState() => state;
 
   @override
@@ -82,6 +77,9 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     Emitter<SceneState> emit,
   ) async {
     if (state.isSvgReady && state.isGameReady) {
+      // Awaited delay — ensures the Flutter frame pipeline has settled and the
+      // loading animation plays for a perceivable duration before transitioning.
+      // Safe: Bloc event handlers are sequential; the bloc's close() cancels pending events.
       await Future.delayed(const Duration(milliseconds: 600));
       emit(const SceneState.logo());
     }

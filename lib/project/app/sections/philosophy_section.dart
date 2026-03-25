@@ -6,7 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
 import 'package:flutter_home_page/project/app/models/scroll_result.dart';
 
+import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
+import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
+import 'package:flutter_home_page/project/app/system/transition/transition_coordinator.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_scene_orchestrator.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/next_button_component.dart';
@@ -27,6 +30,8 @@ class PhilosophySection extends Component implements GameSection {
   Vector2 screenSize;
   final VoidCallback playEntrySound;
   final VoidCallback playCompletionSound;
+  final GameAudioSystem _audioSystem;
+  final TransitionCoordinator _transitionCoordinator;
   double _scrollProgress = 0.0;
 
   double get _maxHeight => trailComponent.maxScrollExtent;
@@ -40,6 +45,12 @@ class PhilosophySection extends Component implements GameSection {
   double _buttonOpacity = 0.0;
   double _animTime = 0.0;
 
+  /// Countdown timer for deferred section completion, driven by the game loop.
+  /// Set to > 0 when shatter completes; ticks down in [update] and fires
+  /// [_triggerComplete] when it reaches zero. Reset in [exit] to prevent
+  /// stale callbacks on disposed sections.
+  double _pendingCompleteCountdown = -1.0;
+
   PhilosophySection({
     required this.titleComponent,
     required this.cloudBackground,
@@ -50,7 +61,10 @@ class PhilosophySection extends Component implements GameSection {
     required this.screenSize,
     required this.playEntrySound,
     required this.playCompletionSound,
-  }) {
+    required GameAudioSystem audioSystem,
+    required TransitionCoordinator transitionCoordinator,
+  })  : _audioSystem = audioSystem,
+        _transitionCoordinator = transitionCoordinator {
     orchestrator = BeachSceneOrchestrator(
       background: cloudBackground,
       rainTransition: rainTransition,
@@ -66,7 +80,7 @@ class PhilosophySection extends Component implements GameSection {
       rainTransition.updateMousePosition(nextButton.position);
 
       if (math.Random().nextDouble() < progress * 0.3) {
-        trailComponent.game.audio.playSpatialWaterdrop(0.5);
+        _audioSystem.playSpatialWaterdrop(0.5);
       }
     };
 
@@ -80,8 +94,7 @@ class PhilosophySection extends Component implements GameSection {
     nextButton.onHoldComplete = () {
       if (!_isShattering) {
         _isShattering = true;
-        final myGame = trailComponent.game;
-        myGame.transitionCoordinator.startPhilosophyToExperience(from: this);
+        _transitionCoordinator.startPhilosophyToExperience(from: this);
       }
     };
 
@@ -91,9 +104,9 @@ class PhilosophySection extends Component implements GameSection {
         _hasWarmedUpNext = true;
       }
 
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _triggerComplete();
-      });
+      // Schedule completion via game-loop timer instead of fire-and-forget Future.delayed.
+      // Cleared in exit() to prevent stale callbacks on disposed sections.
+      _pendingCompleteCountdown = 0.1; // 100ms
     };
   }
 
@@ -133,7 +146,7 @@ class PhilosophySection extends Component implements GameSection {
     if (offset < _scrollProgress && _buttonVisible) {
       // Reverse scroll detected — hide button immediately
       _buttonVisible = false;
-    } else if (offset >= 2700 && !_buttonVisible && !_isShattering) {
+    } else if (offset >= PhilosophySectionLayout.buttonShowThreshold && !_buttonVisible && !_isShattering) {
       // All cards settled — show button
       _buttonVisible = true;
     }
@@ -155,7 +168,7 @@ class PhilosophySection extends Component implements GameSection {
 
     _scrollProgress = offset;
 
-    if (_scrollProgress > _maxHeight - 500 && !_hasWarmedUpNext) {
+    if (_scrollProgress > _maxHeight - PhilosophySectionLayout.warmUpLookahead && !_hasWarmedUpNext) {
       onWarmUpNextSection?.call();
       _hasWarmedUpNext = true;
     }
@@ -170,43 +183,51 @@ class PhilosophySection extends Component implements GameSection {
   }
 
   void _applyScrollEffects(double offset) {
-    _updateAudio(offset);
-    if (!_hasScrolledPastEntry && offset > 200) {
+
+
+    if (!_hasScrolledPastEntry && offset > PhilosophySectionLayout.entryScrollThreshold) {
       _hasScrolledPastEntry = true;
     }
 
     if (_hasScrolledPastEntry) {
       whiteOverlay.opacity = 0.0;
     } else {
-      final overlayProgress = (offset / 150.0).clamp(0.0, 1.0);
+      final overlayProgress =
+          (offset / PhilosophySectionLayout.whiteOverlayFadeDistance).clamp(0.0, 1.0);
       whiteOverlay.opacity = 1.0 - overlayProgress;
     }
-    double entryProgress = (offset / 500.0).clamp(0.0, 1.0);
+
+    double entryProgress =
+        (offset / PhilosophySectionLayout.backgroundFadeDistance).clamp(0.0, 1.0);
     final entryCurve = Curves.easeOutCubic.transform(entryProgress);
     cloudBackground.opacity = entryCurve;
-    cloudBackground.scale = Vector2.all(1.2); // 20% Overscan
+    cloudBackground.scale = Vector2.all(PhilosophySectionLayout.backgroundOverscan);
     cloudBackground.position = Vector2(
-      -(screenSize.x * 0.1),
-      -(entryCurve * 100),
+      -(screenSize.x * PhilosophySectionLayout.backgroundOverscanMargin),
+      -(entryCurve * PhilosophySectionLayout.backgroundYShift),
     );
-    if (offset > 1000) {
-      double trailProgress = ((offset - 1000) / 200.0).clamp(0.0, 1.0);
+
+    if (offset > PhilosophySectionLayout.trailAppearOffset) {
+      double trailProgress =
+          ((offset - PhilosophySectionLayout.trailAppearOffset) / PhilosophySectionLayout.trailFadeDistance)
+              .clamp(0.0, 1.0);
       final trailCurve = Curves.easeOutCubic.transform(trailProgress);
 
       trailComponent.opacity = trailCurve;
-      trailComponent.scale = Vector2.all(0.95 + (0.05 * trailCurve));
-      trailComponent.position = Vector2(0, (1.0 - trailCurve) * 200);
+      trailComponent.scale = Vector2.all(
+        PhilosophySectionLayout.trailInitialScale + (PhilosophySectionLayout.trailScaleRange * trailCurve),
+      );
+      trailComponent.position =
+          Vector2(0, (1.0 - trailCurve) * PhilosophySectionLayout.trailInitialY);
     } else {
       trailComponent.opacity = 0.0;
-      trailComponent.scale = Vector2.all(0.95);
-      trailComponent.position = Vector2(0, 200);
+      trailComponent.scale = Vector2.all(PhilosophySectionLayout.trailInitialScale);
+      trailComponent.position = Vector2(0, PhilosophySectionLayout.trailInitialY);
     }
 
-    if (offset > 500) {
-      const double titleStart = 500.0;
-      const double titleEnd = 1000.0;
-
-      final titleProgress = ((offset - titleStart) / (titleEnd - titleStart))
+    if (offset > PhilosophySectionLayout.titleStartOffset) {
+      final titleProgress = ((offset - PhilosophySectionLayout.titleStartOffset) /
+              (PhilosophySectionLayout.titleEndOffset - PhilosophySectionLayout.titleStartOffset))
           .clamp(0.0, 1.0);
 
       if (titleProgress > 0) {
@@ -222,24 +243,28 @@ class PhilosophySection extends Component implements GameSection {
     trailComponent.updateTrailAnimation(offset);
 
     _updateAudio(offset);
-    nextButton.position = Vector2(screenSize.x / 2, screenSize.y * 0.8);
+    nextButton.position =
+        Vector2(screenSize.x / 2, screenSize.y * PhilosophySectionLayout.buttonYRatio);
   }
 
   void _updateAudio(double offset) {
     if (!_isActive) return;
 
+    // Each audio phase spans one audioPhaseWidth (500px).
+    // Phase 0 is silent; phases 1-6 map to musical notes Do-Sol.
+    const pw = PhilosophySectionLayout.audioPhaseWidth;
     int newPhase = 0;
-    if (offset < 500) {
+    if (offset < pw) {
       newPhase = 1; // 0-500: Do
-    } else if (offset < 1000) {
+    } else if (offset < pw * 2) {
       newPhase = 2; // 500-1000: Re
-    } else if (offset < 1500) {
+    } else if (offset < pw * 3) {
       newPhase = 3; // 1000-1500: Mi
-    } else if (offset < 2000) {
+    } else if (offset < pw * 4) {
       newPhase = 4; // 1500-2000: Fa
-    } else if (offset < 2500) {
+    } else if (offset < pw * 5) {
       newPhase = 5; // 2000-2500: Si
-    } else if (offset < 3000) {
+    } else if (offset < pw * 6) {
       newPhase = 6; // 2500-3000: Sol
     } else {
       newPhase = 7;
@@ -283,16 +308,16 @@ class PhilosophySection extends Component implements GameSection {
       case 2:
         break;
       case 3:
-        trailComponent.game.audio.playTrailCardSound(0); // Card 1: Re
+        _audioSystem.playTrailCardSound(0); // Card 1: Re
         break;
       case 4:
-        trailComponent.game.audio.playTrailCardSound(1); // Card 2: Mi
+        _audioSystem.playTrailCardSound(1); // Card 2: Mi
         break;
       case 5:
-        trailComponent.game.audio.playTrailCardSound(2); // Card 3: Fa
+        _audioSystem.playTrailCardSound(2); // Card 3: Fa
         break;
       case 6:
-        trailComponent.game.audio.playTrailCardSound(3); // Card 4: Si
+        _audioSystem.playTrailCardSound(3); // Card 4: Si
         break;
     }
   }
@@ -377,6 +402,7 @@ class PhilosophySection extends Component implements GameSection {
   @override
   Future<void> exit() async {
     _isActive = false;
+    _pendingCompleteCountdown = -1.0; // Cancel any pending completion timer
 
     // Strict Visibility Reset - Hide all components
     titleComponent.opacity = 0.0;
@@ -414,14 +440,25 @@ class PhilosophySection extends Component implements GameSection {
 
     _animTime += dt;
 
+    // Deferred completion timer (replaces fire-and-forget Future.delayed)
+    if (_pendingCompleteCountdown > 0) {
+      _pendingCompleteCountdown -= dt;
+      if (_pendingCompleteCountdown <= 0) {
+        _pendingCompleteCountdown = -1.0;
+        _triggerComplete();
+      }
+    }
+
     // Process audio queue (Moved from scroll loop to time loop)
     _processAudioQueue(dt);
 
     // Smooth button fade (decoupled from scroll)
+
     final targetButtonOpacity = _buttonVisible ? 1.0 : 0.0;
     if ((_buttonOpacity - targetButtonOpacity).abs() > 0.01) {
-      // Fast fade-out (8.0), slower fade-in (3.0) for cinematic feel
-      final speed = _buttonVisible ? 3.0 : 8.0;
+      final speed = _buttonVisible
+          ? PhilosophySectionLayout.buttonFadeInSpeed
+          : PhilosophySectionLayout.buttonFadeOutSpeed;
       _buttonOpacity = lerpDouble(
         _buttonOpacity,
         targetButtonOpacity,
@@ -431,7 +468,9 @@ class PhilosophySection extends Component implements GameSection {
       _buttonOpacity = targetButtonOpacity;
     }
     nextButton.opacity = _buttonOpacity;
-    nextButton.scale = Vector2.all(0.5 + (0.5 * _buttonOpacity));
+    nextButton.scale = Vector2.all(
+      PhilosophySectionLayout.buttonMinScale + ((1.0 - PhilosophySectionLayout.buttonMinScale) * _buttonOpacity),
+    );
 
     if ((nextButton.isHovering ||
             rainTransition.currentIntensity > 0.0 ||
@@ -441,10 +480,10 @@ class PhilosophySection extends Component implements GameSection {
 
       bool needsHighFPS = _isShattering || nextButton.isHovering;
 
-      // Throttle capture:
-      // High FPS needed? Capture every 2nd frame (30fps effective)
-      // Low FPS needed? Capture every 3rd frame (20fps effective)
-      int throttle = needsHighFPS ? 2 : 3;
+      // Throttle capture to balance GPU cost vs visual quality
+      int throttle = needsHighFPS
+          ? PhilosophySectionLayout.highFpsThrottle
+          : PhilosophySectionLayout.lowFpsThrottle;
 
       if (_frameCounter % throttle == 0) {
         _captureRefractionFrame();
@@ -456,13 +495,17 @@ class PhilosophySection extends Component implements GameSection {
     _captureRefractionFrame();
   }
 
+  /// Captures a low-res snapshot of the beach scene for the rain refraction shader.
+  ///
+  /// Uses [PictureRecorder.toImageSync] to avoid the 1-frame raster-thread lag
+  /// that `toImage` would introduce, which causes visible tearing in the rain
+  /// distortion. The low resolution ([PhilosophySectionLayout.refractionScale])
+  /// keeps the UI-thread blocking cost minimal (~2-4ms on modern hardware).
   void _captureRefractionFrame() {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
 
-    // Performance: Reduced to 0.3 for web (16x less GPU work than 1.0).
-    // Rain distortion still readable at lower res.
-    const double scale = 0.3;
+    const double scale = PhilosophySectionLayout.refractionScale;
     canvas.scale(scale);
 
     // Render the beach and the text/cards into the off-screen buffer
@@ -491,7 +534,10 @@ class PhilosophySection extends Component implements GameSection {
   void onResize(Vector2 newSize) {
     screenSize = newSize;
     if (titleComponent.isLoaded && titleComponent.opacity == 0.0) {
-      titleComponent.position = Vector2(screenSize.x / 2, screenSize.y * 0.7);
+      titleComponent.position = Vector2(
+        screenSize.x / 2,
+        screenSize.y * PhilosophySectionLayout.titleStartYRatio,
+      );
     }
   }
 
@@ -517,70 +563,76 @@ class PhilosophySection extends Component implements GameSection {
   void _updateFloatingTitleAnimation(double titleProgress) {
     if (!_isActive) return;
 
+
     // Enable reflection
     titleComponent.showReflection = true;
-    titleComponent.waterLineY =
-        screenSize.y * 0.55; // Tighter reflection spacing
+    titleComponent.waterLineY = screenSize.y * PhilosophySectionLayout.waterLineYRatio;
 
     // Easing - elastic for premium feel
     final eased = Curves.elasticOut.transform(titleProgress);
 
-    // Visuals
     // Fade in 0->1
     titleComponent.opacity = titleProgress;
 
-    // Scale up with overshoot: 0.1 → 0.8 (overshoot) → 0.6 (settle)
+    // Scale up with overshoot: initial → overshoot → settle
     double targetScale;
-    if (titleProgress < 0.7) {
-      // Overshoot phase
-      targetScale = lerpDouble(0.1, 0.8, titleProgress / 0.7)!;
+    if (titleProgress < PhilosophySectionLayout.titleOvershootThreshold) {
+      targetScale = lerpDouble(
+        PhilosophySectionLayout.titleInitialScale,
+        PhilosophySectionLayout.titleOvershootScale,
+        titleProgress / PhilosophySectionLayout.titleOvershootThreshold,
+      )!;
     } else {
-      // Settle phase
-      final settleProgress = (titleProgress - 0.7) / 0.3;
-      targetScale = lerpDouble(0.8, 0.6, settleProgress)!;
+      final settleProgress =
+          (titleProgress - PhilosophySectionLayout.titleOvershootThreshold) /
+              (1.0 - PhilosophySectionLayout.titleOvershootThreshold);
+      targetScale = lerpDouble(
+        PhilosophySectionLayout.titleOvershootScale,
+        PhilosophySectionLayout.titleSettleScale,
+        settleProgress,
+      )!;
     }
 
-    // Idle breathe animation (±2% when fully visible)
+    // Idle breathe animation when fully visible
     if (titleProgress >= 1.0) {
       final breathe =
-          math.sin(_animTime * 0.5) * 0.02;
+          math.sin(_animTime * PhilosophySectionLayout.breatheFrequency) * PhilosophySectionLayout.breatheAmplitude;
       targetScale += targetScale * breathe;
     }
 
     titleComponent.scale = Vector2.all(targetScale);
 
     // Move Up
-    final startY = screenSize.y * 0.7;
-    // Target Y: Just above center cards (Cards top at ~0.2)
-    final endY = screenSize.y * 0.15;
+    final startY = screenSize.y * PhilosophySectionLayout.titleStartYRatio;
+    final endY = screenSize.y * PhilosophySectionLayout.titleEndYRatio;
     final currentY = startY + (endY - startY) * eased;
 
     // Sway (subtle)
-    final swayAmount = 20.0;
-    final sway =
-        math.sin(titleProgress * math.pi * 2) * swayAmount * (1 - eased);
+    final sway = math.sin(titleProgress * math.pi * 2) *
+        PhilosophySectionLayout.swayAmount *
+        (1 - eased);
     titleComponent.position = Vector2(screenSize.x / 2 + sway, currentY);
 
     // Reflection Registration
     if (_orchestratorInitialized) {
-      // Register text component
       orchestrator.reflection.registerTarget(titleComponent);
-
-      // Register all cards from trail
       for (final card in trailComponent.cards) {
         orchestrator.reflection.registerTarget(card);
       }
     }
 
     // Set water level for shader (procedural ocean boundary)
-    // Adjusted to 0.45 to match card horizon so reflections are visible
-    cloudBackground.setWaterLevel(screenSize.y * 0.6);
+    cloudBackground.setWaterLevel(screenSize.y * PhilosophySectionLayout.waterLevelRatio);
   }
 
   void _resetVisuals() {
+
     titleComponent.opacity = 0.0;
-    titleComponent.scale = Vector2.all(0.1);
-    titleComponent.position = Vector2(screenSize.x / 2, screenSize.y * 0.7);
+    titleComponent.scale = Vector2.all(PhilosophySectionLayout.titleInitialScale);
+    titleComponent.position = Vector2(
+      screenSize.x / 2,
+      screenSize.y * PhilosophySectionLayout.titleStartYRatio,
+    );
     titleComponent.showReflection = false;
     _currentPhase = 0;
     _buttonVisible = false;
@@ -593,7 +645,7 @@ class PhilosophySection extends Component implements GameSection {
 
     // Reset button
     nextButton.opacity = 0.0;
-    nextButton.scale = Vector2.all(0.5);
+    nextButton.scale = Vector2.all(PhilosophySectionLayout.buttonMinScale);
   }
 
   /// Cleanup Philosophy components and reset shader uniforms

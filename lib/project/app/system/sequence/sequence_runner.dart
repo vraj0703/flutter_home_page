@@ -42,14 +42,29 @@ class SequenceRunner implements ScrollObserver {
     }
   }
 
+  /// Performs the ghost-render → warmUp → finalize cycle for a section.
+  ///
+  /// The short delay between warmUp and finalizeGhostRender gives the GPU
+  /// pipeline one frame to compile any shaders triggered during warmUp.
+  /// These delays are **awaited** (not fire-and-forget), so they block the
+  /// calling async method and cannot outlive the caller.
+  Future<void> _warmUpSectionPipeline(
+    GameSection section, {
+    Duration delay = const Duration(milliseconds: 100),
+  }) async {
+    section.prepareGhostRender();
+    await section.warmUp();
+    await Future.delayed(delay);
+    await section.finalizeGhostRender();
+  }
+
   void _warmUpNextSection(int callingIndex) async {
     if (callingIndex != _currentIndex) return;
     if (callingIndex < _sections.length - 1) {
-      final next = _sections[callingIndex + 1];
-      next.prepareGhostRender();
-      await next.warmUp();
-      await Future.delayed(const Duration(milliseconds: 300));
-      await next.finalizeGhostRender();
+      await _warmUpSectionPipeline(
+        _sections[callingIndex + 1],
+        delay: const Duration(milliseconds: 300),
+      );
     }
   }
 
@@ -57,10 +72,10 @@ class SequenceRunner implements ScrollObserver {
   /// Should be called during game initialization to front-load compiled shaders and assets.
   Future<void> warmUpAll() async {
     for (final section in _sections) {
-      section.prepareGhostRender();
-      await section.warmUp();
-      await Future.delayed(const Duration(milliseconds: 300));
-      await section.finalizeGhostRender();
+      await _warmUpSectionPipeline(
+        section,
+        delay: const Duration(milliseconds: 300),
+      );
     }
   }
 
@@ -70,10 +85,7 @@ class SequenceRunner implements ScrollObserver {
     _isActive = true;
     if (_sections.isNotEmpty) {
       scrollSystem.setSnapRegions(_sections[_currentIndex].snapRegions);
-      _sections[_currentIndex].prepareGhostRender();
-      await _sections[_currentIndex].warmUp();
-      await Future.delayed(const Duration(milliseconds: 100));
-      await _sections[_currentIndex].finalizeGhostRender();
+      await _warmUpSectionPipeline(_sections[_currentIndex]);
       await _sections[_currentIndex].enter(scrollSystem);
     }
   }
@@ -160,15 +172,10 @@ class SequenceRunner implements ScrollObserver {
           'SequenceRunner',
           'Advancing Section: $callingIndex -> $_currentIndex',
         );
-      final nextSection = _sections[_currentIndex];
+        final nextSection = _sections[_currentIndex];
 
-      // 2. Enter new
-      // Section configures the system itself (reset to 0, snap regions, etc)
-      nextSection.prepareGhostRender();
-      await nextSection.warmUp();
-      await Future.delayed(const Duration(milliseconds: 100));
-      await nextSection.finalizeGhostRender();
-
+        // 2. Enter new
+        await _warmUpSectionPipeline(nextSection);
         await nextSection.enter(scrollSystem);
       } finally {
         _isTransitioning = false;
@@ -196,10 +203,7 @@ class SequenceRunner implements ScrollObserver {
     if (_sections.isNotEmpty) {
       final current = _sections[_currentIndex];
       scrollSystem.setSnapRegions(current.snapRegions);
-      current.prepareGhostRender();
-      await current.warmUp();
-      await Future.delayed(const Duration(milliseconds: 100));
-      await current.finalizeGhostRender();
+      await _warmUpSectionPipeline(current);
       await current.enterReverse(scrollSystem);
     }
   }
@@ -237,10 +241,7 @@ class SequenceRunner implements ScrollObserver {
 
     // Enter new
     scrollSystem.setSnapRegions(nextSection.snapRegions);
-    nextSection.prepareGhostRender();
-    await nextSection.warmUp();
-    await Future.delayed(const Duration(milliseconds: 100));
-    await nextSection.finalizeGhostRender();
+    await _warmUpSectionPipeline(nextSection);
     await nextSection.enter(scrollSystem);
   }
 
@@ -260,9 +261,9 @@ class SequenceRunner implements ScrollObserver {
           'SequenceRunner',
           'Reversing Section: $callingIndex -> $_currentIndex',
         );
-      final prevSection = _sections[_currentIndex];
+        final prevSection = _sections[_currentIndex];
 
-      // 2. Re-enter previous
+        // 2. Re-enter previous
         await prevSection.enterReverse(scrollSystem);
       } finally {
         _isTransitioning = false;

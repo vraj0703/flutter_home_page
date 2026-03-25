@@ -87,7 +87,13 @@ class GameComponentFactory {
   ];
 
   // ── Shader helper ─────────────────────────────────────────────────────
-  Future<FragmentShader> _loadShader(String path) async {
+
+  /// Loads and caches the [FragmentProgram] for the given asset [path].
+  ///
+  /// Each call creates a **new** [FragmentShader] instance from the cached
+  /// program. This is intentional — every component needs its own shader
+  /// instance to maintain independent uniform state.
+  Future<FragmentShader> _getOrLoadShaderProgram(String path) async {
     if (!_shaderCache.containsKey(path)) {
       _shaderCache[path] = await FragmentProgram.fromAsset(path);
     }
@@ -104,7 +110,7 @@ class GameComponentFactory {
   }) async {
     // ─── Shadow Scene ───
     final logoImage = await Flame.images.load(GameAssets.logo);
-    final godRaysShader = await _loadShader(GameAssets.godRaysShader);
+    final godRaysShader = await _getOrLoadShaderProgram(GameAssets.godRaysShader);
     final startZoom = GameLayout.logoInitialScale;
     final baseLogoSize = Vector2(
       logoImage.width.toDouble(),
@@ -120,7 +126,7 @@ class GameComponentFactory {
     _shadowScene.logoPosition = size / 2;
 
     // ─── Logo ───
-    final logoShader = await _loadShader(GameAssets.logoShader);
+    final logoShader = await _getOrLoadShaderProgram(GameAssets.logoShader);
     final tintColor = backgroundColorCallback();
 
     _logoComponent = LogoComponent(
@@ -147,7 +153,7 @@ class GameComponentFactory {
     _godRay.position = size / 2;
 
     // ─── Background Run ───
-    final bgRunShader = await _loadShader(GameAssets.backgroundRunShader);
+    final bgRunShader = await _getOrLoadShaderProgram(GameAssets.backgroundRunShader);
     _backgroundRun = BackgroundRunComponent(
       shader: bgRunShader,
       size: size,
@@ -160,7 +166,7 @@ class GameComponentFactory {
     _backgroundTint.priority = GameLayout.zBackground + 1;
 
     // ─── Beach Background ───
-    final beachShader = await _loadShader(GameAssets.beachShader);
+    final beachShader = await _getOrLoadShaderProgram(GameAssets.beachShader);
     _beachBackground = BeachBackgroundComponent(
       size: size,
       shader: beachShader,
@@ -169,7 +175,7 @@ class GameComponentFactory {
     _beachBackground.priority = 10;
 
     // ─── Cinematic Title ───
-    final metallicShader = await _loadShader(GameAssets.metallicShader);
+    final metallicShader = await _getOrLoadShaderProgram(GameAssets.metallicShader);
     _cinematicTitle = CinematicTitleComponent(
       primaryText: GameStrings.primaryTitle,
       shader: metallicShader,
@@ -178,7 +184,7 @@ class GameComponentFactory {
     _cinematicTitle.priority = GameLayout.zTitle;
 
     // ─── Cinematic Secondary Title ───
-    final metallicShader2 = await _loadShader(GameAssets.metallicShader);
+    final metallicShader2 = await _getOrLoadShaderProgram(GameAssets.metallicShader);
     _cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
       text: GameStrings.secondaryTitle,
       shader: metallicShader2,
@@ -187,7 +193,7 @@ class GameComponentFactory {
     _cinematicSecondaryTitle.priority = GameLayout.zSecondaryTitle;
 
     // ─── Bold Text Reveal ───
-    final boldShader = await _loadShader(GameAssets.boldTextEntranceShader);
+    final boldShader = await _getOrLoadShaderProgram(GameAssets.boldTextEntranceShader);
     _boldTextReveal = BoldTextRevealComponent(
       text: GameStrings.boldText,
       textStyle: material.TextStyle(
@@ -203,7 +209,7 @@ class GameComponentFactory {
     _boldTextReveal.opacity = 0.0;
 
     // ─── Philosophy Text ───
-    final philoShader = await _loadShader(GameAssets.metallicShader);
+    final philoShader = await _getOrLoadShaderProgram(GameAssets.metallicShader);
     _philosophyText = PhilosophyTextComponent(
       text: GameStrings.philosophyTitle,
       style: material.TextStyle(
@@ -231,7 +237,7 @@ class GameComponentFactory {
     _nextButton.opacity = 0.0;
 
     // ─── Rain Transition ───
-    final rainShader = await _loadShader(GameAssets.rainShader);
+    final rainShader = await _getOrLoadShaderProgram(GameAssets.rainShader);
     _rainTransition = RainTransitionComponent(shader: rainShader, size: size);
     _rainTransition.priority = GameLayout.zContent;
     _rainTransition.opacity = 0.0;
@@ -242,7 +248,7 @@ class GameComponentFactory {
     _whiteOverlay.opacity = 0.0; // Default hidden
 
     // ─── Circles Background ───
-    final circlesShader = await _loadShader(GameAssets.circlesShader);
+    final circlesShader = await _getOrLoadShaderProgram(GameAssets.circlesShader);
     _circlesBackground = CirclesBackgroundComponent(
       shader: circlesShader,
       size: size,

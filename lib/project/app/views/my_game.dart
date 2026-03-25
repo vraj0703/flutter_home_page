@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'dart:ui';
-import 'package:flutter_home_page/project/app/config/game_curves.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/models/cursor_dependent_components.dart';
 
+import 'package:flutter_home_page/project/app/models/testimonial_node.dart';
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flame/components.dart';
-import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
@@ -17,8 +17,10 @@ import 'package:flame_bloc/flame_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
+import 'package:flutter_home_page/project/app/interfaces/transition_context.dart';
 import 'package:flutter_home_page/project/app/system/cursor/game_cursor_system.dart';
 import 'package:flutter_home_page/project/app/system/animator/game_logo_animator.dart';
+import 'package:flutter_home_page/project/app/system/intro/intro_flow_controller.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/system/registration/game_component_factory.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/god_ray_controller.dart';
@@ -28,6 +30,7 @@ import 'package:flutter_home_page/project/app/system/sequence/sequence_runner.da
 import 'package:flutter_home_page/project/app/sections/bold_text_section.dart';
 import 'package:flutter_home_page/project/app/sections/experience_section.dart';
 import 'package:flutter_home_page/project/app/sections/philosophy_section.dart';
+import 'package:flutter_home_page/project/app/sections/testimonials_section.dart';
 import 'package:flutter_home_page/project/app/system/transition/transition_coordinator.dart';
 
 class MyGame extends FlameGame
@@ -36,16 +39,20 @@ class MyGame extends FlameGame
         TapCallbacks,
         PointerMoveCallbacks,
         MouseMovementDetector,
-        HoverCallbacks {
+        HoverCallbacks
+    implements TransitionContext {
   VoidCallback? onStartExitAnimation;
+  @override
   final Queuer queuer;
   final StateProvider stateProvider;
+  final SceneBloc _bloc;
 
   MyGame({
     this.onStartExitAnimation,
-    required this.queuer,
-    required this.stateProvider,
-  });
+    required SceneBloc bloc,
+  })  : _bloc = bloc,
+        queuer = bloc,
+        stateProvider = bloc;
 
   final ScrollSystem _philosophyScrollSystem = ScrollSystem();
 
@@ -58,8 +65,10 @@ class MyGame extends FlameGame
 
   final GameAudioSystem _audioSystem = GameAudioSystem();
 
+  @override
   GameAudioSystem get audio => _audioSystem;
 
+  @override
   SequenceRunner get primarySequenceRunner => _primarySequenceRunner;
 
   final GameComponentFactory _componentFactory = GameComponentFactory();
@@ -73,12 +82,21 @@ class MyGame extends FlameGame
   final GameCursorSystem _cursorSystem = GameCursorSystem();
 
   GameCursorSystem get cursorSystem => _cursorSystem;
+
+  /// Notifier for showing/hiding the testimonial form overlay.
+  /// Flame components set this to `true`; the Flutter overlay reads it.
+  final ValueNotifier<bool> showTestimonialForm = ValueNotifier<bool>(false);
+
+  /// Pending testimonial nodes to push into the carousel once the component
+  /// is loaded. Set from the Flutter layer via [updateTestimonials].
+  List<TestimonialNode>? _pendingTestimonialData;
   final GameLogoAnimator logoAnimator = GameLogoAnimator();
   late final Timer _inactivityTimer;
   late final GameInputController _inputController;
 
   GodRayController? _godRayController;
   late final TransitionCoordinator transitionCoordinator;
+  late final IntroFlowController introFlow;
 
   late final FlameBlocProvider<SceneBloc, SceneState> _blocProvider;
 
@@ -106,9 +124,10 @@ class MyGame extends FlameGame
       onSectionTap: _handleSectionTap,
     );
 
-    // Create and store FlameBlocProvider
+    // Create and store FlameBlocProvider — uses the concrete SceneBloc directly
+    // instead of casting from StateProvider, eliminating the unsafe runtime cast.
     _blocProvider = FlameBlocProvider<SceneBloc, SceneState>.value(
-      value: stateProvider as SceneBloc,
+      value: _bloc,
       children: _componentFactory.allComponents,
     );
 
@@ -131,8 +150,24 @@ class MyGame extends FlameGame
       ),
     );
 
+    // Initialize Intro Flow Controller (manages logo → title → active transitions)
+    introFlow = IntroFlowController(
+      logoOverlay: _componentFactory.logoOverlay,
+      cinematicTitle: _componentFactory.cinematicTitle,
+      cinematicSecondaryTitle: _componentFactory.cinematicSecondaryTitle,
+      backgroundRun: _componentFactory.backgroundRun,
+      audioSystem: _audioSystem,
+      cursorSystem: _cursorSystem,
+      logoAnimator: logoAnimator,
+      queuer: queuer,
+      game: this,
+    );
+
     // Initialize Global Config
     _configureGlobal();
+
+    // Initialize TransitionCoordinator (before _initSequence, which injects it into sections)
+    transitionCoordinator = TransitionCoordinator(this);
 
     // Initialize Sections
     _initSequence();
@@ -159,17 +194,14 @@ class MyGame extends FlameGame
     // Register controllers to philosophy scroll system
     _philosophyScrollSystem.register(_primarySequenceRunner);
 
-    // Initialize TransitionCoordinator
-    transitionCoordinator = TransitionCoordinator(this);
-
     // Pre-warm Flash Shader
     await _loadFlashShader();
 
     // State Listener for One-Shot Events (State Purity)
     _stateSubscription = stateProvider.stream.listen((state) {
       state.maybeWhen(
-        loadingExperience: () => hideTitles(),
-        experience: (_) => hideTitles(),
+        loadingExperience: () => introFlow.hideTitles(),
+        experience: (_) => introFlow.hideTitles(),
         orElse: () {},
       );
     });
@@ -194,8 +226,10 @@ class MyGame extends FlameGame
   Vector2 get cursorPosition => _cursorSystem.lastKnownPosition;
 
   // Input blocking control for flash transition
+  @override
   void blockInput() => _isTransitioning = true;
 
+  @override
   void unblockInput() => _isTransitioning = false;
 
   @override
@@ -342,50 +376,28 @@ class MyGame extends FlameGame
     audio.playClick();
   }
 
-  void loadTitleBackground() {
-    _componentFactory.backgroundRun.add(
-      OpacityEffect.to(
-        1.0,
-        EffectController(duration: 2.0, curve: GameCurves.backgroundFade),
-      ),
-    );
-  }
+  /// The latest testimonial nodes from the BLoC (Firestore).
+  /// [TestimonialPageComponent] reads this via `game.testimonialNodes` to
+  /// populate the carousel. Falls back to the hardcoded [testimonialData]
+  /// when `null`.
+  List<TestimonialNode>? get testimonialNodes => _pendingTestimonialData;
 
-  void loadBouncingLines() {
-    _componentFactory.logoOverlay.opacity = 1.0;
-  }
+  /// Update the testimonial carousel with fresh data from the BLoC.
+  ///
+  /// Called from [StatefulScene] when [TestimonialLoaded] fires.
+  /// Stores the data so any [TestimonialPageComponent] can access it,
+  /// and notifies already-loaded carousel components if they exist.
+  void updateTestimonials(List<TestimonialNode> data) {
+    _pendingTestimonialData = data;
 
-  /// One-shot: sets the logo animator target for the logo→title shrink.
-  /// Called by StatefulScene.listener on logoOverlayRemoving entry.
-  void startLogoRemoval() {
-    logoAnimator.setTarget(
-      position: GameLayout.logoRemovingTargetVector,
-      scale: GameLayout.logoRemovingScale,
-    );
-  }
-
-  void  enterTitle() {
-    Future.delayed(ScrollSequenceConfig.enterTitleDelayDuration, () {
-      audio.playTitleLoaded(); // Play sound when main title starts entering
-      _componentFactory.cinematicTitle.show(() {
-        _componentFactory.cinematicSecondaryTitle.show(
-          () => queuer.queue(event: SceneEvent.titleLoaded()),
-        );
-      });
-    });
-  }
-
-  void activateTitleCursorSystem() {
-    _cursorSystem.activate(size / 2);
-  }
-
-  /// Hides the cinematic title and secondary title components.
-  /// Called when transitioning away from the Title/BoldText states
-  /// to ensure they don't bleed into Philosophy or Experience sections.
-  void hideTitles() {
-    _componentFactory.cinematicTitle.opacity = 0.0;
-    _componentFactory.cinematicTitle.hide();
-    _componentFactory.cinematicSecondaryTitle.opacity = 0.0;
+    // If a TestimonialPageComponent is already in the tree, push data now.
+    final sections = _primarySequenceRunner.sections;
+    for (final section in sections) {
+      if (section is TestimonialSection) {
+        section.pageComponent.updateData(data);
+        break;
+      }
+    }
   }
 
   void _configureGlobal() {
@@ -406,8 +418,6 @@ class MyGame extends FlameGame
       logoOverlay: _componentFactory.logoOverlay,
       centerPosition: size / 2,
     );
-    boldSection.onComplete = () {};
-
     // 2. Philosophy
     final philosophySection = PhilosophySection(
       titleComponent: _componentFactory.philosophyText,
@@ -419,6 +429,8 @@ class MyGame extends FlameGame
       screenSize: size,
       playEntrySound: audio.playPhilosophyEntry,
       playCompletionSound: audio.playPhilosophyComplete,
+      audioSystem: _audioSystem,
+      transitionCoordinator: transitionCoordinator,
     );
 
     // Configure components via binding-like logic (formerly addBoldTextBindings)
