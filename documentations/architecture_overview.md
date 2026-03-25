@@ -20,7 +20,7 @@ class FlameScene extends StatelessWidget {
   build() {
     return BlocProvider(
       create: (_) => SceneBloc()..add(Initialize()),
-      child: Scaffold(body: StatefulScene(...)),
+      child: Scaffold(body: StatefulScene()),
     );
   }
 }
@@ -48,7 +48,7 @@ When `SceneBloc` emits a new state (e.g., `SceneState.logo`):
 1. The `listener` triggers UI animations (e.g., reversing the curtain reveal).
 2. The `Stack` widget layers the `GameWidget` (bottom) with `HomeOverlay` and `CurtainClipper` (top).
 
-```dart
+dart
 // Hides complexity of Flutter-Flame boundary
 Stack(
   children: [
@@ -57,7 +57,7 @@ Stack(
     AnimatedBuilder(...),          // Curtain Transition
   ]
 )
-```
+
 
 ## 3. Core Logic: MyGame
 

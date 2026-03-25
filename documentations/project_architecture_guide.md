@@ -75,7 +75,7 @@ Update `lib/project/app/system/registration/game_component_factory.dart`:
 late final FloatingAstronautComponent _astronaut;
 FloatingAstronautComponent get astronaut => _astronaut;
 
-Future<void> initializeComponents(...) async {
+Future<void> initializeComponents() async {
   // ...
   _astronaut = FloatingAstronautComponent();
   // ...
@@ -88,12 +88,12 @@ Future<void> initializeComponents(...) async {
 Update `lib/project/app/views/my_game.dart`:
 In `onLoad()`, when creating `_gameComponents`:
 
-```dart
+dart
 _gameComponents = GameComponents(
   // ...
   astronaut: _componentFactory.astronaut,
 );
-```
+
 
 Now it is available to be passed to any section!
 
