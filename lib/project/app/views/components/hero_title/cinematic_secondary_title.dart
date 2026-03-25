@@ -4,6 +4,7 @@ import 'package:flame/effects.dart';
 import 'package:flutter/material.dart'
     show Colors, TextStyle, FontWeight, Curves, Cubic, TextPainter, TextSpan;
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
+import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'package:flutter_home_page/project/app/views/components/fade_text.dart';
 
@@ -17,12 +18,14 @@ class CinematicSecondaryTitleComponent extends PositionComponent
 
   // late FadeTextComponent _textComponent; // unused
 
+  double _currentOpacity = 0.0;
+
   @override
-  double get opacity =>
-      _charComponents.isNotEmpty ? _charComponents.first.opacity : 1.0;
+  double get opacity => _currentOpacity;
 
   @override
   set opacity(double value) {
+    _currentOpacity = value;
     if (isLoaded) {
       for (final component in _charComponents) {
         component.opacity = value;
@@ -30,16 +33,31 @@ class CinematicSecondaryTitleComponent extends PositionComponent
     }
   }
 
+  @override
+  void onMount() {
+    super.onMount();
+    // Synchronize children with the intended state after loading completes
+    opacity = _currentOpacity;
+  }
+
   CinematicSecondaryTitleComponent({
     required this.text,
     required this.shader,
     super.position,
-  }) : super(anchor: Anchor.center);
+  }) : super(anchor: Anchor.center){
+    opacity = 0.0; // Start hidden per architecture
+  }
 
   void setParallaxOffset(Vector2 offset) {
     if (isLoaded) {
       _contentWrapper.position = offset;
     }
+  }
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    position = size / 2 + GameLayout.secTitleOffsetVector;
   }
 
   @override
@@ -91,10 +109,10 @@ class CinematicSecondaryTitleComponent extends PositionComponent
       // x: currentX + half width (since anchor is center)
       // y: 40 (Initial state)
       charComponent.position = Vector2(currentX + width / 2, 40);
-      charComponent.opacity = 0;
+      charComponent.opacity = 0.001;
       charComponent.scale = Vector2.all(
         1.0,
-      ); // Start normal? Or scaled? "Initial State... opacity 0, y 40".
+      );
 
       _contentWrapper.add(charComponent);
       _charComponents.add(charComponent);
@@ -106,7 +124,9 @@ class CinematicSecondaryTitleComponent extends PositionComponent
   final List<FadeTextComponent> _charComponents = [];
 
   void show(VoidCallback showComplete) {
-    if (_charComponents.isEmpty || _charComponents.first.opacity > 0) return;
+    if (_charComponents.isEmpty) {
+      return;
+    }
 
     (game as MyGame).audio.playSlideIn();
 
@@ -115,10 +135,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
     _contentWrapper.add(
       MoveEffect.to(
         originalWrapperPos,
-        EffectController(
-          duration: 2,
-          curve: const Cubic(0.25, 0.1, 0.25, 1.0),
-        ),
+        EffectController(duration: 2, curve: const Cubic(0.25, 0.1, 0.25, 1.0)),
       ),
     );
     int completedChars = 0;

@@ -21,6 +21,9 @@ class BoldTextSection implements GameSection {
   final LogoOverlayComponent logoOverlay;
   Vector2 centerPosition;
 
+  // Cached mutable vectors to prevent GC allocations on high refresh rates
+  final Vector2 _tempTitleOffset = Vector2.zero();
+
   // Internal state
   double _scrollProgress = 0.0;
   static const double _maxHeight = 3000.0;
@@ -49,6 +52,7 @@ class BoldTextSection implements GameSection {
   VoidCallback? onReverseComplete;
 
   bool _hasWarmedUpNext = false;
+  bool _isActive = false;
 
   @override
   List<Vector2> get snapRegions => [
@@ -65,20 +69,30 @@ class BoldTextSection implements GameSection {
   ];
 
   @override
-  Future<void> warmUp() async {
-    // Architectural Visibility: Ensure everything is hidden during warmup
-    boldTextComponent.opacity = 0.0;
-    cinematicTitle.opacity = 0.0;
-    cinematicSecondaryTitle.opacity = 0.0;
-
-    // Position resets can still happen here if needed, but visibility is strictly 0.
+  void prepareGhostRender() {
+    boldTextComponent.opacity = 0.001;
+    cinematicTitle.opacity = 0.001;
+    cinematicSecondaryTitle.opacity = 0.001;
     cinematicTitle.position = centerPosition;
     cinematicSecondaryTitle.position =
         centerPosition + GameLayout.secTitleOffsetVector;
   }
 
   @override
+  Future<void> warmUp() async {
+    // Pre-load logic if needed
+  }
+
+  @override
+  Future<void> finalizeGhostRender() async {
+    boldTextComponent.opacity = 0.0;
+    cinematicTitle.opacity = 0.0;
+    cinematicSecondaryTitle.opacity = 0.0;
+  }
+
+  @override
   Future<void> enter(ScrollSystem scrollSystem) async {
+    _isActive = true;
     _hasWarmedUpNext = false;
     // Configure ScrollSystem for this section
     scrollSystem.resetScroll(0.0);
@@ -127,6 +141,7 @@ class BoldTextSection implements GameSection {
 
   @override
   Future<void> enterReverse(ScrollSystem scrollSystem) async {
+    _isActive = true;
     _hasWarmedUpNext = false;
     // Configure ScrollSystem for reverse entry
     scrollSystem.resetScroll(_maxHeight);
@@ -142,6 +157,7 @@ class BoldTextSection implements GameSection {
 
   @override
   Future<void> exit() async {
+    _isActive = false;
     boldTextComponent.opacity = 0.0;
     cinematicTitle.opacity = 0.0;
     cinematicSecondaryTitle.opacity = 0.0;
@@ -158,6 +174,7 @@ class BoldTextSection implements GameSection {
   void onResize(Vector2 newSize) {
     centerPosition = newSize / 2;
     boldTextComponent.position = centerPosition;
+    _updateVisuals(_scrollProgress);
   }
 
   @override
@@ -178,32 +195,43 @@ class BoldTextSection implements GameSection {
     // Fade Out UI
     if (scrollOffset < uiFadeEnd) {
       final p = (scrollOffset / uiFadeEnd).clamp(0.0, 1.0);
-      logoOverlay.opacity = 1.0 - p;
+      if (_isActive) logoOverlay.opacity = 1.0 - p;
     } else {
-      logoOverlay.opacity = 0.0;
+      if (_isActive) logoOverlay.opacity = 0.0;
     }
 
     // Intro Transitions (Titles & UI)
     // Parallax
     if (scrollOffset <= titleParallaxExit) {
       final p = (scrollOffset / titleParallaxExit).clamp(0.0, 1.0);
-      final offset = Vector2.zero()..lerp(GameLayout.parallaxEndVector, p);
+      
+      _tempTitleOffset.setFrom(GameLayout.parallaxEndVector);
+      _tempTitleOffset.scale(p);
 
-      cinematicTitle.position = centerPosition + offset;
-      cinematicSecondaryTitle.position =
-          centerPosition + GameLayout.secTitleOffsetVector + offset;
+      cinematicTitle.position
+        ..setFrom(centerPosition)
+        ..add(_tempTitleOffset);
+      cinematicSecondaryTitle.position
+        ..setFrom(centerPosition)
+        ..add(GameLayout.secTitleOffsetVector)
+        ..add(_tempTitleOffset);
 
-      final opacity = 1.0 - p;
-      cinematicTitle.opacity = opacity;
-      cinematicSecondaryTitle.opacity = opacity;
+      if (_isActive) {
+        final opacity = 1.0 - p;
+        cinematicTitle.opacity = opacity;
+        cinematicSecondaryTitle.opacity = opacity;
+      }
     } else {
-      final offset = GameLayout.parallaxEndVector;
-      cinematicTitle.position = centerPosition + offset;
-      cinematicSecondaryTitle.position =
-          centerPosition + GameLayout.secTitleOffsetVector + offset;
+      cinematicTitle.position
+        ..setFrom(centerPosition)
+        ..add(GameLayout.parallaxEndVector);
+      cinematicSecondaryTitle.position
+        ..setFrom(centerPosition)
+        ..add(GameLayout.secTitleOffsetVector)
+        ..add(GameLayout.parallaxEndVector);
     }
 
-    if (scrollOffset > titleFadeEnd) {
+    if (scrollOffset > titleFadeEnd && _isActive) {
       cinematicTitle.opacity = 0.0;
       cinematicSecondaryTitle.opacity = 0.0;
     }

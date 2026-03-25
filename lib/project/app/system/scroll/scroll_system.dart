@@ -1,4 +1,3 @@
-import 'dart:ui' show lerpDouble;
 
 import 'package:flame/components.dart';
 
@@ -15,7 +14,6 @@ class ScrollSystem {
   final List<ScrollObserver> _observers = [];
   double _scrollVelocity = 0.0;
   double _lastScrollOffset = 0.0;
-  double _lastUpdateTime = 0.0;
   List<Vector2> _snapRegions = [];
   bool _isSnapping = false;
   double _snapTarget = 0.0;
@@ -81,7 +79,6 @@ class ScrollSystem {
       _targetScrollOffset = _targetScrollOffset.clamp(_minScroll!, _maxScroll!);
     }
 
-    // Log if scroll system is running away (e.g. > 4000)
     if (_targetScrollOffset.abs() > 4000 &&
         _targetScrollOffset.abs() % 1000 < 50) {
       LoggerUtil.log(
@@ -89,17 +86,6 @@ class ScrollSystem {
         'High Scroll Value Warning: ${_targetScrollOffset.toStringAsFixed(1)}',
       );
     }
-
-    final currentTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
-    if (_lastUpdateTime > 0) {
-      final deltaTime = currentTime - _lastUpdateTime;
-      if (deltaTime > 0) {
-        final deltaOffset = _targetScrollOffset - _lastScrollOffset;
-        _scrollVelocity = deltaOffset / deltaTime;
-      }
-    }
-    _lastScrollOffset = _targetScrollOffset;
-    _lastUpdateTime = currentTime;
 
     _checkSnapPoints();
   }
@@ -131,6 +117,12 @@ class ScrollSystem {
   void update(double originalDt) {
     // Cap DT to prevent physics explosion on lag spikes
     final dt = originalDt.clamp(0.0, 0.05);
+
+    // Calculate approximate velocity cleanly via update loop rather than input loop
+    if (dt > 0) {
+      _scrollVelocity = (_targetScrollOffset - _lastScrollOffset) / dt;
+    }
+    _lastScrollOffset = _targetScrollOffset;
 
     // 1. Handle snapping with SPRING physics
     if (_isSnapping) {
@@ -175,11 +167,9 @@ class ScrollSystem {
       }
     }
 
-    // 2. Inertia: Lerp current towards target
+    // 2. Inertia: Direct math instead of lerpDouble for zero-allocation performance
     final inertia = GamePhysics.scrollInertia;
-    _currentScrollOffset =
-        lerpDouble(_currentScrollOffset, _targetScrollOffset, dt * inertia) ??
-        _currentScrollOffset;
+    _currentScrollOffset += (_targetScrollOffset - _currentScrollOffset) * (dt * inertia);
 
     // 3. Notify observers
     _notifyObservers();

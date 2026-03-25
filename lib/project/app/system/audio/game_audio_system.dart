@@ -36,7 +36,6 @@ class GameAudioSystem {
     // Preload important SFX to avoid latency
     try {
       await FlameAudio.audioCache.loadAll([
-        GameAudioConfig.ambientBgm,
         GameAudioConfig.enterSfx,
         GameAudioConfig.titleLoadedSfx,
         GameAudioConfig.slideInSfx,
@@ -55,7 +54,6 @@ class GameAudioSystem {
         GameAudioConfig.gearTickSfx,
         GameAudioConfig.selectionClickSfx,
         GameAudioConfig.selectionClickSfx,
-        GameAudioConfig.ambientBreeze,
         GameAudioConfig.philosophyButtonSfx,
       ]);
     } catch (e) {
@@ -68,10 +66,7 @@ class GameAudioSystem {
   }
 
   void playBgm() {
-    /*_safePlay(
-      GameAudioConfig.ambientBgm,
-      volume: GameAudioConfig.bgmVolume,
-    );*/
+    // BGM disabled — space_ambient.mp3 removed (37.8 MB, too large for web)
   }
 
   void stopBgm() {

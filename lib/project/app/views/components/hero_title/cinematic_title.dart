@@ -62,7 +62,7 @@ class CinematicTitleComponent extends PositionComponent
   }
 
   void show(VoidCallback showComplete) {
-    if (_primaryTitle.opacity > 0) return;
+    if (_primaryTitle.opacity >= 0.99) return;
     // Primary reveal
     _primaryTitle.add(
       SequenceEffect([

@@ -37,8 +37,16 @@ class TestimonialSection implements GameSection {
   VoidCallback? onWarmUpNextSection;
 
   @override
-  Future<void> warmUp() async {
+  void prepareGhostRender() {
     _scrollProgress = 0.0;
+    pageComponent.opacity = 0.02;
+  }
+
+  @override
+  Future<void> warmUp() async {}
+
+  @override
+  Future<void> finalizeGhostRender() async {
     pageComponent.opacity = 0.0;
   }
 

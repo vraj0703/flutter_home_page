@@ -14,7 +14,6 @@ import 'package:flutter_home_page/project/app/views/components/philosophy/philos
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/rain_transition_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/white_overlay_component.dart';
-import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 
 class PhilosophySection extends Component implements GameSection {
   @override
@@ -39,6 +38,7 @@ class PhilosophySection extends Component implements GameSection {
 
   bool _buttonVisible = false;
   double _buttonOpacity = 0.0;
+  double _animTime = 0.0;
 
   PhilosophySection({
     required this.titleComponent,
@@ -82,7 +82,7 @@ class PhilosophySection extends Component implements GameSection {
         _isShattering = true;
         final myGame = trailComponent.game;
         myGame.transitionCoordinator.startPhilosophyToExperience(from: this);
-      } else {}
+      }
     };
 
     rainTransition.onShatterComplete = () {
@@ -132,37 +132,15 @@ class PhilosophySection extends Component implements GameSection {
     // Button visibility: show when last card settles, hide on ANY reverse scroll
     if (offset < _scrollProgress && _buttonVisible) {
       // Reverse scroll detected — hide button immediately
-      if (_buttonVisible) {
-        LoggerUtil.log(
-          'PhilosophySection',
-          'Reverse Scroll Detected (Offset: ${offset.toStringAsFixed(1)}) -> Hiding Button',
-        );
-      }
       _buttonVisible = false;
     } else if (offset >= 2700 && !_buttonVisible && !_isShattering) {
       // All cards settled — show button
-      LoggerUtil.log(
-        'PhilosophySection',
-        'Scroll Target Reached (Offset: ${offset.toStringAsFixed(1)}) -> Showing Button',
-      );
       _buttonVisible = true;
     }
 
     // Log significant scroll milestones (every 500px)
-    if ((offset ~/ 500) != (_scrollProgress ~/ 500)) {
-      LoggerUtil.log(
-        'PhilosophySection',
-        'Scroll Milestone: ${offset.toStringAsFixed(1)}',
-      );
-    }
 
     if (offset > _maxHeight) {
-      if (offset > _maxHeight + 500 && _frameCounter % 60 == 0) {
-        LoggerUtil.log(
-          'PhilosophySection',
-          'OVERSHOOT: Offset ${offset.toStringAsFixed(1)} > Max ${_maxHeight.toStringAsFixed(1)}',
-        );
-      }
       _scrollProgress = _maxHeight;
       _applyScrollEffects(_scrollProgress);
       return;
@@ -224,8 +202,8 @@ class PhilosophySection extends Component implements GameSection {
       trailComponent.position = Vector2(0, 200);
     }
 
-   if (offset > 500) {
-       const double titleStart = 500.0;
+    if (offset > 500) {
+      const double titleStart = 500.0;
       const double titleEnd = 1000.0;
 
       final titleProgress = ((offset - titleStart) / (titleEnd - titleStart))
@@ -244,7 +222,7 @@ class PhilosophySection extends Component implements GameSection {
     trailComponent.updateTrailAnimation(offset);
 
     _updateAudio(offset);
-   nextButton.position = Vector2(screenSize.x / 2, screenSize.y * 0.8);
+    nextButton.position = Vector2(screenSize.x / 2, screenSize.y * 0.8);
   }
 
   void _updateAudio(double offset) {
@@ -270,14 +248,12 @@ class PhilosophySection extends Component implements GameSection {
     if (newPhase > _currentPhase) {
       for (int i = _currentPhase + 1; i <= newPhase; i++) {
         if (i == 2) continue;
-        LoggerUtil.log('PhilosophySection', 'Queueing Audio Phase (FWD): $i');
         _audioQueue.add(i);
       }
       _currentPhase = newPhase;
     } else if (newPhase < _currentPhase) {
       for (int i = _currentPhase - 1; i >= newPhase; i--) {
         if (i == 2) continue;
-        LoggerUtil.log('PhilosophySection', 'Queueing Audio Phase (REV): $i');
         _audioQueue.add(i);
       }
       _currentPhase = newPhase;
@@ -294,14 +270,12 @@ class PhilosophySection extends Component implements GameSection {
     _timeSinceLastNote += dt;
     if (_timeSinceLastNote >= _noteInterval) {
       final phase = _audioQueue.removeAt(0);
-      LoggerUtil.log('PhilosophySection', 'Processing Audio Queue: $phase');
       _playPhaseSound(phase);
       _timeSinceLastNote = 0.0;
     }
   }
 
   void _playPhaseSound(int phase) {
-    LoggerUtil.log('PhilosophySection', 'Playing Phase Sound: $phase');
     switch (phase) {
       case 1:
         playEntrySound(); // Do
@@ -326,45 +300,27 @@ class PhilosophySection extends Component implements GameSection {
   bool _isActive = false;
 
   @override
-  Future<void> onLoad() async {
+  void prepareGhostRender() {
     if (_scrollProgress <= 0) {
       _resetVisuals();
     }
-
     cloudBackground.opacity = 0.02;
     trailComponent.opacity = 0.02;
     titleComponent.opacity = 0.02;
-    cloudBackground.warmUp();
-    await titleComponent.warmUp();
-    await Future.delayed(const Duration(milliseconds: 300));
-    await orchestrator.reflection.updateReflectionTexture();
-    forceCaptureRefraction();
-
-    // Hide components again
-    cloudBackground.opacity = 0.0;
-    trailComponent.opacity = 0.0;
-    titleComponent.opacity = 0.0;
-    nextButton.opacity = 0.0;
-    rainTransition.setTarget(0.0);
-    whiteOverlay.opacity = 0.0;
   }
 
   @override
   Future<void> warmUp() async {
-    if (_scrollProgress <= 0) {
-      _resetVisuals();
-    }
-
-    cloudBackground.opacity = 0.02;
-    trailComponent.opacity = 0.02;
-    titleComponent.opacity = 0.02;
     cloudBackground.warmUp();
     await titleComponent.warmUp();
-    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
+  Future<void> finalizeGhostRender() async {
     await orchestrator.reflection.updateReflectionTexture();
     forceCaptureRefraction();
 
-    // Hide components again
+    // Strict Visibility Reset - Hide all components
     cloudBackground.opacity = 0.0;
     trailComponent.opacity = 0.0;
     titleComponent.opacity = 0.0;
@@ -375,7 +331,6 @@ class PhilosophySection extends Component implements GameSection {
 
   @override
   Future<void> enter(ScrollSystem scrollSystem) async {
-    LoggerUtil.log('PhilosophySection', 'ENTER -> Activating Section');
     _hasWarmedUpNext = false;
     _isActive = true;
     _hasScrolledPastEntry = false; // Reset for new entry
@@ -383,10 +338,6 @@ class PhilosophySection extends Component implements GameSection {
     _freezeCapture = false;
     _buttonVisible = false;
     _buttonOpacity = 0.0;
-    LoggerUtil.log(
-      'PhilosophySection',
-      'ENTER -> Max Height: ${_maxHeight.toStringAsFixed(1)}',
-    );
     // Allow small overshoot (-10 to max+10) to trigger exit navigation logic
     scrollSystem.resetScroll(0.0);
     scrollSystem.setBounds(-10.0, _maxHeight + 10.0);
@@ -425,7 +376,6 @@ class PhilosophySection extends Component implements GameSection {
 
   @override
   Future<void> exit() async {
-    LoggerUtil.log('PhilosophySection', 'EXIT -> Deactivating Section');
     _isActive = false;
 
     // Strict Visibility Reset - Hide all components
@@ -461,6 +411,8 @@ class PhilosophySection extends Component implements GameSection {
   @override
   void update(double dt) {
     if (!_isActive) return;
+
+    _animTime += dt;
 
     // Process audio queue (Moved from scroll loop to time loop)
     _processAudioQueue(dt);
@@ -508,9 +460,9 @@ class PhilosophySection extends Component implements GameSection {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
 
-    // Performance: Increased for quality.
-    // Rain distortion needs high-res to keep cards visible/readable.
-    const double scale = 1.0;
+    // Performance: Reduced to 0.3 for web (16x less GPU work than 1.0).
+    // Rain distortion still readable at lower res.
+    const double scale = 0.3;
     canvas.scale(scale);
 
     // Render the beach and the text/cards into the off-screen buffer
@@ -591,7 +543,7 @@ class PhilosophySection extends Component implements GameSection {
     // Idle breathe animation (±2% when fully visible)
     if (titleProgress >= 1.0) {
       final breathe =
-          math.sin(DateTime.now().millisecondsSinceEpoch / 1000.0 * 0.5) * 0.02;
+          math.sin(_animTime * 0.5) * 0.02;
       targetScale += targetScale * breathe;
     }
 

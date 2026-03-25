@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
@@ -81,6 +82,7 @@ class MyGame extends FlameGame
 
   late final FlameBlocProvider<SceneBloc, SceneState> _blocProvider;
 
+  StreamSubscription? _stateSubscription;
   bool _warmupComplete = false;
   bool _gameReadyDispatched = false;
 
@@ -164,7 +166,7 @@ class MyGame extends FlameGame
     await _loadFlashShader();
 
     // State Listener for One-Shot Events (State Purity)
-    stateProvider.stream.listen((state) {
+    _stateSubscription = stateProvider.stream.listen((state) {
       state.maybeWhen(
         loadingExperience: () => hideTitles(),
         experience: (_) => hideTitles(),
@@ -204,35 +206,7 @@ class MyGame extends FlameGame
     if (!isLoaded) return;
     if (_isTransitioning) return; // Block ALL scroll during transitions
 
-    final state = stateProvider.sceneState();
-
-    bool isGameState = false;
-    state.maybeWhen(
-      active: (_, __) => isGameState = true,
-      experience: (_) => isGameState = true,
-      loadingExperience: () =>
-          isGameState = true, // Still allow scroll processing? Usually blocked.
-      orElse: () => isGameState = false,
-    );
-
-    if (isGameState) {
-      // centralized routing via SequenceRunner
-      _philosophyScrollSystem.onScroll(info.scrollDelta.global.y);
-
-      // UI Visibility Logic
-      // Hide Arrow in Philosophy Section
-      if (primarySequenceRunner.currentSection is PhilosophySection) {
-        queuer.queue(event: const SceneEvent.toggleArrow(false));
-      } else {
-        queuer.queue(event: const SceneEvent.toggleArrow(true));
-      }
-      if (primarySequenceRunner.currentSection is ExperienceSection &&
-          info.scrollDelta.global.y < -10) {
-        transitionCoordinator.returnToPhilosophy();
-      }
-    } else {
-      _inputController.handleScroll(info);
-    }
+    _inputController.handleScroll(info);
   }
 
   @override
@@ -285,7 +259,6 @@ class MyGame extends FlameGame
     // Intro State Handlers
     state.maybeWhen(
       loading: (isSvgReady, isGameReady) {
-        _centerTitles(size / 2);
         _componentFactory.logoOverlay.inactivityOpacity +=
             dt / ScrollSequenceConfig.uiFadeDuration;
 
@@ -297,9 +270,6 @@ class MyGame extends FlameGame
           _gameReadyDispatched = true;
           queuer.queue(event: const SceneEvent.gameReady());
         }
-      },
-      logo: () {
-        _componentFactory.cinematicTitle.position = size / 2;
       },
       logoOverlayRemoving: () {
         final isDone = logoAnimator.update(
@@ -323,40 +293,53 @@ class MyGame extends FlameGame
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
-    final center = size / 2;
-
     _primarySequenceRunner.onResize(size);
+    if (!isLoaded) return;
+    _snapLogoToCenter(size);
+    _centerTitles(size);
+  }
 
+  void _snapLogoToCenter(Vector2 gameSize) {
     stateProvider.sceneState().maybeWhen(
-      loading: (isSvgReady, isGameReady) {},
-      logo: () {
-        _snapLogoToCenter(center);
-        _centerTitles(center);
-        _componentFactory.logoOverlay.position = center;
-        _componentFactory.logoOverlay.gameSize = size;
+      loading: (_, __) {
+        _componentFactory.logoComponent.position = gameSize / 2;
+        _componentFactory.shadowScene.logoPosition = gameSize / 2;
+        _componentFactory.logoOverlay.position = gameSize / 2;
       },
-      titleLoading: () => _centerTitles(center),
-      title: () => _centerTitles(center),
+      logo: () {
+        _componentFactory.logoComponent.position = gameSize / 2;
+        _componentFactory.shadowScene.logoPosition = gameSize / 2;
+        _componentFactory.logoOverlay.position = gameSize / 2;
+      },
       orElse: () {},
     );
-    try {} catch (_) {}
+  }
+
+  void _centerTitles(Vector2 gameSize) {
+    stateProvider.sceneState().maybeWhen(
+      logoOverlayRemoving: () {
+        _componentFactory.cinematicTitle.position = gameSize / 2;
+        _componentFactory.cinematicSecondaryTitle.position =
+            gameSize / 2 + GameLayout.secTitleOffsetVector;
+      },
+      titleLoading: () {
+        _componentFactory.cinematicTitle.position = gameSize / 2;
+        _componentFactory.cinematicSecondaryTitle.position =
+            gameSize / 2 + GameLayout.secTitleOffsetVector;
+      },
+      title: () {
+        _componentFactory.cinematicTitle.position = gameSize / 2;
+        _componentFactory.cinematicSecondaryTitle.position =
+            gameSize / 2 + GameLayout.secTitleOffsetVector;
+      },
+      orElse: () {},
+    );
   }
 
   // Handle section progress indicator taps
   void _handleSectionTap(int section) {
     if (!isLoaded) return;
     audio.playClick();
-  }
-
-  void _snapLogoToCenter(Vector2 center) {
-    _componentFactory.logoComponent.position = center;
-    _componentFactory.shadowScene.logoPosition = center;
-  }
-
-  void _centerTitles(Vector2 center) {
-    _componentFactory.cinematicTitle.position = center;
-    _componentFactory.cinematicSecondaryTitle.position =
-        center + GameLayout.secTitleOffsetVector;
   }
 
   void loadTitleBackground() {
@@ -381,7 +364,7 @@ class MyGame extends FlameGame
     );
   }
 
-  void enterTitle() {
+  void  enterTitle() {
     Future.delayed(ScrollSequenceConfig.enterTitleDelayDuration, () {
       audio.playTitleLoaded(); // Play sound when main title starts entering
       _componentFactory.cinematicTitle.show(() {
@@ -445,9 +428,11 @@ class MyGame extends FlameGame
     _componentFactory.philosophyText.anchor = Anchor.center;
     _componentFactory.philosophyText.position = Vector2(
       size.x / 2,
-      size.y * 0.7,
+      size.y * GameLayout.philosophyTextYRatio,
     );
-    _componentFactory.philosophyText.scale = Vector2.all(0.1);
+    _componentFactory.philosophyText.scale = Vector2.all(
+      GameLayout.philosophyTextScale,
+    );
     _componentFactory.philosophyText.opacity = 0.0;
 
     // 3. Experience
@@ -469,5 +454,11 @@ class MyGame extends FlameGame
       await _primarySequenceRunner.stop();
       queuer.queue(event: const SceneEvent.enterExperience());
     };
+  }
+
+  @override
+  void onRemove() {
+    _stateSubscription?.cancel();
+    super.onRemove();
   }
 }

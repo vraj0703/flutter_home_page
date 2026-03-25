@@ -50,10 +50,20 @@ class ExperienceSection extends Component
   }
 
   @override
+  void prepareGhostRender() {
+    circlesBackground.opacity = 0.02;
+    content.opacity = 0.02;
+  }
+
+  @override
   Future<void> warmUp() async {
-    // Ensure assets are loaded
-    // Typically redundant if handled by factory, but good for safety
     circlesBackground.warmUp();
+  }
+
+  @override
+  Future<void> finalizeGhostRender() async {
+    circlesBackground.opacity = 0.0;
+    content.opacity = 0.0;
   }
 
   @override
@@ -163,15 +173,6 @@ class ExperienceSection extends Component
         ),
       );
 
-      // Fade the shader "Bloom" (revealProgress) from 1.0 back to 0.0
-      circlesBackground.add(
-        _RevealProgressEffect(
-          from: 1.0,
-          to: 0.0,
-          controller: EffectController(duration: 1.5, curve: curve),
-        ),
-      );
-
       // 3. Finalize
       await Future.delayed(duration);
     } finally {
@@ -180,26 +181,21 @@ class ExperienceSection extends Component
   }
 
   Future<void> nextExperience() async {
-    // Phase 1 (Bloom): Animate circlesBackground.revealProgress to 1.0 (0.4s)
+    // Phase 1 (Bloom): Flash-fade the background to white, then settle
     circlesBackground.add(
-      _RevealProgressEffect(
-        from: 0.0,
-        to: 1.0,
-        controller: EffectController(duration: 0.4, curve: Curves.easeIn),
+      OpacityEffect.to(
+        0.2,
+        EffectController(duration: 0.4, curve: Curves.easeIn),
         onComplete: () {
-          // Phase 2 (Swap): At 1.0, update the text values
+          // Phase 2 (Swap): Update the text values at peak
           content.cycleData();
           content.animateTextReveal();
 
-          // Phase 3 (Settle): Animate circlesBackground.revealProgress back to 0.0 (0.8s)
+          // Phase 3 (Settle): Fade background back to full opacity
           circlesBackground.add(
-            _RevealProgressEffect(
-              from: 1.0,
-              to: 0.0,
-              controller: EffectController(
-                duration: 0.8,
-                curve: Curves.easeOut,
-              ),
+            OpacityEffect.to(
+              1.0,
+              EffectController(duration: 0.8, curve: Curves.easeOut),
             ),
           );
         },
@@ -238,22 +234,3 @@ class ExperienceSection extends Component
   }
 }
 
-class _RevealProgressEffect extends Effect {
-  final double from;
-  final double to;
-
-  _RevealProgressEffect({
-    required this.from,
-    required this.to,
-    required EffectController controller,
-    super.onComplete,
-  }) : super(controller);
-
-  @override
-  void apply(double progress) {
-    if (parent is CirclesBackgroundComponent) {
-      /*(parent as CirclesBackgroundComponent).revealProgress =
-          from + (to - from) * progress;*/
-    }
-  }
-}

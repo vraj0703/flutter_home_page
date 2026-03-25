@@ -25,7 +25,6 @@ class GameLayout {
   static const double testimonialButtonW = 200.0;
   static const double testimonialButtonH = 50.0;
 
-
   // --- God Ray ---
   static const double godRayCoreSize = 0.0;
   static const double godRayCoreBlur = 2.0;
@@ -144,6 +143,8 @@ class GameLayout {
   static const double cardStackWidthRatio = 0.4;
   static const double cardStackHeightRatio = 0.6;
   static const double cardStackXRatio = 0.75;
+  static const double philosophyTextScale = 0.1;
+  static const double philosophyTextYRatio = 0.7;
 
   // --- Parallax ---
   static const double standardParallaxY = -1000.0;

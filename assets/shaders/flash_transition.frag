@@ -1,4 +1,3 @@
-#version 460 core
 #include <flutter/runtime_effect.glsl>
 
 uniform vec2 iResolution;

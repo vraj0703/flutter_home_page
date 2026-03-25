@@ -20,7 +20,14 @@ abstract class GameSection {
 
   /// Pre-loads resources, compiles shaders, or performs heavy calculations
   /// before the section becomes visible.
+  /// Prepares components for a ghost render by setting them to near-zero opacity.
+  void prepareGhostRender();
+
+  /// Pre-loads resources, compiles shaders, or performs heavy calculations.
   Future<void> warmUp();
+
+  /// Finalizes the ghost render, hiding components and capturing textures if needed.
+  Future<void> finalizeGhostRender();
 
   /// Starts the entrance animation logic (forward).
   /// The section configures the [scrollSystem] (e.g. reset to 0, set snap regions)

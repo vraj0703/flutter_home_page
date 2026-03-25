@@ -106,6 +106,13 @@ class LogoOverlayComponent extends PositionComponent
   }
 
   @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    position = size / 2;
+    gameSize = size;
+  }
+
+  @override
   void update(double dt) {
     super.update(dt);
     stateProvider.sceneState().maybeWhen(

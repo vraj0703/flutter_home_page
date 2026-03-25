@@ -8,7 +8,11 @@ import 'package:flutter_home_page/project/app/system/cursor/game_cursor_system.d
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 
-class GameInputController extends Component {
+import 'package:flutter_home_page/project/app/views/my_game.dart';
+import 'package:flutter_home_page/project/app/sections/philosophy_section.dart';
+import 'package:flutter_home_page/project/app/sections/experience_section.dart';
+
+class GameInputController extends Component with HasGameReference<MyGame> {
   final Queuer queuer;
   final ScrollSystem scrollSystem;
   final GameAudioSystem audioSystem;
@@ -27,12 +31,36 @@ class GameInputController extends Component {
   void handleScroll(PointerScrollInfo info) {
     if (!_shouldHandleInput) return;
 
-    queuer.queue(event: const SceneEvent.onScroll());
+    final state = stateProvider.sceneState();
+    bool isGameState = false;
+    state.maybeWhen(
+      active: (_, __) => isGameState = true,
+      experience: (_) => isGameState = true,
+      loadingExperience: () => isGameState = true,
+      orElse: () => isGameState = false,
+    );
 
     final delta = info.scrollDelta.global.y;
-    LoggerUtil.log('Input', 'Scroll Delta: ${delta.toStringAsFixed(1)}');
-    scrollSystem.onScroll(delta);
-    audioSystem.playScrollTick();
+
+    if (isGameState) {
+      scrollSystem.onScroll(delta);
+
+      final currentSection = game.primarySequenceRunner.currentSection;
+      if (currentSection is PhilosophySection) {
+        queuer.queue(event: const SceneEvent.toggleArrow(false));
+      } else {
+        queuer.queue(event: const SceneEvent.toggleArrow(true));
+      }
+      if (currentSection is ExperienceSection &&
+          info.scrollDelta.global.y < -10) {
+        game.transitionCoordinator.returnToPhilosophy();
+      }
+    } else {
+      queuer.queue(event: const SceneEvent.onScroll());
+      LoggerUtil.log('Input', 'Scroll Delta: \${delta.toStringAsFixed(1)}');
+      scrollSystem.onScroll(delta);
+      audioSystem.playScrollTick();
+    }
   }
 
   void handleTapDown(TapDownEvent event) {

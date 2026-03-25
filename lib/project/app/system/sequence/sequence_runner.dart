@@ -15,6 +15,7 @@ class SequenceRunner implements ScrollObserver {
   List<GameSection> _sections = [];
   int _currentIndex = 0;
   bool _isActive = false;
+  bool _isTransitioning = false;
   final Map<PositionComponent, List<ScrollEffect>> _bindings = {};
 
   SequenceRunner({required this.scrollSystem});
@@ -41,10 +42,14 @@ class SequenceRunner implements ScrollObserver {
     }
   }
 
-  void _warmUpNextSection(int callingIndex) {
+  void _warmUpNextSection(int callingIndex) async {
     if (callingIndex != _currentIndex) return;
     if (callingIndex < _sections.length - 1) {
-      _sections[callingIndex + 1].warmUp();
+      final next = _sections[callingIndex + 1];
+      next.prepareGhostRender();
+      await next.warmUp();
+      await Future.delayed(const Duration(milliseconds: 300));
+      await next.finalizeGhostRender();
     }
   }
 
@@ -52,7 +57,10 @@ class SequenceRunner implements ScrollObserver {
   /// Should be called during game initialization to front-load compiled shaders and assets.
   Future<void> warmUpAll() async {
     for (final section in _sections) {
+      section.prepareGhostRender();
       await section.warmUp();
+      await Future.delayed(const Duration(milliseconds: 300));
+      await section.finalizeGhostRender();
     }
   }
 
@@ -62,7 +70,10 @@ class SequenceRunner implements ScrollObserver {
     _isActive = true;
     if (_sections.isNotEmpty) {
       scrollSystem.setSnapRegions(_sections[_currentIndex].snapRegions);
+      _sections[_currentIndex].prepareGhostRender();
       await _sections[_currentIndex].warmUp();
+      await Future.delayed(const Duration(milliseconds: 100));
+      await _sections[_currentIndex].finalizeGhostRender();
       await _sections[_currentIndex].enter(scrollSystem);
     }
   }
@@ -133,32 +144,35 @@ class SequenceRunner implements ScrollObserver {
   }
 
   Future<void> _advanceSection(int callingIndex) async {
-    // Prevent double triggers
-    if (callingIndex != _currentIndex) return;
+    // Prevent double triggers and structural transitions
+    if (_isTransitioning || callingIndex != _currentIndex) return;
 
     if (_currentIndex < _sections.length - 1) {
-      // 1. Exit old
-      await _sections[_currentIndex].exit();
-      scrollSystem.setBounds(null, null);
-      scrollSystem.resetScroll(0.0); // Kill momentum immediately
+      _isTransitioning = true;
+      try {
+        // 1. Exit old
+        await _sections[_currentIndex].exit();
+        scrollSystem.setBounds(null, null);
+        scrollSystem.resetScroll(0.0); // Kill momentum immediately
 
-      // RE-VERIFY index after async operation to prevent race conditions
-      if (_currentIndex != callingIndex) return;
-
-      _currentIndex++;
-      LoggerUtil.log(
-        'SequenceRunner',
-        'Advancing Section: $callingIndex -> $_currentIndex',
-      );
+        _currentIndex++;
+        LoggerUtil.log(
+          'SequenceRunner',
+          'Advancing Section: $callingIndex -> $_currentIndex',
+        );
       final nextSection = _sections[_currentIndex];
 
       // 2. Enter new
       // Section configures the system itself (reset to 0, snap regions, etc)
+      nextSection.prepareGhostRender();
       await nextSection.warmUp();
-      await nextSection.enter(scrollSystem);
+      await Future.delayed(const Duration(milliseconds: 100));
+      await nextSection.finalizeGhostRender();
 
-      // Notify UI listener if needed (e.g., via Bloc event)
-      // _onSectionChanged(_currentIndex);
+        await nextSection.enter(scrollSystem);
+      } finally {
+        _isTransitioning = false;
+      }
     } else {
       // End of game sequence
       if (onSequenceComplete != null) {
@@ -180,9 +194,13 @@ class SequenceRunner implements ScrollObserver {
     _isActive = true;
     _currentIndex = _sections.length - 1;
     if (_sections.isNotEmpty) {
-      scrollSystem.setSnapRegions(_sections[_currentIndex].snapRegions);
-      await _sections[_currentIndex].warmUp();
-      await _sections[_currentIndex].enterReverse(scrollSystem);
+      final current = _sections[_currentIndex];
+      scrollSystem.setSnapRegions(current.snapRegions);
+      current.prepareGhostRender();
+      await current.warmUp();
+      await Future.delayed(const Duration(milliseconds: 100));
+      await current.finalizeGhostRender();
+      await current.enterReverse(scrollSystem);
     }
   }
 
@@ -219,33 +237,36 @@ class SequenceRunner implements ScrollObserver {
 
     // Enter new
     scrollSystem.setSnapRegions(nextSection.snapRegions);
+    nextSection.prepareGhostRender();
     await nextSection.warmUp();
+    await Future.delayed(const Duration(milliseconds: 100));
+    await nextSection.finalizeGhostRender();
     await nextSection.enter(scrollSystem);
   }
 
   Future<void> _reverseSection(int callingIndex) async {
-    if (callingIndex != _currentIndex) return;
+    if (_isTransitioning || callingIndex != _currentIndex) return;
 
     if (_currentIndex > 0) {
-      // 1. Exit current (which is now 'future')
-      await _sections[_currentIndex].exit();
-      scrollSystem.setBounds(null, null);
-      scrollSystem.resetScroll(0.0); // Kill momentum immediately
+      _isTransitioning = true;
+      try {
+        // 1. Exit current (which is now 'future')
+        await _sections[_currentIndex].exit();
+        scrollSystem.setBounds(null, null);
+        scrollSystem.resetScroll(0.0); // Kill momentum immediately
 
-      // RE-VERIFY index after async operation
-      if (_currentIndex != callingIndex) return;
-
-      _currentIndex--;
-      LoggerUtil.log(
-        'SequenceRunner',
-        'Reversing Section: $callingIndex -> $_currentIndex',
-      );
+        _currentIndex--;
+        LoggerUtil.log(
+          'SequenceRunner',
+          'Reversing Section: $callingIndex -> $_currentIndex',
+        );
       final prevSection = _sections[_currentIndex];
 
       // 2. Re-enter previous
-      // Section configures the system itself (reset to Max, snap regions, etc)
-      await prevSection.warmUp();
-      await prevSection.enterReverse(scrollSystem);
+        await prevSection.enterReverse(scrollSystem);
+      } finally {
+        _isTransitioning = false;
+      }
     } else {
       // Start of game sequence
       if (onSequenceReverse != null) {

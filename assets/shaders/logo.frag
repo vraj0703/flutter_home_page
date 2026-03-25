@@ -1,5 +1,3 @@
-#version 120
-
 precision highp float;
 
 uniform vec2 uSize;

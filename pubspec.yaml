@@ -31,18 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
-  flutter_gl: ^0.0.20
-  universal_html: ^2.2.4
   flutter_bloc: ^9.1.1
-  lottie: ^3.0.0
   flame: ^1.33.0
   flame_audio: ^2.1.0
   flame_svg: ^1.11.17
   flutter_svg: ^2.0.9
-  freezed: ^3.2.3
   google_fonts: ^4.0.4
   freezed_annotation: ^3.1.0
   url_launcher: ^6.3.2
@@ -51,7 +44,6 @@ dependencies:
   flame_bloc: ^1.12.20
 
 dependency_overrides:
-  universal_html: ^2.2.4
   build_runner: ^2.10.3
 
 dev_dependencies:
@@ -64,6 +56,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  freezed: ^3.2.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -126,23 +119,22 @@ flutter:
     - assets/fonts/monoblock_bold.json
     - assets/fonts/pixel_code.json
     - assets/fonts/trt_artnik.json
-    - assets/audio/space_ambient.mp3
-    - assets/audio/enter_sound.wav
-    - assets/audio/title_loaded.wav
-    - assets/audio/slide_in.wav
-    - assets/audio/bouncy_arrow.wav
+    - assets/audio/enter_sound.mp3
+    - assets/audio/title_loaded.mp3
+    - assets/audio/slide_in.mp3
+    - assets/audio/bouncy_arrow.mp3
     - assets/audio/thunder_crack.mp3
-    - assets/audio/thunder_roll.wav
+    - assets/audio/thunder_roll.mp3
     - assets/audio/bold_text_swell.mp3
     - assets/audio/glass_break.mp3
-    - assets/audio/ting.wav
-    - assets/audio/do.wav
-    - assets/audio/re.wav
-    - assets/audio/mi.wav
-    - assets/audio/fa.wav
-    - assets/audio/sol.wav
-    - assets/audio/waterdrop.wav
-    - assets/audio/si.wav
+    - assets/audio/ting.mp3
+    - assets/audio/do.mp3
+    - assets/audio/re.mp3
+    - assets/audio/mi.mp3
+    - assets/audio/fa.mp3
+    - assets/audio/sol.mp3
+    - assets/audio/waterdrop.mp3
+    - assets/audio/si.mp3
     - assets/images/logo.png
     - assets/images/ic_book.png
     - assets/images/ic_chalice.png
