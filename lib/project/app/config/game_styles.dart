@@ -63,7 +63,7 @@ class GameStyles {
   // Text Sizes
   static const double titleFontSize = 80.0;
   static const double primaryTitleFontSize = 56.0;
-  static const double philosophyFontSize = 40.0;
+  static const double philosophyFontSize = 72.0;
   static const double contactTitleFontSize = 110.0;
   static const double contactDescriptionFontSize = 18.0;
   static const double buttonFontSize = 16.0;

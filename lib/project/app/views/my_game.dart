@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
+import 'package:web/web.dart' as web;
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
@@ -42,6 +44,7 @@ class MyGame extends FlameGame
         HoverCallbacks
     implements TransitionContext {
   VoidCallback? onStartExitAnimation;
+  bool _handoffSent = false;
   @override
   final Queuer queuer;
   final StateProvider stateProvider;
@@ -187,6 +190,24 @@ class MyGame extends FlameGame
       _warmupComplete = true;
     });
 
+    // Listen for React messages (goto-philosophy)
+    if (kIsWeb) {
+      web.window.addEventListener(
+        'message',
+        (web.Event event) {
+          final msgEvent = event as web.MessageEvent;
+          final data = msgEvent.data;
+          if (data == null) return;
+          final dartData = data.dartify();
+          if (dartData is Map && dartData['type'] == 'goto-philosophy') {
+            debugPrint('[Flutter] Received goto-philosophy');
+            _handoffSent = false; // Allow future handoffs
+            _startPhilosophySection();
+          }
+        }.toJS,
+      );
+    }
+
     // Explicitly warm up components not managed by the sequence runner's warmUp
     _componentFactory.rainTransition.warmUp();
     _componentFactory.circlesBackground.warmUp();
@@ -282,6 +303,9 @@ class MyGame extends FlameGame
       },
       orElse: () {},
     );
+
+    // Handoff is now triggered by philosophy button hold complete
+    // (see philosophy_section.dart onHoldComplete callback)
 
     // Base Updates
     _cursorSystem.update(
@@ -408,6 +432,8 @@ class MyGame extends FlameGame
     scrollSystem.register(_godRayController!);
   }
 
+  late PhilosophySection _philosophySection;
+
   void _initSequence() {
     // 1. Bold Text
     final boldSection = BoldTextSection(
@@ -418,8 +444,8 @@ class MyGame extends FlameGame
       logoOverlay: _componentFactory.logoOverlay,
       centerPosition: size / 2,
     );
-    // 2. Philosophy
-    final philosophySection = PhilosophySection(
+    // 2. Philosophy (stored as field for later goto-philosophy)
+    _philosophySection = PhilosophySection(
       titleComponent: _componentFactory.philosophyText,
       cloudBackground: _componentFactory.beachBackground,
       trailComponent: _componentFactory.philosophyTrail,
@@ -457,15 +483,33 @@ class MyGame extends FlameGame
 
     _primarySequenceRunner.init([
       boldSection,
-      philosophySection,
-      experienceSection,
     ]);
 
-    // Wiring Handoff
+    // Bold section complete → hand off to React
     _primarySequenceRunner.onSequenceComplete = () async {
       await _primarySequenceRunner.stop();
-      queuer.queue(event: const SceneEvent.enterExperience());
+      if (kIsWeb && !_handoffSent) {
+        _handoffSent = true;
+        _sendHandoff();
+      }
     };
+  }
+
+  /// Called when React sends "goto-philosophy" — re-init runner with philosophy section
+  Future<void> _startPhilosophySection() async {
+    _primarySequenceRunner.init([_philosophySection]);
+    queuer.queue(event: const SceneEvent.onScroll());
+    await _primarySequenceRunner.start();
+  }
+
+  void _sendHandoff() {
+    try {
+      final msg = <String, String>{'type': 'flutter-handoff'}.jsify();
+      web.window.parent?.postMessage(msg, '*'.toJS);
+      debugPrint('postMessage sent: flutter-handoff');
+    } catch (e) {
+      debugPrint('postMessage error: $e');
+    }
   }
 
   @override

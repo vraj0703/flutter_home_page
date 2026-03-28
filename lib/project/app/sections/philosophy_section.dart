@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flame/components.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
 import 'package:flutter_home_page/project/app/models/scroll_result.dart';
@@ -94,6 +95,7 @@ class PhilosophySection extends Component implements GameSection {
     nextButton.onHoldComplete = () {
       if (!_isShattering) {
         _isShattering = true;
+        debugPrint('Philosophy button hold complete — final section');
         _transitionCoordinator.startPhilosophyToExperience(from: this);
       }
     };
@@ -142,14 +144,8 @@ class PhilosophySection extends Component implements GameSection {
   void setScrollOffset(double offset) {
     if (!_isActive) return;
 
-    // Button visibility: show when last card settles, hide on ANY reverse scroll
-    if (offset < _scrollProgress && _buttonVisible) {
-      // Reverse scroll detected — hide button immediately
-      _buttonVisible = false;
-    } else if (offset >= PhilosophySectionLayout.buttonShowThreshold && !_buttonVisible && !_isShattering) {
-      // All cards settled — show button
-      _buttonVisible = true;
-    }
+    // Hold button disabled — Contact Me section has no exit button
+    _buttonVisible = false;
 
     // Log significant scroll milestones (every 500px)
 

@@ -1,16 +1,19 @@
 import 'dart:math';
 import 'package:flame/components.dart' hide Matrix4, Vector3;
 import 'package:flame/effects.dart';
+import 'package:flame/events.dart';
 import 'package:flame/text.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 import 'package:vector_math/vector_math_64.dart' hide Vector2, Colors;
+import 'package:web/web.dart' as web;
 
 class PhilosophyCard extends PositionComponent
-    with HasPaint, HasGameReference<MyGame>
+    with HasPaint, HasGameReference<MyGame>, TapCallbacks
     implements OpacityProvider {
   final PhilosophyCardData? data;
   final int index;
@@ -172,7 +175,16 @@ late SpriteComponent iconComp;
     _isHovered = true;
     _isFlipped = true;
     game.audio.playPhilosophyCardHover(index);
-   game.philosophySection.triggerLightningEffect();
+    game.philosophySection.triggerLightningEffect();
+  }
+
+  /// Open URL when card is tapped
+  @override
+  void onTapUp(TapUpEvent event) {
+    final url = data?.url;
+    if (url != null && url.isNotEmpty && kIsWeb) {
+      web.window.open(url, '_blank');
+    }
   }
 
   void onHoverExit() {
