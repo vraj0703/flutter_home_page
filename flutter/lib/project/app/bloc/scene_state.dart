@@ -22,12 +22,7 @@ class SceneState with _$SceneState {
     @Default(true) bool isArrowVisible,
   }) = Active;
 
-  const factory SceneState.loadingExperience() = LoadingExperience;
-
-  const factory SceneState.experience({@Default(1.0) double uiOpacity}) =
-      Experience;
-
   bool get isScrollable => this is Active;
-  bool get isInteractable =>
-      this is Experience || this is Logo || this is Title;
+
+  bool get isInteractable => this is Logo || this is Title;
 }

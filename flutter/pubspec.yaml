@@ -146,13 +146,9 @@ flutter:
     - assets/vectors/down_arrow.svg
 
   shaders:
-    - assets/shaders/god_rays.frag
-    - assets/shaders/logo.frag
     - assets/shaders/background_run_v2.frag
-    - assets/shaders/metallic_text.frag
-    - assets/shaders/shine_text.frag
     - assets/shaders/beach.frag
     - assets/shaders/bold_text_entrance.frag
-    - assets/shaders/flash_transition.frag
-    - assets/shaders/rain.frag
-    - assets/shaders/orbiting_lights.frag
+    - assets/shaders/god_rays.frag
+    - assets/shaders/logo.frag
+    - assets/shaders/metallic_text.frag

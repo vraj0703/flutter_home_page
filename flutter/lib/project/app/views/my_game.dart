@@ -47,12 +47,10 @@ class MyGame extends FlameGame
   final StateProvider stateProvider;
   final SceneBloc _bloc;
 
-  MyGame({
-    this.onStartExitAnimation,
-    required SceneBloc bloc,
-  })  : _bloc = bloc,
-        queuer = bloc,
-        stateProvider = bloc;
+  MyGame({this.onStartExitAnimation, required SceneBloc bloc})
+    : _bloc = bloc,
+      queuer = bloc,
+      stateProvider = bloc;
 
   final ScrollSystem _philosophyScrollSystem = ScrollSystem();
 
@@ -80,6 +78,8 @@ class MyGame extends FlameGame
   /// Notifier for showing/hiding the testimonial form overlay.
   /// Flame components set this to `true`; the Flutter overlay reads it.
   final ValueNotifier<bool> showTestimonialForm = ValueNotifier<bool>(false);
+
+  PhilosophySection get philosophySection => _philosophySection;
 
   final GameLogoAnimator logoAnimator = GameLogoAnimator();
   late final Timer _inactivityTimer;
@@ -196,24 +196,11 @@ class MyGame extends FlameGame
       );
     }
 
-    // Explicitly warm up components not managed by the sequence runner's warmUp
-    _componentFactory.rainTransition.warmUp();
-    _componentFactory.circlesBackground.warmUp();
-
     // Register controllers to philosophy scroll system
     _philosophyScrollSystem.register(_primarySequenceRunner);
 
     // Pre-warm Flash Shader
     await _loadFlashShader();
-
-    // State Listener for One-Shot Events (State Purity)
-    _stateSubscription = stateProvider.stream.listen((state) {
-      state.maybeWhen(
-        loadingExperience: () => introFlow.hideTitles(),
-        experience: (_) => introFlow.hideTitles(),
-        orElse: () {},
-      );
-    });
   }
 
   late final FragmentShader flashShader;
@@ -282,10 +269,6 @@ class MyGame extends FlameGame
     // Update Runner
     state.maybeWhen(
       active: (_, __) {
-        _philosophyScrollSystem.update(dt);
-        _primarySequenceRunner.update(dt);
-      },
-      loadingExperience: () {
         _philosophyScrollSystem.update(dt);
         _primarySequenceRunner.update(dt);
       },
@@ -388,30 +371,6 @@ class MyGame extends FlameGame
     audio.playClick();
   }
 
-  /// The latest testimonial nodes from the BLoC (Firestore).
-  /// [TestimonialPageComponent] reads this via `game.testimonialNodes` to
-  /// populate the carousel. Falls back to the hardcoded [testimonialData]
-  /// when `null`.
-  List<TestimonialNode>? get testimonialNodes => _pendingTestimonialData;
-
-  /// Update the testimonial carousel with fresh data from the BLoC.
-  ///
-  /// Called from [StatefulScene] when [TestimonialLoaded] fires.
-  /// Stores the data so any [TestimonialPageComponent] can access it,
-  /// and notifies already-loaded carousel components if they exist.
-  void updateTestimonials(List<TestimonialNode> data) {
-    _pendingTestimonialData = data;
-
-    // If a TestimonialPageComponent is already in the tree, push data now.
-    final sections = _primarySequenceRunner.sections;
-    for (final section in sections) {
-      if (section is TestimonialSection) {
-        section.pageComponent.updateData(data);
-        break;
-      }
-    }
-  }
-
   void _configureGlobal() {
     _godRayController = GodRayController(
       component: _componentFactory.godRay,
@@ -437,9 +396,7 @@ class MyGame extends FlameGame
       titleComponent: _componentFactory.philosophyText,
       cloudBackground: _componentFactory.beachBackground,
       trailComponent: _componentFactory.philosophyTrail,
-      nextButton: _componentFactory.nextButton,
       backButton: _componentFactory.backButton,
-      rainTransition: _componentFactory.rainTransition,
       whiteOverlay: _componentFactory.whiteOverlay,
       screenSize: size,
       playEntrySound: audio.playPhilosophyEntry,
@@ -462,17 +419,7 @@ class MyGame extends FlameGame
     );
     _componentFactory.philosophyText.opacity = 0.0;
 
-    // 3. Experience
-    final experienceSection = ExperienceSection(
-      circlesBackground: _componentFactory.circlesBackground,
-      queuer: queuer,
-      screenSize: size,
-    );
-    _blocProvider.add(experienceSection);
-
-    _primarySequenceRunner.init([
-      boldSection,
-    ]);
+    _primarySequenceRunner.init([boldSection]);
 
     // Bold section complete → hand off to React
     _primarySequenceRunner.onSequenceComplete = () async {

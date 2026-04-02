@@ -18,8 +18,5 @@ class SceneEvent with _$SceneEvent {
 
   const factory SceneEvent.updateUIOpacity(double opacity) = UpdateUIOpacity;
 
-  const factory SceneEvent.loadExperience() = LoadExperience;
-
-  const factory SceneEvent.enterExperience() = EnterExperience;
   const factory SceneEvent.toggleArrow(bool isVisible) = ToggleArrow;
 }

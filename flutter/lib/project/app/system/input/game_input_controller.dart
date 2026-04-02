@@ -34,8 +34,6 @@ class GameInputController extends Component with HasGameReference<MyGame> {
     bool isGameState = false;
     state.maybeWhen(
       active: (_, __) => isGameState = true,
-      experience: (_) => isGameState = true,
-      loadingExperience: () => isGameState = true,
       orElse: () => isGameState = false,
     );
 

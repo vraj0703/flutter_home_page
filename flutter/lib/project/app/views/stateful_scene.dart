@@ -1,7 +1,4 @@
-import 'dart:async';
-
 import 'package:flame/game.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
@@ -12,11 +9,6 @@ import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'package:flutter_home_page/project/app/views/widgets/curtain_clipper.dart';
 import 'package:flutter_home_page/project/app/views/widgets/home_overlay.dart';
-import 'package:flutter_home_page/project/app/views/components/testimonials/testimonial_form_overlay.dart';
-import 'package:flutter_home_page/project/testimonial/di.dart';
-import 'package:flutter_home_page/project/testimonial/presentation/bloc/testimonial_bloc.dart';
-import 'package:flutter_home_page/project/testimonial/presentation/bloc/testimonial_event.dart';
-import 'package:flutter_home_page/project/testimonial/presentation/bloc/testimonial_state.dart';
 
 class StatefulScene extends StatefulWidget {
   final VoidCallback onClick;
@@ -36,23 +28,10 @@ class _StatefulSceneState extends State<StatefulScene>
   late SceneBloc _bloc;
   late final MyGame _game;
 
-  // ── Testimonial BLoC ──────────────────────────────────────────────────
-  late final TestimonialBloc _testimonialBloc;
-  StreamSubscription<TestimonialState>? _testimonialSub;
-
   @override
   void initState() {
     super.initState();
-
     _bloc = BlocProvider.of<SceneBloc>(context);
-
-    // Create and start the testimonial bloc.
-    _testimonialBloc = TestimonialDI.createBloc();
-    _testimonialBloc.add(const LoadTestimonials());
-
-    // Bridge: push testimonial data into the Flame game when loaded.
-    _testimonialSub = _testimonialBloc.stream.listen(_onTestimonialState);
-    // Controller for the "LOADING" text's blinking effect.
     _blinkingController = AnimationController(
       vsync: this,
       duration: const Duration(
@@ -104,19 +83,8 @@ class _StatefulSceneState extends State<StatefulScene>
     _bloc.updateRevealProgress(_revealController.value);
   }
 
-  void _onTestimonialState(TestimonialState state) {
-    if (state is TestimonialLoaded && state.testimonials.isNotEmpty) {
-      final nodes = state.testimonials
-          .map((t) => t.toNode())
-          .toList(growable: false);
-      _game.updateTestimonials(nodes);
-    }
-  }
-
   @override
   void dispose() {
-    _testimonialSub?.cancel();
-    _testimonialBloc.close();
     _revealController.removeListener(_updateSceneProgress);
     _blinkingController.dispose();
     _revealController.dispose();
@@ -159,12 +127,6 @@ class _StatefulSceneState extends State<StatefulScene>
             _game.unblockInput();
             _game.primarySequenceRunner.start();
           },
-          loadingExperience: () {
-            // Handled by MyGame listener
-          },
-          experience: (_) {
-            // Handled by MyGame listener
-          },
         );
       },
       builder: (context, state) {
@@ -193,13 +155,6 @@ class _StatefulSceneState extends State<StatefulScene>
                 HomeOverlay(
                   key: const ValueKey("home_overlay"),
                   bounceAnimation: _downArrowBounceAnimation,
-                ),
-
-                // Layer: Testimonial Form Overlay
-                TestimonialFormOverlay(
-                  key: const ValueKey("testimonial_form_overlay"),
-                  showNotifier: _game.showTestimonialForm,
-                  bloc: _testimonialBloc,
                 ),
 
                 // Layer 2: The Black Curtain.

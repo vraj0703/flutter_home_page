@@ -15,10 +15,8 @@ import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/system/transition/transition_coordinator.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_scene_orchestrator.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/next_button_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/rain_transition_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/back_button_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/white_overlay_component.dart';
 
@@ -28,14 +26,13 @@ class PhilosophySection extends Component implements GameSection {
   final PhilosophyTextComponent titleComponent;
   final BeachBackgroundComponent cloudBackground;
   final PhilosophyTrailComponent trailComponent;
-  final NextButtonComponent nextButton;
   final BackButtonComponent backButton;
-  final RainTransitionComponent rainTransition;
   final WhiteOverlayComponent whiteOverlay;
   Vector2 screenSize;
   final VoidCallback playEntrySound;
   final VoidCallback playCompletionSound;
   final GameAudioSystem _audioSystem;
+
   // ignore: unused_field — retained for future use (e.g., transition back with flash effect)
   final TransitionCoordinator _transitionCoordinator;
 
@@ -60,41 +57,26 @@ class PhilosophySection extends Component implements GameSection {
   double _nextLightningAt = 8.0;
   final math.Random _rng = math.Random();
 
-  /// Ambient rain intensity (gentle background drizzle)
-  static const double _ambientRainIntensity = 0.08;
-
   PhilosophySection({
     required this.titleComponent,
     required this.cloudBackground,
     required this.trailComponent,
-    required this.nextButton,
     required this.backButton,
-    required this.rainTransition,
     required this.whiteOverlay,
     required this.screenSize,
     required this.playEntrySound,
     required this.playCompletionSound,
     required GameAudioSystem audioSystem,
     required TransitionCoordinator transitionCoordinator,
-  })  : _audioSystem = audioSystem,
-        _transitionCoordinator = transitionCoordinator {
-    orchestrator = BeachSceneOrchestrator(
-      background: cloudBackground,
-      rainTransition: rainTransition,
-    );
+  }) : _audioSystem = audioSystem,
+       _transitionCoordinator = transitionCoordinator {
+    orchestrator = BeachSceneOrchestrator(background: cloudBackground);
     cloudBackground.setOrchestrator(orchestrator);
     _orchestratorInitialized = true;
-
-    // Disable the hold-to-exit button — Contact section uses a Back button instead
-    nextButton.onProgressChange = null;
-    nextButton.onReleased = null;
-    nextButton.onHoldComplete = null;
 
     // Wire back button to navigate back to React
     backButton.onTap = navigateBackToReact;
 
-    // Initialize visibility
-    nextButton.opacity = 0.0;
     backButton.opacity = 0.0;
   }
 
@@ -146,14 +128,11 @@ class PhilosophySection extends Component implements GameSection {
     cloudBackground.opacity = 0.0;
     trailComponent.opacity = 0.0;
     titleComponent.opacity = 0.0;
-    nextButton.opacity = 0.0;
-    rainTransition.setTarget(0.0);
     whiteOverlay.opacity = 0.0;
   }
 
   @override
   Future<void> enter(ScrollSystem scrollSystem) async {
-
     _isActive = true;
     _freezeCapture = false;
     _entranceProgress = 0.0;
@@ -167,16 +146,8 @@ class PhilosophySection extends Component implements GameSection {
 
     // Start with white overlay bridge, then fade it out
     whiteOverlay.opacity = 1.0;
-
-    // Hide next button (not used in Contact mode)
-    nextButton.opacity = 0.0;
-
     // Back button starts hidden, will fade in with entrance animation
     backButton.opacity = 0.0;
-
-    // Rain starts at gentle ambient level
-    rainTransition.opacity = 1.0;
-    rainTransition.setTarget(_ambientRainIntensity);
 
     // Play entry sound
     playEntrySound();
@@ -196,13 +167,8 @@ class PhilosophySection extends Component implements GameSection {
     titleComponent.opacity = 0.0;
     cloudBackground.opacity = 0.0;
     trailComponent.opacity = 0.0;
-    nextButton.opacity = 0.0;
     backButton.opacity = 0.0;
     whiteOverlay.opacity = 0.0;
-    rainTransition.opacity = 0.0;
-
-    // Dispose resources to prevent GPU leaks
-    rainTransition.disposeResources();
 
     // Clean up reflection resources to prevent memory leaks
     orchestrator.reflection.clearTargets();
@@ -229,7 +195,10 @@ class PhilosophySection extends Component implements GameSection {
     // --- Entrance Animation ---
     // Smoothly reveal all components over _entranceDuration seconds
     if (_entranceProgress < 1.0) {
-      _entranceProgress = (_entranceProgress + dt / _entranceDuration).clamp(0.0, 1.0);
+      _entranceProgress = (_entranceProgress + dt / _entranceDuration).clamp(
+        0.0,
+        1.0,
+      );
       _applyEntranceAnimation(_entranceProgress);
     }
 
@@ -237,16 +206,17 @@ class PhilosophySection extends Component implements GameSection {
     _ambientLightningTimer += dt;
     if (_ambientLightningTimer >= _nextLightningAt) {
       _ambientLightningTimer = 0.0;
-      _nextLightningAt = _ambientLightningMinInterval +
-          _rng.nextDouble() * (_ambientLightningMaxInterval - _ambientLightningMinInterval);
+      _nextLightningAt =
+          _ambientLightningMinInterval +
+          _rng.nextDouble() *
+              (_ambientLightningMaxInterval - _ambientLightningMinInterval);
 
       // Trigger a gentle lightning flash
-      orchestrator.lightning.triggerFlash(0.15); // Low intensity = distant thunder
+      orchestrator.lightning.triggerFlash(
+        0.15,
+      ); // Low intensity = distant thunder
       _audioSystem.playSpatialThunder(0.15);
     }
-
-    // --- Ambient Rain (gentle constant drizzle) ---
-    rainTransition.setTarget(_ambientRainIntensity);
 
     // --- Refraction Capture (for rain visual) ---
     if (!_freezeCapture && _entranceProgress > 0.3) {
@@ -259,7 +229,8 @@ class PhilosophySection extends Component implements GameSection {
     // --- Title breathe animation when fully visible ---
     if (_entranceProgress >= 1.0) {
       final breathe =
-          math.sin(_animTime * PhilosophySectionLayout.breatheFrequency) * PhilosophySectionLayout.breatheAmplitude;
+          math.sin(_animTime * PhilosophySectionLayout.breatheFrequency) *
+          PhilosophySectionLayout.breatheAmplitude;
       final baseScale = PhilosophySectionLayout.titleSettleScale;
       titleComponent.scale = Vector2.all(baseScale + baseScale * breathe);
     }
@@ -282,14 +253,18 @@ class PhilosophySection extends Component implements GameSection {
     final bgProgress = (progress / 0.4).clamp(0.0, 1.0);
     final bgCurve = Curves.easeOutCubic.transform(bgProgress);
     cloudBackground.opacity = bgCurve;
-    cloudBackground.scale = Vector2.all(PhilosophySectionLayout.backgroundOverscan);
+    cloudBackground.scale = Vector2.all(
+      PhilosophySectionLayout.backgroundOverscan,
+    );
     cloudBackground.position = Vector2(
       -(screenSize.x * PhilosophySectionLayout.backgroundOverscanMargin),
       -(bgCurve * PhilosophySectionLayout.backgroundYShift),
     );
 
     // Set water level for shader
-    cloudBackground.setWaterLevel(screenSize.y * PhilosophySectionLayout.waterLevelRatio);
+    cloudBackground.setWaterLevel(
+      screenSize.y * PhilosophySectionLayout.waterLevelRatio,
+    );
     cloudBackground.setScrollProgress(bgCurve * 0.5); // Midway sky gradient
 
     // Phase 2 (0.2 - 0.6): Title fades in and floats up
@@ -299,7 +274,8 @@ class PhilosophySection extends Component implements GameSection {
 
       titleComponent.opacity = titleProgress;
       titleComponent.showReflection = true;
-      titleComponent.waterLineY = screenSize.y * PhilosophySectionLayout.waterLineYRatio;
+      titleComponent.waterLineY =
+          screenSize.y * PhilosophySectionLayout.waterLineYRatio;
 
       final startY = screenSize.y * PhilosophySectionLayout.titleStartYRatio;
       final endY = screenSize.y * PhilosophySectionLayout.titleEndYRatio;
@@ -317,7 +293,7 @@ class PhilosophySection extends Component implements GameSection {
       } else {
         final settleProgress =
             (titleProgress - PhilosophySectionLayout.titleOvershootThreshold) /
-                (1.0 - PhilosophySectionLayout.titleOvershootThreshold);
+            (1.0 - PhilosophySectionLayout.titleOvershootThreshold);
         targetScale = lerpDouble(
           PhilosophySectionLayout.titleOvershootScale,
           PhilosophySectionLayout.titleSettleScale,
@@ -336,10 +312,13 @@ class PhilosophySection extends Component implements GameSection {
 
       trailComponent.opacity = trailCurve;
       trailComponent.scale = Vector2.all(
-        PhilosophySectionLayout.trailInitialScale + (PhilosophySectionLayout.trailScaleRange * trailCurve),
+        PhilosophySectionLayout.trailInitialScale +
+            (PhilosophySectionLayout.trailScaleRange * trailCurve),
       );
-      trailComponent.position =
-          Vector2(0, (1.0 - trailCurve) * PhilosophySectionLayout.trailInitialY);
+      trailComponent.position = Vector2(
+        0,
+        (1.0 - trailCurve) * PhilosophySectionLayout.trailInitialY,
+      );
 
       // Force cards to their final "locked" positions by setting a high scroll offset
       // This makes all 4 cards visible at their target positions
@@ -373,20 +352,6 @@ class PhilosophySection extends Component implements GameSection {
 
     cloudBackground.render(canvas);
     trailComponent.render(canvas);
-
-    final picture = recorder.endRecording();
-
-    final int w = (screenSize.x * scale).toInt();
-    final int h = (screenSize.y * scale).toInt();
-
-    try {
-      final img = picture.toImageSync(w, h);
-      rainTransition.updateBackgroundTexture(img);
-    } catch (e) {
-      // Silently handle disposal errors
-    } finally {
-      picture.dispose();
-    }
   }
 
   @override
@@ -409,7 +374,9 @@ class PhilosophySection extends Component implements GameSection {
 
   void _resetVisuals() {
     titleComponent.opacity = 0.0;
-    titleComponent.scale = Vector2.all(PhilosophySectionLayout.titleInitialScale);
+    titleComponent.scale = Vector2.all(
+      PhilosophySectionLayout.titleInitialScale,
+    );
     titleComponent.position = Vector2(
       screenSize.x / 2,
       screenSize.y * PhilosophySectionLayout.titleStartYRatio,
@@ -420,16 +387,11 @@ class PhilosophySection extends Component implements GameSection {
     trailComponent.setTargetScroll(0.0);
     trailComponent.updateTrailAnimation(0.0);
 
-    nextButton.opacity = 0.0;
-    nextButton.scale = Vector2.all(PhilosophySectionLayout.buttonMinScale);
     backButton.opacity = 0.0;
   }
 
   void _cleanupPhilosophyComponents() {
-    rainTransition.setTarget(0.0);
-    rainTransition.setShatterProgress(0.0);
     _freezeCapture = false;
-
   }
 
   /// Sends a message to the parent React frame to navigate back.
@@ -451,7 +413,6 @@ class PhilosophySection extends Component implements GameSection {
 
   @override
   void dispose() {
-    rainTransition.disposeResources();
     orchestrator.reflection.clearTargets();
     orchestrator.holdProgress = 0.0;
   }

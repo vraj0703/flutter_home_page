@@ -26,8 +26,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
     on<TitleLoaded>(_titleLoaded);
     on<OnScroll>(_onScroll);
     on<UpdateUIOpacity>(_updateUIOpacity);
-    on<LoadExperience>(_loadExperience);
-    on<EnterExperience>(_enterExperience);
     on<ToggleArrow>(_toggleArrow);
   }
 
@@ -108,9 +106,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
       // Transition directly to Active.
       // The MyGame listener will pick this up and start the SequenceRunner.
       emit(const SceneState.active());
-    } else if (state is Experience) {
-      // Return to Active (Philosophy) from Experience
-      emit(const SceneState.active(uiOpacity: 1));
     }
   }
 
@@ -125,20 +120,6 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
         }
       },
     );
-  }
-
-  FutureOr<void> _loadExperience(
-    LoadExperience event,
-    Emitter<SceneState> emit,
-  ) {
-    emit(const SceneState.loadingExperience());
-  }
-
-  FutureOr<void> _enterExperience(
-    EnterExperience event,
-    Emitter<SceneState> emit,
-  ) {
-    emit(const SceneState.experience());
   }
 
   @override

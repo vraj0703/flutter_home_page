@@ -17,10 +17,8 @@ import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_o
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/back_button_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/next_button_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/rain_transition_component.dart';
 import 'package:flutter_home_page/project/app/views/components/philosophy/white_overlay_component.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
@@ -42,8 +40,6 @@ class GameComponentFactory {
   late final BoldTextRevealComponent _boldTextReveal;
   late final PhilosophyTextComponent _philosophyText;
   late final PhilosophyTrailComponent _philosophyTrail;
-  late final NextButtonComponent _nextButton;
-  late final RainTransitionComponent _rainTransition;
   late final WhiteOverlayComponent _whiteOverlay;
   late final BackButtonComponent _backButton;
 
@@ -73,8 +69,6 @@ class GameComponentFactory {
 
   PhilosophyTrailComponent get philosophyTrail => _philosophyTrail;
 
-  NextButtonComponent get nextButton => _nextButton;
-
   WhiteOverlayComponent get whiteOverlay => _whiteOverlay;
 
   BackButtonComponent get backButton => _backButton;
@@ -93,9 +87,7 @@ class GameComponentFactory {
     _boldTextReveal,
     _philosophyText,
     _philosophyTrail,
-    _nextButton,
     _whiteOverlay,
-    _rainTransition,
     _backButton,
   ];
 
@@ -256,11 +248,6 @@ class GameComponentFactory {
     _philosophyTrail.priority = GameLayout.zContent;
     _philosophyTrail.opacity = 0.0;
 
-    // ─── Next Button ───
-    _nextButton = NextButtonComponent();
-    _nextButton.priority = GameLayout.zContent + 1;
-    _nextButton.opacity = 0.0;
-
     // ─── Back Button (Contact Section) ───
     _backButton = BackButtonComponent(
       position: Vector2(80.0, size.y - 50.0),
@@ -268,12 +255,6 @@ class GameComponentFactory {
     );
     _backButton.priority = GameLayout.zContent + 2;
     _backButton.opacity = 0.0;
-
-    // ─── Rain Transition ───
-    final rainShader = await _getOrLoadShaderProgram(GameAssets.rainShader);
-    _rainTransition = RainTransitionComponent(shader: rainShader, size: size);
-    _rainTransition.priority = GameLayout.zContent;
-    _rainTransition.opacity = 0.0;
 
     // ─── White Overlay ───
     _whiteOverlay = WhiteOverlayComponent();

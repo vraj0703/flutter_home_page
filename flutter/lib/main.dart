@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/views/scene.dart';
-import 'package:flutter_home_page/project/testimonial/di.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +16,6 @@ Future<void> main() async {
         storageBucket: 'vishal-raj-space-firebase-home.firebasestorage.app',
       ),
     ).timeout(const Duration(seconds: 5));
-    TestimonialDI.initialize();
   } catch (e) {
     // Firebase init failed or timed out — continue without it
     debugPrint('Firebase init failed: $e');
