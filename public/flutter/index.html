@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="/flutter/">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Vishal Raj — Flutter Platform Lead & Mobile Architect. 9+ years building enterprise mobile platforms.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="flutter_home_page">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>Vishal Raj — Portfolio</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { background: #0a0a0a; margin: 0; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    // Track CanvasKit download progress and relay to parent
+    (function() {
+      var isEmbedded = window.parent !== window;
+      var progressSent = 0;
+
+      // Intercept CanvasKit WASM fetch to track download progress
+      var origFetch = window.fetch;
+      window.fetch = function() {
+        var url = arguments[0];
+        var urlStr = typeof url === 'string' ? url : (url && url.url ? url.url : '');
+
+        // Intercept canvaskit.wasm download for progress tracking
+        if (urlStr.indexOf('canvaskit.wasm') !== -1 && isEmbedded) {
+          return origFetch.apply(this, arguments).then(function(response) {
+            var contentLength = response.headers.get('content-length');
+            if (!contentLength || !response.body) {
+              // No content-length header, send incremental faux progress
+              window.parent.postMessage({ type: 'flutter-loading', progress: 0.5 }, '*');
+              return response;
+            }
+            var total = parseInt(contentLength, 10);
+            var loaded = 0;
+            var reader = response.body.getReader();
+            var chunks = [];
+            function pump() {
+              return reader.read().then(function(result) {
+                if (result.done) {
+                  window.parent.postMessage({ type: 'flutter-loading', progress: 0.95 }, '*');
+                  var blob = new Blob(chunks);
+                  return new Response(blob, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers
+                  });
+                }
+                chunks.push(result.value);
+                loaded += result.value.length;
+                var p = Math.min(loaded / total, 0.95);
+                if (p - progressSent > 0.02) {
+                  progressSent = p;
+                  window.parent.postMessage({ type: 'flutter-loading', progress: p }, '*');
+                }
+                return pump();
+              });
+            }
+            window.parent.postMessage({ type: 'flutter-loading', progress: 0.05 }, '*');
+            return pump();
+          });
+        }
+        return origFetch.apply(this, arguments);
+      };
+
+      window.addEventListener('flutter-first-frame', function() {
+        if (isEmbedded) {
+          window.parent.postMessage({ type: 'flutter-loading', progress: 1 }, '*');
+          window.parent.postMessage({ type: 'flutter-ready' }, '*');
+        }
+      });
+
+      window.addEventListener('message', function(event) {
+        if (!event.data || !event.data.type) return;
+        if (event.data.type === 'goto-philosophy') console.log('[Flutter] Received goto-philosophy');
+      });
+    })();
+  </script>
+</body>
+</html>

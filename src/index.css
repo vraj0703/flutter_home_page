@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #EBF0FA;
+  --color-primary-100: #C2D1F0;
+  --color-primary-200: #8BA8E0;
+  --color-primary-300: #5480D0;
+  --color-primary-400: #2E5CB3;
+  --color-primary-500: #1A3A6B;
+  --color-primary-600: #143052;
+  --color-primary-700: #0E2440;
+  --color-primary-800: #091A30;
+  --color-primary-900: #050F1F;
+
+  --color-secondary-50: #FFF9E6;
+  --color-secondary-100: #FFEFB3;
+  --color-secondary-200: #FFE580;
+  --color-secondary-300: #FFDB4D;
+  --color-secondary-400: #FFD11A;
+  --color-secondary-500: #D4A800;
+  --color-secondary-600: #A88500;
+  --color-secondary-700: #7D6300;
+  --color-secondary-800: #524100;
+  --color-secondary-900: #292000;
+
+  --color-neutral-0: #FFFFFF;
+  --color-neutral-50: #F8F9FA;
+  --color-neutral-100: #F1F3F5;
+  --color-neutral-200: #E9ECEF;
+  --color-neutral-300: #DEE2E6;
+  --color-neutral-400: #ADB5BD;
+  --color-neutral-500: #6C757D;
+  --color-neutral-600: #495057;
+  --color-neutral-700: #343A40;
+  --color-neutral-800: #212529;
+  --color-neutral-900: #121416;
+  --color-neutral-1000: #000000;
+
+  --color-surface-bg: #0A0A0C;
+  --color-surface-primary: #111114;
+  --color-surface-raised: #1A1A1F;
+  --color-surface-border: #2A2A32;
+  --color-text-primary: #E8E8ED;
+  --color-text-secondary: #8888A0;
+  --color-text-muted: #55556A;
+
+  --color-accent: #C8A45C;
+  --color-accent-light: #E8C97A;
+  --color-accent-dim: #8B7340;
+
+  --font-display: 'Syne', sans-serif;
+  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(200, 164, 92, 0.3);
+  color: #E8E8ED;
+}
+
+html {
+  background: #0A0A0C;
+  color: #E8E8ED;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  overflow-x: hidden;
+  background: #0A0A0C;
+}
+
+/* Subtle film grain overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px;
+}
+
+/* Lenis */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Section label style */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 300;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Premium card glass */
+.card-glass {
+  background: linear-gradient(135deg, rgba(26, 26, 31, 0.8) 0%, rgba(17, 17, 20, 0.9) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+}
+
+/* Subtle glow */
+.glow-accent {
+  box-shadow: 0 0 60px rgba(200, 164, 92, 0.08), 0 0 120px rgba(200, 164, 92, 0.04);
+}
+
+/* Hide drei ScrollControls scrollbar */
+div[style*="overflow"] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+div[style*="overflow"]::-webkit-scrollbar {
+  display: none;
+}

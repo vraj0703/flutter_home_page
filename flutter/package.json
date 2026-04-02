@@ -1,0 +1,28 @@
+{
+  "name": "flutter_home_page",
+  "version": "1.0.0",
+  "description": "A feature module implementing the home screen experience, featuring 3D elements and interactive UI.",
+  "main": "capture_experience.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vraj0703/flutter_home_page.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/vraj0703/flutter_home_page/issues"
+  },
+  "homepage": "https://github.com/vraj0703/flutter_home_page#readme",
+  "dependencies": {
+    "playwright": "^1.58.2"
+  }
+}
