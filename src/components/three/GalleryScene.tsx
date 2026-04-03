@@ -945,10 +945,12 @@ function CameraRig() {
       const cx = TEST_PAN_END
       tPos = new THREE.Vector3(cx, 0.8, KB_Z)
       tLook = new THREE.Vector3(KB_X, 0.8, KB_Z)
-    } else if (p < 0.97) {
+    } else if (p < 0.97 || !kbTriggered.current) {
       // Zoom in — stay below ceiling, camera max y = 2.5
+      // Also enters here if p >= 0.97 but kbTriggered is false (fast scroll skip)
+      // This prevents teleporting to orbit before the zoom phase completes
       if (!kbTriggered.current) { kbTriggered.current = true; resetBoot(); getAudioEngine()?.playBootSweep() }
-      const t = (p - 0.93) / 0.04
+      const t = Math.min(1, (p - 0.93) / 0.04)
       const ease = Math.sin(t * Math.PI / 2)
       const cx = TEST_PAN_END
       tPos = new THREE.Vector3(
@@ -957,6 +959,14 @@ function CameraRig() {
         KB_Z + ease * 5
       )
       tLook = new THREE.Vector3(KB_X, FLOOR_Y, KB_Z)
+      // Only allow orbit focus once the camera has actually arrived (lerped close enough)
+      if (p >= 0.97 && curPos.current.distanceTo(tPos) < 1.0) {
+        kbFocused.current = true
+        setKbFocused(true)
+        camera.position.set(KB_X, 2.5, KB_Z + 5)
+        camera.lookAt(KB_X, FLOOR_Y, KB_Z)
+        return
+      }
     } else {
       // Keyboard focus — OrbitControls takes over
       if (!kbFocused.current) {
