@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { GalleryScene, subscribeKbFocus, subscribeCTAClick, subscribeBackClick } from '../three/GalleryScene'
+import { GalleryScene, subscribeKbFocus, subscribeCTAClick, subscribeBackClick, subscribeConnectClick } from '../three/GalleryScene'
 import { RecommendationOverlay } from '../ui/RecommendationOverlay'
 import type { Testimonial } from '../../config/testimonials'
 
@@ -15,6 +15,7 @@ export function S3_Gallery({ onNavigateToContact, onNavigateBack }: Props) {
   useEffect(() => subscribeKbFocus(setKbActive), [])
   useEffect(() => subscribeCTAClick(() => setRecOpen(true)), [])
   useEffect(() => subscribeBackClick(() => onNavigateBack?.()), [onNavigateBack])
+  useEffect(() => subscribeConnectClick(() => onNavigateToContact?.()), [onNavigateToContact])
 
   const handleRecSubmit = useCallback((_t: Testimonial) => {
     // Testimonial saved to localStorage by the overlay component

@@ -177,8 +177,6 @@ function Keycap({ skill, position, globalIdx, bootDelay, rowIdx }: {
         anchorY="middle"
         letterSpacing={-0.02}
         fontWeight={700}
-        outlineWidth={0.008}
-        outlineColor="#000000"
       >
         {skill.label}
       </Text>
@@ -221,20 +219,20 @@ function BoardCase({ width, depth }: { width: number; depth: number }) {
       {/* Main board body — diamond crystal slab */}
       <RoundedBox args={[w, BOARD_H, d]} radius={0.1} smoothness={4} receiveShadow>
         <meshPhysicalMaterial
-          color="#080C16"
-          transmission={0.88}
+          color="#2A2010"
+          transmission={0.85}
           ior={2.2}
           thickness={0.8}
-          roughness={0.0}
-          metalness={0}
-          attenuationColor={new THREE.Color(0.06, 0.08, 0.15)}
+          roughness={0.05}
+          metalness={0.1}
+          attenuationColor={new THREE.Color(0.3, 0.22, 0.08)}
           attenuationDistance={0.8}
           clearcoat={1.0}
           clearcoatRoughness={0.0}
           envMapIntensity={2.5}
           specularIntensity={2.0}
-          specularColor={new THREE.Color('#ffffff')}
-          iridescence={0.5}
+          specularColor={new THREE.Color('#C8A45C')}
+          iridescence={0.3}
           iridescenceIOR={2.42}
           reflectivity={1.0}
         />
@@ -242,18 +240,18 @@ function BoardCase({ width, depth }: { width: number; depth: number }) {
       {/* Top plate — crystal edge with rainbow iridescence */}
       <RoundedBox args={[w + 0.04, 0.03, d + 0.04]} radius={0.08} smoothness={3} position={[0, BOARD_H / 2, 0]}>
         <meshPhysicalMaterial
-          color="#0A1020"
-          transmission={0.7}
+          color="#3A2A10"
+          transmission={0.65}
           ior={2.4}
           thickness={0.15}
-          roughness={0.0}
-          metalness={0}
+          roughness={0.05}
+          metalness={0.1}
           clearcoat={1.0}
           clearcoatRoughness={0.0}
           envMapIntensity={3.0}
           specularIntensity={2.0}
-          specularColor={new THREE.Color('#ffffff')}
-          iridescence={0.8}
+          specularColor={new THREE.Color('#C8A45C')}
+          iridescence={0.4}
           iridescenceIOR={2.44}
         />
       </RoundedBox>

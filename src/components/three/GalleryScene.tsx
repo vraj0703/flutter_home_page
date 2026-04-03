@@ -80,6 +80,14 @@ export function subscribeBackClick(fn: () => void) {
 }
 function fireBackClick() { _backClickListeners.forEach(fn => fn()) }
 
+// Connect click — navigate to Flutter contact section
+let _connectClickListeners: Array<() => void> = []
+export function subscribeConnectClick(fn: () => void) {
+  _connectClickListeners.push(fn)
+  return () => { _connectClickListeners = _connectClickListeners.filter(f => f !== fn) }
+}
+function fireConnectClick() { _connectClickListeners.forEach(fn => fn()) }
+
 // Keyboard exhibition hall — center past all testimonials + breathing room
 const KB_ROOM = 24
 // KB_ENTRY_X must clear the last testimonial card (CTA at index 6)
@@ -807,6 +815,91 @@ function WallRadio() {
   )
 }
 
+/* ── Let's Connect — framed CTA on keyboard room right wall ── */
+function LetsConnectFrame() {
+  const hov = useRef(false)
+  const glowRef = useRef<THREE.Mesh>(null)
+  const glowMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: '#C8A45C', emissive: '#C8A45C', emissiveIntensity: 0,
+    transparent: true, opacity: 0, side: THREE.DoubleSide,
+  }), [])
+
+  useFrame(({ camera }) => {
+    if (!glowRef.current) return
+    const worldPos = new THREE.Vector3()
+    glowRef.current.getWorldPosition(worldPos)
+    const dist = camera.position.distanceTo(worldPos)
+    const proximity = Math.max(0, 1 - dist / 12)
+    const targetGlow = hov.current ? 0.8 : proximity * 0.3
+    const targetOpacity = hov.current ? 0.2 : proximity * 0.08
+    glowMat.emissiveIntensity += (targetGlow - glowMat.emissiveIntensity) * 0.1
+    glowMat.opacity += (targetOpacity - glowMat.opacity) * 0.1
+  })
+
+  return (
+    <group position={[KB_END_X - 0.1, 1.5, KB_Z]} rotation={[0, -Math.PI / 2, 0]}>
+      {/* Glow backdrop */}
+      <mesh ref={glowRef} material={glowMat} position={[0, 0, -0.02]}>
+        <planeGeometry args={[3.5, 2.0]} />
+      </mesh>
+
+      {/* Frame outer */}
+      <mesh position={[0, 0, 0.005]}>
+        <planeGeometry args={[3.2, 1.6]} />
+        <meshStandardMaterial color="#1E1C18" roughness={0.6} metalness={0.2} transparent opacity={0.6} />
+      </mesh>
+
+      {/* Frame border */}
+      <mesh position={[0, 0, 0.003]}>
+        <planeGeometry args={[3.4, 1.8]} />
+        <meshStandardMaterial color="#C8A45C" roughness={0.3} metalness={0.5} transparent opacity={0.15} />
+      </mesh>
+
+      {/* Main text */}
+      <Text
+        position={[0, 0.15, 0.01]}
+        fontSize={0.35}
+        color="#C8A45C"
+        anchorX="center"
+        anchorY="middle"
+        letterSpacing={0.08}
+        fontWeight={700}
+      >
+        Let's Connect
+      </Text>
+
+      {/* Subtitle */}
+      <Text
+        position={[0, -0.25, 0.01]}
+        fontSize={0.1}
+        color="#8A7A62"
+        anchorX="center"
+        anchorY="middle"
+        letterSpacing={0.12}
+      >
+        CLICK TO REACH OUT
+      </Text>
+
+      {/* Accent line */}
+      <mesh position={[0, -0.08, 0.008]}>
+        <planeGeometry args={[1.8, 0.008]} />
+        <meshStandardMaterial color="#C8A45C" transparent opacity={0.5} />
+      </mesh>
+
+      {/* Click plane */}
+      <mesh
+        position={[0, 0, 0.02]}
+        onClick={() => { fireConnectClick(); getAudioEngine()?.playButtonClick() }}
+        onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer' }}
+        onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }}
+      >
+        <planeGeometry args={[3.2, 1.6]} />
+        <meshStandardMaterial transparent opacity={0} />
+      </mesh>
+    </group>
+  )
+}
+
 /* ── Back wall spotlight — warm overhead aimed at back wall center ── */
 function BackWallSpotlight() {
   const ref = useRef<THREE.SpotLight>(null)
@@ -1170,6 +1263,9 @@ function GalleryCorridor() {
       <mesh position={[KB_ENTRY_X - 10, 0.5, BACK_WALL_Z + CW]} rotation={[0, Math.PI, 0]} material={mats.wallDouble}>
         <planeGeometry args={[20, CH + 2]} />
       </mesh>
+
+      {/* Let's Connect — on right wall of keyboard room */}
+      <LetsConnectFrame />
 
       {/* Keyboard — centered in the hall */}
       <FloatingKB position={[KB_X, 0.6, KB_Z]} />
