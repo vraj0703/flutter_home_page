@@ -828,12 +828,15 @@ function TestimonialSpotlight({ x }: { x: number }) {
 /* ── Floating keyboard — gentle rotation + bob ───────────── */
 function FloatingKB({ position }: { position: [number, number, number] }) {
   const outerRef = useRef<THREE.Group>(null)
-  const [mounted, setMounted] = useState(false)
+  // Mount keyboard early (scroll > 5%) but hidden far below the scene.
+  // This lets Three.js compile its ~80 RoundedBox geometries + shaders
+  // progressively across many frames while the user walks the corridor.
+  // At scroll > 80%, teleport it to the real position — no stall.
+  const [phase, setPhase] = useState<'unmounted' | 'preloading' | 'visible'>('unmounted')
 
   useFrame(({ clock }) => {
-    // Lazy-mount keyboard when camera approaches (scroll > 50%)
-    // This spreads the geometry creation cost over time instead of hitting it all at once
-    if (!mounted && _scrollProgress > 0.5) setMounted(true)
+    if (phase === 'unmounted' && _scrollProgress > 0.05) setPhase('preloading')
+    if (phase === 'preloading' && _scrollProgress > 0.8) setPhase('visible')
 
     if (!outerRef.current) return
     const p = _scrollProgress
@@ -845,10 +848,18 @@ function FloatingKB({ position }: { position: [number, number, number] }) {
       outerRef.current.position.y += (position[1] - outerRef.current.position.y) * 0.03
     }
   })
+
+  if (phase === 'unmounted') return null
+
   return (
-    <group ref={outerRef} position={position}>
+    <group
+      ref={outerRef}
+      // During preload: hide 500 units below the scene — out of camera frustum
+      // but still in the scene graph so Three.js compiles geometries/shaders
+      position={phase === 'preloading' ? [position[0], -500, position[2]] : position}
+    >
       <group rotation={[0, -Math.PI / 2, 0]} scale={0.7}>
-        {mounted && <SkillKeyboard />}
+        <SkillKeyboard />
       </group>
     </group>
   )
