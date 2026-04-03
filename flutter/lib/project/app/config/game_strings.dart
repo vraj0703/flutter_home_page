@@ -2,7 +2,7 @@ class GameStrings {
   static const String primaryTitle = "VISHAL RAJ";
   static const String secondaryTitle = "Welcome to my space";
   static const String boldText = "Crafting Clarity from Chaos.";
-  static const String contactTitle = "Contact Me";
+  static const String contactTitle = "Let's Connect";
   static const String workExperienceTitle = "WORK EXPERIENCE";
   static const String contactDescription =
       "If you're curious to know more about what you saw, I invite you to contact me or follow me on social media.";

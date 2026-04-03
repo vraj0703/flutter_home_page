@@ -73,10 +73,10 @@ late SpriteComponent iconComp;
   Future<void> onLoad() async {
     if (data != null) {
       final iconPaths = [
-        'ic_crystal.png',
-        'ic_chalice.png',
-        'ic_sword.png',
-        'ic_book.png',
+        'bill.png',
+        'linkedin.png',
+        'github.png',
+        'gmail.png',
       ];
       final iconPath = iconPaths[index % iconPaths.length];
 

@@ -18,7 +18,9 @@ import 'package:flutter_home_page/project/app/views/components/contact/beach_sce
 import 'package:flutter_home_page/project/app/views/components/contact/contact_text_component.dart';
 import 'package:flutter_home_page/project/app/views/components/contact/contact_trail_component.dart';
 import 'package:flutter_home_page/project/app/views/components/contact/back_button_component.dart';
+import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.dart';
 import 'package:flutter_home_page/project/app/views/components/contact/white_overlay_component.dart';
+import 'package:flutter_home_page/project/app/system/registration/game_component_factory.dart';
 
 class ContactSection extends Component implements GameSection {
   @override
@@ -28,6 +30,7 @@ class ContactSection extends Component implements GameSection {
   final ContactTrailComponent trailComponent;
   final BackButtonComponent backButton;
   final WhiteOverlayComponent whiteOverlay;
+  final LogoComponent logoComponent;
   Vector2 screenSize;
   final VoidCallback playEntrySound;
   final VoidCallback playCompletionSound;
@@ -35,6 +38,9 @@ class ContactSection extends Component implements GameSection {
 
   // ignore: unused_field — retained for future use (e.g., transition back with flash effect)
   final TransitionCoordinator _transitionCoordinator;
+
+  final ContactTextButton homeButton;
+  final ContactIconButton audioToggle;
 
   double get _maxHeight => trailComponent.maxScrollExtent;
   late BeachSceneOrchestrator orchestrator;
@@ -63,6 +69,9 @@ class ContactSection extends Component implements GameSection {
     required this.trailComponent,
     required this.backButton,
     required this.whiteOverlay,
+    required this.logoComponent,
+    required this.homeButton,
+    required this.audioToggle,
     required this.screenSize,
     required this.playEntrySound,
     required this.playCompletionSound,
@@ -74,9 +83,8 @@ class ContactSection extends Component implements GameSection {
     cloudBackground.setOrchestrator(orchestrator);
     _orchestratorInitialized = true;
 
-    // Wire back button to navigate back to React
+    // Wire Gallery button to navigate to React gallery
     backButton.onTap = navigateBackToReact;
-
     backButton.opacity = 0.0;
   }
 
@@ -169,6 +177,9 @@ class ContactSection extends Component implements GameSection {
     trailComponent.opacity = 0.0;
     backButton.opacity = 0.0;
     whiteOverlay.opacity = 0.0;
+    logoComponent.scale = Vector2.zero();
+    homeButton.opacity = 0.0;
+    audioToggle.opacity = 0.0;
 
     // Clean up reflection resources to prevent memory leaks
     orchestrator.reflection.clearTargets();
@@ -329,13 +340,28 @@ class ContactSection extends Component implements GameSection {
       trailComponent.opacity = 0.0;
     }
 
-    // Phase 4 (0.7 - 1.0): Back button fades in
+    // Phase 4 (0.7 - 1.0): Buttons + logo fade in
     if (progress > 0.7) {
       final btnProgress = ((progress - 0.7) / 0.3).clamp(0.0, 1.0);
+
+      // Gallery button — bottom left
       backButton.opacity = btnProgress;
       backButton.position = Vector2(80.0, screenSize.y - 50.0);
+
+      // Logo — top left, small
+      logoComponent.position = Vector2(50.0, 50.0);
+      logoComponent.scale = Vector2.all(0.15 * btnProgress);
+
+      // Home + Audio buttons — bottom right
+      homeButton.opacity = btnProgress;
+      homeButton.position = Vector2(screenSize.x - 160.0, screenSize.y - 50.0);
+      audioToggle.opacity = btnProgress;
+      audioToggle.position = Vector2(screenSize.x - 50.0, screenSize.y - 50.0);
     } else {
       backButton.opacity = 0.0;
+      logoComponent.scale = Vector2.zero();
+      homeButton.opacity = 0.0;
+      audioToggle.opacity = 0.0;
     }
   }
 
@@ -388,6 +414,9 @@ class ContactSection extends Component implements GameSection {
     trailComponent.updateTrailAnimation(0.0);
 
     backButton.opacity = 0.0;
+    logoComponent.scale = Vector2.zero();
+    homeButton.opacity = 0.0;
+    audioToggle.opacity = 0.0;
   }
 
   void _cleanupContactComponents() {
@@ -402,7 +431,7 @@ class ContactSection extends Component implements GameSection {
 
     if (kIsWeb) {
       try {
-        final msg = <String, String>{'type': 'goto-react'}.jsify();
+        final msg = <String, String>{'type': 'flutter-handoff'}.jsify();
         web.window.parent?.postMessage(msg, '*'.toJS);
         debugPrint('[Flutter Contact] postMessage sent: goto-react');
       } catch (e) {

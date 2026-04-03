@@ -7,15 +7,15 @@ import 'package:flutter/material.dart' as material;
 
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
-/// A simple "Back" button for the Contact section.
-/// On tap, triggers navigation back to the React keyboard hall.
+/// A "Gallery" button for the Contact section.
+/// On tap, triggers navigation to the React gallery.
 class BackButtonComponent extends PositionComponent
     with HasGameReference<MyGame>, TapCallbacks, HoverCallbacks, HasPaint {
   ui.VoidCallback? onTap;
   bool _isHovering = false;
   double _hoverGlow = 0.0;
 
-  static const double buttonWidth = 120.0;
+  static const double buttonWidth = 130.0;
   static const double buttonHeight = 44.0;
   static const double borderRadius = 22.0;
 
@@ -26,7 +26,6 @@ class BackButtonComponent extends PositionComponent
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    // Initial subtle pulse
     add(
       ScaleEffect.to(
         Vector2.all(1.03),
@@ -43,7 +42,6 @@ class BackButtonComponent extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    // Smooth hover glow
     final target = _isHovering ? 1.0 : 0.0;
     _hoverGlow += (target - _hoverGlow) * dt * 6.0;
   }
@@ -80,7 +78,7 @@ class BackButtonComponent extends PositionComponent
       ..strokeCap = ui.StrokeCap.round
       ..strokeJoin = ui.StrokeJoin.round;
 
-    const cx = 36.0;
+    const cx = 28.0;
     final cy = size.y / 2;
     const arrowSize = 8.0;
 
@@ -90,10 +88,10 @@ class BackButtonComponent extends PositionComponent
       ..lineTo(cx, cy + arrowSize);
     canvas.drawPath(path, arrowPaint);
 
-    // "Back" text
+    // "Gallery" text — after arrow
     final textPainter = material.TextPainter(
       text: material.TextSpan(
-        text: 'Back',
+        text: 'Gallery',
         style: material.TextStyle(
           fontSize: 14.0,
           fontWeight: material.FontWeight.w500,
@@ -106,7 +104,7 @@ class BackButtonComponent extends PositionComponent
     textPainter.layout();
     textPainter.paint(
       canvas,
-      ui.Offset(52.0, (size.y - textPainter.height) / 2),
+      ui.Offset(44.0, (size.y - textPainter.height) / 2),
     );
   }
 

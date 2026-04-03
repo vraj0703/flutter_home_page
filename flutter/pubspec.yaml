@@ -137,10 +137,10 @@ flutter:
     - assets/audio/waterdrop.mp3
     - assets/audio/si.mp3
     - assets/images/logo.png
-    - assets/images/ic_book.png
-    - assets/images/ic_chalice.png
-    - assets/images/ic_crystal.png
-    - assets/images/ic_sword.png
+    - assets/images/bill.png
+    - assets/images/gmail.png
+    - assets/images/linkedin.png
+    - assets/images/github.png
     - assets/vectors/down_arrow.svg
 
   shaders:

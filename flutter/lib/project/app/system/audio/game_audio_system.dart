@@ -8,8 +8,16 @@ import 'package:flutter_home_page/project/app/config/game_audio_config.dart';
 class GameAudioSystem {
   late Soundpool _pool;
   int _waterdropId = -1;
+  bool _muted = false;
+
+  bool get isMuted => _muted;
+
+  void toggleMute() {
+    _muted = !_muted;
+  }
 
   Future<void> _safePlay(String file, {double volume = 1.0}) async {
+    if (_muted) return;
     try {
       await FlameAudio.play(file, volume: volume);
     } catch (_) {
@@ -289,7 +297,7 @@ class GameAudioSystem {
 
   // Inside GameAudioSystem class
   void playSpatialWaterdrop(double normalizedX) {
-    if (_waterdropId == -1) return;
+    if (_waterdropId == -1 || _muted) return;
 
     // Randomize rate slightly [0.9 - 1.1]
     double rate = 0.9 + math.Random().nextDouble() * 0.2;

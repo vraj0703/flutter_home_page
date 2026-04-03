@@ -5,7 +5,7 @@ import { SectionTransition } from './components/SectionTransition'
 import { Preloader } from './components/preloader/Preloader'
 import { useAssetLoader } from './hooks/useAssetLoader'
 import { AudioProvider, useAudio } from './audio/AudioProvider'
-import { preloadRadio, startRadioOnGalleryEnter, stopRadio } from './components/three/GalleryScene'
+import { preloadRadio, startRadioOnGalleryEnter, stopRadio, resetGalleryScroll } from './components/three/GalleryScene'
 
 type Phase = 'flutter' | 'react' | 'contact'
 type TransitionDirection = 'forward' | 'reverse'
@@ -42,10 +42,14 @@ function AppInner() {
     }
   }, [flutterReady, reactReady, preloaderPhase])
 
-  // Start radio when entering React, stop when leaving
+  // Start radio when entering React, stop + reset scroll when leaving
   useEffect(() => {
-    if (phase === 'react') startRadioOnGalleryEnter()
-    else stopRadio()
+    if (phase === 'react') {
+      startRadioOnGalleryEnter()
+    } else {
+      stopRadio()
+      resetGalleryScroll()
+    }
   }, [phase])
 
   const handleFlutterLoadingProgress = useCallback((progress: number) => {

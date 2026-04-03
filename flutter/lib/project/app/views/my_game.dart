@@ -397,12 +397,22 @@ class MyGame extends FlameGame
       centerPosition: size / 2,
     );
     // 2. contact (stored as field for later goto-contact)
+    // Wire Home button to navigate to title screen
+    _componentFactory.homeButton.onTap = () => _startHomeSection();
+
+    // Wire Audio toggle to mute/unmute
+    _componentFactory.audioToggle.onTap = () => _audioSystem.toggleMute();
+    _componentFactory.audioToggle.isMuted = () => _audioSystem.isMuted;
+
     _contactSection = ContactSection(
       titleComponent: _componentFactory.contactText,
       cloudBackground: _componentFactory.beachBackground,
       trailComponent: _componentFactory.contactTrail,
       backButton: _componentFactory.backButton,
       whiteOverlay: _componentFactory.whiteOverlay,
+      logoComponent: _componentFactory.logoComponent,
+      homeButton: _componentFactory.homeButton,
+      audioToggle: _componentFactory.audioToggle,
       screenSize: size,
       playEntrySound: audio.playContactEntry,
       playCompletionSound: audio.playContactComplete,
@@ -436,9 +446,13 @@ class MyGame extends FlameGame
     };
   }
 
-  /// Called when React sends "goto-home" — restore bold text section at title state
+  /// Called when Home button tapped or React sends "goto-home"
   Future<void> _startHomeSection() async {
+    // Brief transition delay for visual smoothness
+    _componentFactory.whiteOverlay.opacity = 1.0;
+    await Future.delayed(const Duration(milliseconds: 400));
     await _primarySequenceRunner.restoreToSection(0, [_boldTextSection]);
+    _componentFactory.whiteOverlay.opacity = 0.0;
 
     // Re-wire handoff so scrolling through sends the user back to React
     _primarySequenceRunner.onSequenceComplete = () async {
@@ -455,10 +469,10 @@ class MyGame extends FlameGame
 
     debugPrint('[goto-home] restoreToSection done, dispatching titleLoaded + onScroll');
 
-    // Go straight to active state so scroll input drives the bold text section
+    // Show title state with bouncy arrow, then transition to active on scroll
     queuer.queue(event: const SceneEvent.titleLoaded());
-    // Immediately transition to active — user already knows how to scroll
     queuer.queue(event: const SceneEvent.onScroll());
+    queuer.queue(event: const SceneEvent.toggleArrow(true));
 
     // Ensure input is not blocked from a previous transition
     unblockInput();
@@ -468,6 +482,7 @@ class MyGame extends FlameGame
   Future<void> _startContactSection() async {
     _primarySequenceRunner.init([_contactSection]);
     queuer.queue(event: const SceneEvent.onScroll());
+    queuer.queue(event: const SceneEvent.toggleArrow(false)); // Hide bouncy arrow
     await _primarySequenceRunner.start();
   }
 

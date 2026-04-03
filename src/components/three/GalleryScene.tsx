@@ -72,6 +72,12 @@ export function subscribeKbFocus(fn: (focused: boolean) => void) {
 let _scrollUnlockRequested = false
 export function requestScrollUnlock() { _scrollUnlockRequested = true }
 
+// Reset gallery scroll to start (called when leaving React phase)
+let _scrollContainer: HTMLElement | null = null
+export function resetGalleryScroll() {
+  if (_scrollContainer) _scrollContainer.scrollTop = 0
+}
+
 // Back navigation — observable from outside Three.js
 let _backClickListeners: Array<() => void> = []
 export function subscribeBackClick(fn: () => void) {
@@ -1315,6 +1321,7 @@ function ReverseScroll() {
     if (attached.current || !scroll.el) return
     attached.current = true
     const el = scroll.el
+    _scrollContainer = el
 
     el.addEventListener('wheel', (e: WheelEvent) => {
       e.preventDefault()

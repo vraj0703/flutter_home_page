@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flame/flame.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_home_page/project/app/config/game_assets.dart';
@@ -42,6 +43,8 @@ class GameComponentFactory {
   late final ContactTrailComponent _contactTrail;
   late final WhiteOverlayComponent _whiteOverlay;
   late final BackButtonComponent _backButton;
+  late final ContactTextButton _homeButton;
+  late final ContactIconButton _audioToggle;
 
   // ── Typed public getters ──────────────────────────────────────────────
   RayMarchingShadowComponent get shadowScene => _shadowScene;
@@ -72,6 +75,8 @@ class GameComponentFactory {
   WhiteOverlayComponent get whiteOverlay => _whiteOverlay;
 
   BackButtonComponent get backButton => _backButton;
+  ContactTextButton get homeButton => _homeButton;
+  ContactIconButton get audioToggle => _audioToggle;
 
   /// All components in render-priority order for adding to the game tree.
   List<Component> get allComponents => [
@@ -89,6 +94,8 @@ class GameComponentFactory {
     _contactTrail,
     _whiteOverlay,
     _backButton,
+    _homeButton,
+    _audioToggle,
   ];
 
   // ── Shader helper ─────────────────────────────────────────────────────
@@ -254,9 +261,109 @@ class GameComponentFactory {
     _backButton.priority = GameLayout.zContent + 2;
     _backButton.opacity = 0.0;
 
+    // ─── Home Button (Contact Section) ───
+    _homeButton = ContactTextButton(
+      text: 'Home',
+      position: Vector2(size.x - 160.0, size.y - 50.0),
+    );
+    _homeButton.priority = GameLayout.zContent + 2;
+    _homeButton.opacity = 0.0;
+
+    // ─── Audio Toggle Button (Contact Section) ───
+    _audioToggle = ContactIconButton(
+      icon: '♪',
+      position: Vector2(size.x - 50.0, size.y - 50.0),
+    );
+    _audioToggle.priority = GameLayout.zContent + 2;
+    _audioToggle.opacity = 0.0;
+
     // ─── White Overlay ───
     _whiteOverlay = WhiteOverlayComponent();
     _whiteOverlay.size = size;
     _whiteOverlay.opacity = 0.0; // Default hidden
   }
+}
+
+/// Simple text button for contact section (Home, etc.)
+class ContactTextButton extends PositionComponent
+    with TapCallbacks, HoverCallbacks, HasPaint {
+  final String text;
+  VoidCallback? onTap;
+  bool _hovering = false;
+  double _hoverGlow = 0.0;
+
+  ContactTextButton({required this.text, super.position})
+      : super(size: Vector2(100, 44), anchor: Anchor.center);
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _hoverGlow += ((_hovering ? 1.0 : 0.0) - _hoverGlow) * dt * 6.0;
+  }
+
+  @override
+  void render(Canvas canvas) {
+    if (opacity <= 0.0) return;
+    final rrect = RRect.fromRectAndRadius(size.toRect(), const Radius.circular(22));
+    canvas.drawRRect(rrect, Paint()..color = Color.fromRGBO(255, 255, 255, (0.08 + _hoverGlow * 0.12) * opacity));
+    canvas.drawRRect(rrect, Paint()..color = Color.fromRGBO(255, 255, 255, (0.15 + _hoverGlow * 0.5) * opacity)..style = PaintingStyle.stroke..strokeWidth = 1.0);
+    final tp = material.TextPainter(
+      text: material.TextSpan(text: text, style: material.TextStyle(fontSize: 14, fontWeight: material.FontWeight.w500, color: Color.fromRGBO(255, 255, 255, 0.8 * opacity), letterSpacing: 1.0)),
+      textDirection: material.TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset((size.x - tp.width) / 2, (size.y - tp.height) / 2));
+  }
+
+  @override
+  void onTapUp(TapUpEvent event) => onTap?.call();
+  @override
+  void onHoverEnter() => _hovering = true;
+  @override
+  void onHoverExit() => _hovering = false;
+  @override
+  bool containsLocalPoint(Vector2 point) =>
+      RRect.fromRectAndRadius(size.toRect(), const Radius.circular(22)).contains(point.toOffset());
+}
+
+/// Simple icon button for contact section (Audio toggle)
+class ContactIconButton extends PositionComponent
+    with TapCallbacks, HoverCallbacks, HasPaint {
+  VoidCallback? onTap;
+  bool Function()? isMuted;
+  bool _hovering = false;
+  double _hoverGlow = 0.0;
+
+  ContactIconButton({required String icon, this.isMuted, super.position})
+      : super(size: Vector2(44, 44), anchor: Anchor.center);
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _hoverGlow += ((_hovering ? 1.0 : 0.0) - _hoverGlow) * dt * 6.0;
+  }
+
+  @override
+  void render(Canvas canvas) {
+    if (opacity <= 0.0) return;
+    final muted = isMuted?.call() ?? false;
+    final label = muted ? '🔇' : '🔊';
+    final rrect = RRect.fromRectAndRadius(size.toRect(), const Radius.circular(22));
+    canvas.drawRRect(rrect, Paint()..color = Color.fromRGBO(255, 255, 255, (0.08 + _hoverGlow * 0.12) * opacity));
+    canvas.drawRRect(rrect, Paint()..color = Color.fromRGBO(255, 255, 255, (0.15 + _hoverGlow * 0.5) * opacity)..style = PaintingStyle.stroke..strokeWidth = 1.0);
+    final tp = material.TextPainter(
+      text: material.TextSpan(text: label, style: material.TextStyle(fontSize: 18, color: Color.fromRGBO(255, 255, 255, 0.8 * opacity))),
+      textDirection: material.TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset((size.x - tp.width) / 2, (size.y - tp.height) / 2));
+  }
+
+  @override
+  void onTapUp(TapUpEvent event) => onTap?.call();
+  @override
+  void onHoverEnter() => _hovering = true;
+  @override
+  void onHoverExit() => _hovering = false;
+  @override
+  bool containsLocalPoint(Vector2 point) =>
+      RRect.fromRectAndRadius(size.toRect(), const Radius.circular(22)).contains(point.toOffset());
 }
