@@ -828,8 +828,13 @@ function TestimonialSpotlight({ x }: { x: number }) {
 /* ── Floating keyboard — gentle rotation + bob ───────────── */
 function FloatingKB({ position }: { position: [number, number, number] }) {
   const outerRef = useRef<THREE.Group>(null)
+  const [mounted, setMounted] = useState(false)
 
   useFrame(({ clock }) => {
+    // Lazy-mount keyboard when camera approaches (scroll > 50%)
+    // This spreads the geometry creation cost over time instead of hitting it all at once
+    if (!mounted && _scrollProgress > 0.5) setMounted(true)
+
     if (!outerRef.current) return
     const p = _scrollProgress
     if (p < 0.97) {
@@ -843,7 +848,7 @@ function FloatingKB({ position }: { position: [number, number, number] }) {
   return (
     <group ref={outerRef} position={position}>
       <group rotation={[0, -Math.PI / 2, 0]} scale={0.7}>
-        <SkillKeyboard />
+        {mounted && <SkillKeyboard />}
       </group>
     </group>
   )
