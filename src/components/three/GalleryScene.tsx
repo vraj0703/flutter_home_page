@@ -1306,6 +1306,25 @@ function KeyboardOrbit() {
   )
 }
 
+/* ── Reverse scroll direction — scroll up = walk forward into gallery ── */
+function ReverseScroll() {
+  const scroll = useScroll()
+  const attached = useRef(false)
+
+  useFrame(() => {
+    if (attached.current || !scroll.el) return
+    attached.current = true
+    const el = scroll.el
+
+    el.addEventListener('wheel', (e: WheelEvent) => {
+      e.preventDefault()
+      el.scrollTop -= e.deltaY
+    }, { passive: false })
+  })
+
+  return null
+}
+
 /* ── Shader warm-up: compile all materials on first frames ── */
 function ShaderWarmup() {
   const { gl, scene, camera } = useThree()
@@ -1339,6 +1358,7 @@ export function GalleryScene() {
 
       <Suspense fallback={null}>
         <ScrollControls pages={16} damping={0.2}>
+          <ReverseScroll />
           <CameraRig />
           <GalleryCorridor />
         </ScrollControls>
