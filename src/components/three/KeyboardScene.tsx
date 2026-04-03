@@ -219,40 +219,24 @@ function BoardCase({ width, depth }: { width: number; depth: number }) {
       {/* Main board body — diamond crystal slab */}
       <RoundedBox args={[w, BOARD_H, d]} radius={0.1} smoothness={4} receiveShadow>
         <meshPhysicalMaterial
-          color="#2A2010"
-          transmission={0.85}
-          ior={2.2}
-          thickness={0.8}
-          roughness={0.05}
-          metalness={0.1}
-          attenuationColor={new THREE.Color(0.3, 0.22, 0.08)}
-          attenuationDistance={0.8}
+          color="#8A7040"
+          roughness={0.2}
+          metalness={0.7}
           clearcoat={1.0}
-          clearcoatRoughness={0.0}
-          envMapIntensity={2.5}
-          specularIntensity={2.0}
-          specularColor={new THREE.Color('#C8A45C')}
-          iridescence={0.3}
-          iridescenceIOR={2.42}
-          reflectivity={1.0}
+          clearcoatRoughness={0.05}
+          envMapIntensity={1.5}
+          reflectivity={0.8}
         />
       </RoundedBox>
       {/* Top plate — crystal edge with rainbow iridescence */}
       <RoundedBox args={[w + 0.04, 0.03, d + 0.04]} radius={0.08} smoothness={3} position={[0, BOARD_H / 2, 0]}>
         <meshPhysicalMaterial
-          color="#3A2A10"
-          transmission={0.65}
-          ior={2.4}
-          thickness={0.15}
-          roughness={0.05}
-          metalness={0.1}
+          color="#A08050"
+          roughness={0.15}
+          metalness={0.8}
           clearcoat={1.0}
-          clearcoatRoughness={0.0}
-          envMapIntensity={3.0}
-          specularIntensity={2.0}
-          specularColor={new THREE.Color('#C8A45C')}
-          iridescence={0.4}
-          iridescenceIOR={2.44}
+          clearcoatRoughness={0.02}
+          envMapIntensity={2.0}
         />
       </RoundedBox>
       {/* Crystal edge accent glow */}
