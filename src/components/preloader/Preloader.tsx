@@ -191,7 +191,7 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
               transition: 'color 0.3s ease',
             }}
           >
-            loading...{'  '}{pctText} %
+            L O A D I N G...{'  '}{pctText} %
           </span>
         </div>
       </div>

@@ -72,6 +72,14 @@ export function subscribeKbFocus(fn: (focused: boolean) => void) {
 let _scrollUnlockRequested = false
 export function requestScrollUnlock() { _scrollUnlockRequested = true }
 
+// Back navigation — observable from outside Three.js
+let _backClickListeners: Array<() => void> = []
+export function subscribeBackClick(fn: () => void) {
+  _backClickListeners.push(fn)
+  return () => { _backClickListeners = _backClickListeners.filter(f => f !== fn) }
+}
+function fireBackClick() { _backClickListeners.forEach(fn => fn()) }
+
 // Keyboard exhibition hall — center past all testimonials + breathing room
 const KB_X = TEST_PAN_END + 16
 const KB_Z = BACK_WALL_Z + CW / 2
@@ -433,6 +441,89 @@ function ScrollArrow() {
   )
 }
 
+/* ── Graffiti back button — spray-painted on left wall before frame 1 ── */
+function GraffitiBackButton() {
+  const grp = useRef<THREE.Group>(null)
+  const hov = useRef(false)
+  const glowRef = useRef<THREE.Mesh>(null)
+  const glowMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: '#FFFFFF', emissive: '#FFFFFF', emissiveIntensity: 0,
+    transparent: true, opacity: 0, side: THREE.DoubleSide,
+  }), [])
+
+  useFrame(({ camera }) => {
+    if (!grp.current || !glowRef.current) return
+    const worldPos = new THREE.Vector3()
+    grp.current.getWorldPosition(worldPos)
+    const dist = camera.position.distanceTo(worldPos)
+    const proximity = Math.max(0, 1 - dist / 6)
+    const targetGlow = hov.current ? 0.8 : proximity * 0.2
+    const targetOpacity = hov.current ? 0.15 : proximity * 0.06
+    glowMat.emissiveIntensity += (targetGlow - glowMat.emissiveIntensity) * 0.1
+    glowMat.opacity += (targetOpacity - glowMat.opacity) * 0.1
+  })
+
+  return (
+    <group position={[-WALL_X + 0.1, FRAME_Y, -1]} rotation={[0, Math.PI / 2, 0]}>
+      <group ref={grp}>
+        {/* Hover glow backdrop */}
+        <mesh ref={glowRef} material={glowMat} position={[0, 0, -0.01]}>
+          <planeGeometry args={[1.6, 1.0]} />
+        </mesh>
+
+        {/* Paint drip / splatter background — rough rectangle */}
+        <mesh position={[0, 0, 0.005]}>
+          <planeGeometry args={[1.4, 0.75]} />
+          <meshStandardMaterial color="#1A1A1A" transparent opacity={0.35} roughness={1} metalness={0} />
+        </mesh>
+
+        {/* Arrow ← */}
+        <Text
+          position={[-0.42, 0.02, 0.01]}
+          fontSize={0.28}
+          color="#E8E0D0"
+          anchorX="center"
+          anchorY="middle"
+          letterSpacing={0}
+          font={undefined}
+        >
+          ←
+        </Text>
+
+        {/* "BACK" text — spray-paint style */}
+        <Text
+          position={[0.12, 0.02, 0.01]}
+          fontSize={0.22}
+          color="#E8E0D0"
+          anchorX="center"
+          anchorY="middle"
+          letterSpacing={0.15}
+          font={undefined}
+        >
+          BACK
+        </Text>
+
+        {/* Underline drip */}
+        <mesh position={[0, -0.22, 0.008]}>
+          <planeGeometry args={[1.1, 0.02]} />
+          <meshStandardMaterial color="#E8E0D0" transparent opacity={0.4} roughness={1} metalness={0} />
+        </mesh>
+
+        {/* Invisible click plane */}
+        <mesh
+          position={[0, 0, 0.02]}
+          onClick={() => { fireBackClick(); getAudioEngine()?.playButtonClick() }}
+          onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer' }}
+          onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }}
+        >
+          <planeGeometry args={[1.6, 1.0]} />
+          <meshStandardMaterial transparent opacity={0} />
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
 /* ── Back wall spotlight — warm overhead aimed at back wall center ── */
 function BackWallSpotlight() {
   const ref = useRef<THREE.SpotLight>(null)
@@ -779,6 +870,9 @@ function GalleryCorridor() {
       {ALL_TEST_CARDS.map((t, i) => (
         <TestimonialSpotlight key={`tspot-${t.id}`} x={TEST_START_X + i * TEST_SPACING} />
       ))}
+
+      {/* Graffiti back button — on left wall before frame 1 */}
+      <GraffitiBackButton />
 
       {/* Left wall frames (4) */}
       {LEFT_PROJECTS.map((proj, i) => {

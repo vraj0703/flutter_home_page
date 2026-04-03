@@ -1,18 +1,20 @@
 import { useEffect, useState, useCallback } from 'react'
-import { GalleryScene, subscribeKbFocus, subscribeCTAClick } from '../three/GalleryScene'
+import { GalleryScene, subscribeKbFocus, subscribeCTAClick, subscribeBackClick } from '../three/GalleryScene'
 import { RecommendationOverlay } from '../ui/RecommendationOverlay'
 import type { Testimonial } from '../../config/testimonials'
 
 interface Props {
   onNavigateToContact?: () => void
+  onNavigateBack?: () => void
 }
 
-export function S3_Gallery({ onNavigateToContact }: Props) {
+export function S3_Gallery({ onNavigateToContact, onNavigateBack }: Props) {
   const [kbActive, setKbActive] = useState(false)
   const [recOpen, setRecOpen] = useState(false)
 
   useEffect(() => subscribeKbFocus(setKbActive), [])
   useEffect(() => subscribeCTAClick(() => setRecOpen(true)), [])
+  useEffect(() => subscribeBackClick(() => onNavigateBack?.()), [onNavigateBack])
 
   const handleRecSubmit = useCallback((_t: Testimonial) => {
     // Testimonial saved to localStorage by the overlay component

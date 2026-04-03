@@ -247,6 +247,41 @@ class SequenceRunner implements ScrollObserver {
     await nextSection.enter(scrollSystem);
   }
 
+  /// Restores a section to its loaded/entered state.
+  /// Unlike [jumpToSection], this re-initializes the full section list
+  /// and enters the target section fresh — useful when returning from
+  /// an external context (e.g., React gallery back to Flutter home).
+  Future<void> restoreToSection(int index, List<GameSection> sections) async {
+    // Stop current if active
+    if (_isActive && _sections.isNotEmpty) {
+      await _sections[_currentIndex].exit();
+    }
+    _isActive = false;
+
+    // Clear scroll bounds and transition state
+    scrollSystem.setBounds(null, null);
+    scrollSystem.resetScroll(0.0);
+    _isTransitioning = false;
+
+    // Re-init with the given sections
+    init(sections);
+
+    // Warm up all sections to ensure shaders are compiled
+    for (final section in _sections) {
+      await _warmUpSectionPipeline(section, delay: const Duration(milliseconds: 100));
+    }
+
+    // Start at the target section
+    _currentIndex = index.clamp(0, _sections.length - 1);
+    _isActive = true;
+    if (_sections.isNotEmpty) {
+      final section = _sections[_currentIndex];
+      scrollSystem.setSnapRegions(section.snapRegions);
+      await _warmUpSectionPipeline(section);
+      await section.enter(scrollSystem);
+    }
+  }
+
   Future<void> _reverseSection(int callingIndex) async {
     if (_isTransitioning || callingIndex != _currentIndex) return;
 

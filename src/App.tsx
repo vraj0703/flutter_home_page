@@ -70,18 +70,20 @@ function AppInner() {
     if (!pendingPhase.current) return
     const p = pendingPhase.current; setPhase(p)
     if (p === 'react') { flutterRef.current?.hide() }
+    else if (p === 'flutter') { flutterRef.current?.show(); flutterRef.current?.sendMessage({ type: 'goto-home' }) }
     else if (p === 'contact') { flutterRef.current?.show(); flutterRef.current?.sendMessage({ type: 'goto-philosophy' }) }
   }, [])
 
   const handleComplete = useCallback(() => { pendingPhase.current = null; setTransitioning(false) }, [])
   const handleFlutterHandoff = useCallback(() => { transitionToPhase('react') }, [transitionToPhase])
   const handleNavigateToContact = useCallback(() => { transitionToPhase('contact') }, [transitionToPhase])
+  const handleNavigateBack = useCallback(() => { transitionToPhase('flutter') }, [transitionToPhase])
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#C4B496', position: 'relative', overflow: 'hidden', userSelect: 'none' }}>
       <FlutterEmbed ref={flutterRef} src="/flutter/index.html" onReady={handleFlutterReady} onHandoff={handleFlutterHandoff} onLoadingProgress={handleFlutterLoadingProgress} />
       <div style={{ position: 'absolute', inset: 0, zIndex: 30, opacity: phase === 'react' ? 1 : 0, pointerEvents: phase === 'react' ? 'auto' : 'none' }}>
-        <S3_Gallery onNavigateToContact={handleNavigateToContact} />
+        <S3_Gallery onNavigateToContact={handleNavigateToContact} onNavigateBack={handleNavigateBack} />
       </div>
       <SectionTransition active={transitioning} onMidpoint={handleMidpoint} onComplete={handleComplete} duration={1.6} direction={transitionDirection} />
       <Preloader progress={totalProgress} phase={preloaderPhase} onRevealComplete={handlePreloaderRevealComplete} />

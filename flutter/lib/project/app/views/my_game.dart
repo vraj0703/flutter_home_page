@@ -177,13 +177,15 @@ class MyGame extends FlameGame
 
     add(_inputController);
 
-    _primarySequenceRunner.warmUpAll(
-      onProgress: (progress) {
-        loadingProgress.value = progress;
-      },
-    ).whenComplete(() {
-      _warmupComplete = true;
-    });
+    _primarySequenceRunner
+        .warmUpAll(
+          onProgress: (progress) {
+            loadingProgress.value = progress;
+          },
+        )
+        .whenComplete(() {
+          _warmupComplete = true;
+        });
 
     // Listen for React messages (goto-philosophy)
     if (kIsWeb) {
@@ -198,6 +200,10 @@ class MyGame extends FlameGame
             debugPrint('[Flutter] Received goto-philosophy');
             _handoffSent = false; // Allow future handoffs
             _startPhilosophySection();
+          } else if (dartData is Map && dartData['type'] == 'goto-home') {
+            debugPrint('[Flutter] Received goto-home');
+            _handoffSent = false; // Allow future handoffs
+            _startHomeSection();
           }
         }.toJS,
       );
@@ -205,11 +211,9 @@ class MyGame extends FlameGame
 
     // Register controllers to philosophy scroll system
     _philosophyScrollSystem.register(_primarySequenceRunner);
-
   }
 
   late final FragmentShader flashShader;
-
 
   // Compatibility getter for components accessing godRay via game reference
   GodRayComponent get godRay => _componentFactory.godRay;
@@ -380,10 +384,11 @@ class MyGame extends FlameGame
   }
 
   late PhilosophySection _philosophySection;
+  late BoldTextSection _boldTextSection;
 
   void _initSequence() {
     // 1. Bold Text
-    final boldSection = BoldTextSection(
+    _boldTextSection = BoldTextSection(
       boldTextComponent: _componentFactory.boldTextReveal,
       backgroundRun: _componentFactory.backgroundRun,
       cinematicTitle: _componentFactory.cinematicTitle,
@@ -419,7 +424,7 @@ class MyGame extends FlameGame
     );
     _componentFactory.philosophyText.opacity = 0.0;
 
-    _primarySequenceRunner.init([boldSection]);
+    _primarySequenceRunner.init([_boldTextSection]);
 
     // Bold section complete → hand off to React
     _primarySequenceRunner.onSequenceComplete = () async {
@@ -429,6 +434,34 @@ class MyGame extends FlameGame
         _sendHandoff();
       }
     };
+  }
+
+  /// Called when React sends "goto-home" — restore bold text section at title state
+  Future<void> _startHomeSection() async {
+    await _primarySequenceRunner.restoreToSection(0, [_boldTextSection]);
+
+    // Re-wire handoff so scrolling through sends the user back to React
+    _primarySequenceRunner.onSequenceComplete = () async {
+      debugPrint('[goto-home] onSequenceComplete fired! _handoffSent=$_handoffSent');
+      await _primarySequenceRunner.stop();
+      if (kIsWeb && !_handoffSent) {
+        _handoffSent = true;
+        debugPrint('[goto-home] Sending handoff to React');
+        _sendHandoff();
+      } else {
+        debugPrint('[goto-home] Handoff blocked: kIsWeb=$kIsWeb _handoffSent=$_handoffSent');
+      }
+    };
+
+    debugPrint('[goto-home] restoreToSection done, dispatching titleLoaded + onScroll');
+
+    // Go straight to active state so scroll input drives the bold text section
+    queuer.queue(event: const SceneEvent.titleLoaded());
+    // Immediately transition to active — user already knows how to scroll
+    queuer.queue(event: const SceneEvent.onScroll());
+
+    // Ensure input is not blocked from a previous transition
+    unblockInput();
   }
 
   /// Called when React sends "goto-philosophy" — re-init runner with philosophy section
