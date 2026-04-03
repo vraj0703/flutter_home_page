@@ -81,10 +81,12 @@ export function subscribeBackClick(fn: () => void) {
 function fireBackClick() { _backClickListeners.forEach(fn => fn()) }
 
 // Keyboard exhibition hall — center past all testimonials + breathing room
-const KB_X = TEST_PAN_END + 16
-const KB_Z = BACK_WALL_Z + CW / 2
 const KB_ROOM = 24
-const KB_ENTRY_X = KB_X - KB_ROOM / 2
+// KB_ENTRY_X must clear the last testimonial card (CTA at index 6)
+const LAST_CARD_X = TEST_START_X + 6 * TEST_SPACING // 37
+const KB_X = LAST_CARD_X + 3 + KB_ROOM / 2 // 37 + 3 + 12 = 52
+const KB_Z = BACK_WALL_Z + CW / 2
+const KB_ENTRY_X = KB_X - KB_ROOM / 2 // 40
 const KB_END_X = KB_X + KB_ROOM / 2
 
 // Camera lock distance from back wall
