@@ -1050,11 +1050,6 @@ function GalleryCorridor() {
         <planeGeometry args={[KB_ENTRY_X - WALL_X, CH + 2]} />
       </mesh>
 
-      {/* End wall of testimonial corridor — closes off the far end past CTA frame */}
-      <mesh position={[KB_ENTRY_X, 0.5, BACK_WALL_Z + CW / 2]} rotation={[0, -Math.PI / 2, 0]} material={mats.wall}>
-        <planeGeometry args={[CW, CH + 2]} />
-      </mesh>
-
       {/* About Me — center of corridor (x=0) */}
       <group position={[0, 0, BACK_WALL_Z + 0.02]}>
         <mesh position={[0, 1.8, -0.02]}>
