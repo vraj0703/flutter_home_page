@@ -196,15 +196,27 @@ function WallFrame({ project, position, side, projectIndex, mats }: {
   const artMat = useMemo(() => new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, metalness: 0, emissive: '#ffffff', emissiveMap: tex, emissiveIntensity: 0.08 }), [tex])
   const grp = useRef<THREE.Group>(null), hov = useRef(false), pop = useRef(0)
   const glowRef = useRef<THREE.Mesh>(null)
+  const entry = useRef({ t: -1, delay: projectIndex * 0.15 })
   const frame = useFrameSize(), rotY = side === 'left' ? Math.PI / 2 : -Math.PI / 2
   const labelY = -(frame.h / 2 + FRAME_BORDER + 0.35), mw = 0.12
   const glowMat = useMemo(() => new THREE.MeshStandardMaterial({
     color: '#C8A45C', emissive: '#C8A45C', emissiveIntensity: 0, transparent: true, opacity: 0,
     roughness: 0.2, metalness: 0.4, side: THREE.BackSide,
   }), [])
-  useFrame(({ camera }) => {
+  useFrame(({ camera }, delta) => {
     if (!grp.current) return
     const t = hov.current ? 0.08 : 0; pop.current += (t - pop.current) * 0.1; grp.current.position.z = pop.current
+    // Entry settle — one-shot damped scale pulse when gallery first entered
+    if (entry.current.t < 0 && _scrollProgress > 0.001) entry.current.t = 0
+    if (entry.current.t >= 0 && entry.current.t < entry.current.delay + 2) {
+      entry.current.t += delta
+      const localT = entry.current.t - entry.current.delay
+      if (localT > 0 && localT < 2) {
+        grp.current.scale.setScalar(1 + Math.sin(localT * 4) * 0.06 * Math.exp(-localT * 2.0))
+      } else if (localT >= 2) {
+        grp.current.scale.setScalar(1)
+      }
+    }
     // Proximity glow — subtle emissive border when camera is within 8 units
     if (glowRef.current) {
       const worldPos = new THREE.Vector3(); grp.current.getWorldPosition(worldPos)
@@ -365,52 +377,59 @@ function FrameSpotlight({ position, side }: { position: [number, number, number]
   )
 }
 
-/* ── Dust particles — subtle floating motes in the corridor ── */
-function DustParticles({ count = 120 }: { count?: number }) {
-  const meshRef = useRef<THREE.InstancedMesh>(null)
-  const dummy = useMemo(() => new THREE.Object3D(), [])
+/* ── Scroll arrow — 3D chevron on the gallery floor ── */
+function ScrollArrow() {
+  const grp = useRef<THREE.Group>(null)
+  const opacity = useRef(1)
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: '#3A3A42', emissive: '#C8A45C', emissiveIntensity: 0.15,
+    roughness: 0.25, metalness: 0.7, transparent: true, opacity: 1,
+    side: THREE.DoubleSide,
+  }), [])
 
-  // Store per-particle data: position, drift speed, drift phase
-  const particleData = useMemo(() => {
-    const data: { x: number; y: number; z: number; dx: number; dy: number; dz: number; phase: number; speed: number; scale: number }[] = []
-    for (let i = 0; i < count; i++) {
-      data.push({
-        x: (Math.random() - 0.5) * CW * 1.5,
-        y: FLOOR_Y + Math.random() * (CEIL_Y - FLOOR_Y),
-        z: -Math.random() * CORRIDOR_LEN,
-        dx: (Math.random() - 0.5) * 0.3,
-        dy: (Math.random() - 0.5) * 0.15,
-        dz: (Math.random() - 0.5) * 0.2,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.2 + Math.random() * 0.5,
-        scale: 0.008 + Math.random() * 0.015,
-      })
-    }
-    return data
-  }, [count])
+  // Build arrow shape: chevron + shaft as a single extruded geometry
+  const arrowGeo = useMemo(() => {
+    const shape = new THREE.Shape()
+    // Chevron arrow pointing up (+Y in shape space, becomes -Z when rotated flat)
+    //   Outer chevron
+    shape.moveTo(0, 0.7)        // tip
+    shape.lineTo(0.45, 0.15)    // right wing outer
+    shape.lineTo(0.25, 0.15)    // right wing inner notch
+    shape.lineTo(0.25, -0.1)    // right shaft top
+    shape.lineTo(0.1, -0.1)     // right shaft inner
+    shape.lineTo(0.1, 0.25)     // inner right of chevron
+    shape.lineTo(0, 0.42)       // inner tip
+    shape.lineTo(-0.1, 0.25)    // inner left of chevron
+    shape.lineTo(-0.1, -0.1)    // left shaft inner
+    shape.lineTo(-0.25, -0.1)   // left shaft top
+    shape.lineTo(-0.25, 0.15)   // left wing inner notch
+    shape.lineTo(-0.45, 0.15)   // left wing outer
+    shape.closePath()
+
+    const extrudeSettings = { depth: 0.06, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 2 }
+    const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings)
+    geo.center()
+    return geo
+  }, [])
 
   useFrame(({ clock }) => {
-    if (!meshRef.current) return
+    if (!grp.current) return
     const t = clock.elapsedTime
-    for (let i = 0; i < count; i++) {
-      const p = particleData[i]
-      dummy.position.set(
-        p.x + Math.sin(t * p.speed + p.phase) * p.dx,
-        p.y + Math.sin(t * p.speed * 0.7 + p.phase + 1) * p.dy,
-        p.z + Math.sin(t * p.speed * 0.5 + p.phase + 2) * p.dz
-      )
-      dummy.scale.setScalar(p.scale)
-      dummy.updateMatrix()
-      meshRef.current.setMatrixAt(i, dummy.matrix)
-    }
-    meshRef.current.instanceMatrix.needsUpdate = true
+
+    // Gentle bounce along Z (into corridor)
+    grp.current.position.z = -4 + Math.sin(t * 2) * 0.12
+
+    // Show when near entrance (progress < 0.03), fade when scrolling, reappear when back to top
+    const fadeTarget = _scrollProgress < 0.01 ? 1 : _scrollProgress < 0.06 ? 1 - (_scrollProgress - 0.01) / 0.05 : 0
+    opacity.current += (fadeTarget - opacity.current) * 0.08
+    mat.opacity = opacity.current
+    grp.current.visible = opacity.current > 0.01
   })
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
-      <sphereGeometry args={[1, 6, 6]} />
-      <meshStandardMaterial color="#FFF8E8" emissive="#FFE0B0" emissiveIntensity={0.5} transparent opacity={0.35} />
-    </instancedMesh>
+    <group ref={grp} position={[0, FLOOR_Y + 0.03, -4]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh geometry={arrowGeo} material={mat} scale={[1.2, 1.2, 1]} />
+    </group>
   )
 }
 
@@ -696,6 +715,9 @@ function GalleryCorridor() {
       <group position={[0, 0, 4]}>
         <mesh material={mats.wall}><planeGeometry args={[CW, CH + 2]} /></mesh>
       </group>
+
+      {/* Scroll cue arrow on floor */}
+      <ScrollArrow />
 
       {/* ── BACK WALL — About Me + Testimonials ────────── */}
       {/* Stops at keyboard room entry */}
