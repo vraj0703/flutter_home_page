@@ -88,7 +88,8 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   }
 
   FutureOr<void> _tapDown(TapDown event, Emitter<SceneState> emit) async {
-    if (state is Logo) {
+    if (state is Logo && _revealProgress >= 1.0) {
+      // Only allow click after the curtain reveal + text entry animation completes
       emit(const SceneState.logoOverlayRemoving());
     }
   }

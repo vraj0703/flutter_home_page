@@ -524,6 +524,167 @@ function GraffitiBackButton() {
   )
 }
 
+/* ── Wall Radio — streaming radio player on right wall ── */
+
+const RADIO_CHANNELS = [
+  { name: 'Lofi', url: 'https://streams.ilovemusic.de/iloveradio17.mp3' },
+  { name: 'Jazz', url: 'http://jking.cdnstream1.com/b22139_128mp3' },
+  { name: 'Ambient', url: 'https://ice5.somafm.com/groovesalad-128-mp3' },
+  { name: 'Chill', url: 'https://listen.reyfm.de/lofi_320kbps.mp3' },
+]
+
+// Module-level audio for radio (persists across re-renders)
+let _radioAudio: HTMLAudioElement | null = null
+let _radioPlaying = false
+let _radioChannel = 0
+
+function _startRadio(channelIdx: number) {
+  _radioChannel = channelIdx
+  if (_radioAudio) { _radioAudio.pause(); _radioAudio.src = '' }
+  _radioAudio = new Audio(RADIO_CHANNELS[channelIdx].url)
+  _radioAudio.crossOrigin = 'anonymous'
+  _radioAudio.volume = 0.25
+  _radioAudio.play().catch(() => {})
+  _radioPlaying = true
+}
+
+function _stopRadio() {
+  if (_radioAudio) { _radioAudio.pause(); _radioAudio.src = '' }
+  _radioPlaying = false
+}
+
+function _nextChannel() {
+  const next = (_radioChannel + 1) % RADIO_CHANNELS.length
+  _startRadio(next)
+}
+
+function WallRadio() {
+  const grp = useRef<THREE.Group>(null)
+  const hov = useRef(false)
+  const [playing, setPlaying] = useState(_radioPlaying)
+  const [channel, setChannel] = useState(_radioChannel)
+  const glowRef = useRef<THREE.Mesh>(null)
+  const glowMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: '#C8A45C', emissive: '#C8A45C', emissiveIntensity: 0,
+    transparent: true, opacity: 0, side: THREE.DoubleSide,
+  }), [])
+
+  useFrame(({ camera }) => {
+    if (!grp.current || !glowRef.current) return
+    const worldPos = new THREE.Vector3()
+    grp.current.getWorldPosition(worldPos)
+    const dist = camera.position.distanceTo(worldPos)
+    const proximity = Math.max(0, 1 - dist / 6)
+    const targetGlow = hov.current ? 0.7 : proximity * 0.2
+    const targetOpacity = hov.current ? 0.12 : proximity * 0.05
+    glowMat.emissiveIntensity += (targetGlow - glowMat.emissiveIntensity) * 0.1
+    glowMat.opacity += (targetOpacity - glowMat.opacity) * 0.1
+  })
+
+  const handleClick = useCallback(() => {
+    if (!_radioPlaying) {
+      _startRadio(_radioChannel)
+      setPlaying(true)
+    } else {
+      _stopRadio()
+      setPlaying(false)
+    }
+    getAudioEngine()?.playButtonClick()
+  }, [])
+
+  const handleNextChannel = useCallback((e: THREE.Event) => {
+    if ('stopPropagation' in e) (e as unknown as { stopPropagation: () => void }).stopPropagation()
+    _nextChannel()
+    setChannel(_radioChannel)
+    setPlaying(true)
+    getAudioEngine()?.playButtonClick()
+  }, [])
+
+  const channelName = RADIO_CHANNELS[channel].name
+
+  return (
+    <group position={[WALL_X - 0.1, FRAME_Y, -1]} rotation={[0, -Math.PI / 2, 0]}>
+      <group ref={grp}>
+        {/* Glow backdrop */}
+        <mesh ref={glowRef} material={glowMat} position={[0, 0, -0.01]}>
+          <planeGeometry args={[1.8, 1.2]} />
+        </mesh>
+
+        {/* Radio body — dark panel */}
+        <mesh position={[0, 0, 0.005]}>
+          <planeGeometry args={[1.6, 1.0]} />
+          <meshStandardMaterial color="#1A1A1A" roughness={0.8} metalness={0.1} transparent opacity={0.5} />
+        </mesh>
+
+        {/* Speaker grille lines */}
+        {[-0.25, -0.15, -0.05, 0.05, 0.15, 0.25].map((y, i) => (
+          <mesh key={i} position={[-0.35, y, 0.008]}>
+            <planeGeometry args={[0.5, 0.02]} />
+            <meshStandardMaterial color="#3A3A3A" roughness={1} metalness={0} transparent opacity={0.5} />
+          </mesh>
+        ))}
+
+        {/* Channel display */}
+        <Text
+          position={[0.25, 0.15, 0.01]}
+          fontSize={0.12}
+          color="#C8A45C"
+          anchorX="center"
+          anchorY="middle"
+          letterSpacing={0.05}
+        >
+          {channelName}
+        </Text>
+
+        {/* Status indicator */}
+        <Text
+          position={[0.25, -0.02, 0.01]}
+          fontSize={0.06}
+          color={playing ? '#6AE06A' : '#8A7A62'}
+          anchorX="center"
+          anchorY="middle"
+          letterSpacing={0.08}
+        >
+          {playing ? '● ON AIR' : '○ OFF'}
+        </Text>
+
+        {/* Next channel button */}
+        <group
+          position={[0.55, -0.28, 0.01]}
+          onClick={handleNextChannel}
+          onPointerOver={() => { document.body.style.cursor = 'pointer' }}
+          onPointerOut={() => { document.body.style.cursor = 'default' }}
+        >
+          <mesh>
+            <planeGeometry args={[0.35, 0.2]} />
+            <meshStandardMaterial color="#2A2420" roughness={0.6} metalness={0.2} />
+          </mesh>
+          <Text position={[0, 0, 0.005]} fontSize={0.06} color="#C8A45C" anchorX="center" anchorY="middle" letterSpacing={0.04}>
+            NEXT ▸
+          </Text>
+        </group>
+
+        {/* Play/Mute button — invisible click plane over whole radio */}
+        <mesh
+          position={[0, 0, 0.015]}
+          onClick={handleClick}
+          onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer' }}
+          onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }}
+        >
+          <planeGeometry args={[1.1, 0.8]} />
+          <meshStandardMaterial transparent opacity={0} />
+        </mesh>
+
+        {/* Underline accent */}
+        <mesh position={[0, -0.42, 0.008]}>
+          <planeGeometry args={[1.3, 0.015]} />
+          <meshStandardMaterial color="#C8A45C" transparent opacity={0.4} roughness={1} metalness={0} />
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
 /* ── Back wall spotlight — warm overhead aimed at back wall center ── */
 function BackWallSpotlight() {
   const ref = useRef<THREE.SpotLight>(null)
@@ -540,60 +701,6 @@ function TestimonialSpotlight({ x }: { x: number }) {
     if (ref.current) { ref.current.target.position.set(x, FRAME_Y, BACK_WALL_Z); ref.current.target.updateMatrixWorld() }
   })
   return <spotLight ref={ref} position={[x, CEIL_Y - 0.5, BACK_WALL_Z + 2.5]} angle={0.4} penumbra={0.8} intensity={1.0} color="#FFE0B0" distance={6} decay={2} />
-}
-
-/* ── Archway transition — between project corridor and testimonial area ── */
-function CorridorArchway() {
-  const archZ = BACK_WALL_Z + WALL_LOCK_DIST
-  const archWidth = CW
-  const archHeight = CH + 1
-  const archDepth = 0.4
-  const pillarW = 0.5
-  const archColor = new THREE.Color(0.72, 0.60, 0.42)
-  const lightRef = useRef<THREE.SpotLight>(null)
-
-  useFrame(() => {
-    if (lightRef.current) {
-      lightRef.current.target.position.set(0, FLOOR_Y, archZ)
-      lightRef.current.target.updateMatrixWorld()
-    }
-  })
-
-  return (
-    <group position={[0, FLOOR_Y, archZ]}>
-      {/* Left pillar */}
-      <mesh position={[-archWidth / 2 + pillarW / 2, archHeight / 2, 0]}>
-        <boxGeometry args={[pillarW, archHeight, archDepth]} />
-        <meshStandardMaterial color={archColor} roughness={0.4} metalness={0.3} />
-      </mesh>
-      {/* Right pillar */}
-      <mesh position={[archWidth / 2 - pillarW / 2, archHeight / 2, 0]}>
-        <boxGeometry args={[pillarW, archHeight, archDepth]} />
-        <meshStandardMaterial color={archColor} roughness={0.4} metalness={0.3} />
-      </mesh>
-      {/* Top beam */}
-      <mesh position={[0, archHeight - 0.2, 0]}>
-        <boxGeometry args={[archWidth, 0.4, archDepth]} />
-        <meshStandardMaterial color={archColor} roughness={0.35} metalness={0.35} />
-      </mesh>
-      {/* Keystone accent */}
-      <mesh position={[0, archHeight - 0.05, archDepth / 2 + 0.01]}>
-        <planeGeometry args={[1.2, 0.25]} />
-        <meshStandardMaterial color="#C8A45C" emissive="#C8A45C" emissiveIntensity={0.3} roughness={0.3} metalness={0.5} />
-      </mesh>
-      {/* Warm downlight from archway */}
-      <spotLight
-        ref={lightRef}
-        position={[0, archHeight - 0.5, 1]}
-        angle={0.7}
-        penumbra={1}
-        intensity={2.0}
-        color="#FFD9A0"
-        distance={12}
-        decay={1.5}
-      />
-    </group>
-  )
 }
 
 /* ── Floating keyboard — gentle rotation + bob ───────────── */
@@ -838,17 +945,6 @@ function GalleryCorridor() {
         <Text position={[0, 0.6, 0]} fontSize={0.08} color="#7A7060" anchorX="center" anchorY="middle" letterSpacing={0.08} font="/fonts/jetbrains-mono.woff">9+ years crafting mobile platforms</Text>
       </group>
 
-      {/* ── CORRIDOR ENHANCEMENTS ─────────────────────── */}
-
-      {/* Archway transition between corridor and testimonial zone */}
-      <CorridorArchway />
-
-      {/* Floor gradient strip — warm to warmer transition near back wall */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, FLOOR_Y + 0.005, BACK_WALL_Z + WALL_LOCK_DIST]}>
-        <planeGeometry args={[CW, 4]} />
-        <meshStandardMaterial color="#C8A060" roughness={0.35} metalness={0.1} transparent opacity={0.3} />
-      </mesh>
-
       {/* ── BACK WALL LIGHTING — warm testimonial zone ── */}
       {/* Central overhead spotlight on back wall */}
       <BackWallSpotlight />
@@ -873,6 +969,9 @@ function GalleryCorridor() {
 
       {/* Graffiti back button — on left wall before frame 1 */}
       <GraffitiBackButton />
+
+      {/* Radio player — on right wall opposite back button */}
+      <WallRadio />
 
       {/* Left wall frames (4) */}
       {LEFT_PROJECTS.map((proj, i) => {
