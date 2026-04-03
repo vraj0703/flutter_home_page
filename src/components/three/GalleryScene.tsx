@@ -828,15 +828,15 @@ function TestimonialSpotlight({ x }: { x: number }) {
 /* ── Floating keyboard — gentle rotation + bob ───────────── */
 function FloatingKB({ position }: { position: [number, number, number] }) {
   const outerRef = useRef<THREE.Group>(null)
-  // Mount keyboard early (scroll > 5%) but hidden far below the scene.
-  // This lets Three.js compile its ~80 RoundedBox geometries + shaders
-  // progressively across many frames while the user walks the corridor.
-  // At scroll > 80%, teleport it to the real position — no stall.
+  // 3-phase lifecycle:
+  // - unmounted (scroll < 5%): nothing in scene graph
+  // - preloading (5-93%): mounted 500 units below, compiling shaders across frames
+  // - visible (>93%): camera turn is complete, teleport to real position
   const [phase, setPhase] = useState<'unmounted' | 'preloading' | 'visible'>('unmounted')
 
   useFrame(({ clock }) => {
     if (phase === 'unmounted' && _scrollProgress > 0.05) setPhase('preloading')
-    if (phase === 'preloading' && _scrollProgress > 0.8) setPhase('visible')
+    if (phase === 'preloading' && _scrollProgress > 0.93) setPhase('visible')
 
     if (!outerRef.current) return
     const p = _scrollProgress
@@ -890,23 +890,23 @@ function CameraRig() {
       setKbFocused(false)
       const el = scroll.el
       if (el) {
-        const target = el.scrollHeight * 0.85
-        el.scrollTo({ top: target, behavior: 'smooth' })
+        // Snap directly — no smooth scroll which fights drei's tracking
+        el.scrollTop = el.scrollHeight * 0.85
       }
       return
     }
 
     // Hysteresis: once KB focused, detect back-scroll to exit
     if (kbFocused.current) {
-      if (p < 0.93) {
-        // User scrolled back — exit keyboard, snap to last testimonial card
+      if (p < 0.96) {
+        // User scrolled back — exit keyboard
         kbTriggered.current = false
         kbFocused.current = false
         setKbFocused(false)
         const el = scroll.el
         if (el) {
-          const target = el.scrollHeight * 0.87
-          el.scrollTo({ top: target, behavior: 'smooth' })
+          // Snap to turn phase — no smooth scroll
+          el.scrollTop = el.scrollHeight * 0.87
         }
       } else {
         _scrollProgress = Math.max(p, 0.97)
