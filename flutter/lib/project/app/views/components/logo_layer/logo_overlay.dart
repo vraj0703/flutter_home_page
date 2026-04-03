@@ -64,6 +64,7 @@ class LogoOverlayComponent extends PositionComponent
 
   double _textAnimationProgress = 0.0;
   final double _textAnimationSpeed = GamePhysics.logoOverlayTextAnimSpeed;
+  bool _exitComplete = false;
 
   @override
   double get opacity => _opacity;
@@ -117,6 +118,12 @@ class LogoOverlayComponent extends PositionComponent
     super.update(dt);
     stateProvider.sceneState().maybeWhen(
       logo: () {
+        // Reset exit state when re-entering logo
+        if (_exitComplete) {
+          _exitComplete = false;
+          _textAnimationProgress = 0.0;
+          _textComponent.textRenderer = TextPaint(style: style);
+        }
         _updateInteractiveState(dt);
       },
       logoOverlayRemoving: () {
@@ -197,6 +204,9 @@ class LogoOverlayComponent extends PositionComponent
   }
 
   void _updateRemovingStartState(double dt) {
+    // Guard: once exit is complete, don't re-animate
+    if (_exitComplete) return;
+
     _textAnimationProgress += _textAnimationSpeed * dt;
     final progress = _textAnimationProgress.clamp(0.0, 1.0);
 
@@ -213,10 +223,8 @@ class LogoOverlayComponent extends PositionComponent
       _textComponent.text = fullText.substring(0, remainingChars);
     } else {
       _textComponent.text = '';
+      _exitComplete = true; // Prevent re-entry
       queuer.queue(event: const SceneEvent.loadTitle());
-      _textAnimationProgress = 0.0;
-      // Restore opacity for next time (though typically this component might be reset)
-      _textComponent.textRenderer = TextPaint(style: style);
     }
 
     _rightLine.targetPosition = GamePhysics.bouncyLineMaxScale;
