@@ -837,7 +837,7 @@ function LetsConnectFrame() {
   })
 
   return (
-    <group position={[KB_ENTRY_X + 0.1, 1.5, (KB_Z + KB_ROOM / 2 + BACK_WALL_Z + CW) / 2]} rotation={[0, Math.PI / 2, 0]}>
+    <group position={[KB_ENTRY_X + 0.1, 1.5, (BACK_WALL_Z + KB_Z - KB_ROOM / 2) / 2]} rotation={[0, Math.PI / 2, 0]}>
       {/* Glow backdrop */}
       <mesh ref={glowRef} material={glowMat} position={[0, 0, -0.02]}>
         <planeGeometry args={[3.5, 2.0]} />
