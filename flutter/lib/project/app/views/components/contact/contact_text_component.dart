@@ -8,7 +8,7 @@ import 'package:flutter_home_page/project/app/views/components/fade_text.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'package:flame/events.dart';
 
-class PhilosophyTextComponent extends PositionComponent
+class ContactTextComponent extends PositionComponent
     with HasPaint, HasGameReference<MyGame>, HoverCallbacks {
   final String text;
   final material.TextStyle style;
@@ -28,7 +28,7 @@ class PhilosophyTextComponent extends PositionComponent
   bool _needsTextureUpdate = true;
   double _lastOpacity = 0.0;
 
-  PhilosophyTextComponent({
+  ContactTextComponent({
     required this.text,
     required this.style,
     required this.shaderProgram,
@@ -38,8 +38,8 @@ class PhilosophyTextComponent extends PositionComponent
 
   @override
   void onHoverEnter() {
-    game.audio.playPhilosophyTitleHover();
-    game.philosophySection.triggerLightningEffect();
+    game.audio.playContactTitleHover();
+    game.contactSection.triggerLightningEffect();
   }
 
   @override
@@ -94,7 +94,7 @@ class PhilosophyTextComponent extends PositionComponent
       _fadeText.opacity = value;
 
       if (value > 0.1 && !_hasPlayedEntrySound) {
-        game.audio.playPhilosophyEntry();
+        game.audio.playContactEntry();
         _hasPlayedEntrySound = true;
       } else if (value < 0.05 && _hasPlayedEntrySound) {
         _hasPlayedEntrySound = false;

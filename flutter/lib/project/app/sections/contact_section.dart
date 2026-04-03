@@ -13,19 +13,19 @@ import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart
 import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart';
 import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/system/transition/transition_coordinator.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/beach_scene_orchestrator.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/back_button_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/white_overlay_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/beach_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/beach_scene_orchestrator.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/contact_text_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/contact_trail_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/back_button_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/white_overlay_component.dart';
 
-class PhilosophySection extends Component implements GameSection {
+class ContactSection extends Component implements GameSection {
   @override
   double get maxScrollExtent => _maxHeight;
-  final PhilosophyTextComponent titleComponent;
+  final ContactTextComponent titleComponent;
   final BeachBackgroundComponent cloudBackground;
-  final PhilosophyTrailComponent trailComponent;
+  final ContactTrailComponent trailComponent;
   final BackButtonComponent backButton;
   final WhiteOverlayComponent whiteOverlay;
   Vector2 screenSize;
@@ -57,7 +57,7 @@ class PhilosophySection extends Component implements GameSection {
   double _nextLightningAt = 8.0;
   final math.Random _rng = math.Random();
 
-  PhilosophySection({
+  ContactSection({
     required this.titleComponent,
     required this.cloudBackground,
     required this.trailComponent,
@@ -178,7 +178,7 @@ class PhilosophySection extends Component implements GameSection {
     _freezeCapture = true;
 
     // Reset shader uniforms and state flags
-    _cleanupPhilosophyComponents();
+    _cleanupContactComponents();
 
     // Reset visuals to initial state
     _resetVisuals();
@@ -221,7 +221,7 @@ class PhilosophySection extends Component implements GameSection {
     // --- Refraction Capture (for rain visual) ---
     if (!_freezeCapture && _entranceProgress > 0.3) {
       _frameCounter++;
-      if (_frameCounter % PhilosophySectionLayout.lowFpsThrottle == 0) {
+      if (_frameCounter % ContactSectionLayout.lowFpsThrottle == 0) {
         _captureRefractionFrame();
       }
     }
@@ -229,9 +229,9 @@ class PhilosophySection extends Component implements GameSection {
     // --- Title breathe animation when fully visible ---
     if (_entranceProgress >= 1.0) {
       final breathe =
-          math.sin(_animTime * PhilosophySectionLayout.breatheFrequency) *
-          PhilosophySectionLayout.breatheAmplitude;
-      final baseScale = PhilosophySectionLayout.titleSettleScale;
+          math.sin(_animTime * ContactSectionLayout.breatheFrequency) *
+          ContactSectionLayout.breatheAmplitude;
+      final baseScale = ContactSectionLayout.titleSettleScale;
       titleComponent.scale = Vector2.all(baseScale + baseScale * breathe);
     }
 
@@ -254,16 +254,16 @@ class PhilosophySection extends Component implements GameSection {
     final bgCurve = Curves.easeOutCubic.transform(bgProgress);
     cloudBackground.opacity = bgCurve;
     cloudBackground.scale = Vector2.all(
-      PhilosophySectionLayout.backgroundOverscan,
+      ContactSectionLayout.backgroundOverscan,
     );
     cloudBackground.position = Vector2(
-      -(screenSize.x * PhilosophySectionLayout.backgroundOverscanMargin),
-      -(bgCurve * PhilosophySectionLayout.backgroundYShift),
+      -(screenSize.x * ContactSectionLayout.backgroundOverscanMargin),
+      -(bgCurve * ContactSectionLayout.backgroundYShift),
     );
 
     // Set water level for shader
     cloudBackground.setWaterLevel(
-      screenSize.y * PhilosophySectionLayout.waterLevelRatio,
+      screenSize.y * ContactSectionLayout.waterLevelRatio,
     );
     cloudBackground.setScrollProgress(bgCurve * 0.5); // Midway sky gradient
 
@@ -275,28 +275,28 @@ class PhilosophySection extends Component implements GameSection {
       titleComponent.opacity = titleProgress;
       titleComponent.showReflection = true;
       titleComponent.waterLineY =
-          screenSize.y * PhilosophySectionLayout.waterLineYRatio;
+          screenSize.y * ContactSectionLayout.waterLineYRatio;
 
-      final startY = screenSize.y * PhilosophySectionLayout.titleStartYRatio;
-      final endY = screenSize.y * PhilosophySectionLayout.titleEndYRatio;
+      final startY = screenSize.y * ContactSectionLayout.titleStartYRatio;
+      final endY = screenSize.y * ContactSectionLayout.titleEndYRatio;
       final currentY = startY + (endY - startY) * titleCurve;
       titleComponent.position = Vector2(screenSize.x / 2, currentY);
 
       // Scale animation
       double targetScale;
-      if (titleProgress < PhilosophySectionLayout.titleOvershootThreshold) {
+      if (titleProgress < ContactSectionLayout.titleOvershootThreshold) {
         targetScale = lerpDouble(
-          PhilosophySectionLayout.titleInitialScale,
-          PhilosophySectionLayout.titleOvershootScale,
-          titleProgress / PhilosophySectionLayout.titleOvershootThreshold,
+          ContactSectionLayout.titleInitialScale,
+          ContactSectionLayout.titleOvershootScale,
+          titleProgress / ContactSectionLayout.titleOvershootThreshold,
         )!;
       } else {
         final settleProgress =
-            (titleProgress - PhilosophySectionLayout.titleOvershootThreshold) /
-            (1.0 - PhilosophySectionLayout.titleOvershootThreshold);
+            (titleProgress - ContactSectionLayout.titleOvershootThreshold) /
+            (1.0 - ContactSectionLayout.titleOvershootThreshold);
         targetScale = lerpDouble(
-          PhilosophySectionLayout.titleOvershootScale,
-          PhilosophySectionLayout.titleSettleScale,
+          ContactSectionLayout.titleOvershootScale,
+          ContactSectionLayout.titleSettleScale,
           settleProgress,
         )!;
       }
@@ -312,12 +312,12 @@ class PhilosophySection extends Component implements GameSection {
 
       trailComponent.opacity = trailCurve;
       trailComponent.scale = Vector2.all(
-        PhilosophySectionLayout.trailInitialScale +
-            (PhilosophySectionLayout.trailScaleRange * trailCurve),
+        ContactSectionLayout.trailInitialScale +
+            (ContactSectionLayout.trailScaleRange * trailCurve),
       );
       trailComponent.position = Vector2(
         0,
-        (1.0 - trailCurve) * PhilosophySectionLayout.trailInitialY,
+        (1.0 - trailCurve) * ContactSectionLayout.trailInitialY,
       );
 
       // Force cards to their final "locked" positions by setting a high scroll offset
@@ -347,7 +347,7 @@ class PhilosophySection extends Component implements GameSection {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
 
-    const double scale = PhilosophySectionLayout.refractionScale;
+    const double scale = ContactSectionLayout.refractionScale;
     canvas.scale(scale);
 
     cloudBackground.render(canvas);
@@ -360,7 +360,7 @@ class PhilosophySection extends Component implements GameSection {
     if (titleComponent.isLoaded && titleComponent.opacity == 0.0) {
       titleComponent.position = Vector2(
         screenSize.x / 2,
-        screenSize.y * PhilosophySectionLayout.titleStartYRatio,
+        screenSize.y * ContactSectionLayout.titleStartYRatio,
       );
     }
   }
@@ -375,11 +375,11 @@ class PhilosophySection extends Component implements GameSection {
   void _resetVisuals() {
     titleComponent.opacity = 0.0;
     titleComponent.scale = Vector2.all(
-      PhilosophySectionLayout.titleInitialScale,
+      ContactSectionLayout.titleInitialScale,
     );
     titleComponent.position = Vector2(
       screenSize.x / 2,
-      screenSize.y * PhilosophySectionLayout.titleStartYRatio,
+      screenSize.y * ContactSectionLayout.titleStartYRatio,
     );
     titleComponent.showReflection = false;
 
@@ -390,7 +390,7 @@ class PhilosophySection extends Component implements GameSection {
     backButton.opacity = 0.0;
   }
 
-  void _cleanupPhilosophyComponents() {
+  void _cleanupContactComponents() {
     _freezeCapture = false;
   }
 

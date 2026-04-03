@@ -4,7 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/interfaces/transition_context.dart';
 
-/// Coordinates the seamless transition from Philosophy to Experience section
+/// Coordinates the seamless transition from contact to Experience section
 /// with precise timing of audio, visual effects, and section lifecycle management.
 class TransitionCoordinator {
   final TransitionContext game;
@@ -13,17 +13,17 @@ class TransitionCoordinator {
   TransitionCoordinator(this.game);
 
 
-  /// Executes the return transition from Experience to Philosophy (Scroll Up)
-  Future<void> returnToPhilosophy() async {
+  /// Executes the return transition from Experience to contact (Scroll Up)
+  Future<void> returnToContact() async {
     if (_isTransitioning) return;
     _isTransitioning = true;
     game.blockInput();
 
-    // 1. Switch State back to Active (Philosophy)
+    // 1. Switch State back to Active (contact)
     game.queuer.queue(event: const SceneEvent.onScroll());
 
-    // 2. Resume Philosophy Runner in reverse mode
-    // SequenceRunner handles the exit of current (Experience) and entry of previous (Philosophy)
+    // 2. Resume contact Runner in reverse mode
+    // SequenceRunner handles the exit of current (Experience) and entry of previous (contact)
     await game.primarySequenceRunner.previous();
 
     // 3. Unblock

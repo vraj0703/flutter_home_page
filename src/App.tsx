@@ -71,7 +71,7 @@ function AppInner() {
     const p = pendingPhase.current; setPhase(p)
     if (p === 'react') { flutterRef.current?.hide() }
     else if (p === 'flutter') { flutterRef.current?.show(); flutterRef.current?.sendMessage({ type: 'goto-home' }) }
-    else if (p === 'contact') { flutterRef.current?.show(); flutterRef.current?.sendMessage({ type: 'goto-philosophy' }) }
+    else if (p === 'contact') { flutterRef.current?.show(); flutterRef.current?.sendMessage({ type: 'goto-contact' }) }
   }, [])
 
   const handleComplete = useCallback(() => { pendingPhase.current = null; setTransitioning(false) }, [])

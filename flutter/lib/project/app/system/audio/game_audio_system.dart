@@ -41,8 +41,8 @@ class GameAudioSystem {
         GameAudioConfig.slideInSfx,
         GameAudioConfig.bouncyArrowSfx,
         GameAudioConfig.boldTextSwell,
-        GameAudioConfig.philosophyEntrySfx,
-        GameAudioConfig.philosophyCompleteSfx,
+        GameAudioConfig.contactEntrySfx,
+        GameAudioConfig.contactCompleteSfx,
         GameAudioConfig.trailCard1Sfx,
         GameAudioConfig.trailCard2Sfx,
         GameAudioConfig.trailCard3Sfx,
@@ -54,7 +54,7 @@ class GameAudioSystem {
         GameAudioConfig.gearTickSfx,
         GameAudioConfig.selectionClickSfx,
         GameAudioConfig.selectionClickSfx,
-        GameAudioConfig.philosophyButtonSfx,
+        GameAudioConfig.contactButtonSfx,
       ]);
     } catch (e) {
       // Ignore audio loading errors (likely format issues on web)
@@ -155,24 +155,24 @@ class GameAudioSystem {
     _safePlay(GameAudioConfig.tingSfx, volume: GameAudioConfig.sfxVolume);
   }
 
-  void playPhilosophyEntry() {
-    LoggerUtil.log('Audio', 'Playing Philosophy Entry (Do)');
+  void playContactEntry() {
+    LoggerUtil.log('Audio', 'Playing contact Entry (Do)');
     _safePlay(
-      GameAudioConfig.philosophyEntrySfx,
+      GameAudioConfig.contactEntrySfx,
       volume: GameAudioConfig.sfxVolume,
     );
   }
 
-  void playPhilosophyComplete() {
+  void playContactComplete() {
     _safePlay(
-      GameAudioConfig.philosophyCompleteSfx,
+      GameAudioConfig.contactCompleteSfx,
       volume: GameAudioConfig.sfxVolume,
     );
   }
 
-  void playPhilosophyButtonSound() {
+  void playContactButtonSound() {
     _safePlay(
-      GameAudioConfig.philosophyButtonSfx,
+      GameAudioConfig.contactButtonSfx,
       volume: GameAudioConfig.sfxVolume,
     );
   }
@@ -223,24 +223,24 @@ class GameAudioSystem {
     _safePlay(file, volume: volume);
   }
 
-  void playPhilosophyTitleHover() {
-    LoggerUtil.log('Audio', 'Playing Philosophy Title Hover (Do)');
+  void playContactTitleHover() {
+    LoggerUtil.log('Audio', 'Playing contact Title Hover (Do)');
     // User requested 'do.wav' for title hover (associated sound)
     _safePlay(
-      GameAudioConfig.philosophyEntrySfx,
+      GameAudioConfig.contactEntrySfx,
       volume: GameAudioConfig.sfxVolume,
     );
   }
 
-  void playPhilosophyCardHover(int index) {
-    LoggerUtil.log('Audio', 'Playing Philosophy Card Hover: $index');
+  void playContactCardHover(int index) {
+    LoggerUtil.log('Audio', 'Playing contact Card Hover: $index');
     playTrailCardSound(index);
   }
 
-  void playPhilosophyButtonHover() {
-    LoggerUtil.log('Audio', 'Playing Philosophy Button Hover (Sol)');
+  void playcontactButtonHover() {
+    LoggerUtil.log('Audio', 'Playing contact Button Hover (Sol)');
     _safePlay(
-      GameAudioConfig.philosophyButtonSfx,
+      GameAudioConfig.contactButtonSfx,
       volume: GameAudioConfig.sfxVolume,
     );
   }

@@ -47,7 +47,7 @@ class GameLayout {
 
   static const double titleHeatDriftY = -20.0;
 
-  // --- Philosophy Card ---
+  // --- contact Card ---
   static const double cardPadding = 32.0;
   static const double cardTitleOffset = 60.0;
   static const double cardDividerOffset = 92.0; // 60 + 32
@@ -119,7 +119,7 @@ class GameLayout {
   static const int zGodRay = 20;
   static const int zSecondaryTitle = 24;
   static const int zTitle = 25;
-  static const int zContent = 25; // Philosophy, Experience, Testimonials
+  static const int zContent = 25; // contact, Experience, Testimonials
   static const int zBoldText = 26;
   static const int zSkills = 28;
   static const int zLogoOverlay = 30;
@@ -139,12 +139,12 @@ class GameLayout {
 
   // --- Factory / Composition Layout ---
   static const double secTitleYOffset = 48.0;
-  static const double philosophyTextXRatio = 0.15;
+  static const double contactTextXRatio = 0.15;
   static const double cardStackWidthRatio = 0.4;
   static const double cardStackHeightRatio = 0.6;
   static const double cardStackXRatio = 0.75;
-  static const double philosophyTextScale = 0.1;
-  static const double philosophyTextYRatio = 0.7;
+  static const double contactTextScale = 0.1;
+  static const double contactTextYRatio = 0.7;
 
   // --- Parallax ---
   static const double standardParallaxY = -1000.0;
@@ -165,7 +165,7 @@ class GameLayout {
   static const double overlayContentY = 0.5;
   static const double overlayButtonY = 0.85;
 
-  // Philosophy
+  // contact
   static const double philExitY = -40.0;
   static const double philStackLift = -350.0;
   static const double philStackRotation = 0.15;
@@ -206,7 +206,7 @@ class GameLayout {
     logoRemovingTargetY,
   );
 
-  // Philosophy Card Vectors
+  // contact Card Vectors
   static final Vector2 cardPaddingVector = Vector2.all(cardPadding);
   static final Vector2 cardTitlePosVector = Vector2(
     cardPadding,

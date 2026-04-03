@@ -5,7 +5,7 @@ import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 
 /// Defines the contract for a distinct section of the game experience.
 ///
-/// Each section (e.g., BoldText, Philosophy) acts as a self-contained unit
+/// Each section (e.g., BoldText, contact) acts as a self-contained unit
 /// that handles its own entrance, interaction, and exit logic.
 abstract class GameSection {
   /// Callback triggered when the section completes its forward sequence (e.g., exit finished).

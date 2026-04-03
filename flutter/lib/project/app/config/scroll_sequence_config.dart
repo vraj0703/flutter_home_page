@@ -38,8 +38,10 @@ class ScrollSequenceConfig {
   // Relative Progress Ranges (0.0 - 1.0)
   // Entrance (0.0 - 0.4): 0 - 1200
   static const double boldTextPass1End = 1200.0;
+
   // Shine (0.4 - 0.6): 1200 - 1800
   static const double boldTextPass2End = 1800.0;
+
   // Exit (0.6 - 1.0): 1800 - 3000
 
   /// Snap point: Bold Text Focus (Clarity Phase Center)
@@ -49,40 +51,44 @@ class ScrollSequenceConfig {
   static const double dimLayerStart = 1200.0;
   static const double dimLayerEnd = 2500.0;
 
-  // --- 2. Philosophy Section (3200 - 4800) ---
+  // --- 2. Contact Section (3200 - 4800) ---
   // Shifted by +1300 (3000 - 1700)
-  static const double philosophyStart = 3200.0;
-  static const double philosophyEnd = 4800.0;
+  static const double contactStart = 3200.0;
+  static const double contactEnd = 4800.0;
 
-  // Internal Philosophy Stages
-  static const double philosophyFadeInEnd = 3600.0;
-  static const double philosophyPeelStart = 3650.0;
-  static const double philosophyPeelDuration = 250.0;
-  static const double philosophyPeelDelay = 150.0;
-  static const double philosophyExitStart = 4500.0;
+  // Internal Contact Stages
+  static const double contactFadeInEnd = 3600.0;
+  static const double contactPeelStart = 3650.0;
+  static const double contactPeelDuration = 250.0;
+  static const double contactPeelDelay = 150.0;
+  static const double contactExitStart = 4500.0;
 
-  // --- Transition Gap: Philosophy -> Work Experience (Closed) ---
-  static const double philosophyToWorkExpGap = 0.0;
+  // --- Transition Gap: contact -> Work Experience (Closed) ---
+  static const double contactToWorkExpGap = 0.0;
 
   // --- 2.5. Work Experience Title Section (4800 - 6400) ---
-  static const double workExpTitleEntranceStart = philosophyEnd; // 4800.0
+  static const double workExpTitleEntranceStart = contactEnd; // 4800.0
   static const double workExpTitleEntranceDuration = 600.0;
+
   static double get workExpTitleEntranceEnd =>
       workExpTitleEntranceStart + workExpTitleEntranceDuration; // 5400
 
   static const double workExpTitleHoldStart =
       5400.0; // Adjusted to match new End
   static const double workExpTitleHoldDuration = 500.0;
+
   static double get workExpTitleHoldEnd =>
       workExpTitleHoldStart + workExpTitleHoldDuration; // 5900
 
   static const double workExpTitleExitStart = 5900.0; // Adjusted
   static const double workExpTitleExitDuration = 500.0;
+
   static double get workExpTitleExitEnd =>
       workExpTitleExitStart + workExpTitleExitDuration; // 6400
 
-  // --- 3. Contact / Philosophy (follows Work Experience) ---
-  static const double contactEntranceStart = 6400.0; // Matches workExpTitleExitEnd
+  // --- 3. Contact / contact (follows Work Experience) ---
+  static const double contactEntranceStart =
+      6400.0; // Matches workExpTitleExitEnd
   static const double contactEntranceDuration = 600.0;
   static const double contactHoldDuration = 2000.0;
 
@@ -92,7 +98,7 @@ class ScrollSequenceConfig {
       contactVisibleStart + contactHoldDuration;
 
   // --- Scroll Transition offsets ---
-  static const double philosophyTransitionOffset = 400.0;
+  static const double contactTransitionOffset = 400.0;
 
   // --- UI Config ---
   static const double uiFadeDistance = 100.0;
@@ -112,20 +118,19 @@ class ScrollSequenceConfig {
   static const List<double> sectionJumpTargets = [
     0.0, // Section 0: Hero
     boldTextStart, // Section 1: Bold Text
-    philosophyStart, // Section 2: Philosophy
-    workExpTitleEntranceStart, // Section 3: Work Experience
-    contactEntranceStart, // Section 4: Contact
+    contactStart, // Section 2: Contact
   ];
+
   // --- Transition Configurations ---
-  static const PhilosophyTransitionConfig philosophyTransition =
-      PhilosophyTransitionConfig();
+  static const ContactTransitionConfig contactTransition =
+  ContactTransitionConfig();
 }
 
-/// Layout and animation constants for [PhilosophySection].
+/// Layout and animation constants for [ContactSection].
 ///
 /// Extracted from inline magic numbers to improve readability and allow
-/// centralized tuning of the philosophy scroll experience.
-class PhilosophySectionLayout {
+/// centralized tuning of the contact scroll experience.
+class ContactSectionLayout {
   // ── Scroll thresholds ──────────────────────────────────────────────
   static const double entryScrollThreshold = 200.0;
   static const double whiteOverlayFadeDistance = 150.0;
@@ -173,8 +178,8 @@ class PhilosophySectionLayout {
   static const int lowFpsThrottle = 3;
 }
 
-class PhilosophyTransitionConfig {
-  const PhilosophyTransitionConfig();
+class ContactTransitionConfig {
+  const ContactTransitionConfig();
 
   /// Duration to hold the button to fill the screen with rain (1.0 -> 2.5s)
   final double buttonHoldDuration = 2.5;

@@ -14,7 +14,7 @@ class FlashTransitionComponent extends PositionComponent
 
   double _timer = 0.0;
   final double duration =
-      ScrollSequenceConfig.philosophyTransition.flashTotalDuration;
+      ScrollSequenceConfig.contactTransition.flashTotalDuration;
   bool _peakTriggered = false;
 
   FlashTransitionComponent({

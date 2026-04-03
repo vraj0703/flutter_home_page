@@ -34,7 +34,7 @@ export const FlutterEmbed = forwardRef<FlutterEmbedHandle, FlutterEmbedProps>(
       },
       sendMessage(msg: Record<string, string>) {
         iframeRef.current?.contentWindow?.postMessage(msg, '*')
-        if (msg.type === 'goto-philosophy' && iframeRef.current?.contentWindow) {
+        if (msg.type === 'goto-contact' && iframeRef.current?.contentWindow) {
           iframeRef.current.contentWindow.scrollTo(0, 0)
         }
       },

@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 
 import 'package:flutter_home_page/project/app/views/my_game.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/beach_scene_orchestrator.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/beach_scene_orchestrator.dart';
 
 class BeachBackgroundComponent extends PositionComponent
     with HasGameReference<MyGame> {

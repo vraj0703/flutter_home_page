@@ -43,7 +43,7 @@ class GameInputController extends Component with HasGameReference<MyGame> {
       scrollSystem.onScroll(delta);
 
       final currentSection = game.primarySequenceRunner.currentSection;
-      if (currentSection is PhilosophySection) {
+      if (currentSection is ContactSection) {
         queuer.queue(event: const SceneEvent.toggleArrow(false));
       } else {
         queuer.queue(event: const SceneEvent.toggleArrow(true));

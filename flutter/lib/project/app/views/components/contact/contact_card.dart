@@ -6,16 +6,16 @@ import 'package:flame/text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
-import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
+import 'package:flutter_home_page/project/app/models/contact_card_data.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 import 'package:vector_math/vector_math_64.dart' hide Vector2, Colors;
 import 'package:web/web.dart' as web;
 
-class PhilosophyCard extends PositionComponent
+class ContactCard extends PositionComponent
     with HasPaint, HasGameReference<MyGame>, TapCallbacks
     implements OpacityProvider {
-  final PhilosophyCardData? data;
+  final ContactCardData? data;
   final int index;
   final int totalCards;
 
@@ -63,7 +63,7 @@ late SpriteComponent iconComp;
   late RectangleComponent dividerComp;
   late TextComponent descComp; // Changed to TextComponent
 
-  PhilosophyCard({
+  ContactCard({
     required this.data,
     required this.index,
     required this.totalCards,
@@ -174,8 +174,8 @@ late SpriteComponent iconComp;
     if (!canFlip) return;
     _isHovered = true;
     _isFlipped = true;
-    game.audio.playPhilosophyCardHover(index);
-    game.philosophySection.triggerLightningEffect();
+    game.audio.playContactCardHover(index);
+    game.contactSection.triggerLightningEffect();
   }
 
   /// Open URL when card is tapped
@@ -236,13 +236,13 @@ late SpriteComponent iconComp;
     // Play entry sound (Re/Mi/Fa/Si) when becoming visible
     if (currentAlpha > 0.1 && !_hasPlayedEntrySound) {
       LoggerUtil.log(
-        'PhilosophyCard',
+        'contactCard',
         'Card $index Entry -> Alpha: $currentAlpha',
       );
       _hasPlayedEntrySound = true;
     } else if (currentAlpha < 0.05 && _hasPlayedEntrySound) {
       LoggerUtil.log(
-        'PhilosophyCard',
+        'contactCard',
         'Card $index Exit -> Alpha: $currentAlpha',
       );
       _hasPlayedEntrySound = false;
@@ -279,7 +279,7 @@ late SpriteComponent iconComp;
         (oldProgress > 0.5 && flipProgress <= 0.5)) {
       // Sound removed as per user request
       LoggerUtil.log(
-        'PhilosophyCard',
+        'contactCard',
         'Card $index Flip -> ${flipProgress >= 0.5 ? "Back" : "Front"}',
       );
     }
@@ -357,7 +357,7 @@ late SpriteComponent iconComp;
 
       if (index == 3 && _idleTime % 60 < 1) {
         // Throttle logs
-        // LoggerUtil.log('PhilosophyCard', 'Card $index Back Update: Scale ${descComp.scale.x}, Alpha $_finalOpacity');
+        // LoggerUtil.log('contactCard', 'Card $index Back Update: Scale ${descComp.scale.x}, Alpha $_finalOpacity');
       }
     } else {
       iconComp.scale = Vector2.all(1.0);
@@ -367,7 +367,7 @@ late SpriteComponent iconComp;
 
     // Debug log for opacity/scale in update
     if (_isFlipped && index == 2 && _idleTime % 1.0 < 0.05) {
-      // LoggerUtil.log('PhilosophyCard', 'Update: Card $index Back. Opacity: $_finalOpacity, Scale: ${descComp.scale}');
+      // LoggerUtil.log('contactCard', 'Update: Card $index Back. Opacity: $_finalOpacity, Scale: ${descComp.scale}');
     }
   }
 

@@ -55,12 +55,12 @@ class MyGame extends FlameGame
       queuer = bloc,
       stateProvider = bloc;
 
-  final ScrollSystem _philosophyScrollSystem = ScrollSystem();
+  final ScrollSystem _contactScrollSystem = ScrollSystem();
 
-  ScrollSystem get scrollSystem => _philosophyScrollSystem;
+  ScrollSystem get scrollSystem => _contactScrollSystem;
 
   late final SequenceRunner _primarySequenceRunner = SequenceRunner(
-    scrollSystem: _philosophyScrollSystem,
+    scrollSystem: _contactScrollSystem,
   );
   bool _isTransitioning = false;
 
@@ -82,7 +82,7 @@ class MyGame extends FlameGame
   /// Flame components set this to `true`; the Flutter overlay reads it.
   final ValueNotifier<bool> showTestimonialForm = ValueNotifier<bool>(false);
 
-  PhilosophySection get philosophySection => _philosophySection;
+  ContactSection get contactSection => _contactSection;
 
   final GameLogoAnimator logoAnimator = GameLogoAnimator();
   late final Timer _inactivityTimer;
@@ -169,7 +169,7 @@ class MyGame extends FlameGame
     // Initialize and add Input Controller
     _inputController = GameInputController(
       queuer: queuer,
-      scrollSystem: _philosophyScrollSystem,
+      scrollSystem: _contactScrollSystem,
       audioSystem: _audioSystem,
       cursorSystem: _cursorSystem,
       stateProvider: stateProvider,
@@ -187,7 +187,7 @@ class MyGame extends FlameGame
           _warmupComplete = true;
         });
 
-    // Listen for React messages (goto-philosophy)
+    // Listen for React messages (goto-contact)
     if (kIsWeb) {
       web.window.addEventListener(
         'message',
@@ -196,10 +196,10 @@ class MyGame extends FlameGame
           final data = msgEvent.data;
           if (data == null) return;
           final dartData = data.dartify();
-          if (dartData is Map && dartData['type'] == 'goto-philosophy') {
-            debugPrint('[Flutter] Received goto-philosophy');
+          if (dartData is Map && dartData['type'] == 'goto-contact') {
+            debugPrint('[Flutter] Received goto-contact');
             _handoffSent = false; // Allow future handoffs
-            _startPhilosophySection();
+            _startContactSection();
           } else if (dartData is Map && dartData['type'] == 'goto-home') {
             debugPrint('[Flutter] Received goto-home');
             _handoffSent = false; // Allow future handoffs
@@ -209,8 +209,8 @@ class MyGame extends FlameGame
       );
     }
 
-    // Register controllers to philosophy scroll system
-    _philosophyScrollSystem.register(_primarySequenceRunner);
+    // Register controllers to contact scroll system
+    _contactScrollSystem.register(_primarySequenceRunner);
   }
 
   late final FragmentShader flashShader;
@@ -272,13 +272,13 @@ class MyGame extends FlameGame
     // Update Runner
     state.maybeWhen(
       active: (_, __) {
-        _philosophyScrollSystem.update(dt);
+        _contactScrollSystem.update(dt);
         _primarySequenceRunner.update(dt);
       },
       orElse: () {},
     );
 
-    // Handoff is now triggered by philosophy button hold complete
+    // Handoff is now triggered by contact button hold complete
     // (see contact_section.dart onHoldComplete callback)
 
     // Base Updates
@@ -383,7 +383,7 @@ class MyGame extends FlameGame
     scrollSystem.register(_godRayController!);
   }
 
-  late PhilosophySection _philosophySection;
+  late ContactSection _contactSection;
   late BoldTextSection _boldTextSection;
 
   void _initSequence() {
@@ -396,33 +396,33 @@ class MyGame extends FlameGame
       logoOverlay: _componentFactory.logoOverlay,
       centerPosition: size / 2,
     );
-    // 2. Philosophy (stored as field for later goto-philosophy)
-    _philosophySection = PhilosophySection(
-      titleComponent: _componentFactory.philosophyText,
+    // 2. contact (stored as field for later goto-contact)
+    _contactSection = ContactSection(
+      titleComponent: _componentFactory.contactText,
       cloudBackground: _componentFactory.beachBackground,
-      trailComponent: _componentFactory.philosophyTrail,
+      trailComponent: _componentFactory.contactTrail,
       backButton: _componentFactory.backButton,
       whiteOverlay: _componentFactory.whiteOverlay,
       screenSize: size,
-      playEntrySound: audio.playPhilosophyEntry,
-      playCompletionSound: audio.playPhilosophyComplete,
+      playEntrySound: audio.playContactEntry,
+      playCompletionSound: audio.playContactComplete,
       audioSystem: _audioSystem,
       transitionCoordinator: transitionCoordinator,
     );
 
     // Configure components via binding-like logic (formerly addBoldTextBindings)
     _componentFactory.boldTextReveal.opacity = 0.0;
-    // Philosophy text setup
-    _componentFactory.philosophyText.priority = 20;
-    _componentFactory.philosophyText.anchor = Anchor.center;
-    _componentFactory.philosophyText.position = Vector2(
+    // contact text setup
+    _componentFactory.contactText.priority = 20;
+    _componentFactory.contactText.anchor = Anchor.center;
+    _componentFactory.contactText.position = Vector2(
       size.x / 2,
-      size.y * GameLayout.philosophyTextYRatio,
+      size.y * GameLayout.contactTextYRatio,
     );
-    _componentFactory.philosophyText.scale = Vector2.all(
-      GameLayout.philosophyTextScale,
+    _componentFactory.contactText.scale = Vector2.all(
+      GameLayout.contactTextScale,
     );
-    _componentFactory.philosophyText.opacity = 0.0;
+    _componentFactory.contactText.opacity = 0.0;
 
     _primarySequenceRunner.init([_boldTextSection]);
 
@@ -464,9 +464,9 @@ class MyGame extends FlameGame
     unblockInput();
   }
 
-  /// Called when React sends "goto-philosophy" — re-init runner with philosophy section
-  Future<void> _startPhilosophySection() async {
-    _primarySequenceRunner.init([_philosophySection]);
+  /// Called when React sends "goto-contact" — re-init runner with contact section
+  Future<void> _startContactSection() async {
+    _primarySequenceRunner.init([_contactSection]);
     queuer.queue(event: const SceneEvent.onScroll());
     await _primarySequenceRunner.start();
   }

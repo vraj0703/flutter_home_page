@@ -2,10 +2,10 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/lightning_controller.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/bird_controller.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/reflection_manager.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/lightning_controller.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/bird_controller.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/beach_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/reflection_manager.dart';
 import 'dart:math' as math;
 
 /// Central orchestrator for the Beach Scene environmental systems.

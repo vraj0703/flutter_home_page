@@ -1,15 +1,15 @@
 import 'package:flame/components.dart' hide Matrix4;
 import 'package:flutter_home_page/project/app/utils/logger_util.dart';
-import 'package:flutter_home_page/project/app/models/philosophy_card_data.dart';
-import 'philosophy_card.dart';
+import 'package:flutter_home_page/project/app/models/contact_card_data.dart';
+import 'contact_card.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
-class PhilosophyTrailComponent extends PositionComponent
+class ContactTrailComponent extends PositionComponent
     with HasGameReference<MyGame>, HasPaint {
-  final List<PhilosophyCard> cards = [];
+  final List<ContactCard> cards = [];
 
   // Smoothing Logic
   double _targetScroll = 0.0;
@@ -26,18 +26,18 @@ class PhilosophyTrailComponent extends PositionComponent
 
   double get maxScrollExtent {
     if (cards.isEmpty) {
-      LoggerUtil.log('PhilosophyTrail', 'maxScrollExtent -> 3000.0 (No Cards)');
+      LoggerUtil.log('contactTrail', 'maxScrollExtent -> 3000.0 (No Cards)');
       return 3000.0;
     }
     // Last card lock point + padding
     // rangeEnd = 1500 + i*400
     final lastIndex = cards.length - 1;
     final lastCardLock = 1500.0 + (lastIndex * 400.0);
-    // LoggerUtil.log('PhilosophyTrail', 'maxScrollExtent -> ${lastCardLock + 100.0} (Cards: ${cards.length})');
+    // LoggerUtil.log('contactTrail', 'maxScrollExtent -> ${lastCardLock + 100.0} (Cards: ${cards.length})');
     return lastCardLock + 100.0; // 100px padding
   }
 
-  PhilosophyTrailComponent() : super(anchor: Anchor.topLeft);
+  ContactTrailComponent() : super(anchor: Anchor.topLeft);
 
   @override
   Future<void> onLoad() async {
@@ -45,7 +45,7 @@ class PhilosophyTrailComponent extends PositionComponent
     size = game.size;
 
     for (int i = 0; i < 4; i++) {
-      final card = PhilosophyCard(data: cardData[i], index: i, totalCards: 4);
+      final card = ContactCard(data: cardData[i], index: i, totalCards: 4);
 
       card.opacity = 0.0;
       card.parentOpacity = 1.0;
@@ -177,7 +177,7 @@ class PhilosophyTrailComponent extends PositionComponent
               cards[_hoveredCardIndex!].onHoverExit();
             }
             _hoveredCardIndex = i;
-            LoggerUtil.log('PhilosophyTrail', 'Hover Enter -> Card $i');
+            LoggerUtil.log('contactTrail', 'Hover Enter -> Card $i');
             card.onHoverEnter(); // Only call once on enter
           }
           foundHover = true;
@@ -188,9 +188,9 @@ class PhilosophyTrailComponent extends PositionComponent
             // If this was the hovered card and now we lost it (or logic changed), handled by foundHover check below?
             // Actually, the loop continues.
             // Simpler logic: Just use onHoverExit for everyone else?
-            // PhilosophyCard.onHoverExit is cheap (sets bools). Is it?
+            // contactCard.onHoverExit is cheap (sets bools). Is it?
             // It doesn't play sound. So calling it repeatedly is fine?
-            // Let's check PhilosophyCard.onHoverExit.
+            // Let's check contactCard.onHoverExit.
             card.onHoverExit();
           }
         }
@@ -312,7 +312,7 @@ class PhilosophyTrailComponent extends PositionComponent
     }
   }
 
-  void _apply3DTransform(PhilosophyCard card, Vector3 pos, double rotY) {
+  void _apply3DTransform(ContactCard card, Vector3 pos, double rotY) {
     // Initial Hide Check
     // If Z is 0 and pos is 0, it might be uninitialized.
     // But our logic above sets position.

@@ -6,7 +6,7 @@ class GameStyles {
   static const Color accentGold = Color(0xFFC78E53);
 
   static const Color boldTextBase = Color(0xFFE3E4E5);
-  static const Color philosophyText = Colors.white;
+  static const Color contactText = Colors.white;
   static const Color dimLayer = Color(0xFF000000);
   static const Color silverText = Color(0xFFCCCCCC);
   static const Color white70 = Colors.white70;
@@ -23,7 +23,7 @@ class GameStyles {
   static const Color logoOverlayUi = Color(0xFF9A482F);
   static const Color logoOverlayShadow = Color(0xFFD6A65F);
 
-  // Philosophy Card Colors
+  // contact Card Colors
   static const Color cardFill = Color(0x0DFFFFFF); // White 5%
   static const Color cardStroke = Color(0x33FFFFFF); // White 20%
   static const Color cardShadow = Colors.black;
@@ -63,7 +63,7 @@ class GameStyles {
   // Text Sizes
   static const double titleFontSize = 80.0;
   static const double primaryTitleFontSize = 56.0;
-  static const double philosophyFontSize = 72.0;
+  static const double contactFontSize = 72.0;
   static const double contactTitleFontSize = 110.0;
   static const double contactDescriptionFontSize = 18.0;
   static const double buttonFontSize = 16.0;
@@ -146,19 +146,19 @@ class GameStyles {
   static const double textShadowOffsetY = 2.0;
 
   // --- Text Styles ---
-  static const TextStyle philosophyIconStyle = TextStyle(
+  static const TextStyle contactIconStyle = TextStyle(
     fontSize: cardIconVisibleSize,
     fontFamily: fontModernUrban,
   );
 
-  static const TextStyle philosophyTitleStyle = TextStyle(
+  static const TextStyle contactTitleStyle = TextStyle(
     fontFamily: fontModernUrban,
     fontSize: cardTitleVisibleSize,
     fontWeight: FontWeight.bold,
     color: Colors.white,
   );
 
-  static const TextStyle philosophyDescStyle = TextStyle(
+  static const TextStyle contactDescStyle = TextStyle(
     fontFamily: fontModernUrban,
     fontSize: cardDescVisibleSize,
     color: cardDesc,

@@ -15,11 +15,11 @@ import 'package:flutter_home_page/project/app/views/components/hero_title/cinema
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/logo_overlay.dart';
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/beach_background_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/back_button_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_text_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/philosophy_trail_component.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/white_overlay_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/beach_background_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/back_button_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/contact_text_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/contact_trail_component.dart';
+import 'package:flutter_home_page/project/app/views/components/contact/white_overlay_component.dart';
 import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/interfaces/queuer.dart';
 
@@ -38,8 +38,8 @@ class GameComponentFactory {
   late final CinematicTitleComponent _cinematicTitle;
   late final CinematicSecondaryTitleComponent _cinematicSecondaryTitle;
   late final BoldTextRevealComponent _boldTextReveal;
-  late final PhilosophyTextComponent _philosophyText;
-  late final PhilosophyTrailComponent _philosophyTrail;
+  late final ContactTextComponent _contactText;
+  late final ContactTrailComponent _contactTrail;
   late final WhiteOverlayComponent _whiteOverlay;
   late final BackButtonComponent _backButton;
 
@@ -65,9 +65,9 @@ class GameComponentFactory {
 
   BoldTextRevealComponent get boldTextReveal => _boldTextReveal;
 
-  PhilosophyTextComponent get philosophyText => _philosophyText;
+  ContactTextComponent get contactText => _contactText;
 
-  PhilosophyTrailComponent get philosophyTrail => _philosophyTrail;
+  ContactTrailComponent get contactTrail => _contactTrail;
 
   WhiteOverlayComponent get whiteOverlay => _whiteOverlay;
 
@@ -85,8 +85,8 @@ class GameComponentFactory {
     _cinematicTitle,
     _cinematicSecondaryTitle,
     _boldTextReveal,
-    _philosophyText,
-    _philosophyTrail,
+    _contactText,
+    _contactTrail,
     _whiteOverlay,
     _backButton,
   ];
@@ -183,7 +183,7 @@ class GameComponentFactory {
     _beachBackground.opacity = 0.0;
     _beachBackground.priority = 10;
 
-    // ─── Metallic shader program (shared by title, secondary title, philosophy) ───
+    // ─── Metallic shader program (shared by title, secondary title, contact) ───
     if (!_shaderCache.containsKey(GameAssets.metallicShader)) {
       _shaderCache[GameAssets.metallicShader] =
           await FragmentProgram.fromAsset(GameAssets.metallicShader);
@@ -224,27 +224,27 @@ class GameComponentFactory {
     _boldTextReveal.priority = GameLayout.zBoldText;
     _boldTextReveal.opacity = 0.0;
 
-    // ─── Philosophy Text ───
-    _philosophyText = PhilosophyTextComponent(
-      text: GameStrings.philosophyTitle,
+    // ─── contact Text ───
+    _contactText = ContactTextComponent(
+      text: GameStrings.contactTitle,
       style: material.TextStyle(
         fontFamily: GameStyles.fontModernUrban,
-        fontSize: GameStyles.philosophyFontSize,
+        fontSize: GameStyles.contactFontSize,
         fontWeight: material.FontWeight.bold,
-        color: GameStyles.philosophyText,
+        color: GameStyles.contactText,
         letterSpacing: 1.5,
       ),
       shaderProgram: metallicProgram,
       anchor: Anchor.centerLeft,
-      position: Vector2(size.x * GameLayout.philosophyTextXRatio, size.y / 2),
+      position: Vector2(size.x * GameLayout.contactTextXRatio, size.y / 2),
     );
-    _philosophyText.priority = GameLayout.zContent;
-    _philosophyText.opacity = 0.0;
+    _contactText.priority = GameLayout.zContent;
+    _contactText.opacity = 0.0;
 
-    // ─── Philosophy Trail ───
-    _philosophyTrail = PhilosophyTrailComponent();
-    _philosophyTrail.priority = GameLayout.zContent;
-    _philosophyTrail.opacity = 0.0;
+    // ─── contact Trail ───
+    _contactTrail = ContactTrailComponent();
+    _contactTrail.priority = GameLayout.zContent;
+    _contactTrail.opacity = 0.0;
 
     // ─── Back Button (Contact Section) ───
     _backButton = BackButtonComponent(
