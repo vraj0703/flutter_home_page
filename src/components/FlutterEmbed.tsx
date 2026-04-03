@@ -30,7 +30,8 @@ export const FlutterEmbed = forwardRef<FlutterEmbedHandle, FlutterEmbedProps>(
       },
       hide() {
         if (!iframeRef.current) return
-        gsap.to(iframeRef.current, { opacity: 0, duration: 0.3, onComplete: () => { iframeRef.current!.style.pointerEvents = 'none' } })
+        iframeRef.current.style.pointerEvents = 'none' // Block immediately — don't wait for fade
+        gsap.to(iframeRef.current, { opacity: 0, duration: 0.3 })
       },
       sendMessage(msg: Record<string, string>) {
         iframeRef.current?.contentWindow?.postMessage(msg, '*')

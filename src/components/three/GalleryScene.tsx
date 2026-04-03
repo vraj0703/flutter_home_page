@@ -527,50 +527,140 @@ function GraffitiBackButton() {
 /* ── Wall Radio — streaming radio player on right wall ── */
 
 const RADIO_CHANNELS = [
-  { name: 'Lofi', url: 'https://streams.ilovemusic.de/iloveradio17.mp3' },
-  { name: 'Jazz', url: 'http://jking.cdnstream1.com/b22139_128mp3' },
+  { name: 'Lofi', url: 'https://ice5.somafm.com/lush-128-mp3' },
+  { name: 'Jazz', url: 'https://ice4.somafm.com/secretagent-128-mp3' },
   { name: 'Ambient', url: 'https://ice5.somafm.com/groovesalad-128-mp3' },
-  { name: 'Chill', url: 'https://listen.reyfm.de/lofi_320kbps.mp3' },
+  { name: 'Chill', url: 'https://ice2.somafm.com/seventies-128-mp3' },
 ]
 
-// Module-level audio for radio (persists across re-renders)
+// Module-level radio state (persists across re-renders)
 let _radioAudio: HTMLAudioElement | null = null
 let _radioPlaying = false
+let _radioMuted = false
+let _radioVolume = 0.25
 let _radioChannel = 0
+let _radioLoading = false
+let _radioListeners: Array<() => void> = []
 
-function _startRadio(channelIdx: number) {
-  _radioChannel = channelIdx
-  if (_radioAudio) { _radioAudio.pause(); _radioAudio.src = '' }
-  _radioAudio = new Audio(RADIO_CHANNELS[channelIdx].url)
+function _notifyRadio() { _radioListeners.forEach(fn => fn()) }
+
+/** Preload the first channel (call early — creates Audio element but doesn't play) */
+export function preloadRadio() {
+  if (_radioAudio) return
+  _radioAudio = new Audio(RADIO_CHANNELS[0].url)
   _radioAudio.crossOrigin = 'anonymous'
-  _radioAudio.volume = 0.25
-  _radioAudio.play().catch(() => {})
-  _radioPlaying = true
+  _radioAudio.volume = _radioVolume
+  _radioAudio.preload = 'auto'
+  // Just load metadata + buffer, don't play
+  _radioAudio.load()
 }
 
-function _stopRadio() {
-  if (_radioAudio) { _radioAudio.pause(); _radioAudio.src = '' }
+/** Start playing (must be called after user gesture) */
+function _playRadio() {
+  if (!_radioAudio) preloadRadio()
+  _radioLoading = true
+  _notifyRadio()
+  _radioAudio!.play().then(() => {
+    _radioPlaying = true
+    _radioLoading = false
+    _notifyRadio()
+  }).catch(() => {
+    _radioLoading = false
+    _notifyRadio()
+  })
+}
+
+export function stopRadio() {
+  if (_radioAudio) _radioAudio.pause()
   _radioPlaying = false
+  _notifyRadio()
 }
 
-function _nextChannel() {
-  const next = (_radioChannel + 1) % RADIO_CHANNELS.length
-  _startRadio(next)
+export function toggleRadioMute() {
+  _radioMuted = !_radioMuted
+  if (_radioAudio) _radioAudio.volume = _radioMuted ? 0 : _radioVolume
+  _notifyRadio()
+}
+
+export function setRadioVolume(vol: number) {
+  _radioVolume = Math.max(0, Math.min(1, vol))
+  _radioMuted = _radioVolume === 0
+  if (_radioAudio) _radioAudio.volume = _radioMuted ? 0 : _radioVolume
+  _notifyRadio()
+}
+
+function _switchChannel(idx: number) {
+  _radioChannel = idx
+  const wasPlaying = _radioPlaying
+  if (_radioAudio) { _radioAudio.pause(); _radioAudio.src = '' }
+  _radioAudio = new Audio(RADIO_CHANNELS[idx].url)
+  _radioAudio.crossOrigin = 'anonymous'
+  _radioAudio.volume = _radioMuted ? 0 : _radioVolume
+  if (wasPlaying) {
+    _radioLoading = true
+    _notifyRadio()
+    _radioAudio.play().then(() => {
+      _radioPlaying = true
+      _radioLoading = false
+      _notifyRadio()
+    }).catch(() => {
+      _radioLoading = false
+      _notifyRadio()
+    })
+  } else {
+    _radioAudio.preload = 'auto'
+    _radioAudio.load()
+    _notifyRadio()
+  }
+}
+
+export function nextRadioChannel() {
+  _switchChannel((_radioChannel + 1) % RADIO_CHANNELS.length)
+}
+
+/** Auto-start radio when gallery is entered (called after user has interacted) */
+export function startRadioOnGalleryEnter() {
+  if (!_radioPlaying && !_radioLoading) _playRadio()
+}
+
+/** Subscribe to radio state changes for external UI */
+export function subscribeRadio(fn: () => void) {
+  _radioListeners.push(fn)
+  return () => { _radioListeners = _radioListeners.filter(f => f !== fn) }
+}
+
+export function getRadioState() {
+  return { playing: _radioPlaying, muted: _radioMuted, loading: _radioLoading, channel: RADIO_CHANNELS[_radioChannel].name, volume: _radioVolume }
 }
 
 function WallRadio() {
   const grp = useRef<THREE.Group>(null)
   const hov = useRef(false)
-  const [playing, setPlaying] = useState(_radioPlaying)
-  const [channel, setChannel] = useState(_radioChannel)
+  const knobRef = useRef<THREE.Group>(null)
+  const [, forceUpdate] = useState(0)
   const glowRef = useRef<THREE.Mesh>(null)
   const glowMat = useMemo(() => new THREE.MeshStandardMaterial({
     color: '#C8A45C', emissive: '#C8A45C', emissiveIntensity: 0,
     transparent: true, opacity: 0, side: THREE.DoubleSide,
   }), [])
 
+  useEffect(() => {
+    const listener = () => forceUpdate(n => n + 1)
+    _radioListeners.push(listener)
+    return () => { _radioListeners = _radioListeners.filter(f => f !== listener) }
+  }, [])
+
+  // M key to mute
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'm' || e.key === 'M') toggleRadioMute() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // Animate volume knob rotation
   useFrame(({ camera }) => {
     if (!grp.current || !glowRef.current) return
+    // Proximity glow
     const worldPos = new THREE.Vector3()
     grp.current.getWorldPosition(worldPos)
     const dist = camera.position.distanceTo(worldPos)
@@ -579,105 +669,135 @@ function WallRadio() {
     const targetOpacity = hov.current ? 0.12 : proximity * 0.05
     glowMat.emissiveIntensity += (targetGlow - glowMat.emissiveIntensity) * 0.1
     glowMat.opacity += (targetOpacity - glowMat.opacity) * 0.1
+    // Knob rotation: 0 vol = -135°, 1 vol = +135°
+    if (knobRef.current) {
+      const targetAngle = (-135 + _radioVolume * 270) * Math.PI / 180
+      knobRef.current.rotation.z += (targetAngle - knobRef.current.rotation.z) * 0.15
+    }
   })
 
-  const handleClick = useCallback(() => {
+  // Cycle volume: 0 → 0.25 → 0.5 → 0.75 → 1.0 → 0 (mute)
+  const handleVolumeCycle = useCallback(() => {
+    const steps = [0, 0.25, 0.5, 0.75, 1.0]
+    const current = steps.findIndex(s => Math.abs(s - _radioVolume) < 0.05)
+    const next = (current + 1) % steps.length
+    setRadioVolume(steps[next])
+    // Auto-start if off and volume > 0
+    if (!_radioPlaying && steps[next] > 0) _playRadio()
+    getAudioEngine()?.playButtonClick()
+  }, [])
+
+  const handleMuteToggle = useCallback(() => {
     if (!_radioPlaying) {
-      _startRadio(_radioChannel)
-      setPlaying(true)
+      _playRadio()
     } else {
-      _stopRadio()
-      setPlaying(false)
+      toggleRadioMute()
     }
     getAudioEngine()?.playButtonClick()
   }, [])
 
-  const handleNextChannel = useCallback((e: THREE.Event) => {
-    if ('stopPropagation' in e) (e as unknown as { stopPropagation: () => void }).stopPropagation()
-    _nextChannel()
-    setChannel(_radioChannel)
-    setPlaying(true)
+  const handleNext = useCallback(() => {
+    nextRadioChannel()
     getAudioEngine()?.playButtonClick()
   }, [])
 
-  const channelName = RADIO_CHANNELS[channel].name
+  const channelName = RADIO_CHANNELS[_radioChannel].name
+  const statusText = _radioLoading ? '◌ TUNING...' : _radioPlaying ? (_radioMuted ? '● MUTED' : '● ON AIR') : '○ OFF'
+  const statusColor = _radioLoading ? '#C8A45C' : _radioPlaying ? (_radioMuted ? '#C87A4C' : '#6AE06A') : '#8A7A62'
+  const knobColor = _radioMuted ? '#5A5040' : '#C8A45C'
 
   return (
     <group position={[WALL_X - 0.1, FRAME_Y, -1]} rotation={[0, -Math.PI / 2, 0]}>
       <group ref={grp}>
         {/* Glow backdrop */}
         <mesh ref={glowRef} material={glowMat} position={[0, 0, -0.01]}>
-          <planeGeometry args={[1.8, 1.2]} />
+          <planeGeometry args={[2.0, 1.4]} />
         </mesh>
 
         {/* Radio body — dark panel */}
         <mesh position={[0, 0, 0.005]}>
-          <planeGeometry args={[1.6, 1.0]} />
-          <meshStandardMaterial color="#1A1A1A" roughness={0.8} metalness={0.1} transparent opacity={0.5} />
+          <planeGeometry args={[1.8, 1.2]} />
+          <meshStandardMaterial color="#1A1A1A" roughness={0.8} metalness={0.1} transparent opacity={0.55} />
         </mesh>
 
-        {/* Speaker grille lines */}
-        {[-0.25, -0.15, -0.05, 0.05, 0.15, 0.25].map((y, i) => (
-          <mesh key={i} position={[-0.35, y, 0.008]}>
-            <planeGeometry args={[0.5, 0.02]} />
+        {/* ── Left: Speaker grille ── */}
+        {[-0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3].map((y, i) => (
+          <mesh key={i} position={[-0.5, y, 0.008]}>
+            <planeGeometry args={[0.5, 0.018]} />
             <meshStandardMaterial color="#3A3A3A" roughness={1} metalness={0} transparent opacity={0.5} />
           </mesh>
         ))}
 
-        {/* Channel display */}
-        <Text
-          position={[0.25, 0.15, 0.01]}
-          fontSize={0.12}
-          color="#C8A45C"
-          anchorX="center"
-          anchorY="middle"
-          letterSpacing={0.05}
-        >
+        {/* ── Center: Display ── */}
+        <Text position={[0.15, 0.22, 0.01]} fontSize={0.13} color="#C8A45C" anchorX="center" anchorY="middle" letterSpacing={0.06}>
           {channelName}
         </Text>
-
-        {/* Status indicator */}
-        <Text
-          position={[0.25, -0.02, 0.01]}
-          fontSize={0.06}
-          color={playing ? '#6AE06A' : '#8A7A62'}
-          anchorX="center"
-          anchorY="middle"
-          letterSpacing={0.08}
-        >
-          {playing ? '● ON AIR' : '○ OFF'}
+        <Text position={[0.15, 0.06, 0.01]} fontSize={0.055} color={statusColor} anchorX="center" anchorY="middle" letterSpacing={0.08}>
+          {statusText}
         </Text>
 
-        {/* Next channel button */}
-        <group
-          position={[0.55, -0.28, 0.01]}
-          onClick={handleNextChannel}
+        {/* ── Volume knob (3D cylinder) — click to cycle volume ── */}
+        <group position={[-0.15, -0.3, 0.04]}
+          onClick={handleVolumeCycle}
           onPointerOver={() => { document.body.style.cursor = 'pointer' }}
           onPointerOut={() => { document.body.style.cursor = 'default' }}
         >
-          <mesh>
-            <planeGeometry args={[0.35, 0.2]} />
-            <meshStandardMaterial color="#2A2420" roughness={0.6} metalness={0.2} />
+          {/* Knob base ring */}
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.12, 0.12, 0.02, 24]} />
+            <meshStandardMaterial color="#2A2420" roughness={0.4} metalness={0.5} />
           </mesh>
-          <Text position={[0, 0, 0.005]} fontSize={0.06} color="#C8A45C" anchorX="center" anchorY="middle" letterSpacing={0.04}>
-            NEXT ▸
+          {/* Rotatable knob */}
+          <group ref={knobRef}>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.09, 0.09, 0.04, 24]} />
+              <meshStandardMaterial color="#3A3028" roughness={0.3} metalness={0.6} />
+            </mesh>
+            {/* Indicator dot */}
+            <mesh position={[0, 0.07, 0.025]}>
+              <sphereGeometry args={[0.015, 8, 8]} />
+              <meshStandardMaterial color={knobColor} emissive={knobColor} emissiveIntensity={0.5} />
+            </mesh>
+          </group>
+          {/* VOL label */}
+          <Text position={[0, -0.16, 0.01]} fontSize={0.04} color="#5A5040" anchorX="center" anchorY="middle" letterSpacing={0.1}>
+            VOL
           </Text>
         </group>
 
-        {/* Play/Mute button — invisible click plane over whole radio */}
-        <mesh
-          position={[0, 0, 0.015]}
-          onClick={handleClick}
-          onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer' }}
-          onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }}
-        >
-          <planeGeometry args={[1.1, 0.8]} />
-          <meshStandardMaterial transparent opacity={0} />
-        </mesh>
+        {/* ── Mute/Play button ── */}
+        <group position={[0.2, -0.3, 0.03]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}
+            onClick={handleMuteToggle}
+            onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer' }}
+            onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }}
+          >
+            <cylinderGeometry args={[0.1, 0.1, 0.035, 24]} />
+            <meshStandardMaterial color={_radioMuted || !_radioPlaying ? '#3A3028' : '#2A3A28'} roughness={0.4} metalness={0.4} />
+          </mesh>
+          <Text position={[0, 0, 0.025]} fontSize={0.035} color={knobColor} anchorX="center" anchorY="middle" letterSpacing={0.03}>
+            {_radioPlaying ? (_radioMuted ? 'UNMUTE' : 'MUTE') : 'PLAY'}
+          </Text>
+        </group>
+
+        {/* ── Next station button ── */}
+        <group position={[0.55, -0.3, 0.03]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}
+            onClick={handleNext}
+            onPointerOver={() => { document.body.style.cursor = 'pointer' }}
+            onPointerOut={() => { document.body.style.cursor = 'default' }}
+          >
+            <cylinderGeometry args={[0.1, 0.1, 0.035, 24]} />
+            <meshStandardMaterial color="#3A3028" roughness={0.4} metalness={0.4} />
+          </mesh>
+          <Text position={[0, 0, 0.025]} fontSize={0.035} color="#C8A45C" anchorX="center" anchorY="middle" letterSpacing={0.03}>
+            NEXT
+          </Text>
+        </group>
 
         {/* Underline accent */}
-        <mesh position={[0, -0.42, 0.008]}>
-          <planeGeometry args={[1.3, 0.015]} />
+        <mesh position={[0, -0.52, 0.008]}>
+          <planeGeometry args={[1.5, 0.015]} />
           <meshStandardMaterial color="#C8A45C" transparent opacity={0.4} roughness={1} metalness={0} />
         </mesh>
       </group>
