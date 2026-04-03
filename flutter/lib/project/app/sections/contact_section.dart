@@ -178,8 +178,12 @@ class ContactSection extends Component implements GameSection {
     backButton.opacity = 0.0;
     whiteOverlay.opacity = 0.0;
     logoComponent.scale = Vector2.zero();
+    logoComponent.priority = 10; // Reset to default zLogo
     homeButton.opacity = 0.0;
     audioToggle.opacity = 0.0;
+
+    // Stop all contact audio on exit
+    _audioSystem.stopBoldTextAudio();
 
     // Clean up reflection resources to prevent memory leaks
     orchestrator.reflection.clearTargets();
@@ -348,7 +352,8 @@ class ContactSection extends Component implements GameSection {
       backButton.opacity = btnProgress;
       backButton.position = Vector2(80.0, screenSize.y - 50.0);
 
-      // Logo — top left, small
+      // Logo — top left, small, z-above contact content
+      logoComponent.priority = 50;
       logoComponent.position = Vector2(50.0, 50.0);
       logoComponent.scale = Vector2.all(0.15 * btnProgress);
 

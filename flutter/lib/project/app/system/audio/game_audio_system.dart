@@ -125,6 +125,7 @@ class GameAudioSystem {
     double progress, {
     double velocity = 0.5,
   }) async {
+    if (_muted) return;
     if (_boldTextPlayer == null) {
       _boldTextPlayer = AudioPlayer();
       await _boldTextPlayer!.setSource(
@@ -157,6 +158,12 @@ class GameAudioSystem {
 
   void stopBoldTextAudio() {
     _boldTextPlayer?.stop();
+  }
+
+  /// Stop all currently playing audio
+  void stopAll() {
+    _boldTextPlayer?.stop();
+    // FlameAudio doesn't have a global stop, but stopping individual players covers it
   }
 
   void playTing() {
@@ -254,6 +261,7 @@ class GameAudioSystem {
   }
 
   void playSpatialThunder(double intensity) {
+    if (_muted) return;
     // 1. Randomize the "Source" of the lightning
     // -1.0 is far left, 1.0 is far right
     // Note: FlameAudio doesn't support panning yet, reserved for future use
@@ -325,6 +333,7 @@ class GameAudioSystem {
   /// Play multi-layered heavy shatter sound effect
   /// Combines glass break + bass thump + reverb tail
   Future<void> playHeavyShatter() async {
+    if (_muted) return;
     try {
       // Layer 1: Primary glass break
       await FlameAudio.play(GameAudioConfig.glassBreakSfx, volume: 0.9);
@@ -345,6 +354,7 @@ class GameAudioSystem {
   /// Play the full transition climax sequence
   /// Layers: Heavy shatter + Thunder + Tinnitus ring (10% volume, 800ms decay)
   Future<void> playTransitionClimax() async {
+    if (_muted) return;
     try {
       // Layer 1: Heavy shatter (glass + bass)
       // Layer 1: Heavy shatter (Glass Crunch + Bass Thump) triggered immediately

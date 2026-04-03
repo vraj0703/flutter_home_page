@@ -18,30 +18,31 @@ class ContactCardData {
 
 final cardData = [
   const ContactCardData(
-    icon: "👋",
-    title: "Let's Connect",
-    description: "I'm always open to interesting conversations, collaborations, and new opportunities. Whether you have a project in mind or just want to say hello — I'd love to hear from you.",
+    icon: "📄",
+    title: "Resume",
+    description: "Download my resume for a detailed overview of my experience, skills, and achievements.",
     accentColor: Color(0xFF00FFFF),
+    // url: will be set when resume PDF is ready
   ),
   const ContactCardData(
     icon: "💼",
     title: "LinkedIn",
     description: "Connect with me on LinkedIn for professional updates, endorsements, and career insights.",
     accentColor: Color(0xFF0A66C2),
-    url: "https://www.linkedin.com/in/ivishalraj/",
+    url: "https://www.linkedin.com/in/vraj0703/",
   ),
   const ContactCardData(
     icon: "🐙",
     title: "GitHub",
     description: "Explore my open-source contributions, side projects, and code experiments on GitHub.",
     accentColor: Color(0xFFFFFFFF),
-    url: "https://github.com/ivishalraj",
+    url: "https://github.com/vraj0703",
   ),
   const ContactCardData(
     icon: "✉️",
     title: "Email",
-    description: "Reach out via email for collaborations, opportunities, or just to say hello.\n\nivishalraj@gmail.com",
+    description: "Reach out via email for collaborations, opportunities, or just to say hello.\n\nvraj0703@gmail.com",
     accentColor: Color(0xFFEA4335),
-    url: "mailto:ivishalraj@gmail.com",
+    url: "mailto:vraj0703@gmail.com",
   ),
 ];

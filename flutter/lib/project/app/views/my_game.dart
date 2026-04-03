@@ -448,6 +448,9 @@ class MyGame extends FlameGame
 
   /// Called when Home button tapped or React sends "goto-home"
   Future<void> _startHomeSection() async {
+    // Stop all contact audio before transitioning
+    _audioSystem.stopAll();
+
     // Brief transition delay for visual smoothness
     _componentFactory.whiteOverlay.opacity = 1.0;
     await Future.delayed(const Duration(milliseconds: 400));
@@ -480,9 +483,13 @@ class MyGame extends FlameGame
 
   /// Called when React sends "goto-contact" — re-init runner with contact section
   Future<void> _startContactSection() async {
+    // Smooth transition: white overlay bridges the visual gap
+    _componentFactory.whiteOverlay.opacity = 1.0;
+    await Future.delayed(const Duration(milliseconds: 300));
+
     _primarySequenceRunner.init([_contactSection]);
     queuer.queue(event: const SceneEvent.onScroll());
-    queuer.queue(event: const SceneEvent.toggleArrow(false)); // Hide bouncy arrow
+    queuer.queue(event: const SceneEvent.toggleArrow(false));
     await _primarySequenceRunner.start();
   }
 
