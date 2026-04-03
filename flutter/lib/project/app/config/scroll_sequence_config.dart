@@ -81,70 +81,18 @@ class ScrollSequenceConfig {
   static double get workExpTitleExitEnd =>
       workExpTitleExitStart + workExpTitleExitDuration; // 6400
 
-  // --- Transition Gap: Work Experience -> Experience Section (Closed) ---
-  static const double workExpToExperienceGap = 0.0;
-
-  // --- 3. Experience Section (6400 - 8750) ---
-  static const double experienceEntranceStart =
-      6400.0; // Matches workExpTitleExitEnd
-  static const double experienceEntranceDuration = 300.0;
-
-  static double get experienceEntranceEnd =>
-      experienceEntranceStart + experienceEntranceDuration; // 6700
-  static const double experienceInteractionStart = 6700.0;
-  static const double experienceInteractionDuration = 1750.0;
-
-  static double get experienceInteractionEnd =>
-      experienceInteractionStart + experienceInteractionDuration; // 8450
-  static double get experienceExitStart => experienceInteractionEnd; // 8450
-  static const double experienceExitDuration = 300.0;
-
-  static double get experienceExitEnd =>
-      experienceExitStart + experienceExitDuration; // 8750
-
-  static const double experienceScrollDivisor = 500.0;
-
-  // --- Transition Gap: Experience -> Testimonials (Closed) ---
-  static const double experienceToTestimonialGap = 0.0;
-
-  // --- 4. Testimonials (8750 - 12650) ---
-  static const double testimonialEntranceStart =
-      8750.0; // Matches experienceExitEnd
-  static const double testimonialEntranceDuration = 300.0;
-
-  static double get testimonialEntranceEnd =>
-      testimonialEntranceStart + testimonialEntranceDuration; // 9050
-  static const double testimonialInteractionStart = 9050.0;
-  static const double testimonialVisibleDuration = 3200.0;
-  static double get testimonialInteractionEnd =>
-      testimonialInteractionStart + testimonialVisibleDuration; // 12250
-  static double get testimonialExitStart => testimonialInteractionEnd; // 12250
-  static const double testimonialExitDuration = 400.0;
-
-  static double get testimonialExitEnd =>
-      testimonialExitStart + testimonialExitDuration; // 12650
-
-  // --- Transition Gap: Testimonials -> Contact (Closed) ---
-  static const double testimonialToContactGap = 0.0;
-
-  // --- 5. Contact (12650+) - FINAL SECTION ---
-  static const double contactEntranceStart =
-      12650.0; // Matches testimonialExitEnd
+  // --- 3. Contact / Philosophy (follows Work Experience) ---
+  static const double contactEntranceStart = 6400.0; // Matches workExpTitleExitEnd
   static const double contactEntranceDuration = 600.0;
   static const double contactHoldDuration = 2000.0;
 
   static const double contactVisibleStart =
       contactEntranceStart + contactEntranceDuration;
   static const double maxScrollOffset =
-      contactVisibleStart + contactHoldDuration; // ~15650
+      contactVisibleStart + contactHoldDuration;
 
   // --- Scroll Transition offsets ---
-  static const double experienceFadeOffset = 300.0;
-  static const double experienceExitFadeOffset = 350.0;
-
   static const double philosophyTransitionOffset = 400.0;
-
-  static const double testimonialFadeOffset = 300.0;
 
   // --- UI Config ---
   static const double uiFadeDistance = 100.0;
@@ -166,8 +114,7 @@ class ScrollSequenceConfig {
     boldTextStart, // Section 1: Bold Text
     philosophyStart, // Section 2: Philosophy
     workExpTitleEntranceStart, // Section 3: Work Experience
-    testimonialInteractionStart, // Section 4: Testimonials
-    contactEntranceStart, // Section 5: Contact
+    contactEntranceStart, // Section 4: Contact
   ];
   // --- Transition Configurations ---
   static const PhilosophyTransitionConfig philosophyTransition =

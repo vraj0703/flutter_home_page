@@ -12,13 +12,14 @@ class CinematicSecondaryTitleComponent extends PositionComponent
     with HasGameReference
     implements OpacityProvider {
   final String text;
-  final FragmentShader shader;
+  final FragmentProgram shaderProgram;
 
   late PositionComponent _contentWrapper;
 
-  // late FadeTextComponent _textComponent; // unused
-
   double _currentOpacity = 0.0;
+
+  /// When true, the show/hide animation owns per-character opacity.
+  bool _isAnimating = false;
 
   @override
   double get opacity => _currentOpacity;
@@ -26,7 +27,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
   @override
   set opacity(double value) {
     _currentOpacity = value;
-    if (isLoaded) {
+    if (isLoaded && !_isAnimating) {
       for (final component in _charComponents) {
         component.opacity = value;
       }
@@ -36,16 +37,17 @@ class CinematicSecondaryTitleComponent extends PositionComponent
   @override
   void onMount() {
     super.onMount();
-    // Synchronize children with the intended state after loading completes
-    opacity = _currentOpacity;
+    if (!_isAnimating) {
+      opacity = _currentOpacity;
+    }
   }
 
   CinematicSecondaryTitleComponent({
     required this.text,
-    required this.shader,
+    required this.shaderProgram,
     super.position,
-  }) : super(anchor: Anchor.center){
-    opacity = 0.0; // Start hidden per architecture
+  }) : super(anchor: Anchor.center) {
+    opacity = 0.0;
   }
 
   void setParallaxOffset(Vector2 offset) {
@@ -74,7 +76,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
 
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
 
-    // 1. Measure and Center
+    // 1. Measure each character width
     double totalWidth = 0;
     final List<double> charWidths = [];
     for (int i = 0; i < text.length; i++) {
@@ -86,11 +88,9 @@ class CinematicSecondaryTitleComponent extends PositionComponent
       totalWidth += width;
     }
 
-    // Adjust for letter spacing roughly (Flutter TextPainter includes it usually, but manual spacing might be needed)
-    // We will just place them sequentially based on measured width.
-    final spacing = style.letterSpacing ?? 0.0; // Use style directly
-
-    double currentX = -(totalWidth + (text.length - 1) * spacing) / 2;
+    final spacing = style.letterSpacing ?? 0.0;
+    final totalSpan = totalWidth + (text.length - 1) * spacing;
+    double currentX = -totalSpan / 2;
 
     for (int i = 0; i < text.length; i++) {
       final char = text[i];
@@ -99,43 +99,41 @@ class CinematicSecondaryTitleComponent extends PositionComponent
       final charComponent = FadeTextComponent(
         text: char,
         textStyle: style,
-        shader: shader,
+        shaderProgram: shaderProgram,
         baseColor: GameStyles.secondaryTitleColor,
         anchor: Anchor.center,
         priority: 1,
       );
 
-      // Position relative to wrapper center
-      // x: currentX + half width (since anchor is center)
-      // y: 40 (Initial state)
       charComponent.position = Vector2(currentX + width / 2, 40);
-      charComponent.opacity = 0.001;
-      charComponent.scale = Vector2.all(
-        1.0,
-      );
+      charComponent.opacity = 0.0;
+      charComponent.scale = Vector2.all(1.0);
 
       _contentWrapper.add(charComponent);
       _charComponents.add(charComponent);
 
-      currentX += width + spacing;
+      currentX += width;
+      if (i < text.length - 1) {
+        currentX += spacing;
+      }
     }
   }
 
   final List<FadeTextComponent> _charComponents = [];
 
   void show(VoidCallback showComplete) {
-    if (_charComponents.isEmpty) {
-      return;
-    }
+    if (_charComponents.isEmpty) return;
 
+    _isAnimating = true;
     (game as MyGame).audio.playSlideIn();
 
     final originalWrapperPos = _contentWrapper.position.clone();
-    _contentWrapper.position.x -= 100; // Start 100px left
+    _contentWrapper.position.x -= 100;
     _contentWrapper.add(
       MoveEffect.to(
         originalWrapperPos,
-        EffectController(duration: 2, curve: const Cubic(0.25, 0.1, 0.25, 1.0)),
+        EffectController(
+            duration: 2, curve: const Cubic(0.25, 0.1, 0.25, 1.0)),
       ),
     );
     int completedChars = 0;
@@ -144,24 +142,22 @@ class CinematicSecondaryTitleComponent extends PositionComponent
       final component = _charComponents[i];
       final delay = i * 0.05;
 
-      // 1. Rise & Fade & Stretch
-
-      // Opacity
+      // Opacity fade in
       component.add(
         OpacityEffect.to(
           1.0,
           EffectController(
-            duration: 0.1,
-            curve: Curves.linear,
+            duration: 0.4,
+            curve: Curves.easeOut,
             startDelay: delay,
           ),
         ),
       );
 
-      // Move (Rise)
+      // Rise from y=40 to y=0
       component.add(
         MoveEffect.to(
-          Vector2(component.position.x, 0), // Target Y: 0
+          Vector2(component.position.x, 0),
           EffectController(
             duration: 0.8,
             curve: Curves.easeOutCubic,
@@ -170,7 +166,7 @@ class CinematicSecondaryTitleComponent extends PositionComponent
         ),
       );
 
-      // Squash and Stretch: Stretch Vertically during rise
+      // Squash & stretch → elastic settle
       component.add(
         ScaleEffect.to(
           Vector2(0.95, 1.1),
@@ -180,8 +176,6 @@ class CinematicSecondaryTitleComponent extends PositionComponent
             startDelay: delay,
           ),
           onComplete: () {
-            // 2. Landing Bounce (Elastic restore to 1.0)
-            // Note: onComplete will happen after delay+duration
             component.add(
               ScaleEffect.to(
                 Vector2.all(1.0),
@@ -189,6 +183,8 @@ class CinematicSecondaryTitleComponent extends PositionComponent
                 onComplete: () {
                   completedChars++;
                   if (completedChars == _charComponents.length) {
+                    _isAnimating = false;
+                    _currentOpacity = 1.0;
                     showComplete();
                   }
                 },
@@ -201,11 +197,20 @@ class CinematicSecondaryTitleComponent extends PositionComponent
   }
 
   void hide() {
+    _isAnimating = true;
+    int completedChars = 0;
     for (final component in _charComponents) {
       component.add(
         OpacityEffect.to(
           0.0,
           EffectController(duration: 0.5, curve: Curves.easeIn),
+          onComplete: () {
+            completedChars++;
+            if (completedChars == _charComponents.length) {
+              _isAnimating = false;
+              _currentOpacity = 0.0;
+            }
+          },
         ),
       );
     }

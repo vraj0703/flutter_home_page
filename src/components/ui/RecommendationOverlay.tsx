@@ -44,12 +44,15 @@ export function RecommendationOverlay({ open, onClose, onSubmit }: Props) {
     e.preventDefault()
     if (!name.trim() || !message.trim()) return
 
+    // Sanitize inputs — strip HTML tags to prevent XSS if rendered elsewhere
+    const strip = (s: string) => s.trim().replace(/<[^>]*>/g, '')
+
     const testimonial: Testimonial = {
       id: `user-${Date.now()}`,
-      name: name.trim(),
-      role: role.trim(),
-      company: company.trim(),
-      text: message.trim(),
+      name: strip(name),
+      role: strip(role),
+      company: strip(company),
+      text: strip(message),
       relationship,
       date: new Date().toISOString().slice(0, 7),
     }

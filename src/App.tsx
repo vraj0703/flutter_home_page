@@ -5,18 +5,10 @@ import { SectionTransition } from './components/SectionTransition'
 import { Preloader } from './components/preloader/Preloader'
 import { useAssetLoader } from './hooks/useAssetLoader'
 import { AudioProvider, useAudio } from './audio/AudioProvider'
-import { AudioToggle } from './audio/AudioToggle'
 
 type Phase = 'flutter' | 'react' | 'contact'
 type TransitionDirection = 'forward' | 'reverse'
 type PreloaderPhase = 'loading' | 'revealing' | 'done'
-
-function getStatusText(progress: number): string {
-  if (progress < 0.3) return 'Loading engine...'
-  if (progress < 0.7) return 'Preparing gallery...'
-  if (progress < 0.95) return 'Almost ready...'
-  return 'Launching...'
-}
 
 function AppInner() {
   const [phase, setPhase] = useState<Phase>('flutter')
@@ -39,8 +31,6 @@ function AppInner() {
     return Math.min(fp * 0.8 + rp * 0.2, 1)
   }, [flutterProgress, flutterReady, reactProgress, reactReady])
 
-  const statusText = useMemo(() => getStatusText(totalProgress), [totalProgress])
-
   // Trigger reveal when both are ready
   useEffect(() => {
     if (flutterReady && reactReady && preloaderPhase === 'loading') {
@@ -61,9 +51,10 @@ function AppInner() {
     setPreloaderPhase('done')
   }, [])
 
+  const { setSection } = audio
   useEffect(() => {
-    audio.setSection(phase === 'react' ? 'gallery' : 'none')
-  }, [phase, audio])
+    setSection(phase === 'react' ? 'gallery' : 'none')
+  }, [phase, setSection])
 
   const transitionToPhase = useCallback((targetPhase: Phase) => {
     if (transitioning) return
@@ -93,8 +84,7 @@ function AppInner() {
         <S3_Gallery onNavigateToContact={handleNavigateToContact} />
       </div>
       <SectionTransition active={transitioning} onMidpoint={handleMidpoint} onComplete={handleComplete} duration={1.6} direction={transitionDirection} />
-      <AudioToggle />
-      <Preloader progress={totalProgress} phase={preloaderPhase} onRevealComplete={handlePreloaderRevealComplete} statusText={statusText} />
+      <Preloader progress={totalProgress} phase={preloaderPhase} onRevealComplete={handlePreloaderRevealComplete} />
     </div>
   )
 }

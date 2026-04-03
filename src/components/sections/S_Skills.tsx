@@ -27,7 +27,11 @@ export function S_Skills({ visible, onScrollBack, onReachEnd }: Props) {
     }
   }, [visible])
 
-  // Wheel handler — detect back-scroll to return to testimonials
+  // Stable ref for onScrollBack to avoid re-registering wheel listener
+  const onScrollBackRef = useRef(onScrollBack)
+  onScrollBackRef.current = onScrollBack
+
+  // Wheel handler — detect back-scroll to return to previous section
   useEffect(() => {
     if (!visible || !containerRef.current) return
     const el = containerRef.current
@@ -35,11 +39,11 @@ export function S_Skills({ visible, onScrollBack, onReachEnd }: Props) {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
 
-      if (e.deltaY < 0 && onScrollBack) {
+      if (e.deltaY < 0 && onScrollBackRef.current) {
         backScrollCount.current++
         if (backScrollCount.current >= 2 && !scrollBackFired.current) {
           scrollBackFired.current = true
-          onScrollBack()
+          onScrollBackRef.current()
         }
       } else if (e.deltaY > 0) {
         backScrollCount.current = 0
@@ -48,7 +52,7 @@ export function S_Skills({ visible, onScrollBack, onReachEnd }: Props) {
 
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [visible, onScrollBack])
+  }, [visible]) // only re-register when visibility changes
 
   if (!visible) return null
 

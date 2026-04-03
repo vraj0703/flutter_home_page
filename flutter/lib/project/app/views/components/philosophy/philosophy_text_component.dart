@@ -12,7 +12,7 @@ class PhilosophyTextComponent extends PositionComponent
     with HasPaint, HasGameReference<MyGame>, HoverCallbacks {
   final String text;
   final material.TextStyle style;
-  final ui.FragmentShader shader;
+  final ui.FragmentProgram shaderProgram;
   late final FadeTextComponent _fadeText;
 
   /// Enable reflection rendering (now handled by shader)
@@ -31,7 +31,7 @@ class PhilosophyTextComponent extends PositionComponent
   PhilosophyTextComponent({
     required this.text,
     required this.style,
-    required this.shader,
+    required this.shaderProgram,
     super.position,
     super.anchor,
   });
@@ -54,7 +54,7 @@ class PhilosophyTextComponent extends PositionComponent
     _fadeText = FadeTextComponent(
       text: text,
       textStyle: style,
-      shader: shader,
+      shaderProgram: shaderProgram,
       baseColor: GameStyles.boldTextBase,
     );
     _fadeText.anchor = Anchor.center;

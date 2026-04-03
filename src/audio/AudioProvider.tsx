@@ -41,7 +41,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('touchstart', initOnInteraction)
     }
 
-    // Also try to init immediately (works if user already interacted with Flutter)
+    // Try to init immediately — succeeds if user already interacted (e.g. via Flutter)
+    // AudioContext creation is safe here (inside useEffect, not during render)
     engine.init()
 
     window.addEventListener('click', initOnInteraction, { once: false })

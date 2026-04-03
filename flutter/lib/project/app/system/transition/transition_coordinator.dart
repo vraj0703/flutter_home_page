@@ -1,13 +1,8 @@
 import 'dart:math' as math;
 import 'package:flame/camera.dart';
-import 'package:flutter/services.dart';
 import 'package:flame/components.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
-import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
-
 import 'package:flutter_home_page/project/app/interfaces/transition_context.dart';
-import 'package:flutter_home_page/project/app/sections/philosophy_section.dart';
-import 'package:flutter_home_page/project/app/views/components/philosophy/flash_transition_component.dart';
 
 /// Coordinates the seamless transition from Philosophy to Experience section
 /// with precise timing of audio, visual effects, and section lifecycle management.
@@ -38,6 +33,7 @@ class TransitionCoordinator {
 
   /// Triggers camera shake by adding a [_CameraShakeComponent] to the viewport.
   /// Tied to the component tree — auto-cleans up if the viewport is removed.
+  // ignore: unused_element — retained for flash-back transition effect
   void _triggerCameraShake({
     required double intensity,
     required double duration,

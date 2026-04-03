@@ -101,7 +101,7 @@ class BoldTextSection implements GameSection {
     // Architectural Visibility: Reveal all components
     boldTextComponent.opacity = 1.0;
     cinematicTitle.reset();
-    cinematicSecondaryTitle.opacity = 1.0;
+    // Don't set secondary title opacity here — show() will animate it in
     backgroundRun.opacity = 1.0;
 
     logoOverlay.opacity = 1.0;
@@ -149,7 +149,7 @@ class BoldTextSection implements GameSection {
     setScrollOffset(_maxHeight);
     boldTextComponent.opacity = 1.0;
     cinematicTitle.reset();
-    cinematicSecondaryTitle.opacity = 1.0;
+    // Don't set secondary title opacity here — show() handles it
     logoOverlay.opacity = 1.0;
     backgroundRun.opacity = 1.0;
     boldTextComponent.position = centerPosition;
@@ -219,7 +219,11 @@ class BoldTextSection implements GameSection {
       if (_isActive) {
         final opacity = 1.0 - p;
         cinematicTitle.opacity = opacity;
-        cinematicSecondaryTitle.opacity = opacity;
+        // Only override secondary title opacity when scroll has started (p > 0)
+        // During intro (p == 0), show() animation owns opacity
+        if (p > 0.01) {
+          cinematicSecondaryTitle.opacity = opacity;
+        }
       }
     } else {
       cinematicTitle.position

@@ -13,14 +13,14 @@ import 'package:flutter_home_page/project/app/views/components/fade_text.dart';
 class CinematicTitleComponent extends PositionComponent
     with HasGameReference, HasPaint {
   final String primaryText;
-  final FragmentShader shader;
+  final FragmentProgram shaderProgram;
 
   late PositionComponent _contentWrapper;
   late FadeTextComponent _primaryTitle;
 
   CinematicTitleComponent({
     required this.primaryText,
-    required this.shader,
+    required this.shaderProgram,
     super.position,
   }) : super(anchor: Anchor.center);
 
@@ -42,7 +42,7 @@ class CinematicTitleComponent extends PositionComponent
         FadeTextComponent(
             text: primaryText.toUpperCase(),
             textStyle: primaryStyle,
-            shader: shader,
+            shaderProgram: shaderProgram,
             baseColor: GameStyles.boldTextBase,
             // Gold/Copper
             anchor: Anchor.center,

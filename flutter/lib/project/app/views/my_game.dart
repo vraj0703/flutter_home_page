@@ -29,7 +29,7 @@ import 'package:flutter_home_page/project/app/system/input/game_input_controller
 import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart';
 import 'package:flutter_home_page/project/app/system/sequence/sequence_runner.dart';
 import 'package:flutter_home_page/project/app/sections/bold_text_section.dart';
-import 'package:flutter_home_page/project/app/sections/philosophy_section.dart';
+import 'package:flutter_home_page/project/app/sections/contact_section.dart';
 import 'package:flutter_home_page/project/app/system/transition/transition_coordinator.dart';
 
 class MyGame extends FlameGame
@@ -46,6 +46,9 @@ class MyGame extends FlameGame
   final Queuer queuer;
   final StateProvider stateProvider;
   final SceneBloc _bloc;
+
+  /// Loading progress (0.0–1.0) exposed for the overlay widget.
+  final ValueNotifier<double> loadingProgress = ValueNotifier(0.0);
 
   MyGame({this.onStartExitAnimation, required SceneBloc bloc})
     : _bloc = bloc,
@@ -174,7 +177,11 @@ class MyGame extends FlameGame
 
     add(_inputController);
 
-    _primarySequenceRunner.warmUpAll().whenComplete(() {
+    _primarySequenceRunner.warmUpAll(
+      onProgress: (progress) {
+        loadingProgress.value = progress;
+      },
+    ).whenComplete(() {
       _warmupComplete = true;
     });
 
@@ -199,18 +206,10 @@ class MyGame extends FlameGame
     // Register controllers to philosophy scroll system
     _philosophyScrollSystem.register(_primarySequenceRunner);
 
-    // Pre-warm Flash Shader
-    await _loadFlashShader();
   }
 
   late final FragmentShader flashShader;
 
-  Future<void> _loadFlashShader() async {
-    final program = await FragmentProgram.fromAsset(
-      'assets/shaders/flash_transition.frag',
-    );
-    flashShader = program.fragmentShader();
-  }
 
   // Compatibility getter for components accessing godRay via game reference
   GodRayComponent get godRay => _componentFactory.godRay;
@@ -276,7 +275,7 @@ class MyGame extends FlameGame
     );
 
     // Handoff is now triggered by philosophy button hold complete
-    // (see philosophy_section.dart onHoldComplete callback)
+    // (see contact_section.dart onHoldComplete callback)
 
     // Base Updates
     _cursorSystem.update(
@@ -298,6 +297,7 @@ class MyGame extends FlameGame
         if (_warmupComplete && !_gameReadyDispatched) {
           _gameReadyDispatched = true;
           queuer.queue(event: const SceneEvent.gameReady());
+          _sendFlutterReady();
         }
       },
       logoOverlayRemoving: () {
@@ -436,6 +436,18 @@ class MyGame extends FlameGame
     _primarySequenceRunner.init([_philosophySection]);
     queuer.queue(event: const SceneEvent.onScroll());
     await _primarySequenceRunner.start();
+  }
+
+  /// Notify parent React frame that Flutter engine is loaded and ready.
+  void _sendFlutterReady() {
+    if (!kIsWeb) return;
+    try {
+      final msg = <String, String>{'type': 'flutter-ready'}.jsify();
+      web.window.parent?.postMessage(msg, '*'.toJS);
+      debugPrint('postMessage sent: flutter-ready');
+    } catch (e) {
+      debugPrint('postMessage error: $e');
+    }
   }
 
   void _sendHandoff() {

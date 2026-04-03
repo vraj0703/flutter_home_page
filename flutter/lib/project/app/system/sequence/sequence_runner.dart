@@ -70,12 +70,14 @@ class SequenceRunner implements ScrollObserver {
 
   /// Proactively warms up all sections in the sequence.
   /// Should be called during game initialization to front-load compiled shaders and assets.
-  Future<void> warmUpAll() async {
-    for (final section in _sections) {
+  /// [onProgress] reports 0.0–1.0 as each section completes.
+  Future<void> warmUpAll({void Function(double)? onProgress}) async {
+    for (int i = 0; i < _sections.length; i++) {
       await _warmUpSectionPipeline(
-        section,
+        _sections[i],
         delay: const Duration(milliseconds: 300),
       );
+      onProgress?.call((i + 1) / _sections.length);
     }
   }
 

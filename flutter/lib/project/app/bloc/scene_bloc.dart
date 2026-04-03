@@ -42,7 +42,7 @@ class SceneBloc extends Bloc<SceneEvent, SceneState>
   }
 
   @override
-  queue({required SceneEvent event}) {
+  void queue({required SceneEvent event}) {
     add(event);
   }
 

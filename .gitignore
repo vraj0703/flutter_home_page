@@ -60,6 +60,9 @@ flutter/.flutter-plugins-dependencies
 .pub-cache/
 .pub/
 
+# Flutter web build output (generated — rebuild with flutter build web)
+public/flutter/
+
 # Agent Artifacts
 .agent/
 .claude/

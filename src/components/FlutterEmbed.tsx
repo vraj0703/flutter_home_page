@@ -40,31 +40,41 @@ export const FlutterEmbed = forwardRef<FlutterEmbedHandle, FlutterEmbedProps>(
       },
     }))
 
+    // Use refs for callbacks to avoid re-registering the listener on every prop change
+    const onReadyRef = useRef(onReady)
+    const onHandoffRef = useRef(onHandoff)
+    const onLoadingProgressRef = useRef(onLoadingProgress)
+    onReadyRef.current = onReady
+    onHandoffRef.current = onHandoff
+    onLoadingProgressRef.current = onLoadingProgress
+
     useEffect(() => {
       function handleMessage(event: MessageEvent) {
         const data = event.data
         if (!data || typeof data !== 'object') return
 
+        // Only handle known flutter-* message types to filter out noise
         const type = data.type || data['type']
-        if (!type) return
+        if (!type || typeof type !== 'string' || !type.startsWith('flutter-')) return
 
         if (type === 'flutter-loading' && typeof data.progress === 'number') {
-          onLoadingProgress?.(data.progress)
+          const clamped = Math.max(0, Math.min(1, data.progress))
+          onLoadingProgressRef.current?.(clamped)
         }
 
         if (type === 'flutter-ready') {
-          onReady?.()
+          onReadyRef.current?.()
         }
 
         if (type === 'flutter-handoff' && !handoffTriggered.current) {
           handoffTriggered.current = true
-          onHandoff?.()
+          onHandoffRef.current?.()
         }
       }
 
       window.addEventListener('message', handleMessage)
       return () => window.removeEventListener('message', handleMessage)
-    }, [onReady, onHandoff, onLoadingProgress])
+    }, []) // stable — reads refs
 
     return (
       <iframe

@@ -2,8 +2,6 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
-import 'package:flutter_home_page/project/app/config/game_strings.dart';
-import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/config/game_curves.dart';
 import 'package:flutter_home_page/project/app/config/scroll_sequence_config.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
@@ -173,37 +171,6 @@ class _StatefulSceneState extends State<StatefulScene>
                   },
                 ),
 
-                TweenAnimationBuilder<double>(
-                  // Animates from current value to this 'end' whenever it changes
-                  tween: Tween<double>(
-                    begin: state is Loading ? 0.0 : _blinkingController.value,
-                    end: state is Loading ? 1.0 : 0.0,
-                  ),
-                  duration: const Duration(
-                    milliseconds: ScrollSequenceConfig.loadingBlinkDuration,
-                  ),
-                  curve: GameCurves.loadingBlink,
-                  // Decelerates for a smoother "exit" feel
-                  builder: (context, value, child) {
-                    return IgnorePointer(
-                      child: Opacity(opacity: value, child: child),
-                    );
-                  },
-                  child: FadeTransition(
-                    key: ValueKey('loading'),
-                    opacity: _blinkingController,
-                    child: const Text(
-                      GameStrings.loadingText,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: GameStyles.loadingFontSize,
-                        letterSpacing: GameStyles.loadingLetterSpacing,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: GameStyles.fontBroadway,
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),

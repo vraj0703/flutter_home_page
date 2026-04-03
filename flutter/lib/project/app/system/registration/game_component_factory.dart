@@ -183,24 +183,25 @@ class GameComponentFactory {
     _beachBackground.opacity = 0.0;
     _beachBackground.priority = 10;
 
+    // ─── Metallic shader program (shared by title, secondary title, philosophy) ───
+    if (!_shaderCache.containsKey(GameAssets.metallicShader)) {
+      _shaderCache[GameAssets.metallicShader] =
+          await FragmentProgram.fromAsset(GameAssets.metallicShader);
+    }
+    final metallicProgram = _shaderCache[GameAssets.metallicShader]!;
+
     // ─── Cinematic Title ───
-    final metallicShader = await _getOrLoadShaderProgram(
-      GameAssets.metallicShader,
-    );
     _cinematicTitle = CinematicTitleComponent(
       primaryText: GameStrings.primaryTitle,
-      shader: metallicShader,
+      shaderProgram: metallicProgram,
       position: size / 2,
     );
     _cinematicTitle.priority = GameLayout.zTitle;
 
     // ─── Cinematic Secondary Title ───
-    final metallicShader2 = await _getOrLoadShaderProgram(
-      GameAssets.metallicShader,
-    );
     _cinematicSecondaryTitle = CinematicSecondaryTitleComponent(
       text: GameStrings.secondaryTitle,
-      shader: metallicShader2,
+      shaderProgram: metallicProgram,
       position: size / 2 + GameLayout.secTitleOffsetVector,
     );
     _cinematicSecondaryTitle.priority = GameLayout.zSecondaryTitle;
@@ -224,9 +225,6 @@ class GameComponentFactory {
     _boldTextReveal.opacity = 0.0;
 
     // ─── Philosophy Text ───
-    final philoShader = await _getOrLoadShaderProgram(
-      GameAssets.metallicShader,
-    );
     _philosophyText = PhilosophyTextComponent(
       text: GameStrings.philosophyTitle,
       style: material.TextStyle(
@@ -236,7 +234,7 @@ class GameComponentFactory {
         color: GameStyles.philosophyText,
         letterSpacing: 1.5,
       ),
-      shader: philoShader,
+      shaderProgram: metallicProgram,
       anchor: Anchor.centerLeft,
       position: Vector2(size.x * GameLayout.philosophyTextXRatio, size.y / 2),
     );

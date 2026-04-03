@@ -4,23 +4,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 import 'package:flutter_home_page/project/app/views/my_game.dart';
 
+/// A text component rendered with a metallic fragment shader.
+///
+/// IMPORTANT: Each instance creates its OWN [FragmentShader] from the given
+/// [shaderProgram]. This is critical because Flutter's canvas records draw
+/// commands lazily — if multiple components share one shader and each sets
+/// different uniforms (position, opacity), later components overwrite the
+/// uniforms before earlier components' draws execute on the GPU, causing
+/// flickering and opacity contamination.
 class FadeTextComponent extends TextComponent with HasPaint, HasGameReference {
-  final FragmentShader shader;
+  final FragmentProgram shaderProgram;
+  late final FragmentShader _ownShader;
   final Color baseColor;
   double _time = 0;
 
   FadeTextComponent({
     required super.text,
     required TextStyle textStyle,
-    required this.shader,
+    required this.shaderProgram,
     this.baseColor = GameStyles.fadeTextDefault,
     super.position,
     super.anchor,
     super.priority,
-  }) : super(
+  }) : _ownShader = shaderProgram.fragmentShader(),
+       super(
          textRenderer: TextPaint(
            style: textStyle.copyWith(
-             foreground: Paint()..shader = shader,
+             // Placeholder paint — replaced in onLoad with own shader instance
+             foreground: Paint(),
              shadows: [
                const Shadow(
                  color: GameStyles.textShadowColor,
@@ -33,7 +44,15 @@ class FadeTextComponent extends TextComponent with HasPaint, HasGameReference {
              ],
            ),
          ),
-       );
+       ) {
+    // Set the TextPaint's foreground shader to our OWN instance
+    final currentStyle = (textRenderer as TextPaint).style;
+    textRenderer = TextPaint(
+      style: currentStyle.copyWith(
+        foreground: Paint()..shader = _ownShader,
+      ),
+    );
+  }
 
   @override
   void update(double dt) {
@@ -45,16 +64,12 @@ class FadeTextComponent extends TextComponent with HasPaint, HasGameReference {
   void render(Canvas canvas) {
     if (opacity <= 0) return;
 
-    // 1. Get the Device Pixel Ratio (DPR)
     final dpr = game.canvasSize.x / game.size.x;
-
-    // 2. Translate everything to PHYSICAL coordinate space
-    // This is the only way to ensure 1:1 cursor tracking on all devices
     final physicalTopLeft = absolutePositionOf(Vector2.zero()) * dpr;
     final physicalSize = size * dpr;
     final physicalLightPos = (game as MyGame).godRay.position * dpr;
 
-    shader
+    _ownShader
       ..setFloat(0, physicalSize.x)
       ..setFloat(1, physicalSize.y)
       ..setFloat(2, physicalTopLeft.x)

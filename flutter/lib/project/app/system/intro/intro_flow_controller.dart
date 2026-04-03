@@ -105,6 +105,6 @@ class IntroFlowController {
   void hideTitles() {
     _cinematicTitle.opacity = 0.0;
     _cinematicTitle.hide();
-    _cinematicSecondaryTitle.opacity = 0.0;
+    _cinematicSecondaryTitle.hide();
   }
 }

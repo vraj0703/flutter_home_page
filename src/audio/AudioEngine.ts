@@ -1,34 +1,17 @@
 /**
- * AudioEngine — Hybrid audio: real ambient loops + procedural UI sounds
- * Ambient: MP3 loops per section (gallery-piano, testimonials-pad, skills-electronic)
- * UI: Web Audio API synthesized sounds (hover, click, whoosh, clack, boot)
+ * AudioEngine — Procedural UI sounds via Web Audio API
+ * Synthesized sounds: hover ping, shutter click, scroll tick, whoosh, clack, boot sweep, button click
  */
 
 export type SectionName = 'gallery' | 'testimonials' | 'skills' | 'none'
 
-const AMBIENT_TRACKS: Record<Exclude<SectionName, 'none'>, string> = {
-  gallery: '/audio/gallery-piano.mp3',
-  testimonials: '/audio/testimonials-pad.mp3',
-  skills: '/audio/skills-electronic.mp3',
-}
-
-// Free lofi radio stream — plays in gallery section via HTML5 Audio
-const LOFI_STREAM_URL = 'https://play.streamafrica.net/lofiradio'
-
 export class AudioEngine {
   private ctx: AudioContext | null = null
   private masterGain: GainNode | null = null
-  private ambientGain: GainNode | null = null
   private uiGain: GainNode | null = null
-  private currentAmbient: OscillatorNode[] = []
-  private currentNoises: AudioBufferSourceNode[] = []
-  private currentTrack: AudioBufferSourceNode | null = null
-  private trackBuffers: Map<string, AudioBuffer> = new Map()
   private currentSection: SectionName = 'none'
   private _muted = false
   private _initialized = false
-  private lofiAudio: HTMLAudioElement | null = null
-  private lofiActive = false
 
   get muted() { return this._muted }
 
@@ -40,10 +23,6 @@ export class AudioEngine {
       this.masterGain = this.ctx.createGain()
       this.masterGain.gain.value = 1.0
       this.masterGain.connect(this.ctx.destination)
-
-      this.ambientGain = this.ctx.createGain()
-      this.ambientGain.gain.value = 0
-      this.ambientGain.connect(this.masterGain)
 
       this.uiGain = this.ctx.createGain()
       this.uiGain.gain.value = 0.6
@@ -73,11 +52,6 @@ export class AudioEngine {
       this.ctx.currentTime,
       0.15
     )
-    // Sync lofi stream volume with mute state
-    if (this.lofiAudio) {
-      if (muted) this.lofiAudio.volume = 0
-      else if (this.lofiActive) this.fadeLofi(0.25, 300)
-    }
   }
 
   /** Toggle mute */
@@ -86,110 +60,9 @@ export class AudioEngine {
     return this._muted
   }
 
-  // ─── Ambient Scores ───────────────────────────────────
-
-  /** Crossfade to a new section's ambient score */
+  /** Track current section (no ambient audio) */
   async setSection(section: SectionName) {
-    if (section === this.currentSection) return
-    if (!this.ctx || !this.ambientGain) { this.init(); if (!this.ctx) return }
-    await this.ensureRunning()
-
-    // Fade out current
-    this.ambientGain!.gain.setTargetAtTime(0, this.ctx!.currentTime, 0.4)
-
-    // Manage lofi radio for gallery section
-    if (section === 'gallery') this.startLofi()
-    else this.stopLofi()
-
-    // Wait for fade out
-    setTimeout(() => {
-      this.stopAmbient()
-      this.currentSection = section
-      if (section === 'none') return
-
-      // Start new ambient track from file
-      this.startAmbientTrack(section as Exclude<SectionName, 'none'>)
-
-      // Fade in
-      this.ambientGain!.gain.setTargetAtTime(1.0, this.ctx!.currentTime, 0.5)
-    }, 500)
-  }
-
-  /** Start lofi radio stream */
-  private startLofi() {
-    if (this.lofiActive) return
-    this.lofiActive = true
-    if (!this.lofiAudio) {
-      this.lofiAudio = new Audio(LOFI_STREAM_URL)
-      this.lofiAudio.crossOrigin = 'anonymous'
-      this.lofiAudio.loop = true
-      this.lofiAudio.volume = 0
-    }
-    this.lofiAudio.play().catch(() => {})
-    this.fadeLofi(0.25, 2000)
-  }
-
-  /** Stop lofi radio stream */
-  private stopLofi() {
-    if (!this.lofiActive || !this.lofiAudio) return
-    this.lofiActive = false
-    this.fadeLofi(0, 1000, () => { this.lofiAudio?.pause() })
-  }
-
-  /** Fade lofi audio volume smoothly */
-  private fadeLofi(target: number, durationMs: number, onDone?: () => void) {
-    if (!this.lofiAudio) { onDone?.(); return }
-    const start = this.lofiAudio.volume
-    const startTime = performance.now()
-    const step = () => {
-      if (!this.lofiAudio) { onDone?.(); return }
-      const elapsed = performance.now() - startTime
-      const t = Math.min(elapsed / durationMs, 1)
-      this.lofiAudio.volume = start + (target - start) * t
-      if (t < 1) requestAnimationFrame(step)
-      else onDone?.()
-    }
-    requestAnimationFrame(step)
-  }
-
-  private stopAmbient() {
-    this.currentAmbient.forEach(osc => { try { osc.stop() } catch {} })
-    this.currentNoises.forEach(n => { try { n.stop() } catch {} })
-    if (this.currentTrack) { try { this.currentTrack.stop() } catch {} }
-    this.currentAmbient = []
-    this.currentNoises = []
-    this.currentTrack = null
-  }
-
-  /** Load and cache an audio file as AudioBuffer */
-  private async loadTrack(url: string): Promise<AudioBuffer | null> {
-    if (this.trackBuffers.has(url)) return this.trackBuffers.get(url)!
-    if (!this.ctx) return null
-    try {
-      const response = await fetch(url)
-      const arrayBuffer = await response.arrayBuffer()
-      const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer)
-      this.trackBuffers.set(url, audioBuffer)
-      return audioBuffer
-    } catch (e) {
-      console.warn('[Audio] Failed to load track:', url, e)
-      return null
-    }
-  }
-
-  /** Start a looping ambient track from file */
-  private async startAmbientTrack(section: Exclude<SectionName, 'none'>) {
-    if (!this.ctx || !this.ambientGain) return
-    const url = AMBIENT_TRACKS[section]
-    const buffer = await this.loadTrack(url)
-    if (!buffer) return
-
-    const source = this.ctx.createBufferSource()
-    source.buffer = buffer
-    source.loop = true
-    source.connect(this.ambientGain)
-    source.start()
-    this.currentTrack = source
+    this.currentSection = section
   }
 
   // ─── UI Sounds ────────────────────────────────────────
@@ -338,9 +211,6 @@ export class AudioEngine {
 
   /** Cleanup */
   dispose() {
-    this.stopAmbient()
-    this.stopLofi()
-    if (this.lofiAudio) { this.lofiAudio.src = ''; this.lofiAudio = null }
     if (this.ctx && this.ctx.state !== 'closed') {
       this.ctx.close()
     }

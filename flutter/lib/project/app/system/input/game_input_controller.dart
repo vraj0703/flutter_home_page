@@ -9,7 +9,7 @@ import 'package:flutter_home_page/project/app/system/scroll/scroll_system.dart';
 import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 
 import 'package:flutter_home_page/project/app/views/my_game.dart';
-import 'package:flutter_home_page/project/app/sections/philosophy_section.dart';
+import 'package:flutter_home_page/project/app/sections/contact_section.dart';
 
 class GameInputController extends Component with HasGameReference<MyGame> {
   final Queuer queuer;
@@ -50,7 +50,7 @@ class GameInputController extends Component with HasGameReference<MyGame> {
       }
     } else {
       queuer.queue(event: const SceneEvent.onScroll());
-      LoggerUtil.log('Input', 'Scroll Delta: \${delta.toStringAsFixed(1)}');
+      LoggerUtil.log('Input', 'Scroll Delta: ${delta.toStringAsFixed(1)}');
       scrollSystem.onScroll(delta);
       audioSystem.playScrollTick();
     }
