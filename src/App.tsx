@@ -83,9 +83,24 @@ function AppInner() {
   const handleMidpoint = useCallback(() => {
     if (!pendingPhase.current) return
     const p = pendingPhase.current; setPhase(p)
-    if (p === 'react') { flutterRef.current?.hide() }
-    else if (p === 'flutter') { flutterRef.current?.show(); flutterRef.current?.sendMessage({ type: 'goto-home' }) }
-    else if (p === 'contact') { flutterRef.current?.show(); flutterRef.current?.sendMessage({ type: 'goto-contact' }) }
+    if (p === 'react') { 
+      flutterRef.current?.hide()
+      flutterRef.current?.sendMessage({ type: 'flutter-pause' }) 
+    }
+    else if (p === 'flutter') { 
+      flutterRef.current?.show(); 
+      flutterRef.current?.sendMessage({ type: 'flutter-resume' });
+      setTimeout(() => {
+        flutterRef.current?.sendMessage({ type: 'goto-home' }) 
+      }, 50)
+    }
+    else if (p === 'contact') { 
+      flutterRef.current?.show(); 
+      flutterRef.current?.sendMessage({ type: 'flutter-resume' });
+      setTimeout(() => {
+        flutterRef.current?.sendMessage({ type: 'goto-contact' }) 
+      }, 50)
+    }
   }, [])
 
   const handleComplete = useCallback(() => { pendingPhase.current = null; setTransitioning(false) }, [])

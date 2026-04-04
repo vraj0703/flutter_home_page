@@ -119,16 +119,39 @@ export function SectionTransition({
   }, [active, duration])
 
   return (
-    <div
-      ref={overlayRef}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 100,
-        opacity: 0,
-        pointerEvents: 'none',
-        willChange: 'opacity, transform, filter',
-      }}
-    />
+    <>
+      <style>{`
+        @keyframes pulseGlow {
+          0% { opacity: 0.3; text-shadow: 0 0 4px rgba(200,164,92,0.2) }
+          50% { opacity: 0.9; text-shadow: 0 0 12px rgba(200,164,92,0.6) }
+          100% { opacity: 0.3; text-shadow: 0 0 4px rgba(200,164,92,0.2) }
+        }
+      `}</style>
+      <div
+        ref={overlayRef}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 100,
+          opacity: 0,
+          pointerEvents: 'none',
+          willChange: 'opacity, transform, filter',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <div style={{
+          color: '#C8A45C',
+          fontFamily: 'monospace',
+          letterSpacing: '0.3em',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          animation: 'pulseGlow 1.8s infinite ease-in-out'
+        }}>
+          SYSTEM TRANSITION // ALIGNING PROTOCOLS
+        </div>
+      </div>
+    </>
   )
 }

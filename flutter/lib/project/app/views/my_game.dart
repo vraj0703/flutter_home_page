@@ -187,6 +187,10 @@ class MyGame extends FlameGame
         .warmUpAll(
           onProgress: (progress) {
             loadingProgress.value = progress;
+            if (kIsWeb) {
+              final msg = {'type': 'flutter-loading', 'progress': progress}.jsify();
+              web.window.parent?.postMessage(msg, '*'.toJS);
+            }
           },
         )
         .whenComplete(() {
@@ -202,14 +206,21 @@ class MyGame extends FlameGame
           final data = msgEvent.data;
           if (data == null) return;
           final dartData = data.dartify();
-          if (dartData is Map && dartData['type'] == 'goto-contact') {
-            debugPrint('[Flutter] Received goto-contact');
-            _handoffSent = false; // Allow future handoffs
-            _startContactSection();
-          } else if (dartData is Map && dartData['type'] == 'goto-home') {
-            debugPrint('[Flutter] Received goto-home');
-            _handoffSent = false; // Allow future handoffs
-            _startHomeSection();
+          if (dartData is Map) {
+            final type = dartData['type'];
+            if (type == 'flutter-pause') {
+              paused = true;
+            } else if (type == 'flutter-resume') {
+              paused = false;
+            } else if (type == 'goto-contact') {
+              debugPrint('[Flutter] Received goto-contact');
+              _handoffSent = false; // Allow future handoffs
+              _startContactSection();
+            } else if (type == 'goto-home') {
+              debugPrint('[Flutter] Received goto-home');
+              _handoffSent = false; // Allow future handoffs
+              _startHomeSection();
+            }
           }
         }.toJS,
       );

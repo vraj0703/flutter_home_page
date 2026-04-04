@@ -41,7 +41,7 @@ const TEST_CARDS = TESTIMONIALS.filter(t => !t.isCTA)
 const ALL_TEST_CARDS = TESTIMONIALS // includes CTA as last entry
 const TEST_SPACING = 5
 const TEST_START_X = 7
-const TEST_PAN_END = TEST_START_X + (TEST_CARDS.length - 1) * TEST_SPACING
+const TEST_PAN_END = TEST_START_X + (ALL_TEST_CARDS.length - 1) * TEST_SPACING
 
 // Shared scroll progress
 let _scrollProgress = 0
@@ -935,7 +935,7 @@ function FloatingKB({ position }: { position: [number, number, number] }) {
   // - unmounted (scroll < 5%): nothing in scene graph
   // - preloading (5-93%): mounted 500 units below, compiling shaders across frames
   // - visible (>93%): camera turn is complete, teleport to real position
-  const [phase, setPhase] = useState<'unmounted' | 'preloading' | 'visible'>('unmounted')
+  const [phase, setPhase] = useState<'unmounted' | 'preloading' | 'visible'>('preloading')
 
   useFrame(({ clock }) => {
     if (phase === 'unmounted' && _scrollProgress > 0.05) setPhase('preloading')
@@ -945,10 +945,14 @@ function FloatingKB({ position }: { position: [number, number, number] }) {
     if (!outerRef.current) return
     const p = _scrollProgress
     if (p < 0.97) {
-      outerRef.current.rotation.y = Math.PI + clock.elapsedTime * 0.1
+      const baseRot = clock.elapsedTime * 0.1
+      outerRef.current.rotation.y = Math.PI + baseRot % (Math.PI * 2)
       outerRef.current.position.y = position[1] + Math.sin(clock.elapsedTime * 0.4) * 0.08
     } else {
-      outerRef.current.rotation.y += (Math.PI - outerRef.current.rotation.y) * 0.03
+      let diff = Math.PI - outerRef.current.rotation.y
+      while (diff < -Math.PI) diff += Math.PI * 2
+      while (diff > Math.PI) diff -= Math.PI * 2
+      outerRef.current.rotation.y += diff * 0.03
       outerRef.current.position.y += (position[1] - outerRef.current.position.y) * 0.03
     }
   })
@@ -1367,8 +1371,9 @@ function ShaderWarmup() {
 export function GalleryScene() {
   return (
     <Canvas
+      dpr={Math.min(window.devicePixelRatio, 2)}
       camera={{ position: [0, 0.3, 3], fov: 65 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.6, preserveDrawingBuffer: true, powerPreference: 'high-performance' }}
+      gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.6, preserveDrawingBuffer: true, powerPreference: 'high-performance' }}
       shadows
       style={{ position: 'absolute', inset: 0 }}
       onCreated={({ gl }) => { gl.setClearColor(new THREE.Color('#C4B496'), 1) }}

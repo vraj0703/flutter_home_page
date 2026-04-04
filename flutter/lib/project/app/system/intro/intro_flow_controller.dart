@@ -84,7 +84,13 @@ class IntroFlowController {
             1000.0,
         removeOnFinish: true,
         onTick: () {
-          _audioSystem.playTitleLoaded();
+          Future.delayed(
+            Duration(milliseconds: (ScrollSequenceConfig.titleRevealDelay * 1000).toInt()),
+            () {
+              if (_audioSystem.isMuted) return;
+              _audioSystem.playTitleLoaded();
+            }
+          );
           _cinematicTitle.show(() {
             _cinematicSecondaryTitle.show(
               () => _queuer.queue(event: SceneEvent.titleLoaded()),
