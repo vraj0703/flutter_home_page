@@ -61,7 +61,8 @@ class ContactCard extends PositionComponent
 late SpriteComponent iconComp;
   late TextComponent titleComp;
   late RectangleComponent dividerComp;
-  late TextComponent descComp; // Changed to TextComponent
+  late TextComponent descComp;
+  late TextComponent ctaComp;
 
   ContactCard({
     required this.data,
@@ -109,12 +110,12 @@ late SpriteComponent iconComp;
       add(dividerComp);
 
       descComp = TextComponent(
-        text: '', // Set in _updateLayout
+        text: '',
         textRenderer: TextPaint(
           style: TextStyle(
             fontFamily: GameStyles.fontModernUrban,
             fontSize: GameStyles.cardDescVisibleSize,
-            color: GameStyles.cardDesc, // Will be updated by _updateVisuals
+            color: GameStyles.cardDesc,
             height: 1.4,
           ),
         ),
@@ -122,6 +123,22 @@ late SpriteComponent iconComp;
         position: size / 2,
       );
       add(descComp);
+
+      // CTA button text on the back
+      ctaComp = TextComponent(
+        text: data!.ctaText,
+        textRenderer: TextPaint(
+          style: TextStyle(
+            fontFamily: GameStyles.fontModernUrban,
+            fontSize: 14.0,
+            fontWeight: FontWeight.w600,
+            color: data!.accentColor,
+            letterSpacing: 1.5,
+          ),
+        ),
+        anchor: Anchor.center,
+      );
+      add(ctaComp);
     }
 
     _updateLayout();
@@ -178,9 +195,10 @@ late SpriteComponent iconComp;
     game.contactSection.triggerLightningEffect();
   }
 
-  /// Open URL when card is tapped
+  /// Open URL when card is tapped (only when flipped to back side)
   @override
   void onTapUp(TapUpEvent event) {
+    if (!_isFlipped) return; // Only act when showing back side with CTA
     final url = data?.url;
     if (url != null && url.isNotEmpty && kIsWeb) {
       web.window.open(url, '_blank');
@@ -353,7 +371,8 @@ late SpriteComponent iconComp;
     if (isBack) {
       iconComp.scale = Vector2.zero();
       titleComp.scale = Vector2.zero();
-     descComp.scale = Vector2.all(1.0);
+      descComp.scale = Vector2.all(1.0);
+      ctaComp.scale = Vector2.all(1.0);
 
       if (index == 3 && _idleTime % 60 < 1) {
         // Throttle logs
@@ -363,6 +382,7 @@ late SpriteComponent iconComp;
       iconComp.scale = Vector2.all(1.0);
       titleComp.scale = Vector2.all(1.0);
       descComp.scale = Vector2.zero();
+      ctaComp.scale = Vector2.zero();
     }
 
     // Debug log for opacity/scale in update
@@ -394,12 +414,34 @@ late SpriteComponent iconComp;
         // Divider: Standard Plane (Z=0)
         // dividerComp.renderTree(canvas); // Hidden in layout anyway, but safe to skip
       } else {
-        // Back side: Un-mirror text by flipping canvas horizontally
-
+        // Back side: Un-mirror by flipping canvas horizontally
         canvas.save();
         canvas.scale(-1.0, 1.0);
         canvas.translate(-size.x, 0);
         descComp.renderTree(canvas);
+
+        // CTA button — rendered below description
+        // Draw button background
+        final ctaBounds = RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(size.x / 2, size.y - 50),
+            width: 160,
+            height: 36,
+          ),
+          const Radius.circular(18),
+        );
+        canvas.drawRRect(
+          ctaBounds,
+          Paint()..color = Color.fromRGBO(255, 255, 255, 0.12 * _finalOpacity),
+        );
+        canvas.drawRRect(
+          ctaBounds,
+          Paint()
+            ..color = (data?.accentColor ?? const Color(0xFFFFFFFF)).withValues(alpha: 0.5 * _finalOpacity)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.0,
+        );
+        ctaComp.renderTree(canvas);
         canvas.restore();
       }
 
@@ -449,6 +491,10 @@ late SpriteComponent iconComp;
     }
 
     dividerComp.size = Vector2.zero();
+
+    // CTA position — bottom center of card
+    ctaComp.position = Vector2(size.x / 2, size.y - 50);
+    ctaComp.anchor = Anchor.center;
   }
 
   void _updateVisuals() {
@@ -472,6 +518,16 @@ late SpriteComponent iconComp;
           fontSize: GameStyles.cardDescVisibleSize,
           color: GameStyles.cardDesc.withValues(alpha: alpha),
           height: 1.4,
+        ),
+      );
+
+      ctaComp.textRenderer = TextPaint(
+        style: TextStyle(
+          fontFamily: GameStyles.fontModernUrban,
+          fontSize: 14.0,
+          fontWeight: FontWeight.w600,
+          color: (data!.accentColor).withValues(alpha: alpha),
+          letterSpacing: 1.5,
         ),
       );
     }
