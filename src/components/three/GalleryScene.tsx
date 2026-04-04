@@ -74,8 +74,12 @@ export function requestScrollUnlock() { _scrollUnlockRequested = true }
 
 // Reset gallery scroll to start (called when leaving React phase)
 let _scrollContainer: HTMLElement | null = null
+let _cameraResetRequested = false
 export function resetGalleryScroll() {
   if (_scrollContainer) _scrollContainer.scrollTop = 0
+  _scrollProgress = 0
+  _kbFocused = false
+  _cameraResetRequested = true
 }
 
 // Back navigation — observable from outside Three.js
@@ -936,6 +940,7 @@ function FloatingKB({ position }: { position: [number, number, number] }) {
   useFrame(({ clock }) => {
     if (phase === 'unmounted' && _scrollProgress > 0.05) setPhase('preloading')
     if (phase === 'preloading' && _scrollProgress > 0.93) setPhase('visible')
+    if (phase === 'visible' && _scrollProgress < 0.05) setPhase('preloading')
 
     if (!outerRef.current) return
     const p = _scrollProgress
@@ -978,6 +983,19 @@ function CameraRig() {
   const kbFocused = useRef(false)
 
   useFrame(() => {
+    // Reset camera state when gallery re-enters
+    if (_cameraResetRequested) {
+      _cameraResetRequested = false
+      kbTriggered.current = false
+      kbFocused.current = false
+      setKbFocused(false)
+      curPos.current.set(0, 0.5, 3)
+      curLook.current.set(0, 0.5, -10)
+      prevOff.current = 0
+      focusActive = false
+      focusProjectIndex = -1
+    }
+
     const p = scroll.offset
     _scrollProgress = p
 

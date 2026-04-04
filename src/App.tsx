@@ -42,13 +42,13 @@ function AppInner() {
     }
   }, [flutterReady, reactReady, preloaderPhase])
 
-  // Start radio when entering React, stop + reset scroll when leaving
+  // Start radio + reset scroll when entering React, stop when leaving
   useEffect(() => {
     if (phase === 'react') {
+      resetGalleryScroll() // Always start gallery from the beginning
       startRadioOnGalleryEnter()
     } else {
       stopRadio()
-      resetGalleryScroll()
     }
   }, [phase])
 
