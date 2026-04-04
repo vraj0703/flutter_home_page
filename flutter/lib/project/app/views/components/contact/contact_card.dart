@@ -195,14 +195,18 @@ late SpriteComponent iconComp;
     game.contactSection.triggerLightningEffect();
   }
 
-  /// Open URL when card is tapped (only when flipped to back side)
-  @override
-  void onTapUp(TapUpEvent event) {
-    if (!_isFlipped) return; // Only act when showing back side with CTA
+  /// Open the card's URL in a new tab
+  void openUrl() {
     final url = data?.url;
     if (url != null && url.isNotEmpty && kIsWeb) {
       web.window.open(url, '_blank');
     }
+  }
+
+  @override
+  void onTapUp(TapUpEvent event) {
+    // Flame's default tap routing can't hit perspective-transformed cards.
+    // Taps are routed via MyGame.onTapDown → card.openUrl() instead.
   }
 
   void onHoverExit() {

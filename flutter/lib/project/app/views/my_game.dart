@@ -245,6 +245,20 @@ class MyGame extends FlameGame
   @override
   void onTapDown(TapDownEvent event) {
     _inputController.handleTapDown(event);
+
+    // Route taps to contact cards (Flame's TapCallbacks can't hit
+    // perspective-transformed cards — their visual position differs
+    // from their logical position in the component tree)
+    if (_primarySequenceRunner.currentSection is ContactSection) {
+      final tapPos = Vector2(event.localPosition.x, event.localPosition.y);
+      for (final card in _componentFactory.contactTrail.cards) {
+        if (card.isFlipped && card.containsPoint(tapPos)) {
+          card.openUrl();
+          break;
+        }
+      }
+    }
+
     super.onTapDown(event);
   }
 
