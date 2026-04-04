@@ -98,6 +98,12 @@ class MyGame extends FlameGame
   bool _warmupComplete = false;
   bool _gameReadyDispatched = false;
 
+  // White overlay fade state machine for smooth Flutter→Flutter transitions
+  String _fadePhase = 'idle'; // idle | fadeIn | hold | fadeOut
+  double _fadeProgress = 0.0;
+  static const double _fadeDuration = 0.4; // seconds per fade direction
+  VoidCallback? _onFadeMidpoint; // called when overlay is fully opaque
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
@@ -277,6 +283,24 @@ class MyGame extends FlameGame
   void update(double dt) {
     super.update(dt);
     if (!isLoaded) return;
+
+    // White overlay fade state machine (for smooth Flutter→Flutter transitions)
+    if (_fadePhase == 'fadeIn') {
+      _fadeProgress = (_fadeProgress + dt / _fadeDuration).clamp(0.0, 1.0);
+      _componentFactory.whiteOverlay.opacity = _fadeProgress;
+      if (_fadeProgress >= 1.0) {
+        _fadePhase = 'hold';
+        _onFadeMidpoint?.call();
+        _onFadeMidpoint = null;
+        _fadePhase = 'fadeOut';
+      }
+    } else if (_fadePhase == 'fadeOut') {
+      _fadeProgress = (_fadeProgress - dt / _fadeDuration).clamp(0.0, 1.0);
+      _componentFactory.whiteOverlay.opacity = _fadeProgress;
+      if (_fadeProgress <= 0.0) {
+        _fadePhase = 'idle';
+      }
+    }
 
     // Check State
     final state = stateProvider.sceneState();
@@ -461,46 +485,36 @@ class MyGame extends FlameGame
   }
 
   /// Called when Home button tapped or React sends "goto-home"
-  Future<void> _startHomeSection() async {
-    // Stop all contact audio before transitioning
+  /// Animated white overlay: fade in → swap section → fade out (~0.8s total)
+  void _startHomeSection() {
+    if (_fadePhase != 'idle') return; // Prevent double-tap
     _audioSystem.stopAll();
 
-    // Brief transition delay for visual smoothness
-    _componentFactory.whiteOverlay.opacity = 1.0;
-    await Future.delayed(const Duration(milliseconds: 400));
-    await _primarySequenceRunner.restoreToSection(0, [_boldTextSection]);
-    _componentFactory.whiteOverlay.opacity = 0.0;
+    _fadePhase = 'fadeIn';
+    _fadeProgress = 0.0;
+    _onFadeMidpoint = () async {
+      // This runs when the overlay is fully opaque — user sees white
+      await _primarySequenceRunner.restoreToSection(0, [_boldTextSection]);
 
-    // Re-wire handoff so scrolling through sends the user back to React
-    _primarySequenceRunner.onSequenceComplete = () async {
-      debugPrint('[goto-home] onSequenceComplete fired! _handoffSent=$_handoffSent');
-      await _primarySequenceRunner.stop();
-      if (kIsWeb && !_handoffSent) {
-        _handoffSent = true;
-        debugPrint('[goto-home] Sending handoff to React');
-        _sendHandoff();
-      } else {
-        debugPrint('[goto-home] Handoff blocked: kIsWeb=$kIsWeb _handoffSent=$_handoffSent');
-      }
+      // Re-wire handoff
+      _primarySequenceRunner.onSequenceComplete = () async {
+        await _primarySequenceRunner.stop();
+        if (kIsWeb && !_handoffSent) {
+          _handoffSent = true;
+          _sendHandoff();
+        }
+      };
+
+      queuer.queue(event: const SceneEvent.titleLoaded());
+      queuer.queue(event: const SceneEvent.onScroll());
+      queuer.queue(event: const SceneEvent.toggleArrow(true));
+      unblockInput();
     };
-
-    debugPrint('[goto-home] restoreToSection done, dispatching titleLoaded + onScroll');
-
-    // Show title state with bouncy arrow, then transition to active on scroll
-    queuer.queue(event: const SceneEvent.titleLoaded());
-    queuer.queue(event: const SceneEvent.onScroll());
-    queuer.queue(event: const SceneEvent.toggleArrow(true));
-
-    // Ensure input is not blocked from a previous transition
-    unblockInput();
   }
 
   /// Called when React sends "goto-contact" — re-init runner with contact section
+  /// React's SectionTransition wipe covers the visual swap — no extra overlay needed.
   Future<void> _startContactSection() async {
-    // Smooth transition: white overlay bridges the visual gap
-    _componentFactory.whiteOverlay.opacity = 1.0;
-    await Future.delayed(const Duration(milliseconds: 300));
-
     _primarySequenceRunner.init([_contactSection]);
     queuer.queue(event: const SceneEvent.onScroll());
     queuer.queue(event: const SceneEvent.toggleArrow(false));
