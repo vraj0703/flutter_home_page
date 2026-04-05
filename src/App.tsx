@@ -73,6 +73,17 @@ function AppInner() {
   const transitionToPhase = useCallback((targetPhase: Phase) => {
     if (transitioning) return
     pendingPhase.current = targetPhase
+
+    // PRE-ROUTE: Awaken and navigate Flutter in the background
+    // This gives it ~800ms to process the heavy layout before the overlay reveals it.
+    if (targetPhase === 'contact') {
+      flutterRef.current?.sendMessage({ type: 'flutter-resume' })
+      flutterRef.current?.sendMessage({ type: 'goto-contact' })
+    } else if (targetPhase === 'flutter') {
+      flutterRef.current?.sendMessage({ type: 'flutter-resume' })
+      flutterRef.current?.sendMessage({ type: 'goto-home' })
+    }
+
     // Flutter→React = forward (left-to-right wipe), React→Flutter/contact = reverse (right-to-left)
     const dir: TransitionDirection = targetPhase === 'react' ? 'forward' : 'reverse'
     setTransitionDirection(dir)
@@ -82,24 +93,16 @@ function AppInner() {
 
   const handleMidpoint = useCallback(() => {
     if (!pendingPhase.current) return
-    const p = pendingPhase.current; setPhase(p)
+    const p = pendingPhase.current; 
+    setPhase(p)
+    
     if (p === 'react') { 
       flutterRef.current?.hide()
       flutterRef.current?.sendMessage({ type: 'flutter-pause' }) 
     }
-    else if (p === 'flutter') { 
-      flutterRef.current?.show(); 
-      flutterRef.current?.sendMessage({ type: 'flutter-resume' });
-      setTimeout(() => {
-        flutterRef.current?.sendMessage({ type: 'goto-home' }) 
-      }, 50)
-    }
-    else if (p === 'contact') { 
-      flutterRef.current?.show(); 
-      flutterRef.current?.sendMessage({ type: 'flutter-resume' });
-      setTimeout(() => {
-        flutterRef.current?.sendMessage({ type: 'goto-contact' }) 
-      }, 50)
+    else if (p === 'flutter' || p === 'contact') { 
+      flutterRef.current?.show()
+      // Already resumed and routed at transition start
     }
   }, [])
 

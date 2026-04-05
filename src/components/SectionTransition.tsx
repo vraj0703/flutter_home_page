@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react'
+import { gsap } from 'gsap'
 
 type TransitionDirection = 'forward' | 'reverse'
 
@@ -13,11 +14,8 @@ interface Props {
 }
 
 /**
- * CSS-based transition overlay with directional wipe + blur.
- *
- * - Forward (Flutter→React): wipes left-to-right with slight translateX slide
- * - Reverse (React→Flutter): wipes right-to-left
- * - At midpoint: 200ms blur pulse before fade-out for smoother handoff
+ * GSAP-based transition overlay with high-end multi-layer masking.
+ * No text, just a slick cinematic geometric wipe.
  */
 export function SectionTransition({
   active,
@@ -30,128 +28,101 @@ export function SectionTransition({
   const overlayRef = useRef<HTMLDivElement>(null)
   const onMidpointRef = useRef(onMidpoint)
   const onCompleteRef = useRef(onComplete)
-  const colorRef = useRef(color)
-  const directionRef = useRef(direction)
-  const timerRef = useRef<number>(0)
-  const timersRef = useRef<number[]>([])
   onMidpointRef.current = onMidpoint
   onCompleteRef.current = onComplete
-  colorRef.current = color
-  directionRef.current = direction
-
-  const clearAllTimers = () => {
-    clearTimeout(timerRef.current)
-    timersRef.current.forEach(t => clearTimeout(t))
-    timersRef.current = []
-  }
-
-  const scheduleTimer = (fn: () => void, ms: number): number => {
-    const id = window.setTimeout(fn, ms)
-    timersRef.current.push(id)
-    return id
-  }
 
   useEffect(() => {
     const el = overlayRef.current
     if (!el) return
 
-    clearAllTimers()
+    const layers = el.querySelectorAll('.transition-layer')
+    
+    gsap.killTweensOf(el)
+    gsap.killTweensOf(layers)
 
     if (active) {
-      const half = (duration / 2) * 1000
-      const dir = directionRef.current
-      // Wipe direction: forward slides overlay from right, reverse from left
-      const translateStart = dir === 'forward' ? 'translateX(5%)' : 'translateX(-5%)'
-      const translateMid = 'translateX(0%)'
-      const translateEnd = dir === 'forward' ? 'translateX(-5%)' : 'translateX(5%)'
+      const half = duration / 2
+      const dir = direction === 'forward' ? 1 : -1
 
-      // Reset state for fade IN
-      el.style.background = colorRef.current
-      el.style.opacity = '0'
-      el.style.transform = translateStart
-      el.style.filter = 'blur(0px)'
-      el.style.transition = `opacity ${half}ms ease-in-out, transform ${half}ms ease-in-out, filter 200ms ease`
-      el.style.pointerEvents = 'auto'
+      // Enable container
+      gsap.set(el, { pointerEvents: 'auto', display: 'block' })
+      
+      // Move layers off-screen
+      gsap.set(layers, {
+        xPercent: dir === 1 ? 100 : -100,
+      })
 
-      // Force reflow
-      void el.offsetHeight
+      const tl = gsap.timeline({
+        onComplete: () => {
+          gsap.set(el, { pointerEvents: 'none', display: 'none' })
+          onCompleteRef.current()
+        }
+      })
 
-      // Fade IN + slide to center
-      el.style.opacity = '1'
-      el.style.transform = translateMid
+      // 1. Wipe IN (Cascading layers)
+      tl.to(layers, {
+        xPercent: 0,
+        duration: half,
+        ease: 'power3.inOut',
+        stagger: 0.12,
+      })
 
-      // At peak: fire midpoint, apply blur pulse, then fade OUT
-      timerRef.current = scheduleTimer(() => {
+      // 2. Fire Midpoint when screen is fully covered by the top layer
+      tl.add(() => {
         onMidpointRef.current()
+      }, `>-0.1`) // Fire slightly before the very end of the stagger to overlap with React rendering
 
-        // Brief blur pulse at midpoint for smoother handoff feel
-        el.style.filter = 'blur(6px)'
+      // 3. Short hold period for async processes (Flutter loading, React DOM settle)
+      tl.to({}, { duration: 0.25 })
 
-        // Hold for mount + blur, then begin fade out
-        scheduleTimer(() => {
-          // Remove blur before fading out
-          el.style.filter = 'blur(0px)'
+      // 4. Wipe OUT (Layers slide away in same direction)
+      tl.to(layers, {
+        xPercent: dir === 1 ? -100 : 100,
+        duration: half * 0.9,
+        ease: 'power3.inOut',
+        stagger: 0.08,
+      })
 
-          scheduleTimer(() => {
-            el.style.transition = `opacity ${half}ms ease-in-out, transform ${half}ms ease-in-out, filter 200ms ease`
-            el.style.opacity = '0'
-            el.style.transform = translateEnd
-
-            // Complete after fade out
-            scheduleTimer(() => {
-              el.style.pointerEvents = 'none'
-              el.style.transform = 'translateX(0%)'
-              onCompleteRef.current()
-            }, half + 50)
-          }, 200) // blur hold duration
-        }, 150) // mount hold
-      }, half + 50)
     } else {
-      // Force hidden
-      el.style.opacity = '0'
-      el.style.pointerEvents = 'none'
-      el.style.transition = 'none'
-      el.style.transform = 'translateX(0%)'
-      el.style.filter = 'blur(0px)'
+      // Force hidden instantly
+      gsap.set(el, { pointerEvents: 'none', display: 'none' })
     }
 
-    return () => clearAllTimers()
-  }, [active, duration])
+    return () => {
+      gsap.killTweensOf(el)
+      gsap.killTweensOf(layers)
+    }
+  }, [active, duration, direction])
 
   return (
-    <>
-      <style>{`
-        @keyframes pulseGlow {
-          0% { opacity: 0.3; text-shadow: 0 0 4px rgba(200,164,92,0.2) }
-          50% { opacity: 0.9; text-shadow: 0 0 12px rgba(200,164,92,0.6) }
-          100% { opacity: 0.3; text-shadow: 0 0 4px rgba(200,164,92,0.2) }
-        }
-      `}</style>
-      <div
-        ref={overlayRef}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 100,
-          opacity: 0,
-          pointerEvents: 'none',
-          willChange: 'opacity, transform, filter',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        <div style={{
-          color: '#C8A45C',
-          fontFamily: 'monospace',
-          letterSpacing: '0.3em',
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          animation: 'pulseGlow 1.8s infinite ease-in-out'
-        }}>
-          SYSTEM TRANSITION // ALIGNING PROTOCOLS
-        </div>
-      </div>
-    </>
+    <div
+      ref={overlayRef}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100,
+        pointerEvents: 'none',
+        display: 'none',
+      }}
+    >
+      {/* 
+        Layers sequence (z-index): 
+        1. Base Accent (Gold)
+        2. Neutral Shadow (Deep Grey)
+        3. Primary Background (Color prop)
+      */}
+      <div 
+        className="transition-layer" 
+        style={{ position: 'absolute', inset: 0, background: '#C8A45C', zIndex: 1, willChange: 'transform' }} 
+      />
+      <div 
+        className="transition-layer" 
+        style={{ position: 'absolute', inset: 0, background: '#111114', zIndex: 2, willChange: 'transform' }} 
+      />
+      <div 
+        className="transition-layer" 
+        style={{ position: 'absolute', inset: 0, background: color, zIndex: 3, willChange: 'transform' }} 
+      />
+    </div>
   )
 }
