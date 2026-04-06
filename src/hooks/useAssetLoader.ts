@@ -12,9 +12,9 @@ const PRIORITY_AUDIO: Record<string, string> = {
 }
 
 const FONT_CHECKS = [
-  '700 1em Syne',
-  '400 1em "Space Grotesk"',
-  '400 1em "JetBrains Mono"',
+  '400 1em ModrntUrban',
+  '400 1em InconsolataNerd',
+  '400 1em Poseidon',
 ]
 
 // Weights: fonts 20%, audio 50%, textures 10%, webgl 20%

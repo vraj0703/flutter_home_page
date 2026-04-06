@@ -88,7 +88,7 @@ export function S_Skills({ visible, onScrollBack, onReachEnd }: Props) {
             padding: '14px 32px',
             borderRadius: '40px',
             fontSize: '15px',
-            fontFamily: "'Space Grotesk', sans-serif",
+            fontFamily: "'ModrntUrban', sans-serif",
             letterSpacing: '1.5px',
             cursor: 'pointer',
             display: 'flex',

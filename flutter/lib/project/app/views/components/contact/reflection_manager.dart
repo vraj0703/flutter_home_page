@@ -15,15 +15,31 @@ class ReflectionManager extends Component with HasGameReference<MyGame> {
   /// List of components to render in the reflection
   final List<Component> reflectionTargets = [];
 
+  /// Throttle: minimum interval between texture updates (seconds)
+  static const double _minUpdateInterval = 0.5;
+  double _timeSinceLastUpdate = 0.0;
+
+  /// Pause reflection updates (e.g., during entrance animation)
+  bool paused = false;
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _timeSinceLastUpdate += dt;
+  }
+
   @override
   void render(Canvas canvas) {
     // This component doesn't draw to the screen itself
   }
 
   /// Asynchronously updates the reflection texture from registered components.
-  /// Called every frame but processes in background to avoid blocking.
+  /// Throttled to prevent GPU pipeline blocking.
   Future<void> updateReflectionTexture() async {
-    if (_isProcessing || !game.hasLayout) return;
+    if (_isProcessing || !game.hasLayout || paused) return;
+    if (_timeSinceLastUpdate < _minUpdateInterval) return;
+    if (reflectionTargets.isEmpty) return;
+    _timeSinceLastUpdate = 0.0;
     _isProcessing = true;
 
     try {

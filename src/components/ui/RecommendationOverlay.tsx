@@ -99,7 +99,7 @@ export function RecommendationOverlay({ open, onClose, onSubmit }: Props) {
       <style>{`
         .glass-input {
           width: 100%;
-          font-family: 'Space Grotesk', sans-serif;
+          font-family: 'ModrntUrban', sans-serif;
           font-size: 0.9rem;
           color: #FAF8F2;
           background: rgba(10, 10, 12, 0.4);
@@ -119,7 +119,7 @@ export function RecommendationOverlay({ open, onClose, onSubmit }: Props) {
           background: rgba(20, 20, 24, 0.6);
         }
         .submit-btn {
-          font-family: 'JetBrains Mono', monospace;
+          font-family: 'InconsolataNerd', monospace;
           font-size: 0.8rem;
           font-weight: 600;
           letter-spacing: 0.1em;
@@ -211,9 +211,9 @@ export function RecommendationOverlay({ open, onClose, onSubmit }: Props) {
 
           {submitted ? (
             <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem', fontFamily: 'Syne, sans-serif', color: '#FAF8F2' }}>Thank you</div>
+              <div style={{ fontSize: '2rem', marginBottom: '1rem', fontFamily: 'ModrntUrban, sans-serif', color: '#FAF8F2' }}>Thank you</div>
               <p style={{
-                fontFamily: 'Space Grotesk, sans-serif',
+                fontFamily: 'ModrntUrban, sans-serif',
                 fontSize: '0.95rem',
                 color: '#A09880',
                 lineHeight: 1.7,
@@ -231,7 +231,7 @@ export function RecommendationOverlay({ open, onClose, onSubmit }: Props) {
           ) : (
             <>
               <h2 style={{
-                fontFamily: 'Syne, sans-serif',
+                fontFamily: 'ModrntUrban, sans-serif',
                 fontSize: '1.4rem',
                 fontWeight: 700,
                 color: '#FAF8F2',
@@ -241,7 +241,7 @@ export function RecommendationOverlay({ open, onClose, onSubmit }: Props) {
                 Recommend Vishal
               </h2>
               <p style={{
-                fontFamily: 'Space Grotesk, sans-serif',
+                fontFamily: 'ModrntUrban, sans-serif',
                 fontSize: '0.85rem',
                 color: '#8A7A62',
                 marginBottom: '1.8rem',
@@ -297,7 +297,7 @@ export function RecommendationOverlay({ open, onClose, onSubmit }: Props) {
 /* ── Shared styles ──────────────────────────────────────── */
 
 const labelStyle: React.CSSProperties = {
-  fontFamily: 'JetBrains Mono, monospace',
+  fontFamily: 'InconsolataNerd, monospace',
   fontSize: '0.7rem',
   fontWeight: 500,
   letterSpacing: '0.08em',

@@ -45,7 +45,7 @@ export function TestimonialCard({ testimonial, isLinkedIn }: TestimonialCardProp
         border-radius: 8px;
         font-size: 0.85rem;
         font-weight: 600;
-        font-family: 'Space Grotesk', sans-serif;
+        font-family: 'ModrntUrban', sans-serif;
         text-decoration: none;
         transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
         box-shadow: 0 4px 12px rgba(200, 164, 92, 0.2);
@@ -84,7 +84,7 @@ export function TestimonialCard({ testimonial, isLinkedIn }: TestimonialCardProp
       <>
         {styles}
         <div className="linkedin-card">
-          <div style={{ color: '#FAF8F2', fontSize: '1.2rem', fontWeight: 600, fontFamily: 'Syne, sans-serif', marginBottom: '1.8rem', letterSpacing: '-0.01em' }}>
+          <div style={{ color: '#FAF8F2', fontSize: '1.2rem', fontWeight: 600, fontFamily: 'ModrntUrban, sans-serif', marginBottom: '1.8rem', letterSpacing: '-0.01em' }}>
             More on LinkedIn
           </div>
           <a
@@ -109,14 +109,14 @@ export function TestimonialCard({ testimonial, isLinkedIn }: TestimonialCardProp
             color: '#C8A45C', 
             fontSize: '3rem', 
             lineHeight: 0.8, 
-            fontFamily: 'Syne, serif', 
+            fontFamily: 'ModrntUrban, serif', 
             marginBottom: '0.5rem',
             opacity: 0.9
           }}>
             "
           </div>
           <p style={{
-            fontFamily: 'Space Grotesk, sans-serif',
+            fontFamily: 'ModrntUrban, sans-serif',
             fontSize: '0.95rem',
             fontWeight: 400,
             color: '#2A2420',
@@ -133,7 +133,7 @@ export function TestimonialCard({ testimonial, isLinkedIn }: TestimonialCardProp
           zIndex: 1
         }}>
           <div style={{ 
-            fontFamily: 'Syne, sans-serif', 
+            fontFamily: 'ModrntUrban, sans-serif', 
             fontWeight: 700, 
             color: '#1E1C18', 
             fontSize: '1rem',
@@ -142,7 +142,7 @@ export function TestimonialCard({ testimonial, isLinkedIn }: TestimonialCardProp
             {testimonial.name}
           </div>
           <div style={{
-            fontFamily: 'JetBrains Mono, monospace',
+            fontFamily: 'InconsolataNerd, monospace',
             fontSize: '0.7rem',
             color: '#8A7A62',
             letterSpacing: '0.04em',

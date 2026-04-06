@@ -18,6 +18,7 @@ class BeachSceneOrchestrator extends Component with HasGameReference<MyGame> {
 
   double _currentCrackStrength = 0.0;
   double holdProgress = 0.0;
+  final math.Random _rng = math.Random();
 
   BeachSceneOrchestrator({
     required this.background,
@@ -45,7 +46,7 @@ class BeachSceneOrchestrator extends Component with HasGameReference<MyGame> {
     if (progress > 0.5) {
       // Frequency increases as progress nears 1.0
       double strikeChance = math.pow(progress, 4.0) * 0.03;
-      if (math.Random().nextDouble() < strikeChance) {
+      if (_rng.nextDouble() < strikeChance) {
         // Pass current progress to trigger the dynamic thunder delay
         lightning.triggerFlash(progress);
         game.audio.playSpatialThunder(progress);
@@ -65,6 +66,7 @@ class BeachSceneOrchestrator extends Component with HasGameReference<MyGame> {
 
     // 5. HOUSEKEEPING
     birds.syncWithLightning(lightning.intensity);
+    // Reflection is throttled internally — safe to call every frame
     reflection.updateReflectionTexture();
     background.shader.setFloat(12, lightning.intensity);
   }

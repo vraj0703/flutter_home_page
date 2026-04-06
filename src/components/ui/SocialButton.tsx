@@ -28,7 +28,7 @@ export function SocialButton({ label, href, svgPath, delay, visible }: SocialBut
         <path d={svgPath} />
       </svg>
       <span style={{
-        fontFamily: 'Space Grotesk, sans-serif',
+        fontFamily: 'ModrntUrban, sans-serif',
         fontSize: '0.85rem',
         fontWeight: 400,
         color: '#8888A0',

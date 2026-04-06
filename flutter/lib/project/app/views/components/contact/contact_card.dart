@@ -270,7 +270,7 @@ late SpriteComponent iconComp;
       _hasPlayedEntrySound = false;
     }
 
-    const duration = 0.8; // Extended from 0.7s to 0.8s
+    const duration = 0.5; // Faster with spring overshoot
     final oldProgress = flipProgress;
 
     if (_isFlipped) {
@@ -279,21 +279,14 @@ late SpriteComponent iconComp;
       flipProgress = (flipProgress - dt / duration).clamp(0.0, 1.0);
     }
 
-    // Scale variation during flip for tactile feel
-    double flipScale;
-    if (flipProgress < 0.5) {
-      // Phase 1: Scale DOWN to 0.95 as we rotate to 90°
-      flipScale = 1.0 - (flipProgress * 2.0) * 0.05; // 1.0 → 0.95
-    } else {
-      // Phase 2: Scale UP to 1.05, then settle to 1.0
-      final settleProgress = (flipProgress - 0.5) * 2.0;
-      if (settleProgress < 0.5) {
-        flipScale = 0.95 + (settleProgress * 2.0) * 0.1; // 0.95 → 1.05
-      } else {
-        final finalProgress = (settleProgress - 0.5) * 2.0;
-        flipScale = 1.05 - (finalProgress * 0.05); // 1.05 → 1.0
-      }
-    }
+    // Spring-based scale: damped oscillation for tactile feel
+    // scale = 1.0 + amplitude * exp(-damping * t) * sin(frequency * t)
+    final t = flipProgress;
+    final springT = t < 0.5 ? t * 2.0 : (1.0 - t) * 2.0; // peak at midpoint
+    const damping = 4.0;
+    const frequency = 12.0;
+    const amplitude = 0.08;
+    final flipScale = 1.0 + amplitude * exp(-damping * springT) * sin(frequency * springT);
     scale = Vector2.all(flipScale);
 
     // Trigger whoosh sound at flip peak (90°)

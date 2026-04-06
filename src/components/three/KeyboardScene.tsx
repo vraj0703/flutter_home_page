@@ -407,7 +407,7 @@ function TitleOverlay() {
       textAlign: 'center', zIndex: 5, pointerEvents: 'none',
     }}>
       <h2 style={{
-        fontFamily: 'Syne, sans-serif', fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
+        fontFamily: 'ModrntUrban, sans-serif', fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
         fontWeight: 700, color: '#3A3028', letterSpacing: '-0.03em', margin: 0,
       }}>
         Tech Stack
@@ -418,7 +418,7 @@ function TitleOverlay() {
         margin: '10px auto',
       }} />
       <p style={{
-        fontFamily: 'JetBrains Mono, monospace', fontSize: '0.6rem',
+        fontFamily: 'InconsolataNerd, monospace', fontSize: '0.6rem',
         fontWeight: 300, letterSpacing: '0.2em', color: '#7A7060', margin: 0,
       }}>
         {ALL_SKILLS.length} TECHNOLOGIES
@@ -434,7 +434,7 @@ function HintOverlay() {
       textAlign: 'center', zIndex: 5, pointerEvents: 'none',
     }}>
       <p style={{
-        fontFamily: 'JetBrains Mono, monospace', fontSize: '0.5rem',
+        fontFamily: 'InconsolataNerd, monospace', fontSize: '0.5rem',
         fontWeight: 300, letterSpacing: '0.15em', color: '#8A7A62',
       }}>
         drag to orbit · hover to explore

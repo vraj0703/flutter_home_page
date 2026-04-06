@@ -35,7 +35,7 @@ export function AboutCard({ title, subtitle, description, index, progress }: Abo
         <div className="flex items-center gap-3 mb-6">
           <span
             style={{
-              fontFamily: 'JetBrains Mono, monospace',
+              fontFamily: 'InconsolataNerd, monospace',
               fontSize: '0.65rem',
               fontWeight: 300,
               letterSpacing: '0.15em',
@@ -47,7 +47,7 @@ export function AboutCard({ title, subtitle, description, index, progress }: Abo
           <div className="h-px flex-1" style={{ background: 'rgba(200,164,92,0.15)' }} />
           <span
             style={{
-              fontFamily: 'JetBrains Mono, monospace',
+              fontFamily: 'InconsolataNerd, monospace',
               fontSize: '0.6rem',
               fontWeight: 300,
               letterSpacing: '0.15em',
@@ -62,7 +62,7 @@ export function AboutCard({ title, subtitle, description, index, progress }: Abo
         {/* Title */}
         <h3
           style={{
-            fontFamily: 'Syne, sans-serif',
+            fontFamily: 'ModrntUrban, sans-serif',
             fontSize: 'clamp(1.5rem, 3vw, 2rem)',
             fontWeight: 600,
             color: '#E8E8ED',
@@ -77,7 +77,7 @@ export function AboutCard({ title, subtitle, description, index, progress }: Abo
         {/* Description */}
         <p
           style={{
-            fontFamily: 'Space Grotesk, sans-serif',
+            fontFamily: 'ModrntUrban, sans-serif',
             fontSize: 'clamp(0.9rem, 1.2vw, 1.05rem)',
             fontWeight: 300,
             color: '#8888A0',

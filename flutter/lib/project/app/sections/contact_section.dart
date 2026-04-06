@@ -45,12 +45,14 @@ class ContactSection extends Component implements GameSection {
   double get _maxHeight => trailComponent.maxScrollExtent;
   late BeachSceneOrchestrator orchestrator;
   bool _orchestratorInitialized = false;
-  bool _freezeCapture = false;
 
   double _animTime = 0.0;
 
   // --- Contact Section State ---
   bool _isActive = false;
+
+  /// Whether the first reflection capture has been done post-entrance
+  bool _reflectionCaptured = false;
 
   /// Entrance animation progress (0 = hidden, 1 = fully visible)
   double _entranceProgress = 0.0;
@@ -97,7 +99,7 @@ class ContactSection extends Component implements GameSection {
   @override
   VoidCallback? onReverseComplete;
 
-  set freezeCapture(bool value) => _freezeCapture = value;
+  // freezeCapture removed — was only used by dead _captureRefractionFrame code
 
   @override
   List<Vector2> get snapRegions => [];
@@ -129,8 +131,8 @@ class ContactSection extends Component implements GameSection {
 
   @override
   Future<void> finalizeGhostRender() async {
-    await orchestrator.reflection.updateReflectionTexture();
-    forceCaptureRefraction();
+    // Skip reflection during ghost render — it blocks GPU for 200-500ms
+    // Reflection will be captured ONCE after entrance animation completes
 
     // Strict Visibility Reset - Hide all components
     cloudBackground.opacity = 0.0;
@@ -142,10 +144,13 @@ class ContactSection extends Component implements GameSection {
   @override
   Future<void> enter(ScrollSystem scrollSystem) async {
     _isActive = true;
-    _freezeCapture = false;
     _entranceProgress = 0.0;
     _ambientLightningTimer = 0.0;
+    _reflectionCaptured = false;
     _nextLightningAt = _rng.nextDouble() * 4.0 + 4.0; // first strike 4-8s in
+
+    // Pause reflection updates during entrance — prevents GPU blocking
+    orchestrator.reflection.paused = true;
 
     // Disable scroll bounds — no scrolling needed
     scrollSystem.resetScroll(0.0);
@@ -190,7 +195,6 @@ class ContactSection extends Component implements GameSection {
     orchestrator.holdProgress = 0.0;
 
     // Stop background capture loop
-    _freezeCapture = true;
 
     // Reset shader uniforms and state flags
     _cleanupContactComponents();
@@ -198,8 +202,6 @@ class ContactSection extends Component implements GameSection {
     // Reset visuals to initial state
     _resetVisuals();
   }
-
-  int _frameCounter = 0;
 
   @override
   void update(double dt) {
@@ -233,12 +235,12 @@ class ContactSection extends Component implements GameSection {
       _audioSystem.playSpatialThunder(0.15);
     }
 
-    // --- Refraction Capture (for rain visual) ---
-    if (!_freezeCapture && _entranceProgress > 0.3) {
-      _frameCounter++;
-      if (_frameCounter % ContactSectionLayout.lowFpsThrottle == 0) {
-        _captureRefractionFrame();
-      }
+    // --- Enable reflection ONCE after entrance completes ---
+    if (_entranceProgress >= 1.0 && !_reflectionCaptured) {
+      _reflectionCaptured = true;
+      // Un-pause reflection and capture once now that content is stable
+      orchestrator.reflection.paused = false;
+      orchestrator.reflection.updateReflectionTexture();
     }
 
     // --- Title breathe animation when fully visible ---
@@ -370,20 +372,8 @@ class ContactSection extends Component implements GameSection {
     }
   }
 
-  void forceCaptureRefraction() {
-    _captureRefractionFrame();
-  }
-
-  void _captureRefractionFrame() {
-    final recorder = PictureRecorder();
-    final canvas = Canvas(recorder);
-
-    const double scale = ContactSectionLayout.refractionScale;
-    canvas.scale(scale);
-
-    cloudBackground.render(canvas);
-    trailComponent.render(canvas);
-  }
+  // Removed: _captureRefractionFrame() was rendering to a PictureRecorder
+  // that was never finalized (endRecording() never called) — pure wasted GPU work.
 
   @override
   void onResize(Vector2 newSize) {
@@ -425,7 +415,6 @@ class ContactSection extends Component implements GameSection {
   }
 
   void _cleanupContactComponents() {
-    _freezeCapture = false;
   }
 
   /// Sends a message to the parent React frame to navigate back.
@@ -437,7 +426,7 @@ class ContactSection extends Component implements GameSection {
     if (kIsWeb) {
       try {
         final msg = <String, String>{'type': 'flutter-handoff'}.jsify();
-        web.window.parent?.postMessage(msg, '*'.toJS);
+        web.window.parent?.postMessage(msg, web.window.origin.toJS);
         debugPrint('[Flutter Contact] postMessage sent: goto-react');
       } catch (e) {
         debugPrint('[Flutter Contact] postMessage error: $e');

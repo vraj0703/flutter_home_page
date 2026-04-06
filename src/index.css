@@ -1,5 +1,41 @@
 @import "tailwindcss";
 
+/* ── Shared font stack (matches Flutter pubspec.yaml) ── */
+@font-face {
+  font-family: 'ModrntUrban';
+  src: url('/fonts/modrnt_urban.otf') format('opentype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'InconsolataNerd';
+  src: url('/fonts/inconsolata_nerd_mono_regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poseidon';
+  src: url('/fonts/poseidon.otf') format('opentype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DuneRise';
+  src: url('/fonts/dune_rise.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Broadway';
+  src: url('/fonts/broadway.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
 @theme {
   --color-primary-50: #EBF0FA;
   --color-primary-100: #C2D1F0;
@@ -48,9 +84,9 @@
   --color-accent-light: #E8C97A;
   --color-accent-dim: #8B7340;
 
-  --font-display: 'Syne', sans-serif;
-  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-display: 'ModrntUrban', sans-serif;
+  --font-sans: 'ModrntUrban', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'InconsolataNerd', 'Fira Code', monospace;
 }
 
 * {

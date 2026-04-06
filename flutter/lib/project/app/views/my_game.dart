@@ -102,6 +102,8 @@ class MyGame extends FlameGame
   String _fadePhase = 'idle'; // idle | fadeIn | hold | fadeOut
   double _fadeProgress = 0.0;
   static const double _fadeDuration = 0.4; // seconds per fade direction
+  static const double _holdDuration = 0.1; // seconds to hold at full opacity
+  double _holdTimer = 0.0;
   VoidCallback? _onFadeMidpoint; // called when overlay is fully opaque
 
   @override
@@ -189,7 +191,7 @@ class MyGame extends FlameGame
             loadingProgress.value = progress;
             if (kIsWeb) {
               final msg = {'type': 'flutter-loading', 'progress': progress}.jsify();
-              web.window.parent?.postMessage(msg, '*'.toJS);
+              web.window.parent?.postMessage(msg, web.window.origin.toJS);
             }
           },
         )
@@ -301,8 +303,14 @@ class MyGame extends FlameGame
       _componentFactory.whiteOverlay.opacity = _fadeProgress;
       if (_fadeProgress >= 1.0) {
         _fadePhase = 'hold';
+        _holdTimer = 0.0;
         _onFadeMidpoint?.call();
         _onFadeMidpoint = null;
+      }
+    } else if (_fadePhase == 'hold') {
+      // Hold at full opacity for a short duration to let new section render
+      _holdTimer += dt;
+      if (_holdTimer >= _holdDuration) {
         _fadePhase = 'fadeOut';
       }
     } else if (_fadePhase == 'fadeOut') {
@@ -537,7 +545,7 @@ class MyGame extends FlameGame
     if (!kIsWeb) return;
     try {
       final msg = <String, String>{'type': 'flutter-ready'}.jsify();
-      web.window.parent?.postMessage(msg, '*'.toJS);
+      web.window.parent?.postMessage(msg, web.window.origin.toJS);
       debugPrint('postMessage sent: flutter-ready');
     } catch (e) {
       debugPrint('postMessage error: $e');
@@ -547,7 +555,7 @@ class MyGame extends FlameGame
   void _sendHandoff() {
     try {
       final msg = <String, String>{'type': 'flutter-handoff'}.jsify();
-      web.window.parent?.postMessage(msg, '*'.toJS);
+      web.window.parent?.postMessage(msg, web.window.origin.toJS);
       debugPrint('postMessage sent: flutter-handoff');
     } catch (e) {
       debugPrint('postMessage error: $e');

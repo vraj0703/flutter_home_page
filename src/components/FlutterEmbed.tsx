@@ -34,7 +34,7 @@ export const FlutterEmbed = forwardRef<FlutterEmbedHandle, FlutterEmbedProps>(
         gsap.to(iframeRef.current, { opacity: 0, duration: 0.3 })
       },
       sendMessage(msg: Record<string, string>) {
-        iframeRef.current?.contentWindow?.postMessage(msg, '*')
+        iframeRef.current?.contentWindow?.postMessage(msg, window.location.origin)
         if (msg.type === 'goto-contact' && iframeRef.current?.contentWindow) {
           iframeRef.current.contentWindow.scrollTo(0, 0)
         }

@@ -24,6 +24,16 @@ import { TESTIMONIALS, type Testimonial } from '../../config/testimonials'
 import { Keyboard as SkillKeyboard, resetBoot, Particles as KBParticles } from '../three/KeyboardScene'
 import { getAudioEngine } from '../../audio'
 
+/* ── Reusable vectors (avoid per-frame allocations) ────── */
+const _tmpVec3 = new THREE.Vector3()
+
+/** Frame-rate independent exponential smoothing.
+ *  Replaces `value += (target - value) * CONSTANT` which is frame-rate dependent.
+ *  `speed` controls how fast the value converges (higher = faster). */
+function damp(current: number, target: number, speed: number, delta: number): number {
+  return current + (target - current) * (1 - Math.exp(-speed * delta))
+}
+
 /* ── Dimensions ──────────────────────────────────────────── */
 const CW = 8, CH = 5
 const FRAME_MAX_H = 3.0, FRAME_DEPTH = 0.2, FRAME_BORDER = 0.15, FRAME_Y = 0.8, SPACING = 5
@@ -234,7 +244,7 @@ function WallFrame({ project, position, side, projectIndex, mats }: {
   }), [])
   useFrame(({ camera }, delta) => {
     if (!grp.current) return
-    const t = hov.current ? 0.08 : 0; pop.current += (t - pop.current) * 0.1; grp.current.position.z = pop.current
+    const t = hov.current ? 0.08 : 0; pop.current = damp(pop.current, t, 10, delta); grp.current.position.z = pop.current
     // Entry settle — one-shot damped scale pulse when gallery first entered
     if (entry.current.t < 0 && _scrollProgress > 0.001) entry.current.t = 0
     if (entry.current.t >= 0 && entry.current.t < entry.current.delay + 2) {
@@ -248,13 +258,13 @@ function WallFrame({ project, position, side, projectIndex, mats }: {
     }
     // Proximity glow — subtle emissive border when camera is within 8 units
     if (glowRef.current) {
-      const worldPos = new THREE.Vector3(); grp.current.getWorldPosition(worldPos)
-      const dist = camera.position.distanceTo(worldPos)
+      grp.current.getWorldPosition(_tmpVec3)
+      const dist = camera.position.distanceTo(_tmpVec3)
       const proximity = Math.max(0, 1 - dist / 8) // 0 at 8+ units, 1 at 0
       const targetGlow = (hov.current ? 0.6 : proximity * 0.25)
       const targetOpacity = (hov.current ? 0.4 : proximity * 0.15)
-      glowMat.emissiveIntensity += (targetGlow - glowMat.emissiveIntensity) * 0.1
-      glowMat.opacity += (targetOpacity - glowMat.opacity) * 0.1
+      glowMat.emissiveIntensity = damp(glowMat.emissiveIntensity, targetGlow, 10, delta)
+      glowMat.opacity = damp(glowMat.opacity, targetOpacity, 10, delta)
     }
   })
   return (
@@ -305,7 +315,7 @@ function TestimonialFrame({ testimonial, position, mats }: {
       {isCTA ? (
         /* ── CTA card: "Recommend Vishal" ── */
         <group>
-          <Text position={[0, 0.5, FRAME_DEPTH / 2 + 0.005]} fontSize={0.18} color="#C8A45C" anchorX="center" anchorY="middle" font="/fonts/syne-bold.woff">
+          <Text position={[0, 0.5, FRAME_DEPTH / 2 + 0.005]} fontSize={0.18} color="#C8A45C" anchorX="center" anchorY="middle" font="/fonts/modrnt_urban.otf">
             Recommend Vishal
           </Text>
           <Text position={[0, 0.1, FRAME_DEPTH / 2 + 0.005]} fontSize={0.085} color="#A09880" anchorX="center" anchorY="middle" maxWidth={fw - 0.6} lineHeight={1.6}>
@@ -315,7 +325,7 @@ function TestimonialFrame({ testimonial, position, mats }: {
             <planeGeometry args={[fw * 0.4, 0.003]} />
             <meshBasicMaterial color="#C8A45C" />
           </mesh>
-          <Text position={[0, -0.7, FRAME_DEPTH / 2 + 0.005]} fontSize={0.07} color="#C8A45C" anchorX="center" anchorY="middle" letterSpacing={0.12} font="/fonts/jetbrains-mono.woff">
+          <Text position={[0, -0.7, FRAME_DEPTH / 2 + 0.005]} fontSize={0.07} color="#C8A45C" anchorX="center" anchorY="middle" letterSpacing={0.12} font="/fonts/inconsolata_nerd_mono_regular.ttf">
             CLICK TO WRITE
           </Text>
           {/* Invisible click target */}
@@ -327,7 +337,7 @@ function TestimonialFrame({ testimonial, position, mats }: {
       ) : (
         /* ── Regular testimonial card ── */
         <group>
-          <Text position={[-fw / 2 + 0.2, fh / 2 - 0.25, FRAME_DEPTH / 2 + 0.005]} fontSize={0.4} color="#C8A45C" anchorX="left" anchorY="top" font="/fonts/playfair-display.woff">
+          <Text position={[-fw / 2 + 0.2, fh / 2 - 0.25, FRAME_DEPTH / 2 + 0.005]} fontSize={0.4} color="#C8A45C" anchorX="left" anchorY="top" font="/fonts/poseidon.otf">
             "
           </Text>
           <Text position={[0, 0.1, FRAME_DEPTH / 2 + 0.005]} fontSize={0.11} color="#2A2420" anchorX="center" anchorY="middle" maxWidth={fw - 0.5} lineHeight={1.7}>
@@ -337,10 +347,10 @@ function TestimonialFrame({ testimonial, position, mats }: {
             <planeGeometry args={[fw * 0.5, 0.004]} />
             <meshBasicMaterial color="#C8A45C" />
           </mesh>
-          <Text position={[0, -fh / 2 + 0.48, FRAME_DEPTH / 2 + 0.005]} fontSize={0.11} color="#2A2420" anchorX="center" anchorY="middle" font="/fonts/syne-bold.woff">
+          <Text position={[0, -fh / 2 + 0.48, FRAME_DEPTH / 2 + 0.005]} fontSize={0.11} color="#2A2420" anchorX="center" anchorY="middle" font="/fonts/modrnt_urban.otf">
             {testimonial.name}
           </Text>
-          <Text position={[0, -fh / 2 + 0.28, FRAME_DEPTH / 2 + 0.005]} fontSize={0.055} color="#9A8A6E" anchorX="center" anchorY="middle" letterSpacing={0.08} font="/fonts/jetbrains-mono.woff">
+          <Text position={[0, -fh / 2 + 0.28, FRAME_DEPTH / 2 + 0.005]} fontSize={0.055} color="#9A8A6E" anchorX="center" anchorY="middle" letterSpacing={0.08} font="/fonts/inconsolata_nerd_mono_regular.ttf">
             {testimonial.role} · {testimonial.company}
           </Text>
         </group>
@@ -351,7 +361,7 @@ function TestimonialFrame({ testimonial, position, mats }: {
           <planeGeometry args={[1.0, 0.25]} />
           <meshStandardMaterial color="#C8A45C" roughness={0.3} metalness={0.6} />
         </mesh>
-        <Text position={[0, 0, 0.005]} fontSize={0.06} color="#2A2420" anchorX="center" anchorY="middle" letterSpacing={0.1} font="/fonts/jetbrains-mono.woff">
+        <Text position={[0, 0, 0.005]} fontSize={0.06} color="#2A2420" anchorX="center" anchorY="middle" letterSpacing={0.1} font="/fonts/inconsolata_nerd_mono_regular.ttf">
           {isCTA ? 'RECOMMEND' : 'TESTIMONIAL'}
         </Text>
       </group>
@@ -386,7 +396,8 @@ function TubeLight({ position, side }: { position: [number, number, number]; sid
 function FrameSpotlight({ position, side }: { position: [number, number, number]; side: 'left' | 'right' }) {
   const lightRef = useRef<THREE.SpotLight>(null)
   const targetX = side === 'left' ? position[0] + 0.5 : position[0] - 0.5
-  useFrame(() => {
+  // Static target — set once, not per frame
+  useEffect(() => {
     if (lightRef.current) {
       lightRef.current.target.position.set(position[0], position[1], position[2])
       lightRef.current.target.updateMatrixWorld()
@@ -441,7 +452,7 @@ function ScrollArrow() {
     return geo
   }, [])
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     if (!grp.current) return
     const t = clock.elapsedTime
 
@@ -450,7 +461,7 @@ function ScrollArrow() {
 
     // Show when near entrance (progress < 0.03), fade when scrolling, reappear when back to top
     const fadeTarget = _scrollProgress < 0.01 ? 1 : _scrollProgress < 0.06 ? 1 - (_scrollProgress - 0.01) / 0.05 : 0
-    opacity.current += (fadeTarget - opacity.current) * 0.08
+    opacity.current = damp(opacity.current, fadeTarget, 8, delta)
     mat.opacity = opacity.current
     grp.current.visible = opacity.current > 0.01
   })
@@ -472,16 +483,15 @@ function GraffitiBackButton() {
     transparent: true, opacity: 0, side: THREE.DoubleSide,
   }), [])
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera }, delta) => {
     if (!grp.current || !glowRef.current) return
-    const worldPos = new THREE.Vector3()
-    grp.current.getWorldPosition(worldPos)
-    const dist = camera.position.distanceTo(worldPos)
+    grp.current.getWorldPosition(_tmpVec3)
+    const dist = camera.position.distanceTo(_tmpVec3)
     const proximity = Math.max(0, 1 - dist / 6)
     const targetGlow = hov.current ? 0.8 : proximity * 0.2
     const targetOpacity = hov.current ? 0.15 : proximity * 0.06
-    glowMat.emissiveIntensity += (targetGlow - glowMat.emissiveIntensity) * 0.1
-    glowMat.opacity += (targetOpacity - glowMat.opacity) * 0.1
+    glowMat.emissiveIntensity = damp(glowMat.emissiveIntensity, targetGlow, 10, delta)
+    glowMat.opacity = damp(glowMat.opacity, targetOpacity, 10, delta)
   })
 
   return (
@@ -678,21 +688,20 @@ function WallRadio() {
   }, [])
 
   // Animate volume knob rotation
-  useFrame(({ camera }) => {
+  useFrame(({ camera }, delta) => {
     if (!grp.current || !glowRef.current) return
     // Proximity glow
-    const worldPos = new THREE.Vector3()
-    grp.current.getWorldPosition(worldPos)
-    const dist = camera.position.distanceTo(worldPos)
+    grp.current.getWorldPosition(_tmpVec3)
+    const dist = camera.position.distanceTo(_tmpVec3)
     const proximity = Math.max(0, 1 - dist / 6)
     const targetGlow = hov.current ? 0.7 : proximity * 0.2
     const targetOpacity = hov.current ? 0.12 : proximity * 0.05
-    glowMat.emissiveIntensity += (targetGlow - glowMat.emissiveIntensity) * 0.1
-    glowMat.opacity += (targetOpacity - glowMat.opacity) * 0.1
+    glowMat.emissiveIntensity = damp(glowMat.emissiveIntensity, targetGlow, 10, delta)
+    glowMat.opacity = damp(glowMat.opacity, targetOpacity, 10, delta)
     // Knob rotation: 0 vol = -135°, 1 vol = +135°
     if (knobRef.current) {
       const targetAngle = (-135 + _radioVolume * 270) * Math.PI / 180
-      knobRef.current.rotation.z += (targetAngle - knobRef.current.rotation.z) * 0.15
+      knobRef.current.rotation.z = damp(knobRef.current.rotation.z, targetAngle, 15, delta)
     }
   })
 
@@ -820,16 +829,15 @@ function LetsConnectFrame() {
     transparent: true, opacity: 0, side: THREE.DoubleSide,
   }), [])
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera }, delta) => {
     if (!glowRef.current) return
-    const worldPos = new THREE.Vector3()
-    glowRef.current.getWorldPosition(worldPos)
-    const dist = camera.position.distanceTo(worldPos)
+    glowRef.current.getWorldPosition(_tmpVec3)
+    const dist = camera.position.distanceTo(_tmpVec3)
     const proximity = Math.max(0, 1 - dist / 12)
     const targetGlow = hov.current ? 0.8 : proximity * 0.3
     const targetOpacity = hov.current ? 0.2 : proximity * 0.08
-    glowMat.emissiveIntensity += (targetGlow - glowMat.emissiveIntensity) * 0.1
-    glowMat.opacity += (targetOpacity - glowMat.opacity) * 0.1
+    glowMat.emissiveIntensity = damp(glowMat.emissiveIntensity, targetGlow, 10, delta)
+    glowMat.opacity = damp(glowMat.opacity, targetOpacity, 10, delta)
   })
 
   return (
@@ -899,7 +907,8 @@ function LetsConnectFrame() {
 /* ── Back wall spotlight — warm overhead aimed at back wall center ── */
 function BackWallSpotlight() {
   const ref = useRef<THREE.SpotLight>(null)
-  useFrame(() => {
+  // Static target — set once
+  useEffect(() => {
     if (ref.current) { ref.current.target.position.set(0, 1, BACK_WALL_Z); ref.current.target.updateMatrixWorld() }
   })
   return <spotLight ref={ref} position={[0, CEIL_Y - 0.3, BACK_WALL_Z + 3]} angle={0.6} penumbra={0.9} intensity={2.5} color="#FFD9A0" distance={10} decay={1.5} />
@@ -908,7 +917,8 @@ function BackWallSpotlight() {
 /* ── Testimonial spotlight — individual warm light per frame ── */
 function TestimonialSpotlight({ x }: { x: number }) {
   const ref = useRef<THREE.SpotLight>(null)
-  useFrame(() => {
+  // Static target — set once
+  useEffect(() => {
     if (ref.current) { ref.current.target.position.set(x, FRAME_Y, BACK_WALL_Z); ref.current.target.updateMatrixWorld() }
   })
   return <spotLight ref={ref} position={[x, CEIL_Y - 0.5, BACK_WALL_Z + 2.5]} angle={0.4} penumbra={0.8} intensity={1.0} color="#FFE0B0" distance={6} decay={2} />
@@ -923,7 +933,7 @@ function FloatingKB({ position }: { position: [number, number, number] }) {
   // - visible (>93%): camera turn is complete, teleport to real position
   const [phase, setPhase] = useState<'unmounted' | 'preloading' | 'visible'>('preloading')
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     if (phase === 'unmounted' && _scrollProgress > 0.05) setPhase('preloading')
     if (phase === 'preloading' && _scrollProgress > 0.93) setPhase('visible')
     if (phase === 'visible' && _scrollProgress < 0.05) setPhase('preloading')
@@ -938,8 +948,8 @@ function FloatingKB({ position }: { position: [number, number, number] }) {
       let diff = Math.PI - outerRef.current.rotation.y
       while (diff < -Math.PI) diff += Math.PI * 2
       while (diff > Math.PI) diff -= Math.PI * 2
-      outerRef.current.rotation.y += diff * 0.03
-      outerRef.current.position.y += (position[1] - outerRef.current.position.y) * 0.03
+      outerRef.current.rotation.y += diff * (1 - Math.exp(-3 * delta))
+      outerRef.current.position.y = damp(outerRef.current.position.y, position[1], 3, delta)
     }
   })
 
