@@ -16,7 +16,8 @@
 
 import { Suspense, useRef, useMemo, useEffect, useState, useCallback } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { ScrollControls, useScroll, Text, OrbitControls } from '@react-three/drei'
+import { ScrollControls, useScroll, Text, OrbitControls, MeshReflectorMaterial } from '@react-three/drei'
+import { EffectComposer, Bloom, ToneMapping } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import { LEFT_PROJECTS, RIGHT_PROJECTS, type Project } from '../../config/projects'
 import { TESTIMONIALS, type Testimonial } from '../../config/testimonials'
@@ -205,9 +206,9 @@ function useMaterials() {
       color: new THREE.Color(0.95, 0.82, 0.55), roughness: 0.75, metalness: 0.08,
       side: THREE.DoubleSide,
     }),
-    // Frame materials
-    frameOuter: new THREE.MeshStandardMaterial({ color: '#5C3A1E', roughness: 0.3, metalness: 0.5 }),
-    frameInner: new THREE.MeshStandardMaterial({ color: '#3E2510', roughness: 0.4, metalness: 0.3 }),
+    // Frame materials - Elevated to Acrylic/Metal
+    frameOuter: new THREE.MeshPhysicalMaterial({ color: '#111111', roughness: 0.15, metalness: 0.8, clearcoat: 1.0, clearcoatRoughness: 0.1 }),
+    frameInner: new THREE.MeshPhysicalMaterial({ color: '#050505', roughness: 0.3, metalness: 0.6 }),
     mat: new THREE.MeshStandardMaterial({ color: '#E8E0D0', roughness: 0.95, metalness: 0 }),
     artBg: new THREE.MeshBasicMaterial({ color: '#FAF8F2' }),
   }), [])
@@ -494,32 +495,31 @@ function GraffitiBackButton() {
         {/* Paint drip / splatter background — rough rectangle */}
         <mesh position={[0, 0, 0.005]}>
           <planeGeometry args={[1.4, 0.75]} />
-          <meshStandardMaterial color="#1A1A1A" transparent opacity={0.35} roughness={1} metalness={0} />
+          <meshBasicMaterial transparent opacity={0} />
         </mesh>
 
         {/* Arrow ← */}
         <Text
           position={[-0.42, 0.02, 0.01]}
           fontSize={0.28}
-          color="#E8E0D0"
           anchorX="center"
           anchorY="middle"
           letterSpacing={0}
           font={undefined}
         >
+          <meshBasicMaterial color={[1.5, 1.3, 1.0]} toneMapped={false} />
           ←
         </Text>
 
-        {/* "BACK" text — spray-paint style */}
         <Text
           position={[0.12, 0.02, 0.01]}
           fontSize={0.22}
-          color="#E8E0D0"
           anchorX="center"
           anchorY="middle"
           letterSpacing={0.15}
-          font={undefined}
+          font="/flutter/assets/fonts/modrnt_urban.otf"
         >
+          <meshBasicMaterial color={[2.5, 1.8, 0.8]} toneMapped={false} />
           BACK
         </Text>
 
@@ -722,103 +722,89 @@ function WallRadio() {
   }, [])
 
   const channelName = RADIO_CHANNELS[_radioChannel].name
-  const statusText = _radioLoading ? '◌ TUNING...' : _radioPlaying ? (_radioMuted ? '● MUTED' : '● ON AIR') : '○ OFF'
-  const statusColor = _radioLoading ? '#C8A45C' : _radioPlaying ? (_radioMuted ? '#C87A4C' : '#6AE06A') : '#8A7A62'
-  const knobColor = _radioMuted ? '#5A5040' : '#C8A45C'
+  const statusText = _radioLoading ? 'TUNING...' : _radioPlaying ? (_radioMuted ? 'MUTED' : 'ON AIR') : 'OFF'
+  
+  // Neon float multipliers for HDR glowing
+  const neonCyan: [number, number, number] = [0.2, 2.0, 2.5]
+  const neonPink: [number, number, number] = [2.8, 0.4, 1.5]
+  const neonYellow: [number, number, number] = [2.5, 2.0, 0.4]
+  const neonRed: [number, number, number] = [2.5, 0.5, 0.5]
+  const neonGreen: [number, number, number] = [0.4, 2.5, 0.6]
+  const disabled: [number, number, number] = [0.8, 0.8, 0.8]
+
+  const statusColor = _radioLoading ? neonYellow : _radioPlaying ? (_radioMuted ? neonRed : neonGreen) : disabled
 
   return (
     <group position={[WALL_X - 0.1, FRAME_Y, -1]} rotation={[0, -Math.PI / 2, 0]}>
       <group ref={grp}>
-        {/* Glow backdrop */}
+        {/* Hover backdrop (invisible until hovered heavily) */}
         <mesh ref={glowRef} material={glowMat} position={[0, 0, -0.01]}>
           <planeGeometry args={[2.0, 1.4]} />
         </mesh>
 
-        {/* Radio body — dark panel */}
+        {/* Radio Hitbox - invisible background */}
         <mesh position={[0, 0, 0.005]}>
           <planeGeometry args={[1.8, 1.2]} />
-          <meshStandardMaterial color="#1A1A1A" roughness={0.8} metalness={0.1} transparent opacity={0.55} />
+          <meshBasicMaterial transparent opacity={0} />
         </mesh>
 
-        {/* ── Left: Speaker grille ── */}
-        {[-0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3].map((y, i) => (
-          <mesh key={i} position={[-0.5, y, 0.008]}>
-            <planeGeometry args={[0.5, 0.018]} />
-            <meshStandardMaterial color="#3A3A3A" roughness={1} metalness={0} transparent opacity={0.5} />
-          </mesh>
-        ))}
-
-        {/* ── Center: Display ── */}
-        <Text position={[0.15, 0.22, 0.01]} fontSize={0.13} color="#C8A45C" anchorX="center" anchorY="middle" letterSpacing={0.06}>
+        {/* ── Title: Graffiti Display ── */}
+        <Text position={[0, 0.25, 0.01]} fontSize={0.22} anchorX="center" anchorY="middle" letterSpacing={0.06} font="/flutter/assets/fonts/modrnt_urban.otf">
+          <meshBasicMaterial color={neonCyan} toneMapped={false} />
           {channelName}
         </Text>
-        <Text position={[0.15, 0.06, 0.01]} fontSize={0.055} color={statusColor} anchorX="center" anchorY="middle" letterSpacing={0.08}>
-          {statusText}
+        
+        {/* ── Subtitle: Status ── */}
+        <Text position={[0, 0.05, 0.01]} fontSize={0.07} anchorX="center" anchorY="middle" letterSpacing={0.1} font="/flutter/assets/fonts/inconsolata_nerd_mono_regular.ttf">
+          <meshBasicMaterial color={statusColor} toneMapped={false} />
+          {`[ ${statusText} ]`}
         </Text>
 
-        {/* ── Volume knob (3D cylinder) — click to cycle volume ── */}
-        <group position={[-0.15, -0.3, 0.04]}
+        {/* ── Controls Row (Pure Stencil Text) ── */}
+        
+        {/* VOL Cycle Button */}
+        <group position={[-0.4, -0.3, 0.01]}
           onClick={handleVolumeCycle}
           onPointerOver={() => { document.body.style.cursor = 'pointer' }}
           onPointerOut={() => { document.body.style.cursor = 'default' }}
         >
-          {/* Knob base ring */}
-          <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.12, 0.12, 0.02, 24]} />
-            <meshStandardMaterial color="#2A2420" roughness={0.4} metalness={0.5} />
-          </mesh>
-          {/* Rotatable knob */}
-          <group ref={knobRef}>
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.09, 0.09, 0.04, 24]} />
-              <meshStandardMaterial color="#3A3028" roughness={0.3} metalness={0.6} />
-            </mesh>
-            {/* Indicator dot */}
-            <mesh position={[0, 0.07, 0.025]}>
-              <sphereGeometry args={[0.015, 8, 8]} />
-              <meshStandardMaterial color={knobColor} emissive={knobColor} emissiveIntensity={0.5} />
-            </mesh>
-          </group>
-          {/* VOL label */}
-          <Text position={[0, -0.16, 0.01]} fontSize={0.04} color="#5A5040" anchorX="center" anchorY="middle" letterSpacing={0.1}>
-            VOL
+          <Text fontSize={0.09} anchorX="center" anchorY="middle" letterSpacing={0.1} font="/flutter/assets/fonts/modrnt_urban.otf">
+            <meshBasicMaterial color={neonYellow} toneMapped={false} />
+            VOL+
           </Text>
+          <mesh><planeGeometry args={[0.4, 0.2]} /><meshBasicMaterial transparent opacity={0} /></mesh>
         </group>
 
-        {/* ── Mute/Play button ── */}
-        <group position={[0.2, -0.3, 0.03]}>
-          <mesh rotation={[Math.PI / 2, 0, 0]}
-            onClick={handleMuteToggle}
-            onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer' }}
-            onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }}
-          >
-            <cylinderGeometry args={[0.1, 0.1, 0.035, 24]} />
-            <meshStandardMaterial color={_radioMuted || !_radioPlaying ? '#3A3028' : '#2A3A28'} roughness={0.4} metalness={0.4} />
-          </mesh>
-          <Text position={[0, 0, 0.025]} fontSize={0.035} color={knobColor} anchorX="center" anchorY="middle" letterSpacing={0.03}>
+        {/* Mute/Play Button */}
+        <group position={[0, -0.3, 0.01]}
+          onClick={handleMuteToggle}
+          onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer' }}
+          onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }}
+        >
+          <Text fontSize={0.09} anchorX="center" anchorY="middle" letterSpacing={0.1} font="/flutter/assets/fonts/modrnt_urban.otf">
+            <meshBasicMaterial color={_radioPlaying ? (_radioMuted ? disabled : neonCyan) : neonPink} toneMapped={false} />
             {_radioPlaying ? (_radioMuted ? 'UNMUTE' : 'MUTE') : 'PLAY'}
           </Text>
+          <mesh><planeGeometry args={[0.4, 0.2]} /><meshBasicMaterial transparent opacity={0} /></mesh>
         </group>
 
-        {/* ── Next station button ── */}
-        <group position={[0.55, -0.3, 0.03]}>
-          <mesh rotation={[Math.PI / 2, 0, 0]}
-            onClick={handleNext}
-            onPointerOver={() => { document.body.style.cursor = 'pointer' }}
-            onPointerOut={() => { document.body.style.cursor = 'default' }}
-          >
-            <cylinderGeometry args={[0.1, 0.1, 0.035, 24]} />
-            <meshStandardMaterial color="#3A3028" roughness={0.4} metalness={0.4} />
-          </mesh>
-          <Text position={[0, 0, 0.025]} fontSize={0.035} color="#C8A45C" anchorX="center" anchorY="middle" letterSpacing={0.03}>
+        {/* Next Button */}
+        <group position={[0.4, -0.3, 0.01]}
+          onClick={handleNext}
+          onPointerOver={() => { document.body.style.cursor = 'pointer' }}
+          onPointerOut={() => { document.body.style.cursor = 'default' }}
+        >
+          <Text fontSize={0.09} anchorX="center" anchorY="middle" letterSpacing={0.1} font="/flutter/assets/fonts/modrnt_urban.otf">
+            <meshBasicMaterial color={neonPink} toneMapped={false} />
             NEXT
           </Text>
+          <mesh><planeGeometry args={[0.4, 0.2]} /><meshBasicMaterial transparent opacity={0} /></mesh>
         </group>
 
-        {/* Underline accent */}
-        <mesh position={[0, -0.52, 0.008]}>
-          <planeGeometry args={[1.5, 0.015]} />
-          <meshStandardMaterial color="#C8A45C" transparent opacity={0.4} roughness={1} metalness={0} />
+        {/* Graffiti Underline */}
+        <mesh position={[0, -0.5, 0.01]}>
+          <planeGeometry args={[1.2, 0.005]} />
+          <meshBasicMaterial color={neonCyan} transparent opacity={0.6} toneMapped={false} />
         </mesh>
       </group>
     </group>
@@ -1156,10 +1142,20 @@ function GalleryCorridor() {
     <group>
       {/* ── PROJECT CORRIDOR ─────────────────────────────── */}
 
-      {/* Floor — warm silver, low metalness for brightness */}
+      {/* Floor — Glossy Museum Concrete */}
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[KB_X / 2, FLOOR_Y, KB_Z]}>
         <planeGeometry args={[200, 200]} />
-        <meshStandardMaterial color={[0.88, 0.85, 0.80]} roughness={0.4} metalness={0.08} side={THREE.DoubleSide} />
+        <MeshReflectorMaterial 
+          blur={[2000, 2000]} 
+          resolution={512} 
+          mixBlur={2.5} 
+          mixStrength={1.5} 
+          roughness={0.9} 
+          depthScale={0} 
+          color="#8A7A62" 
+          metalness={0.05} 
+          mirror={0.05} 
+        />
       </mesh>
 
       {/* Ceiling — warm ceramic, bright */}
@@ -1201,12 +1197,21 @@ function GalleryCorridor() {
       <group position={[0, 0, BACK_WALL_Z + 0.02]}>
         <mesh position={[0, 1.8, -0.02]}>
           <planeGeometry args={[5, 1.2]} />
-          <meshBasicMaterial color="#C8A45C" transparent opacity={0.04} />
+          <meshBasicMaterial color="#C8A45C" transparent opacity={0.02} />
         </mesh>
-        <Text position={[0, 1.8, 0]} fontSize={0.8} color="#C8A45C" anchorX="center" anchorY="middle" letterSpacing={0.05} font="/fonts/poseidon.otf">VISHAL RAJ</Text>
-        <mesh position={[0, 1.4, 0]}><planeGeometry args={[2.5, 0.003]} /><meshBasicMaterial color="#C8A45C" /></mesh>
-        <Text position={[0, 1.1, 0]} fontSize={0.12} color="#8A7A62" anchorX="center" anchorY="middle" letterSpacing={0.2} font="/fonts/jetbrains-mono.woff">FLUTTER PLATFORM LEAD</Text>
-        <Text position={[0, 0.6, 0]} fontSize={0.08} color="#7A7060" anchorX="center" anchorY="middle" letterSpacing={0.08} font="/fonts/jetbrains-mono.woff">9+ years crafting mobile platforms</Text>
+        
+        {/* Main Neon Title */}
+        <Text position={[0, 1.75, 0]} fontSize={0.8} color="#FFE0B0" anchorX="center" anchorY="bottom" letterSpacing={0.05} font="/fonts/poseidon.otf">
+          VISHAL RAJ
+        </Text>
+        <mesh position={[0, 1.65, 0]}><planeGeometry args={[2.5, 0.003]} /><meshBasicMaterial color="#C8A45C" /></mesh>
+        
+        {/* Description Bio */}
+        <Text position={[0, 1.5, 0]} fontSize={0.11} color="#C4B496" anchorX="center" anchorY="top" maxWidth={4.2} textAlign="center" lineHeight={1.5} letterSpacing={0.02} font="/flutter/assets/fonts/inconsolata_nerd_mono_regular.ttf">
+          I make software that works quietly and well. For a decade, I've been building mobile apps,
+          developer tools, and lately, AI systems that can think for themselves. I believe good
+          engineering is invisible — you only notice it when it's missing.
+        </Text>
       </group>
 
       {/* ── BACK WALL LIGHTING — warm testimonial zone ── */}
@@ -1329,7 +1334,7 @@ function KeyboardOrbit() {
       minPolarAngle={Math.PI / 4}
       maxPolarAngle={Math.PI / 2.2}
       dampingFactor={0.05}
-      makeDefault={false}
+      makeDefault
     />
   )
 }
@@ -1346,6 +1351,8 @@ function ReverseScroll() {
     _scrollContainer = el
 
     el.addEventListener('wheel', (e: WheelEvent) => {
+      // When keyboard is focused, let OrbitControls handle wheel events
+      if (_kbFocused) return
       e.preventDefault()
       el.scrollTop -= e.deltaY
     }, { passive: false })
@@ -1380,11 +1387,18 @@ export function GalleryScene() {
     >
       <color attach="background" args={['#C4B496']} />
       <fog attach="fog" args={['#C4B496', 25, 80]} />
+      
       <ambientLight intensity={0.35} color="#FFF8E8" />
       <hemisphereLight args={['#FFF8E8', '#C4B496', 0.4]} />
-
+      
       <KeyboardOrbit />
       <ShaderWarmup />
+
+      {/* Post-Processing fixed pipeline: Render Scene -> Bloom over 1.0 -> ACES Filmic mapping -> Screen */}
+      <EffectComposer>
+        <Bloom luminanceThreshold={1.0} intensity={2.0} mipmapBlur />
+        <ToneMapping mode={THREE.ACESFilmicToneMapping} />
+      </EffectComposer>
 
       <Suspense fallback={null}>
         <ScrollControls pages={16} damping={0.2}>
