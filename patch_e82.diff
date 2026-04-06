@@ -1,0 +1,569 @@
+commit e82134eb88890931de06c977575457e9b4c84ce1
+Author: Vishal Raj <vraj0703@gmail.com>
+Date:   Fri Apr 3 23:18:19 2026 +0530
+
+    feat: contact section overhaul + gallery scroll reset + card icons
+    
+    Contact section:
+    - Title changed to "Let's Connect"
+    - Back button → "Gallery" with left arrow, sends flutter-handoff
+    - Added Home button (bottom-right) → navigates to title screen
+    - Added Audio toggle (bottom-right) → mutes/unmutes all Flutter audio
+      with 🔊/🔇 visual state. GameAudioSystem gains toggleMute/isMuted.
+    - Logo component shown top-left during entrance animation
+    - Bouncy arrow hidden when contact section is active
+    - Smooth white overlay transition when going contact → home
+    - Card icons swapped: ic_crystal/chalice/sword/book → bill/linkedin/github/gmail PNGs
+    
+    Gallery:
+    - Scroll position resets when leaving React phase (resetGalleryScroll)
+      so returning to gallery starts from project corridor
+    
+    Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+
+diff --git a/flutter/assets/images/bill.png b/flutter/assets/images/bill.png
+new file mode 100644
+index 0000000..323e3f5
+Binary files /dev/null and b/flutter/assets/images/bill.png differ
+diff --git a/flutter/assets/images/github.png b/flutter/assets/images/github.png
+new file mode 100644
+index 0000000..4c68971
+Binary files /dev/null and b/flutter/assets/images/github.png differ
+diff --git a/flutter/assets/images/gmail.png b/flutter/assets/images/gmail.png
+new file mode 100644
+index 0000000..5dc6890
+Binary files /dev/null and b/flutter/assets/images/gmail.png differ
+diff --git a/flutter/assets/images/linkedin.png b/flutter/assets/images/linkedin.png
+new file mode 100644
+index 0000000..58b8934
+Binary files /dev/null and b/flutter/assets/images/linkedin.png differ
+diff --git a/flutter/lib/project/app/config/game_strings.dart b/flutter/lib/project/app/config/game_strings.dart
+index c2d756a..a95b1eb 100644
+--- a/flutter/lib/project/app/config/game_strings.dart
++++ b/flutter/lib/project/app/config/game_strings.dart
+@@ -2,7 +2,7 @@ class GameStrings {
+   static const String primaryTitle = "VISHAL RAJ";
+   static const String secondaryTitle = "Welcome to my space";
+   static const String boldText = "Crafting Clarity from Chaos.";
+-  static const String contactTitle = "Contact Me";
++  static const String contactTitle = "Let's Connect";
+   static const String workExperienceTitle = "WORK EXPERIENCE";
+   static const String contactDescription =
+       "If you're curious to know more about what you saw, I invite you to contact me or follow me on social media.";
+diff --git a/flutter/lib/project/app/sections/contact_section.dart b/flutter/lib/project/app/sections/contact_section.dart
+index f78bff2..dea9fa5 100644
+--- a/flutter/lib/project/app/sections/contact_section.dart
++++ b/flutter/lib/project/app/sections/contact_section.dart
+@@ -18,7 +18,9 @@ import 'package:flutter_home_page/project/app/views/components/contact/beach_sce
+ import 'package:flutter_home_page/project/app/views/components/contact/contact_text_component.dart';
+ import 'package:flutter_home_page/project/app/views/components/contact/contact_trail_component.dart';
+ import 'package:flutter_home_page/project/app/views/components/contact/back_button_component.dart';
++import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.dart';
+ import 'package:flutter_home_page/project/app/views/components/contact/white_overlay_component.dart';
++import 'package:flutter_home_page/project/app/system/registration/game_component_factory.dart';
+ 
+ class ContactSection extends Component implements GameSection {
+   @override
+@@ -28,6 +30,7 @@ class ContactSection extends Component implements GameSection {
+   final ContactTrailComponent trailComponent;
+   final BackButtonComponent backButton;
+   final WhiteOverlayComponent whiteOverlay;
++  final LogoComponent logoComponent;
+   Vector2 screenSize;
+   final VoidCallback playEntrySound;
+   final VoidCallback playCompletionSound;
+@@ -36,6 +39,9 @@ class ContactSection extends Component implements GameSection {
+   // ignore: unused_field — retained for future use (e.g., transition back with flash effect)
+   final TransitionCoordinator _transitionCoordinator;
+ 
++  final ContactTextButton homeButton;
++  final ContactIconButton audioToggle;
++
+   double get _maxHeight => trailComponent.maxScrollExtent;
+   late BeachSceneOrchestrator orchestrator;
+   bool _orchestratorInitialized = false;
+@@ -63,6 +69,9 @@ class ContactSection extends Component implements GameSection {
+     required this.trailComponent,
+     required this.backButton,
+     required this.whiteOverlay,
++    required this.logoComponent,
++    required this.homeButton,
++    required this.audioToggle,
+     required this.screenSize,
+     required this.playEntrySound,
+     required this.playCompletionSound,
+@@ -74,9 +83,8 @@ class ContactSection extends Component implements GameSection {
+     cloudBackground.setOrchestrator(orchestrator);
+     _orchestratorInitialized = true;
+ 
+-    // Wire back button to navigate back to React
++    // Wire Gallery button to navigate to React gallery
+     backButton.onTap = navigateBackToReact;
+-
+     backButton.opacity = 0.0;
+   }
+ 
+@@ -169,6 +177,9 @@ class ContactSection extends Component implements GameSection {
+     trailComponent.opacity = 0.0;
+     backButton.opacity = 0.0;
+     whiteOverlay.opacity = 0.0;
++    logoComponent.scale = Vector2.zero();
++    homeButton.opacity = 0.0;
++    audioToggle.opacity = 0.0;
+ 
+     // Clean up reflection resources to prevent memory leaks
+     orchestrator.reflection.clearTargets();
+@@ -329,13 +340,28 @@ class ContactSection extends Component implements GameSection {
+       trailComponent.opacity = 0.0;
+     }
+ 
+-    // Phase 4 (0.7 - 1.0): Back button fades in
++    // Phase 4 (0.7 - 1.0): Buttons + logo fade in
+     if (progress > 0.7) {
+       final btnProgress = ((progress - 0.7) / 0.3).clamp(0.0, 1.0);
++
++      // Gallery button — bottom left
+       backButton.opacity = btnProgress;
+       backButton.position = Vector2(80.0, screenSize.y - 50.0);
++
++      // Logo — top left, small
++      logoComponent.position = Vector2(50.0, 50.0);
++      logoComponent.scale = Vector2.all(0.15 * btnProgress);
++
++      // Home + Audio buttons — bottom right
++      homeButton.opacity = btnProgress;
++      homeButton.position = Vector2(screenSize.x - 160.0, screenSize.y - 50.0);
++      audioToggle.opacity = btnProgress;
++      audioToggle.position = Vector2(screenSize.x - 50.0, screenSize.y - 50.0);
+     } else {
+       backButton.opacity = 0.0;
++      logoComponent.scale = Vector2.zero();
++      homeButton.opacity = 0.0;
++      audioToggle.opacity = 0.0;
+     }
+   }
+ 
+@@ -388,6 +414,9 @@ class ContactSection extends Component implements GameSection {
+     trailComponent.updateTrailAnimation(0.0);
+ 
+     backButton.opacity = 0.0;
++    logoComponent.scale = Vector2.zero();
++    homeButton.opacity = 0.0;
++    audioToggle.opacity = 0.0;
+   }
+ 
+   void _cleanupContactComponents() {
+@@ -402,7 +431,7 @@ class ContactSection extends Component implements GameSection {
+ 
+     if (kIsWeb) {
+       try {
+-        final msg = <String, String>{'type': 'goto-react'}.jsify();
++        final msg = <String, String>{'type': 'flutter-handoff'}.jsify();
+         web.window.parent?.postMessage(msg, '*'.toJS);
+         debugPrint('[Flutter Contact] postMessage sent: goto-react');
+       } catch (e) {
+diff --git a/flutter/lib/project/app/system/audio/game_audio_system.dart b/flutter/lib/project/app/system/audio/game_audio_system.dart
+index b28ff60..f6eb741 100644
+--- a/flutter/lib/project/app/system/audio/game_audio_system.dart
++++ b/flutter/lib/project/app/system/audio/game_audio_system.dart
+@@ -8,8 +8,16 @@ import 'package:flutter_home_page/project/app/config/game_audio_config.dart';
+ class GameAudioSystem {
+   late Soundpool _pool;
+   int _waterdropId = -1;
++  bool _muted = false;
++
++  bool get isMuted => _muted;
++
++  void toggleMute() {
++    _muted = !_muted;
++  }
+ 
+   Future<void> _safePlay(String file, {double volume = 1.0}) async {
++    if (_muted) return;
+     try {
+       await FlameAudio.play(file, volume: volume);
+     } catch (_) {
+@@ -289,7 +297,7 @@ class GameAudioSystem {
+ 
+   // Inside GameAudioSystem class
+   void playSpatialWaterdrop(double normalizedX) {
+-    if (_waterdropId == -1) return;
++    if (_waterdropId == -1 || _muted) return;
+ 
+     // Randomize rate slightly [0.9 - 1.1]
+     double rate = 0.9 + math.Random().nextDouble() * 0.2;
+diff --git a/flutter/lib/project/app/system/registration/game_component_factory.dart b/flutter/lib/project/app/system/registration/game_component_factory.dart
+index 4dd7032..ce0d45d 100644
+--- a/flutter/lib/project/app/system/registration/game_component_factory.dart
++++ b/flutter/lib/project/app/system/registration/game_component_factory.dart
+@@ -1,5 +1,6 @@
+ import 'dart:ui';
+ import 'package:flame/components.dart';
++import 'package:flame/events.dart';
+ import 'package:flame/flame.dart';
+ import 'package:flutter/material.dart' as material;
+ import 'package:flutter_home_page/project/app/config/game_assets.dart';
+@@ -42,6 +43,8 @@ class GameComponentFactory {
+   late final ContactTrailComponent _contactTrail;
+   late final WhiteOverlayComponent _whiteOverlay;
+   late final BackButtonComponent _backButton;
++  late final ContactTextButton _homeButton;
++  late final ContactIconButton _audioToggle;
+ 
+   // ── Typed public getters ──────────────────────────────────────────────
+   RayMarchingShadowComponent get shadowScene => _shadowScene;
+@@ -72,6 +75,8 @@ class GameComponentFactory {
+   WhiteOverlayComponent get whiteOverlay => _whiteOverlay;
+ 
+   BackButtonComponent get backButton => _backButton;
++  ContactTextButton get homeButton => _homeButton;
++  ContactIconButton get audioToggle => _audioToggle;
+ 
+   /// All components in render-priority order for adding to the game tree.
+   List<Component> get allComponents => [
+@@ -89,6 +94,8 @@ class GameComponentFactory {
+     _contactTrail,
+     _whiteOverlay,
+     _backButton,
++    _homeButton,
++    _audioToggle,
+   ];
+ 
+   // ── Shader helper ─────────────────────────────────────────────────────
+@@ -254,9 +261,109 @@ class GameComponentFactory {
+     _backButton.priority = GameLayout.zContent + 2;
+     _backButton.opacity = 0.0;
+ 
++    // ─── Home Button (Contact Section) ───
++    _homeButton = ContactTextButton(
++      text: 'Home',
++      position: Vector2(size.x - 160.0, size.y - 50.0),
++    );
++    _homeButton.priority = GameLayout.zContent + 2;
++    _homeButton.opacity = 0.0;
++
++    // ─── Audio Toggle Button (Contact Section) ───
++    _audioToggle = ContactIconButton(
++      icon: '♪',
++      position: Vector2(size.x - 50.0, size.y - 50.0),
++    );
++    _audioToggle.priority = GameLayout.zContent + 2;
++    _audioToggle.opacity = 0.0;
++
+     // ─── White Overlay ───
+     _whiteOverlay = WhiteOverlayComponent();
+     _whiteOverlay.size = size;
+     _whiteOverlay.opacity = 0.0; // Default hidden
+   }
+ }
++
++/// Simple text button for contact section (Home, etc.)
++class ContactTextButton extends PositionComponent
++    with TapCallbacks, HoverCallbacks, HasPaint {
++  final String text;
++  VoidCallback? onTap;
++  bool _hovering = false;
++  double _hoverGlow = 0.0;
++
++  ContactTextButton({required this.text, super.position})
++      : super(size: Vector2(100, 44), anchor: Anchor.center);
++
++  @override
++  void update(double dt) {
++    super.update(dt);
++    _hoverGlow += ((_hovering ? 1.0 : 0.0) - _hoverGlow) * dt * 6.0;
++  }
++
++  @override
++  void render(Canvas canvas) {
++    if (opacity <= 0.0) return;
++    final rrect = RRect.fromRectAndRadius(size.toRect(), const Radius.circular(22));
++    canvas.drawRRect(rrect, Paint()..color = Color.fromRGBO(255, 255, 255, (0.08 + _hoverGlow * 0.12) * opacity));
++    canvas.drawRRect(rrect, Paint()..color = Color.fromRGBO(255, 255, 255, (0.15 + _hoverGlow * 0.5) * opacity)..style = PaintingStyle.stroke..strokeWidth = 1.0);
++    final tp = material.TextPainter(
++      text: material.TextSpan(text: text, style: material.TextStyle(fontSize: 14, fontWeight: material.FontWeight.w500, color: Color.fromRGBO(255, 255, 255, 0.8 * opacity), letterSpacing: 1.0)),
++      textDirection: material.TextDirection.ltr,
++    )..layout();
++    tp.paint(canvas, Offset((size.x - tp.width) / 2, (size.y - tp.height) / 2));
++  }
++
++  @override
++  void onTapUp(TapUpEvent event) => onTap?.call();
++  @override
++  void onHoverEnter() => _hovering = true;
++  @override
++  void onHoverExit() => _hovering = false;
++  @override
++  bool containsLocalPoint(Vector2 point) =>
++      RRect.fromRectAndRadius(size.toRect(), const Radius.circular(22)).contains(point.toOffset());
++}
++
++/// Simple icon button for contact section (Audio toggle)
++class ContactIconButton extends PositionComponent
++    with TapCallbacks, HoverCallbacks, HasPaint {
++  VoidCallback? onTap;
++  bool Function()? isMuted;
++  bool _hovering = false;
++  double _hoverGlow = 0.0;
++
++  ContactIconButton({required String icon, this.isMuted, super.position})
++      : super(size: Vector2(44, 44), anchor: Anchor.center);
++
++  @override
++  void update(double dt) {
++    super.update(dt);
++    _hoverGlow += ((_hovering ? 1.0 : 0.0) - _hoverGlow) * dt * 6.0;
++  }
++
++  @override
++  void render(Canvas canvas) {
++    if (opacity <= 0.0) return;
++    final muted = isMuted?.call() ?? false;
++    final label = muted ? '🔇' : '🔊';
++    final rrect = RRect.fromRectAndRadius(size.toRect(), const Radius.circular(22));
++    canvas.drawRRect(rrect, Paint()..color = Color.fromRGBO(255, 255, 255, (0.08 + _hoverGlow * 0.12) * opacity));
++    canvas.drawRRect(rrect, Paint()..color = Color.fromRGBO(255, 255, 255, (0.15 + _hoverGlow * 0.5) * opacity)..style = PaintingStyle.stroke..strokeWidth = 1.0);
++    final tp = material.TextPainter(
++      text: material.TextSpan(text: label, style: material.TextStyle(fontSize: 18, color: Color.fromRGBO(255, 255, 255, 0.8 * opacity))),
++      textDirection: material.TextDirection.ltr,
++    )..layout();
++    tp.paint(canvas, Offset((size.x - tp.width) / 2, (size.y - tp.height) / 2));
++  }
++
++  @override
++  void onTapUp(TapUpEvent event) => onTap?.call();
++  @override
++  void onHoverEnter() => _hovering = true;
++  @override
++  void onHoverExit() => _hovering = false;
++  @override
++  bool containsLocalPoint(Vector2 point) =>
++      RRect.fromRectAndRadius(size.toRect(), const Radius.circular(22)).contains(point.toOffset());
++}
+diff --git a/flutter/lib/project/app/views/components/contact/back_button_component.dart b/flutter/lib/project/app/views/components/contact/back_button_component.dart
+index 010800e..b7aa9f8 100644
+--- a/flutter/lib/project/app/views/components/contact/back_button_component.dart
++++ b/flutter/lib/project/app/views/components/contact/back_button_component.dart
+@@ -7,15 +7,15 @@ import 'package:flutter/material.dart' as material;
+ 
+ import 'package:flutter_home_page/project/app/views/my_game.dart';
+ 
+-/// A simple "Back" button for the Contact section.
+-/// On tap, triggers navigation back to the React keyboard hall.
++/// A "Gallery" button for the Contact section.
++/// On tap, triggers navigation to the React gallery.
+ class BackButtonComponent extends PositionComponent
+     with HasGameReference<MyGame>, TapCallbacks, HoverCallbacks, HasPaint {
+   ui.VoidCallback? onTap;
+   bool _isHovering = false;
+   double _hoverGlow = 0.0;
+ 
+-  static const double buttonWidth = 120.0;
++  static const double buttonWidth = 130.0;
+   static const double buttonHeight = 44.0;
+   static const double borderRadius = 22.0;
+ 
+@@ -26,7 +26,6 @@ class BackButtonComponent extends PositionComponent
+   @override
+   Future<void> onLoad() async {
+     await super.onLoad();
+-    // Initial subtle pulse
+     add(
+       ScaleEffect.to(
+         Vector2.all(1.03),
+@@ -43,7 +42,6 @@ class BackButtonComponent extends PositionComponent
+   @override
+   void update(double dt) {
+     super.update(dt);
+-    // Smooth hover glow
+     final target = _isHovering ? 1.0 : 0.0;
+     _hoverGlow += (target - _hoverGlow) * dt * 6.0;
+   }
+@@ -80,7 +78,7 @@ class BackButtonComponent extends PositionComponent
+       ..strokeCap = ui.StrokeCap.round
+       ..strokeJoin = ui.StrokeJoin.round;
+ 
+-    const cx = 36.0;
++    const cx = 28.0;
+     final cy = size.y / 2;
+     const arrowSize = 8.0;
+ 
+@@ -90,10 +88,10 @@ class BackButtonComponent extends PositionComponent
+       ..lineTo(cx, cy + arrowSize);
+     canvas.drawPath(path, arrowPaint);
+ 
+-    // "Back" text
++    // "Gallery" text — after arrow
+     final textPainter = material.TextPainter(
+       text: material.TextSpan(
+-        text: 'Back',
++        text: 'Gallery',
+         style: material.TextStyle(
+           fontSize: 14.0,
+           fontWeight: material.FontWeight.w500,
+@@ -106,7 +104,7 @@ class BackButtonComponent extends PositionComponent
+     textPainter.layout();
+     textPainter.paint(
+       canvas,
+-      ui.Offset(52.0, (size.y - textPainter.height) / 2),
++      ui.Offset(44.0, (size.y - textPainter.height) / 2),
+     );
+   }
+ 
+diff --git a/flutter/lib/project/app/views/components/contact/contact_card.dart b/flutter/lib/project/app/views/components/contact/contact_card.dart
+index ebaab80..63321b9 100644
+--- a/flutter/lib/project/app/views/components/contact/contact_card.dart
++++ b/flutter/lib/project/app/views/components/contact/contact_card.dart
+@@ -73,10 +73,10 @@ late SpriteComponent iconComp;
+   Future<void> onLoad() async {
+     if (data != null) {
+       final iconPaths = [
+-        'ic_crystal.png',
+-        'ic_chalice.png',
+-        'ic_sword.png',
+-        'ic_book.png',
++        'bill.png',
++        'linkedin.png',
++        'github.png',
++        'gmail.png',
+       ];
+       final iconPath = iconPaths[index % iconPaths.length];
+ 
+diff --git a/flutter/lib/project/app/views/my_game.dart b/flutter/lib/project/app/views/my_game.dart
+index edff68e..7bef8cf 100644
+--- a/flutter/lib/project/app/views/my_game.dart
++++ b/flutter/lib/project/app/views/my_game.dart
+@@ -397,12 +397,22 @@ class MyGame extends FlameGame
+       centerPosition: size / 2,
+     );
+     // 2. contact (stored as field for later goto-contact)
++    // Wire Home button to navigate to title screen
++    _componentFactory.homeButton.onTap = () => _startHomeSection();
++
++    // Wire Audio toggle to mute/unmute
++    _componentFactory.audioToggle.onTap = () => _audioSystem.toggleMute();
++    _componentFactory.audioToggle.isMuted = () => _audioSystem.isMuted;
++
+     _contactSection = ContactSection(
+       titleComponent: _componentFactory.contactText,
+       cloudBackground: _componentFactory.beachBackground,
+       trailComponent: _componentFactory.contactTrail,
+       backButton: _componentFactory.backButton,
+       whiteOverlay: _componentFactory.whiteOverlay,
++      logoComponent: _componentFactory.logoComponent,
++      homeButton: _componentFactory.homeButton,
++      audioToggle: _componentFactory.audioToggle,
+       screenSize: size,
+       playEntrySound: audio.playContactEntry,
+       playCompletionSound: audio.playContactComplete,
+@@ -436,9 +446,13 @@ class MyGame extends FlameGame
+     };
+   }
+ 
+-  /// Called when React sends "goto-home" — restore bold text section at title state
++  /// Called when Home button tapped or React sends "goto-home"
+   Future<void> _startHomeSection() async {
++    // Brief transition delay for visual smoothness
++    _componentFactory.whiteOverlay.opacity = 1.0;
++    await Future.delayed(const Duration(milliseconds: 400));
+     await _primarySequenceRunner.restoreToSection(0, [_boldTextSection]);
++    _componentFactory.whiteOverlay.opacity = 0.0;
+ 
+     // Re-wire handoff so scrolling through sends the user back to React
+     _primarySequenceRunner.onSequenceComplete = () async {
+@@ -455,10 +469,10 @@ class MyGame extends FlameGame
+ 
+     debugPrint('[goto-home] restoreToSection done, dispatching titleLoaded + onScroll');
+ 
+-    // Go straight to active state so scroll input drives the bold text section
++    // Show title state with bouncy arrow, then transition to active on scroll
+     queuer.queue(event: const SceneEvent.titleLoaded());
+-    // Immediately transition to active — user already knows how to scroll
+     queuer.queue(event: const SceneEvent.onScroll());
++    queuer.queue(event: const SceneEvent.toggleArrow(true));
+ 
+     // Ensure input is not blocked from a previous transition
+     unblockInput();
+@@ -468,6 +482,7 @@ class MyGame extends FlameGame
+   Future<void> _startContactSection() async {
+     _primarySequenceRunner.init([_contactSection]);
+     queuer.queue(event: const SceneEvent.onScroll());
++    queuer.queue(event: const SceneEvent.toggleArrow(false)); // Hide bouncy arrow
+     await _primarySequenceRunner.start();
+   }
+ 
+diff --git a/flutter/pubspec.yaml b/flutter/pubspec.yaml
+index 9b7d30e..33f14c5 100644
+--- a/flutter/pubspec.yaml
++++ b/flutter/pubspec.yaml
+@@ -137,10 +137,10 @@ flutter:
+     - assets/audio/waterdrop.mp3
+     - assets/audio/si.mp3
+     - assets/images/logo.png
+-    - assets/images/ic_book.png
+-    - assets/images/ic_chalice.png
+-    - assets/images/ic_crystal.png
+-    - assets/images/ic_sword.png
++    - assets/images/bill.png
++    - assets/images/gmail.png
++    - assets/images/linkedin.png
++    - assets/images/github.png
+     - assets/vectors/down_arrow.svg
+ 
+   shaders:
+diff --git a/src/App.tsx b/src/App.tsx
+index 139754d..328b64c 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -5,7 +5,7 @@ import { SectionTransition } from './components/SectionTransition'
+ import { Preloader } from './components/preloader/Preloader'
+ import { useAssetLoader } from './hooks/useAssetLoader'
+ import { AudioProvider, useAudio } from './audio/AudioProvider'
+-import { preloadRadio, startRadioOnGalleryEnter, stopRadio } from './components/three/GalleryScene'
++import { preloadRadio, startRadioOnGalleryEnter, stopRadio, resetGalleryScroll } from './components/three/GalleryScene'
+ 
+ type Phase = 'flutter' | 'react' | 'contact'
+ type TransitionDirection = 'forward' | 'reverse'
+@@ -42,10 +42,14 @@ function AppInner() {
+     }
+   }, [flutterReady, reactReady, preloaderPhase])
+ 
+-  // Start radio when entering React, stop when leaving
++  // Start radio when entering React, stop + reset scroll when leaving
+   useEffect(() => {
+-    if (phase === 'react') startRadioOnGalleryEnter()
+-    else stopRadio()
++    if (phase === 'react') {
++      startRadioOnGalleryEnter()
++    } else {
++      stopRadio()
++      resetGalleryScroll()
++    }
+   }, [phase])
+ 
+   const handleFlutterLoadingProgress = useCallback((progress: number) => {
+diff --git a/src/components/three/GalleryScene.tsx b/src/components/three/GalleryScene.tsx
+index cf7ef2a..fdb7817 100644
+--- a/src/components/three/GalleryScene.tsx
++++ b/src/components/three/GalleryScene.tsx
+@@ -72,6 +72,12 @@ export function subscribeKbFocus(fn: (focused: boolean) => void) {
+ let _scrollUnlockRequested = false
+ export function requestScrollUnlock() { _scrollUnlockRequested = true }
+ 
++// Reset gallery scroll to start (called when leaving React phase)
++let _scrollContainer: HTMLElement | null = null
++export function resetGalleryScroll() {
++  if (_scrollContainer) _scrollContainer.scrollTop = 0
++}
++
+ // Back navigation — observable from outside Three.js
+ let _backClickListeners: Array<() => void> = []
+ export function subscribeBackClick(fn: () => void) {
+@@ -1315,6 +1321,7 @@ function ReverseScroll() {
+     if (attached.current || !scroll.el) return
+     attached.current = true
+     const el = scroll.el
++    _scrollContainer = el
+ 
+     el.addEventListener('wheel', (e: WheelEvent) => {
+       e.preventDefault()
