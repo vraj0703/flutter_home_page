@@ -68,10 +68,10 @@ export function SectionTransition({
         stagger: t.wipeStagger,
       })
 
-      // 2. Fire Midpoint EARLY for React settle time (at ~T+0.5s, not T+0.8s)
+      // 2. Fire Midpoint slightly before wipe-in completes (overlap with React settle)
       tl.add(() => {
         onMidpointRef.current()
-      }, t.midpoint)
+      }, `>-0.1`)
 
       // 3. Short hold period for async processes (Flutter loading, React DOM settle)
       tl.to({}, { duration: t.hold })
