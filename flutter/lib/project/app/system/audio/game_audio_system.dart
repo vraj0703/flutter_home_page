@@ -2,12 +2,10 @@ import 'dart:math' as math;
 import 'package:flutter_home_page/project/app/utils/logger_util.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/services.dart';
-import 'package:soundpool/soundpool.dart';
 import 'package:flutter_home_page/project/app/config/game_audio_config.dart';
 
 class GameAudioSystem {
-  late Soundpool _pool;
-  int _waterdropId = -1;
+  bool _waterdropReady = false;
   bool _muted = false;
 
   bool get isMuted => _muted;
@@ -25,23 +23,17 @@ class GameAudioSystem {
     }
   }
 
+  /// Full initialization — kept for backward compatibility.
+  /// Calls initCritical() then loadDeferred() sequentially.
   Future<void> initialize() async {
-    // 1. Initialize Soundpool for high-concurrency SFX (waterdrops)
-    _pool = Soundpool.fromOptions(
-      options: const SoundpoolOptions(streamType: StreamType.music),
-    );
+    await initCritical();
+    await loadDeferred();
+  }
 
-    try {
-      // Load waterdrop sound into pool
-      final data = await rootBundle.load(
-        'assets/audio/${GameAudioConfig.waterdropSfx}',
-      );
-      _waterdropId = await _pool.load(data);
-    } catch (e) {
-      // Handle loading error
-    }
-
-    // Preload important SFX to avoid latency
+  /// Load only the audio needed before first frame (logo + title + scroll).
+  /// Contact section audio is deferred to [loadDeferred].
+  Future<void> initCritical() async {
+    // Critical SFX: needed for logo → title → bold text scroll sequence
     try {
       await FlameAudio.audioCache.loadAll([
         GameAudioConfig.enterSfx,
@@ -49,6 +41,19 @@ class GameAudioSystem {
         GameAudioConfig.slideInSfx,
         GameAudioConfig.bouncyArrowSfx,
         GameAudioConfig.boldTextSwell,
+      ]);
+    } catch (e) {
+      // Ignore audio loading errors on web
+    }
+
+    playBgm();
+  }
+
+  /// Load deferred audio — contact section, trail cards, thunder, etc.
+  /// Call after flutter-ready has been sent and the game is interactive.
+  Future<void> loadDeferred() async {
+    try {
+      await FlameAudio.audioCache.loadAll([
         GameAudioConfig.contactEntrySfx,
         GameAudioConfig.contactCompleteSfx,
         GameAudioConfig.trailCard1Sfx,
@@ -61,16 +66,11 @@ class GameAudioSystem {
         GameAudioConfig.waterdropSfx,
         GameAudioConfig.gearTickSfx,
         GameAudioConfig.selectionClickSfx,
-        GameAudioConfig.selectionClickSfx,
         GameAudioConfig.contactButtonSfx,
       ]);
     } catch (e) {
-      // Ignore audio loading errors (likely format issues on web)
-      // Audio load error: $e
+      // Ignore audio loading errors on web
     }
-
-    // Start BGM loop (can be toggled in settings later)
-    playBgm();
   }
 
   void playBgm() {
@@ -303,18 +303,14 @@ class GameAudioSystem {
     });
   }
 
-  // Inside GameAudioSystem class
+  // Waterdrop SFX — replaced Soundpool (discontinued, dart2wasm incompatible)
+  // with FlameAudio.play which works under both dart2js and dart2wasm.
   void playSpatialWaterdrop(double normalizedX) {
-    if (_waterdropId == -1 || _muted) return;
-
-    // Randomize rate slightly [0.9 - 1.1]
-    double rate = 0.9 + math.Random().nextDouble() * 0.2;
+    if (_muted) return;
 
     // Randomize volume [0.3 - 0.7]
     double vol = 0.3 + math.Random().nextDouble() * 0.4;
-    _pool.play(_waterdropId, rate: rate).then((streamId) {
-      _pool.setVolume(streamId: streamId, volume: vol);
-    });
+    _safePlay(GameAudioConfig.waterdropSfx, volume: vol);
   }
 
   Future<void> duckAmbientLoops({int durationMs = 500}) async {

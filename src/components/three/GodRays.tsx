@@ -24,7 +24,7 @@ export function GodRays({ logoTexture, opacity = 1 }: GodRaysProps) {
     uLogoTexture: { value: logoTexture },
   }), [])
 
-  useFrame(({ pointer }) => {
+  useFrame(({ pointer }, delta) => {
     if (!ref.current) return
     const u = ref.current.uniforms
 
@@ -32,9 +32,10 @@ export function GodRays({ logoTexture, opacity = 1 }: GodRaysProps) {
     const targetX = (pointer.x * 0.5 + 0.5) * size.width
     const targetY = (1.0 - (pointer.y * 0.5 + 0.5)) * size.height
 
-    // Smooth lerp
-    lightPx.current.x += (targetX - lightPx.current.x) * 0.04
-    lightPx.current.y += (targetY - lightPx.current.y) * 0.04
+    // Frame-rate independent smooth follow (was: * 0.04 which is frame-rate dependent)
+    const speed = 2.5
+    lightPx.current.x += (targetX - lightPx.current.x) * (1 - Math.exp(-speed * delta))
+    lightPx.current.y += (targetY - lightPx.current.y) * (1 - Math.exp(-speed * delta))
 
     u.uSize.value = [size.width, size.height]
     u.uLightPos.value = [lightPx.current.x, lightPx.current.y]

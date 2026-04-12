@@ -1,5 +1,6 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import { gsap } from 'gsap'
+import { MOTION } from '../config/motion'
 
 export interface FlutterEmbedHandle {
   show: () => void
@@ -23,15 +24,16 @@ export const FlutterEmbed = forwardRef<FlutterEmbedHandle, FlutterEmbedProps>(
       show() {
         if (!iframeRef.current) return
         handoffTriggered.current = false
+        // Pure opacity fade — no y-slide (the flutter frame is already in place)
         gsap.fromTo(iframeRef.current,
-          { opacity: 0, y: 30 },
-          { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', onStart: () => { iframeRef.current!.style.pointerEvents = 'auto' } }
+          { opacity: 0 },
+          { opacity: 1, duration: MOTION.flutter.showDuration, ease: MOTION.ease.enter, onStart: () => { iframeRef.current!.style.pointerEvents = 'auto' } }
         )
       },
       hide() {
         if (!iframeRef.current) return
-        iframeRef.current.style.pointerEvents = 'none' // Block immediately — don't wait for fade
-        gsap.to(iframeRef.current, { opacity: 0, duration: 0.3 })
+        iframeRef.current.style.pointerEvents = 'none'
+        gsap.to(iframeRef.current, { opacity: 0, duration: MOTION.flutter.hideDuration })
       },
       sendMessage(msg: Record<string, string>) {
         iframeRef.current?.contentWindow?.postMessage(msg, window.location.origin)

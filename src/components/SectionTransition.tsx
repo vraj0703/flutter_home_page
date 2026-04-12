@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
+import { MOTION } from '../config/motion'
 
 type TransitionDirection = 'forward' | 'reverse'
 
@@ -41,12 +42,12 @@ export function SectionTransition({
     gsap.killTweensOf(layers)
 
     if (active) {
-      const half = duration / 2
+      const t = MOTION.transition
       const dir = direction === 'forward' ? 1 : -1
 
       // Enable container
       gsap.set(el, { pointerEvents: 'auto', display: 'block' })
-      
+
       // Move layers off-screen
       gsap.set(layers, {
         xPercent: dir === 1 ? 100 : -100,
@@ -59,28 +60,28 @@ export function SectionTransition({
         }
       })
 
-      // 1. Wipe IN (Cascading layers)
+      // 1. Wipe IN (Cascading layers — gold is z:3, last to cover = first face you see)
       tl.to(layers, {
         xPercent: 0,
-        duration: half,
-        ease: 'power3.inOut',
-        stagger: 0.12,
+        duration: t.wipeIn,
+        ease: MOTION.ease.inOut,
+        stagger: t.wipeStagger,
       })
 
-      // 2. Fire Midpoint when screen is fully covered by the top layer
+      // 2. Fire Midpoint EARLY for React settle time (at ~T+0.5s, not T+0.8s)
       tl.add(() => {
         onMidpointRef.current()
-      }, `>-0.1`) // Fire slightly before the very end of the stagger to overlap with React rendering
+      }, t.midpoint)
 
       // 3. Short hold period for async processes (Flutter loading, React DOM settle)
-      tl.to({}, { duration: 0.25 })
+      tl.to({}, { duration: t.hold })
 
-      // 4. Wipe OUT (Layers slide away in same direction)
+      // 4. Wipe OUT (Layers slide away — tighter stagger for immediate reveal feel)
       tl.to(layers, {
         xPercent: dir === 1 ? -100 : 100,
-        duration: half * 0.9,
-        ease: 'power3.inOut',
-        stagger: 0.08,
+        duration: t.wipeOut,
+        ease: MOTION.ease.inOut,
+        stagger: t.exitStagger,
       })
 
     } else {
@@ -105,23 +106,23 @@ export function SectionTransition({
         display: 'none',
       }}
     >
-      {/* 
-        Layers sequence (z-index): 
-        1. Base Accent (Gold)
-        2. Neutral Shadow (Deep Grey)
-        3. Primary Background (Color prop)
+      {/*
+        Layers sequence (z-index) — INVERTED from original:
+        1. Primary Background (enters first = deepest)
+        2. Neutral Shadow (middle depth)
+        3. Base Accent Gold (enters last = threshold face, first to peel back on reveal)
       */}
-      <div 
-        className="transition-layer" 
-        style={{ position: 'absolute', inset: 0, background: '#C8A45C', zIndex: 1, willChange: 'transform' }} 
+      <div
+        className="transition-layer"
+        style={{ position: 'absolute', inset: 0, background: color, zIndex: 1, willChange: 'transform' }}
       />
-      <div 
-        className="transition-layer" 
-        style={{ position: 'absolute', inset: 0, background: '#111114', zIndex: 2, willChange: 'transform' }} 
+      <div
+        className="transition-layer"
+        style={{ position: 'absolute', inset: 0, background: '#111114', zIndex: 2, willChange: 'transform' }}
       />
-      <div 
-        className="transition-layer" 
-        style={{ position: 'absolute', inset: 0, background: color, zIndex: 3, willChange: 'transform' }} 
+      <div
+        className="transition-layer"
+        style={{ position: 'absolute', inset: 0, background: '#C8A45C', zIndex: 3, willChange: 'transform' }}
       />
     </div>
   )

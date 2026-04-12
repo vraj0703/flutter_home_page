@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
 import { gsap } from 'gsap'
+import { useReducedMotion } from '../../hooks/useReducedMotion'
 
 interface PreloaderProps {
   progress: number
@@ -15,6 +16,7 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
   const textRef = useRef<HTMLDivElement>(null)
   const hasRevealed = useRef(false)
   const [displayPct, setDisplayPct] = useState(1)
+  const reducedMotion = useReducedMotion()
 
   // Smooth percentage counter — starts at 01, counts to 100
   useEffect(() => {
@@ -47,9 +49,16 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
 
     const tl = gsap.timeline()
 
-    // 1. Flash burst at 100% — the energy peaks
+    if (reducedMotion) {
+      // Accessibility: skip flash burst, simple crossfade out
+      tl.to(containerRef.current, { opacity: 0, duration: 0.3, ease: 'power1.inOut' })
+      tl.call(() => onRevealComplete())
+      return
+    }
+
+    // 1. Radial bloom (was: full-screen flash at 0.9 — reduced to 0.4 max for safety)
     tl.to(flashRef.current, {
-      opacity: 0.9,
+      opacity: 0.4,
       duration: 0.15,
       ease: 'power4.in',
     })
@@ -78,9 +87,9 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
       ease: 'power2.out',
     }, '<+=0.1')
 
-    // Glow expands and dissolves
+    // Glow expands and dissolves (radial bloom replaces full-screen flash)
     tl.to(glowRef.current, {
-      scale: 3,
+      scale: 4,
       opacity: 0,
       duration: 0.8,
       ease: 'power2.out',
@@ -94,7 +103,7 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
     }, '-=0.3')
 
     tl.call(() => onRevealComplete())
-  }, [phase, onRevealComplete])
+  }, [phase, onRevealComplete, reducedMotion])
 
   if (phase === 'done') return null
 

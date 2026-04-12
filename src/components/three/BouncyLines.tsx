@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import type { Group, ShaderMaterial } from 'three'
 import logoVert from '../../shaders/logo.vert?raw'
@@ -15,7 +15,10 @@ function springStep(
   return [pos + nv * dt, nv]
 }
 
-const SP = { mass: 20, stiffness: 500, damping: 70 }
+import { MOTION } from '../../config/motion'
+import { prefersReducedMotion } from '../../hooks/useReducedMotion'
+
+const SP = MOTION.bouncyLines
 const H_THRESHOLD = 300 // px
 const V_THRESHOLD = 150 // px
 
@@ -58,6 +61,8 @@ export function BouncyLines({ visible, logoScale }: BouncyLinesProps) {
 
   useFrame(({ pointer }, delta) => {
     if (!groupRef.current) return
+    // Accessibility: freeze lines when reduced motion is preferred
+    if (prefersReducedMotion()) return
     const dt = Math.min(delta, 1 / 30)
 
     // Fade opacity

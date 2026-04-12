@@ -28,6 +28,8 @@ import 'package:flutter_home_page/project/app/system/scroll/scroll_controller/go
 import 'package:flutter_home_page/project/app/system/input/game_input_controller.dart';
 import 'package:flutter_home_page/project/app/system/audio/game_audio_system.dart';
 import 'package:flutter_home_page/project/app/system/sequence/sequence_runner.dart';
+import 'package:flutter_home_page/project/app/system/lifecycle/tick_tier.dart';
+import 'package:flutter_home_page/project/app/system/lifecycle/canvas_lifecycle_port.dart';
 import 'package:flutter_home_page/project/app/sections/bold_text_section.dart';
 import 'package:flutter_home_page/project/app/sections/contact_section.dart';
 import 'package:flutter_home_page/project/app/system/transition/transition_coordinator.dart';
@@ -38,7 +40,8 @@ class MyGame extends FlameGame
         TapCallbacks,
         PointerMoveCallbacks,
         MouseMovementDetector,
-        HoverCallbacks
+        HoverCallbacks,
+        ThrottledGame
     implements TransitionContext {
   VoidCallback? onStartExitAnimation;
   bool _handoffSent = false;
@@ -98,6 +101,9 @@ class MyGame extends FlameGame
   bool _warmupComplete = false;
   bool _gameReadyDispatched = false;
 
+  /// Communication port to the host page (iframe or hostElement).
+  late final CanvasLifecyclePort _port;
+
   // White overlay fade state machine for smooth Flutter→Flutter transitions
   String _fadePhase = 'idle'; // idle | fadeIn | hold | fadeOut
   double _fadeProgress = 0.0;
@@ -116,7 +122,7 @@ class MyGame extends FlameGame
       repeat: false,
     );
     _cursorSystem.initialize(size / 2);
-    await _audioSystem.initialize(); // Initialize audio
+    await _audioSystem.initCritical(); // Load only critical audio (logo + title + scroll)
 
     await _componentFactory.initializeComponents(
       size: size,
@@ -125,6 +131,10 @@ class MyGame extends FlameGame
       backgroundColorCallback: backgroundColor,
       onSectionTap: _handleSectionTap,
     );
+
+    // NOTE: prewarmShaders() removed — it crashes on CanvasKit because
+    // shaders have varying uniform counts. Shader compilation happens
+    // on first render of each component instead (acceptable latency).
 
     // Create and store FlameBlocProvider — uses the concrete SceneBloc directly
     // instead of casting from StateProvider, eliminating the unsafe runtime cast.
@@ -185,48 +195,33 @@ class MyGame extends FlameGame
 
     add(_inputController);
 
+    // Initialize CanvasLifecyclePort BEFORE warmUpAll — progress callbacks use _port.send()
+    _port = CanvasLifecyclePort();
+    _port.on('flutter-pause', (_) => setTickTier(TickTier.frozen));
+    _port.on('flutter-resume', (_) => setTickTier(TickTier.active));
+    _port.on('flutter-background', (_) => setTickTier(TickTier.background));
+    _port.on('goto-contact', (_) {
+      debugPrint('[Flutter] Received goto-contact');
+      _handoffSent = false;
+      _startContactSection();
+    });
+    _port.on('goto-home', (_) {
+      debugPrint('[Flutter] Received goto-home');
+      _handoffSent = false;
+      _startHomeSection();
+    });
+    _port.listen();
+
     _primarySequenceRunner
         .warmUpAll(
           onProgress: (progress) {
             loadingProgress.value = progress;
-            if (kIsWeb) {
-              final msg = {'type': 'flutter-loading', 'progress': progress}.jsify();
-              web.window.parent?.postMessage(msg, web.window.origin.toJS);
-            }
+            _port.send({'type': 'flutter-loading', 'progress': progress});
           },
         )
         .whenComplete(() {
           _warmupComplete = true;
         });
-
-    // Listen for React messages (goto-contact)
-    if (kIsWeb) {
-      web.window.addEventListener(
-        'message',
-        (web.Event event) {
-          final msgEvent = event as web.MessageEvent;
-          final data = msgEvent.data;
-          if (data == null) return;
-          final dartData = data.dartify();
-          if (dartData is Map) {
-            final type = dartData['type'];
-            if (type == 'flutter-pause') {
-              paused = true;
-            } else if (type == 'flutter-resume') {
-              paused = false;
-            } else if (type == 'goto-contact') {
-              debugPrint('[Flutter] Received goto-contact');
-              _handoffSent = false; // Allow future handoffs
-              _startContactSection();
-            } else if (type == 'goto-home') {
-              debugPrint('[Flutter] Received goto-home');
-              _handoffSent = false; // Allow future handoffs
-              _startHomeSection();
-            }
-          }
-        }.toJS,
-      );
-    }
 
     // Register controllers to contact scroll system
     _contactScrollSystem.register(_primarySequenceRunner);
@@ -296,6 +291,7 @@ class MyGame extends FlameGame
   void update(double dt) {
     super.update(dt);
     if (!isLoaded) return;
+    if (!shouldProcessTick(dt)) return;
 
     // White overlay fade state machine (for smooth Flutter→Flutter transitions)
     if (_fadePhase == 'fadeIn') {
@@ -357,6 +353,7 @@ class MyGame extends FlameGame
         // Dispatch Game Ready only when warmup is fully complete
         if (_warmupComplete && !_gameReadyDispatched) {
           _gameReadyDispatched = true;
+          _audioSystem.loadDeferred(); // Load contact/trail/thunder audio in background
           queuer.queue(event: const SceneEvent.gameReady());
           _sendFlutterReady();
         }
@@ -540,31 +537,21 @@ class MyGame extends FlameGame
     await _primarySequenceRunner.start();
   }
 
-  /// Notify parent React frame that Flutter engine is loaded and ready.
+  /// Notify host page that Flutter engine is loaded and ready.
   void _sendFlutterReady() {
-    if (!kIsWeb) return;
-    try {
-      final msg = <String, String>{'type': 'flutter-ready'}.jsify();
-      web.window.parent?.postMessage(msg, web.window.origin.toJS);
-      debugPrint('postMessage sent: flutter-ready');
-    } catch (e) {
-      debugPrint('postMessage error: $e');
-    }
+    _port.send({'type': 'flutter-ready'});
+    debugPrint('[MyGame] sent: flutter-ready');
   }
 
   void _sendHandoff() {
-    try {
-      final msg = <String, String>{'type': 'flutter-handoff'}.jsify();
-      web.window.parent?.postMessage(msg, web.window.origin.toJS);
-      debugPrint('postMessage sent: flutter-handoff');
-    } catch (e) {
-      debugPrint('postMessage error: $e');
-    }
+    _port.send({'type': 'flutter-handoff'});
+    debugPrint('[MyGame] sent: flutter-handoff');
   }
 
   @override
   void onRemove() {
     _stateSubscription?.cancel();
+    _port.dispose();
     super.onRemove();
   }
 }

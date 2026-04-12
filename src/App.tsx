@@ -1,11 +1,14 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { FlutterEmbed, type FlutterEmbedHandle } from './components/FlutterEmbed'
+// FlutterHost is ready for iframe elimination — swap after Flutter rebuild
+// import { FlutterHost, type FlutterEmbedHandle } from './components/FlutterHost'
 import { S3_Gallery } from './components/sections/S3_Gallery'
 import { SectionTransition } from './components/SectionTransition'
 import { Preloader } from './components/preloader/Preloader'
 import { useAssetLoader } from './hooks/useAssetLoader'
 import { AudioProvider, useAudio } from './audio/AudioProvider'
-import { preloadRadio, startRadioOnGalleryEnter, stopRadio, resetGalleryScroll } from './components/three/GalleryScene'
+import { preloadRadio, startRadioOnGalleryEnter, stopRadio } from './audio/RadioEngine'
+import { resetGalleryScroll } from './components/three/gallery/galleryStore'
 
 type Phase = 'flutter' | 'react' | 'contact'
 type TransitionDirection = 'forward' | 'reverse'

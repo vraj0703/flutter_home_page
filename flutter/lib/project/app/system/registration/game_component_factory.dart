@@ -112,6 +112,31 @@ class GameComponentFactory {
     return _shaderCache[path]!.fragmentShader();
   }
 
+  /// Pre-warm all cached shaders by drawing a 1x1 rect with each.
+  /// Triggers GPU compilation without visible output — prevents first-frame stalls.
+  void prewarmShaders() {
+    for (final program in _shaderCache.values) {
+      final shader = program.fragmentShader();
+      // Set minimal uniforms: resolution (required by most shaders)
+      try {
+        shader.setFloat(0, 1.0); // resolution.x
+        shader.setFloat(1, 1.0); // resolution.y
+        shader.setFloat(2, 0.0); // time
+      } catch (_) {
+        // Some shaders may have fewer uniforms — ignore
+      }
+      final recorder = PictureRecorder();
+      final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, 1, 1));
+      canvas.drawRect(
+        const Rect.fromLTWH(0, 0, 1, 1),
+        Paint()..shader = shader,
+      );
+      final picture = recorder.endRecording();
+      picture.dispose();
+      shader.dispose();
+    }
+  }
+
   // ── Initialize all components directly ────────────────────────────────
   Future<void> initializeComponents({
     required Vector2 size,

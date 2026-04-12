@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "flutter:build": "cd flutter && flutter build web --wasm --release --base-href /flutter/",
+    "flutter:build:js": "cd flutter && flutter build web --release --base-href /flutter/",
+    "flutter:copy": "rsync -a --exclude='index.html' flutter/build/web/ public/flutter/",
+    "flutter:full": "npm run flutter:build && npm run flutter:copy",
+    "build:all": "npm run flutter:full && npm run build"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

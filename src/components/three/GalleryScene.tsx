@@ -1,17 +1,19 @@
 /**
- * GalleryScene.tsx — Unified 3D Gallery
+ * GalleryScene.tsx — Unified 3D Gallery (decomposed)
  *
- * Sections:
- *   1. Constants & dimensions (corridor, testimonials, keyboard room)
- *   2. Procedural textures (wall normal/roughness maps)
- *   3. Frame sizing hooks (useFrameSize, useFocusDistance)
- *   4. Project artwork draw functions (canvas-based generative art)
- *   5. Shared materials (useMaterials)
- *   6. WallFrame / TestimonialFrame components
- *   7. CanopyLight / CeilingBeam / FloatingKB
- *   8. CameraRig — walk forward, lock on wall, pan right, keyboard orbit
- *   9. GalleryCorridor — walls, floors, ceiling, frames, lights
- *  10. GalleryScene (exported) — Canvas wrapper with scroll + orbit
+ * Extracted modules:
+ *   - ./gallery/galleryStore    — all shared state & event buses
+ *   - ./gallery/dimensions      — all scene constants & room geometry
+ *   - ./gallery/utils           — damp, tmpVec3, useFrameSize, useFocusDistance
+ *   - ./gallery/materials       — useMaterials
+ *   - ./gallery/textures        — useProjectTexture
+ *   - ../../audio/RadioEngine   — radio playback & state
+ *
+ * Components defined here:
+ *   WallFrame, TestimonialFrame, TubeLight, FrameSpotlight, ScrollArrow,
+ *   GraffitiBackButton, WallRadio, LetsConnectFrame, BackWallSpotlight,
+ *   TestimonialSpotlight, FloatingKB, CameraRig, GalleryCorridor,
+ *   KeyboardOrbit, ReverseScroll, ShaderWarmup, GalleryScene (exported)
  */
 
 import { Suspense, useRef, useMemo, useEffect, useState, useCallback } from 'react'
@@ -24,210 +26,57 @@ import { TESTIMONIALS, type Testimonial } from '../../config/testimonials'
 import { Keyboard as SkillKeyboard, resetBoot, Particles as KBParticles } from '../three/KeyboardScene'
 import { getAudioEngine } from '../../audio'
 
-/* ── Reusable vectors (avoid per-frame allocations) ────── */
-const _tmpVec3 = new THREE.Vector3()
+// State & events
+import {
+  getScrollProgress, setScrollProgress,
+  isKbFocused, setKbFocused, subscribeKbFocus,
+  getFocusState, setClickTarget, clearFocus,
+  isCameraResetRequested, consumeCameraReset,
+  isScrollUnlockRequested, consumeScrollUnlock,
+  getScrollContainer, setScrollContainer,
+  fireCTAClick, fireBackClick, fireConnectClick,
+  requestScrollUnlock,
+} from './gallery/galleryStore'
 
-/** Frame-rate independent exponential smoothing.
- *  Replaces `value += (target - value) * CONSTANT` which is frame-rate dependent.
- *  `speed` controls how fast the value converges (higher = faster). */
-function damp(current: number, target: number, speed: number, delta: number): number {
-  return current + (target - current) * (1 - Math.exp(-speed * delta))
-}
+// Constants
+import {
+  CW, CH, FRAME_MAX_H, FRAME_DEPTH, FRAME_BORDER, FRAME_Y, SPACING,
+  WALL_X, FLOOR_Y, CEIL_Y, FOV_RAD, FOCUS_MARGIN,
+  CORRIDOR_LEN, BACK_WALL_Z, RIGHT_WALL_LEN,
+  TEST_CARDS, ALL_TEST_CARDS, TEST_SPACING, TEST_START_X, TEST_PAN_END,
+  KB_ROOM, KB_X, KB_Z, KB_ENTRY_X, KB_END_X,
+  WALL_LOCK_DIST, WALL_LOCK_Z,
+} from './gallery/dimensions'
 
-/* ── Dimensions ──────────────────────────────────────────── */
-const CW = 8, CH = 5
-const FRAME_MAX_H = 3.0, FRAME_DEPTH = 0.2, FRAME_BORDER = 0.15, FRAME_Y = 0.8, SPACING = 5
-const WALL_X = CW / 2, FLOOR_Y = -(CH / 2 - 1), CEIL_Y = CH / 2 + 1.5
-const FOV_RAD = (65 * Math.PI) / 180, FOCUS_MARGIN = 1.5
+// Utilities
+import { damp, tmpVec3, useFrameSize, useFocusDistance } from './gallery/utils'
 
-// Project corridor — 4 rows deep, extra room after last frames
-const CORRIDOR_LEN = LEFT_PROJECTS.length * SPACING + 8
-const BACK_WALL_Z = -(CORRIDOR_LEN - 3)
+// Materials
+import { useMaterials } from './gallery/materials'
 
-// Right wall stops after 3 pairs — opening starts at row 4 (P7)
-const RIGHT_WALL_LEN = RIGHT_PROJECTS.length * SPACING + 6
+// Textures
+import { useProjectTexture } from './gallery/textures'
 
-// Testimonial frames on back wall — spaced horizontally (exclude CTA for layout math)
-const TEST_CARDS = TESTIMONIALS.filter(t => !t.isCTA)
-const ALL_TEST_CARDS = TESTIMONIALS // includes CTA as last entry
-const TEST_SPACING = 5
-const TEST_START_X = 7
-const TEST_PAN_END = TEST_START_X + (ALL_TEST_CARDS.length - 1) * TEST_SPACING
+// Radio
+import {
+  preloadRadio, stopRadio, startRadioOnGalleryEnter,
+  toggleRadioMute, setRadioVolume, nextRadioChannel,
+  subscribeRadio, getRadioState, RADIO_CHANNELS, _playRadio,
+} from '../../audio/RadioEngine'
 
-// Shared scroll progress
-let _scrollProgress = 0
+/* ── Re-exports for backward compatibility ─────────────────── */
+export {
+  subscribeCTAClick, subscribeBackClick, subscribeConnectClick,
+  subscribeKbFocus, requestScrollUnlock, setClickTarget,
+} from './gallery/galleryStore'
+export { resetGalleryScroll } from './gallery/galleryStore'
+export {
+  preloadRadio, stopRadio, startRadioOnGalleryEnter,
+  toggleRadioMute, setRadioVolume, nextRadioChannel,
+  subscribeRadio, getRadioState,
+} from '../../audio/RadioEngine'
 
-// CTA click state — observable from outside Three.js
-let _ctaClickListeners: Array<() => void> = []
-export function subscribeCTAClick(fn: () => void) {
-  _ctaClickListeners.push(fn)
-  return () => { _ctaClickListeners = _ctaClickListeners.filter(f => f !== fn) }
-}
-function fireCTAClick() { _ctaClickListeners.forEach(fn => fn()) }
-
-// Keyboard focus state — observable from outside Three.js
-let _kbFocused = false
-let _kbFocusListeners: Array<(focused: boolean) => void> = []
-function setKbFocused(v: boolean) {
-  if (v === _kbFocused) return
-  _kbFocused = v
-  _kbFocusListeners.forEach(fn => fn(v))
-}
-export function subscribeKbFocus(fn: (focused: boolean) => void) {
-  _kbFocusListeners.push(fn)
-  fn(_kbFocused) // fire initial
-  return () => { _kbFocusListeners = _kbFocusListeners.filter(f => f !== fn) }
-}
-
-// Scroll unlock request — set by Back button, consumed by CameraRig
-let _scrollUnlockRequested = false
-export function requestScrollUnlock() { _scrollUnlockRequested = true }
-
-// Reset gallery scroll to start (called when leaving React phase)
-let _scrollContainer: HTMLElement | null = null
-let _cameraResetRequested = false
-export function resetGalleryScroll() {
-  if (_scrollContainer) _scrollContainer.scrollTop = 0
-  _scrollProgress = 0
-  _kbFocused = false
-  _cameraResetRequested = true
-}
-
-// Back navigation — observable from outside Three.js
-let _backClickListeners: Array<() => void> = []
-export function subscribeBackClick(fn: () => void) {
-  _backClickListeners.push(fn)
-  return () => { _backClickListeners = _backClickListeners.filter(f => f !== fn) }
-}
-function fireBackClick() { _backClickListeners.forEach(fn => fn()) }
-
-// Connect click — navigate to Flutter contact section
-let _connectClickListeners: Array<() => void> = []
-export function subscribeConnectClick(fn: () => void) {
-  _connectClickListeners.push(fn)
-  return () => { _connectClickListeners = _connectClickListeners.filter(f => f !== fn) }
-}
-function fireConnectClick() { _connectClickListeners.forEach(fn => fn()) }
-
-// Keyboard exhibition hall — center past all testimonials + breathing room
-const KB_ROOM = 24
-// KB_ENTRY_X must clear the last testimonial card (CTA at index 6)
-const LAST_CARD_X = TEST_START_X + 6 * TEST_SPACING // 37
-const KB_X = LAST_CARD_X + 3 + KB_ROOM / 2 // 37 + 3 + 12 = 52
-const KB_Z = BACK_WALL_Z + CW / 2
-const KB_ENTRY_X = KB_X - KB_ROOM / 2 // 40
-const KB_END_X = KB_X + KB_ROOM / 2
-
-// Camera lock distance from back wall
-const WALL_LOCK_DIST = 4
-const WALL_LOCK_Z = BACK_WALL_Z + WALL_LOCK_DIST
-
-/* ── Procedural textures ─────────────────────────────────── */
-function makeWallNormalMap(): THREE.CanvasTexture {
-  const S = 512, c = document.createElement('canvas'); c.width = c.height = S
-  const x = c.getContext('2d')!, img = x.createImageData(S, S)
-  for (let y = 0; y < S; y++) for (let xx = 0; xx < S; xx++) {
-    const i = (y * S + xx) * 4
-    img.data[i] = 128 + Math.floor(Math.sin(xx * 0.08) * Math.cos(y * 0.05) * 15 + (Math.random() - 0.5) * 12)
-    img.data[i + 1] = 128 + Math.floor(Math.cos(xx * 0.06) * Math.sin(y * 0.09) * 15 + (Math.random() - 0.5) * 12)
-    img.data[i + 2] = 230 + Math.floor(Math.random() * 25); img.data[i + 3] = 255
-  }
-  x.putImageData(img, 0, 0)
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(16, 16); return t
-}
-function makeWallRoughnessMap(): THREE.CanvasTexture {
-  const S = 256, c = document.createElement('canvas'); c.width = c.height = S
-  const x = c.getContext('2d')!, img = x.createImageData(S, S)
-  for (let i = 0; i < img.data.length; i += 4) {
-    const v = 180 + Math.floor(Math.random() * 50)
-    img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255
-  }
-  x.putImageData(img, 0, 0)
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(16, 16); return t
-}
-const _wallNormal = makeWallNormalMap()
-const _wallRoughness = makeWallRoughnessMap()
-
-/* ── Frame size hooks ────────────────────────────────────── */
-function useFrameSize() {
-  const { size } = useThree()
-  return useMemo(() => {
-    const a = size.width / size.height, h = FRAME_MAX_H, w = Math.min(h * a, WALL_X - 0.8)
-    return { w, h: w / a }
-  }, [size.width, size.height])
-}
-function useFocusDistance() {
-  const { size } = useThree()
-  const f = useFrameSize()
-  return useMemo(() => {
-    const a = size.width / size.height
-    const dH = ((f.h + FRAME_BORDER * 2 + 0.84) * FOCUS_MARGIN / 2) / Math.tan(FOV_RAD / 2)
-    const hFov = 2 * Math.atan(Math.tan(FOV_RAD / 2) * a)
-    const dW = ((f.w + FRAME_BORDER * 2 + 0.24) * FOCUS_MARGIN / 2) / Math.tan(hFov / 2)
-    return Math.max(dH, dW)
-  }, [size.width, size.height, f.w, f.h])
-}
-
-/* ── Project artwork textures (canvas draw functions) ────── */
-function drawBase(ctx: CanvasRenderingContext2D, S: number, c: [string, string]) {
-  const g = ctx.createLinearGradient(0, 0, S, S); g.addColorStop(0, c[0]); g.addColorStop(1, c[1]); ctx.fillStyle = g; ctx.fillRect(0, 0, S, S)
-  const r = ctx.createRadialGradient(S * .4, S * .35, 0, S * .4, S * .35, S * .6); r.addColorStop(0, 'rgba(255,255,255,0.06)'); r.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = r; ctx.fillRect(0, 0, S, S)
-}
-function drawStats(ctx: CanvasRenderingContext2D, S: number, stats: string[]) {
-  ctx.font = 'bold 28px monospace'; ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.textAlign = 'center'
-  const y = S - 60; stats.forEach((s, i) => ctx.fillText(s, S / 2 + (i - (stats.length - 1) / 2) * 180, y))
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(S * .15, y - 25); ctx.lineTo(S * .85, y - 25); ctx.stroke()
-}
-function drawTitle(ctx: CanvasRenderingContext2D, S: number, t: string) { ctx.font = 'bold 56px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.textAlign = 'left'; ctx.fillText(t, 50, 70) }
-function drawMesh(c: CanvasRenderingContext2D, S: number) { const ns = [{x:S*.5,y:S*.3,r:35,l:'PC'},{x:S*.25,y:S*.6,r:28,l:'Pi'},{x:S*.75,y:S*.6,r:24,l:'Phone'}]; c.strokeStyle='rgba(255,255,255,0.25)';c.lineWidth=2;ns.forEach((a,i)=>ns.forEach((b,j)=>{if(j>i){c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke()}}));for(let i=1;i<=4;i++){c.strokeStyle=`rgba(255,255,255,${.08-i*.015})`;c.lineWidth=1;c.beginPath();c.arc(S*.5,S*.45,60+i*40,0,Math.PI*2);c.stroke()}ns.forEach(n=>{c.fillStyle='rgba(255,255,255,0.2)';c.beginPath();c.arc(n.x,n.y,n.r,0,Math.PI*2);c.fill();c.fillStyle='rgba(255,255,255,0.7)';c.font='bold 22px monospace';c.textAlign='center';c.textBaseline='middle';c.fillText(n.l,n.x,n.y)}) }
-function drawPipeline(c: CanvasRenderingContext2D, S: number) { const st=['Script','TTS','Footage','Edit','Upload'],y=S*.45;st.forEach((s,i)=>{const x=S*.12+i*(S*.19);c.fillStyle='rgba(255,255,255,0.1)';c.fillRect(x-35,y-22,70,44);c.strokeStyle='rgba(255,255,255,0.3)';c.lineWidth=1;c.strokeRect(x-35,y-22,70,44);c.fillStyle='rgba(255,255,255,0.7)';c.font='18px monospace';c.textAlign='center';c.textBaseline='middle';c.fillText(s,x,y);if(i<st.length-1){c.strokeStyle='rgba(255,255,255,0.3)';c.beginPath();c.moveTo(x+38,y);c.lineTo(x+58,y);c.stroke()}}) }
-function drawTimeline(c: CanvasRenderingContext2D, S: number) { const js=[{l:'PayU',y2:'2016',s:'Fintech'},{l:'FieldAssist',y2:'2018',s:'FMCG'},{l:'Twin Health',y2:'2022',s:'Health'}],y=S*.48;c.strokeStyle='rgba(255,255,255,0.2)';c.lineWidth=2;c.beginPath();c.moveTo(S*.12,y);c.lineTo(S*.88,y);c.stroke();js.forEach((j,i)=>{const x=S*.2+i*(S*.3);c.fillStyle='rgba(255,255,255,0.5)';c.beginPath();c.arc(x,y,8,0,Math.PI*2);c.fill();c.fillStyle='rgba(255,255,255,0.7)';c.font='bold 22px sans-serif';c.textAlign='center';c.fillText(j.l,x,y+35);c.fillStyle='rgba(255,255,255,0.35)';c.font='16px monospace';c.fillText(`${j.y2} · ${j.s}`,x,y+58)}) }
-function drawGraph(c: CanvasRenderingContext2D, S: number) { const rng=(i:number)=>((Math.sin(42+i*127.1)*43758.5453)%1+1)%1;const ns:{x:number;y:number}[]=[];for(let i=0;i<24;i++)ns.push({x:S*.15+rng(i*2)*S*.7,y:S*.18+rng(i*2+1)*S*.55});c.strokeStyle='rgba(255,255,255,0.08)';c.lineWidth=1;ns.forEach((a,i)=>ns.forEach((b,j)=>{if(j>i&&Math.abs(a.x-b.x)+Math.abs(a.y-b.y)<S*.35){c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke()}}));ns.forEach((n,i)=>{c.fillStyle=`rgba(255,255,255,${.15+rng(i+200)*.2})`;c.beginPath();c.arc(n.x,n.y,4+rng(i+100)*8,0,Math.PI*2);c.fill()}) }
-function drawFunnel(c: CanvasRenderingContext2D, S: number) { [{l:'T1 · Instant',cl:'rgba(100,220,150,0.3)',w:.7},{l:'T2 · Local LLM',cl:'rgba(255,200,80,0.25)',w:.5},{l:'T3 · Executive',cl:'rgba(255,100,80,0.2)',w:.3}].forEach((t,i)=>{const y=S*.28+i*(S*.18),w=S*t.w,x=(S-w)/2;c.fillStyle=t.cl;c.fillRect(x,y,w,S*.12);c.fillStyle='rgba(255,255,255,0.6)';c.font='bold 22px monospace';c.textAlign='center';c.textBaseline='middle';c.fillText(t.l,S/2,y+S*.06)}) }
-function drawDashboard(c: CanvasRenderingContext2D, S: number) { c.fillStyle='rgba(0,0,0,0.3)';c.fillRect(S*.08,S*.15,S*.84,S*.6);c.fillStyle='rgba(255,255,255,0.08)';c.fillRect(S*.08,S*.15,S*.84,S*.06);c.fillStyle='rgba(255,255,255,0.5)';c.font='16px monospace';c.textAlign='left';c.fillText('RAJ SADAN · COMMAND CENTER',S*.12,S*.19);['Cortex','Senses','Cron','Knowledge','WhatsApp'].forEach((s,i)=>{const x=S*.1+i*95,y=S*.25;c.fillStyle='rgba(100,220,150,0.2)';c.fillRect(x,y,85,24);c.fillStyle='rgba(100,220,150,0.7)';c.font='12px monospace';c.textAlign='center';c.fillText(s,x+42,y+16)});for(let i=0;i<3;i++){const y=S*.35+i*55;c.fillStyle='rgba(255,255,255,0.05)';c.fillRect(S*.1,y,S*.8,42);c.fillStyle='rgba(255,255,255,0.25)';c.font='14px monospace';c.textAlign='left';c.fillText(['▸ Alert: Health check passed','▸ Briefing: Morning ready','▸ Metric: 68 capabilities'][i],S*.13,y+26)} }
-function drawChat(c: CanvasRenderingContext2D, S: number) { c.strokeStyle='rgba(255,255,255,0.2)';c.lineWidth=2;const px=S*.25,py=S*.12,pw=S*.5;c.strokeRect(px,py,pw,S*.68);c.fillStyle='rgba(255,255,255,0.08)';c.fillRect(px,py,pw,S*.06);c.fillStyle='rgba(255,255,255,0.5)';c.font='bold 16px sans-serif';c.textAlign='center';c.fillText('Raj Sadan Bot',S/2,py+S*.04);[{t:'✓ All 11 services online',a:'left' as const,y:.24},{t:'/status',a:'right' as const,y:.34},{t:'☀ Morning briefing ready',a:'left' as const,y:.44},{t:'⚡ Cortex cycle: 14.2s',a:'left' as const,y:.54}].forEach(m=>{const bx=m.a==='left'?px+15:px+pw-200,by=S*m.y;c.fillStyle=m.a==='left'?'rgba(255,255,255,0.08)':'rgba(255,255,255,0.15)';c.fillRect(bx,by,185,32);c.fillStyle='rgba(255,255,255,0.6)';c.font='14px monospace';c.textAlign='left';c.fillText(m.t,bx+10,by+21)}) }
-
-function useProjectTexture(project: Project) {
-  return useMemo(() => {
-    const S = 1024, cv = document.createElement('canvas'); cv.width = cv.height = S; const ctx = cv.getContext('2d')!
-    drawBase(ctx, S, project.colors)
-    switch (project.visual) { case 'mesh': drawMesh(ctx, S); break; case 'pipeline': drawPipeline(ctx, S); break; case 'timeline': drawTimeline(ctx, S); break; case 'graph': drawGraph(ctx, S); break; case 'funnel': drawFunnel(ctx, S); break; case 'dashboard': drawDashboard(ctx, S); break; case 'chat': drawChat(ctx, S); break }
-    drawTitle(ctx, S, project.title); drawStats(ctx, S, project.stats)
-    return new THREE.CanvasTexture(cv)
-  }, [project.title, project.colors, project.visual, project.stats])
-}
-
-/* ── Shared materials ────────────────────────────────────── */
-/*
- * Material palette derived from Shadertoy path tracer reference:
- *   Walls  → Copper GGX:  specular (0.955, 0.637, 0.538), roughness 0.45
- *   Floor  → Silver GGX:  specular (0.972, 0.960, 0.915), roughness 0.35
- *   Ceiling→ Ceramic GGX: albedo   (0.8, 0.7, 0.65),     roughness 0.30
- */
-function useMaterials() {
-  return useMemo(() => ({
-    // Walls — smooth golden, warm and bright
-    wall: new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0.95, 0.82, 0.55), roughness: 0.75, metalness: 0.08,
-      normalMap: _wallNormal, normalScale: new THREE.Vector2(0.3, 0.3), roughnessMap: _wallRoughness,
-    }),
-    // Walls — same golden, DoubleSide for keyboard room orbit
-    wallDouble: new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0.95, 0.82, 0.55), roughness: 0.75, metalness: 0.08,
-      side: THREE.DoubleSide,
-    }),
-    // Frame materials - Elevated to Acrylic/Metal
-    frameOuter: new THREE.MeshPhysicalMaterial({ color: '#111111', roughness: 0.15, metalness: 0.8, clearcoat: 1.0, clearcoatRoughness: 0.1 }),
-    frameInner: new THREE.MeshPhysicalMaterial({ color: '#050505', roughness: 0.3, metalness: 0.6 }),
-    mat: new THREE.MeshStandardMaterial({ color: '#E8E0D0', roughness: 0.95, metalness: 0 }),
-    artBg: new THREE.MeshBasicMaterial({ color: '#FAF8F2' }),
-  }), [])
-}
-
-/* ── WallFrame ───────────────────────────────────────────── */
-let focusProjectIndex = -1, focusActive = false
-export function setClickTarget(i: number) { focusProjectIndex = i; focusActive = true }
-
+/* ── WallFrame ───────────────────────────────────────────────── */
 function WallFrame({ project, position, side, projectIndex, mats }: {
   project: Project; position: [number, number, number]; side: 'left' | 'right'; projectIndex: number; mats: ReturnType<typeof useMaterials>
 }) {
@@ -242,11 +91,14 @@ function WallFrame({ project, position, side, projectIndex, mats }: {
     color: '#C8A45C', emissive: '#C8A45C', emissiveIntensity: 0, transparent: true, opacity: 0,
     roughness: 0.2, metalness: 0.4, side: THREE.BackSide,
   }), [])
+
+  useEffect(() => () => { artMat.dispose(); glowMat.dispose() }, [artMat, glowMat])
+
   useFrame(({ camera }, delta) => {
     if (!grp.current) return
     const t = hov.current ? 0.08 : 0; pop.current = damp(pop.current, t, 10, delta); grp.current.position.z = pop.current
     // Entry settle — one-shot damped scale pulse when gallery first entered
-    if (entry.current.t < 0 && _scrollProgress > 0.001) entry.current.t = 0
+    if (entry.current.t < 0 && getScrollProgress() > 0.001) entry.current.t = 0
     if (entry.current.t >= 0 && entry.current.t < entry.current.delay + 2) {
       entry.current.t += delta
       const localT = entry.current.t - entry.current.delay
@@ -258,8 +110,8 @@ function WallFrame({ project, position, side, projectIndex, mats }: {
     }
     // Proximity glow — subtle emissive border when camera is within 8 units
     if (glowRef.current) {
-      grp.current.getWorldPosition(_tmpVec3)
-      const dist = camera.position.distanceTo(_tmpVec3)
+      grp.current.getWorldPosition(tmpVec3)
+      const dist = camera.position.distanceTo(tmpVec3)
       const proximity = Math.max(0, 1 - dist / 8) // 0 at 8+ units, 1 at 0
       const targetGlow = (hov.current ? 0.6 : proximity * 0.25)
       const targetOpacity = (hov.current ? 0.4 : proximity * 0.15)
@@ -287,7 +139,7 @@ function WallFrame({ project, position, side, projectIndex, mats }: {
   )
 }
 
-/* ── Testimonial frame on back wall ──────────────────────── */
+/* ── Testimonial frame on back wall ──────────────────────────── */
 function TestimonialFrame({ testimonial, position, mats }: {
   testimonial: Testimonial; position: [number, number, number]; mats: ReturnType<typeof useMaterials>
 }) {
@@ -391,7 +243,6 @@ function TubeLight({ position, side }: { position: [number, number, number]; sid
   )
 }
 
-
 /* ── Frame spotlight — warm focused light on each project frame ── */
 function FrameSpotlight({ position, side }: { position: [number, number, number]; side: 'left' | 'right' }) {
   const lightRef = useRef<THREE.SpotLight>(null)
@@ -452,6 +303,8 @@ function ScrollArrow() {
     return geo
   }, [])
 
+  useEffect(() => () => { mat.dispose(); arrowGeo.dispose() }, [mat, arrowGeo])
+
   useFrame(({ clock }, delta) => {
     if (!grp.current) return
     const t = clock.elapsedTime
@@ -460,7 +313,7 @@ function ScrollArrow() {
     grp.current.position.z = -4 + Math.sin(t * 2) * 0.12
 
     // Show when near entrance (progress < 0.03), fade when scrolling, reappear when back to top
-    const fadeTarget = _scrollProgress < 0.01 ? 1 : _scrollProgress < 0.06 ? 1 - (_scrollProgress - 0.01) / 0.05 : 0
+    const fadeTarget = getScrollProgress() < 0.01 ? 1 : getScrollProgress() < 0.06 ? 1 - (getScrollProgress() - 0.01) / 0.05 : 0
     opacity.current = damp(opacity.current, fadeTarget, 8, delta)
     mat.opacity = opacity.current
     grp.current.visible = opacity.current > 0.01
@@ -483,10 +336,12 @@ function GraffitiBackButton() {
     transparent: true, opacity: 0, side: THREE.DoubleSide,
   }), [])
 
+  useEffect(() => () => { glowMat.dispose() }, [glowMat])
+
   useFrame(({ camera }, delta) => {
     if (!grp.current || !glowRef.current) return
-    grp.current.getWorldPosition(_tmpVec3)
-    const dist = camera.position.distanceTo(_tmpVec3)
+    grp.current.getWorldPosition(tmpVec3)
+    const dist = camera.position.distanceTo(tmpVec3)
     const proximity = Math.max(0, 1 - dist / 6)
     const targetGlow = hov.current ? 0.8 : proximity * 0.2
     const targetOpacity = hov.current ? 0.15 : proximity * 0.06
@@ -555,114 +410,6 @@ function GraffitiBackButton() {
 }
 
 /* ── Wall Radio — streaming radio player on right wall ── */
-
-const RADIO_CHANNELS = [
-  { name: 'Lofi', url: 'https://ice5.somafm.com/lush-128-mp3' },
-  { name: 'Jazz', url: 'https://ice4.somafm.com/secretagent-128-mp3' },
-  { name: 'Ambient', url: 'https://ice5.somafm.com/groovesalad-128-mp3' },
-  { name: 'Chill', url: 'https://ice2.somafm.com/seventies-128-mp3' },
-]
-
-// Module-level radio state (persists across re-renders)
-let _radioAudio: HTMLAudioElement | null = null
-let _radioPlaying = false
-let _radioMuted = false
-let _radioVolume = 0.25
-let _radioChannel = 0
-let _radioLoading = false
-let _radioListeners: Array<() => void> = []
-
-function _notifyRadio() { _radioListeners.forEach(fn => fn()) }
-
-/** Preload the first channel (call early — creates Audio element but doesn't play) */
-export function preloadRadio() {
-  if (_radioAudio) return
-  _radioAudio = new Audio(RADIO_CHANNELS[0].url)
-  _radioAudio.crossOrigin = 'anonymous'
-  _radioAudio.volume = _radioVolume
-  _radioAudio.preload = 'auto'
-  // Just load metadata + buffer, don't play
-  _radioAudio.load()
-}
-
-/** Start playing (must be called after user gesture) */
-function _playRadio() {
-  if (!_radioAudio) preloadRadio()
-  _radioLoading = true
-  _notifyRadio()
-  _radioAudio!.play().then(() => {
-    _radioPlaying = true
-    _radioLoading = false
-    _notifyRadio()
-  }).catch(() => {
-    _radioLoading = false
-    _notifyRadio()
-  })
-}
-
-export function stopRadio() {
-  if (_radioAudio) _radioAudio.pause()
-  _radioPlaying = false
-  _notifyRadio()
-}
-
-export function toggleRadioMute() {
-  _radioMuted = !_radioMuted
-  if (_radioAudio) _radioAudio.volume = _radioMuted ? 0 : _radioVolume
-  _notifyRadio()
-}
-
-export function setRadioVolume(vol: number) {
-  _radioVolume = Math.max(0, Math.min(1, vol))
-  _radioMuted = _radioVolume === 0
-  if (_radioAudio) _radioAudio.volume = _radioMuted ? 0 : _radioVolume
-  _notifyRadio()
-}
-
-function _switchChannel(idx: number) {
-  _radioChannel = idx
-  const wasPlaying = _radioPlaying
-  if (_radioAudio) { _radioAudio.pause(); _radioAudio.src = '' }
-  _radioAudio = new Audio(RADIO_CHANNELS[idx].url)
-  _radioAudio.crossOrigin = 'anonymous'
-  _radioAudio.volume = _radioMuted ? 0 : _radioVolume
-  if (wasPlaying) {
-    _radioLoading = true
-    _notifyRadio()
-    _radioAudio.play().then(() => {
-      _radioPlaying = true
-      _radioLoading = false
-      _notifyRadio()
-    }).catch(() => {
-      _radioLoading = false
-      _notifyRadio()
-    })
-  } else {
-    _radioAudio.preload = 'auto'
-    _radioAudio.load()
-    _notifyRadio()
-  }
-}
-
-export function nextRadioChannel() {
-  _switchChannel((_radioChannel + 1) % RADIO_CHANNELS.length)
-}
-
-/** Auto-start radio when gallery is entered (called after user has interacted) */
-export function startRadioOnGalleryEnter() {
-  if (!_radioPlaying && !_radioLoading) _playRadio()
-}
-
-/** Subscribe to radio state changes for external UI */
-export function subscribeRadio(fn: () => void) {
-  _radioListeners.push(fn)
-  return () => { _radioListeners = _radioListeners.filter(f => f !== fn) }
-}
-
-export function getRadioState() {
-  return { playing: _radioPlaying, muted: _radioMuted, loading: _radioLoading, channel: RADIO_CHANNELS[_radioChannel].name, volume: _radioVolume }
-}
-
 function WallRadio() {
   const grp = useRef<THREE.Group>(null)
   const hov = useRef(false)
@@ -676,8 +423,7 @@ function WallRadio() {
 
   useEffect(() => {
     const listener = () => forceUpdate(n => n + 1)
-    _radioListeners.push(listener)
-    return () => { _radioListeners = _radioListeners.filter(f => f !== listener) }
+    return subscribeRadio(listener)
   }, [])
 
   // M key to mute
@@ -691,8 +437,8 @@ function WallRadio() {
   useFrame(({ camera }, delta) => {
     if (!grp.current || !glowRef.current) return
     // Proximity glow
-    grp.current.getWorldPosition(_tmpVec3)
-    const dist = camera.position.distanceTo(_tmpVec3)
+    grp.current.getWorldPosition(tmpVec3)
+    const dist = camera.position.distanceTo(tmpVec3)
     const proximity = Math.max(0, 1 - dist / 6)
     const targetGlow = hov.current ? 0.7 : proximity * 0.2
     const targetOpacity = hov.current ? 0.12 : proximity * 0.05
@@ -700,13 +446,15 @@ function WallRadio() {
     glowMat.opacity = damp(glowMat.opacity, targetOpacity, 10, delta)
     // Knob rotation: 0 vol = -135°, 1 vol = +135°
     if (knobRef.current) {
-      const targetAngle = (-135 + _radioVolume * 270) * Math.PI / 180
+      const { volume } = getRadioState()
+      const targetAngle = (-135 + volume * 270) * Math.PI / 180
       knobRef.current.rotation.z = damp(knobRef.current.rotation.z, targetAngle, 15, delta)
     }
   })
 
   // Cycle volume: 0 → 0.25 → 0.5 → 0.75 → 1.0 → 0 (mute)
   const handleVolumeCycle = useCallback(() => {
+    const { volume: _radioVolume, playing: _radioPlaying } = getRadioState()
     const steps = [0, 0.25, 0.5, 0.75, 1.0]
     const current = steps.findIndex(s => Math.abs(s - _radioVolume) < 0.05)
     const next = (current + 1) % steps.length
@@ -717,6 +465,7 @@ function WallRadio() {
   }, [])
 
   const handleMuteToggle = useCallback(() => {
+    const { playing: _radioPlaying } = getRadioState()
     if (!_radioPlaying) {
       _playRadio()
     } else {
@@ -730,9 +479,9 @@ function WallRadio() {
     getAudioEngine()?.playButtonClick()
   }, [])
 
-  const channelName = RADIO_CHANNELS[_radioChannel].name
+  const { playing: _radioPlaying, muted: _radioMuted, loading: _radioLoading, channel: channelName, volume: _radioVolume } = getRadioState()
   const statusText = _radioLoading ? 'TUNING...' : _radioPlaying ? (_radioMuted ? 'MUTED' : 'ON AIR') : 'OFF'
-  
+
   // Neon float multipliers for HDR glowing
   const neonCyan: [number, number, number] = [0.2, 2.0, 2.5]
   const neonPink: [number, number, number] = [2.8, 0.4, 1.5]
@@ -762,7 +511,7 @@ function WallRadio() {
           <meshBasicMaterial color={neonCyan} toneMapped={false} />
           {channelName}
         </Text>
-        
+
         {/* ── Subtitle: Status ── */}
         <Text position={[0, 0.05, 0.01]} fontSize={0.07} anchorX="center" anchorY="middle" letterSpacing={0.1} font="/flutter/assets/fonts/inconsolata_nerd_mono_regular.ttf">
           <meshBasicMaterial color={statusColor} toneMapped={false} />
@@ -770,7 +519,7 @@ function WallRadio() {
         </Text>
 
         {/* ── Controls Row (Pure Stencil Text) ── */}
-        
+
         {/* VOL Cycle Button */}
         <group position={[-0.4, -0.3, 0.01]}
           onClick={handleVolumeCycle}
@@ -829,10 +578,12 @@ function LetsConnectFrame() {
     transparent: true, opacity: 0, side: THREE.DoubleSide,
   }), [])
 
+  useEffect(() => () => { glowMat.dispose() }, [glowMat])
+
   useFrame(({ camera }, delta) => {
     if (!glowRef.current) return
-    glowRef.current.getWorldPosition(_tmpVec3)
-    const dist = camera.position.distanceTo(_tmpVec3)
+    glowRef.current.getWorldPosition(tmpVec3)
+    const dist = camera.position.distanceTo(tmpVec3)
     const proximity = Math.max(0, 1 - dist / 12)
     const targetGlow = hov.current ? 0.8 : proximity * 0.3
     const targetOpacity = hov.current ? 0.2 : proximity * 0.08
@@ -934,12 +685,12 @@ function FloatingKB({ position }: { position: [number, number, number] }) {
   const [phase, setPhase] = useState<'unmounted' | 'preloading' | 'visible'>('preloading')
 
   useFrame(({ clock }, delta) => {
-    if (phase === 'unmounted' && _scrollProgress > 0.05) setPhase('preloading')
-    if (phase === 'preloading' && _scrollProgress > 0.93) setPhase('visible')
-    if (phase === 'visible' && _scrollProgress < 0.05) setPhase('preloading')
+    const p = getScrollProgress()
+    if (phase === 'unmounted' && p > 0.05) setPhase('preloading')
+    if (phase === 'preloading' && p > 0.93) setPhase('visible')
+    if (phase === 'visible' && p < 0.05) setPhase('preloading')
 
     if (!outerRef.current) return
-    const p = _scrollProgress
     if (p < 0.97) {
       const baseRot = clock.elapsedTime * 0.1
       outerRef.current.rotation.y = Math.PI + baseRot % (Math.PI * 2)
@@ -984,24 +735,23 @@ function CameraRig() {
 
   useFrame(() => {
     // Reset camera state when gallery re-enters
-    if (_cameraResetRequested) {
-      _cameraResetRequested = false
+    if (isCameraResetRequested()) {
+      consumeCameraReset()
       kbTriggered.current = false
       kbFocused.current = false
       setKbFocused(false)
       curPos.current.set(0, 0.5, 3)
       curLook.current.set(0, 0.5, -10)
       prevOff.current = 0
-      focusActive = false
-      focusProjectIndex = -1
+      clearFocus()
     }
 
     const p = scroll.offset
-    _scrollProgress = p
+    setScrollProgress(p)
 
     // Handle scroll unlock request (back scroll from keyboard)
-    if (_scrollUnlockRequested && kbFocused.current) {
-      _scrollUnlockRequested = false
+    if (isScrollUnlockRequested() && kbFocused.current) {
+      consumeScrollUnlock()
       kbTriggered.current = false
       kbFocused.current = false
       setKbFocused(false)
@@ -1026,20 +776,26 @@ function CameraRig() {
           el.scrollTop = el.scrollHeight * 0.87
         }
       } else {
-        _scrollProgress = Math.max(p, 0.97)
+        setScrollProgress(Math.max(p, 0.97))
         return
       }
     }
+
+    const { focusActive, focusProjectIndex } = getFocusState()
+
     if (p < 0.92) { kbTriggered.current = false }
-    if (focusActive && Math.abs(p - prevOff.current) > 0.002) { focusActive = false; focusProjectIndex = -1 }
+    if (focusActive && Math.abs(p - prevOff.current) > 0.002) { clearFocus() }
     prevOff.current = p
 
     let tPos: THREE.Vector3, tLook: THREE.Vector3
 
-    if (focusActive && focusProjectIndex >= 0) {
+    // Re-read focus state after potential clearFocus() call
+    const { focusActive: fa, focusProjectIndex: fpi } = getFocusState()
+
+    if (fa && fpi >= 0) {
       // Focus on a project frame (click-to-zoom)
-      const isLeft = focusProjectIndex < LEFT_PROJECTS.length
-      const pi = isLeft ? focusProjectIndex : focusProjectIndex - LEFT_PROJECTS.length
+      const isLeft = fpi < LEFT_PROJECTS.length
+      const pi = isLeft ? fpi : fpi - LEFT_PROJECTS.length
       const z = -(pi + 1) * SPACING, lookY = FRAME_Y - 0.3
       if (isLeft) { tPos = new THREE.Vector3(-WALL_X + focusDist + 0.15, lookY, z); tLook = new THREE.Vector3(-WALL_X + 0.15, lookY, z) }
       else { tPos = new THREE.Vector3(WALL_X - focusDist - 0.15, lookY, z); tLook = new THREE.Vector3(WALL_X - 0.15, lookY, z) }
@@ -1096,8 +852,9 @@ function CameraRig() {
     }
 
     // Direct position for wall-lock + pan + turn; lerp for walk + focus + keyboard zoom
-    const isLocked = !focusActive && p >= 0.58 && p < 0.93
-    const isKeyboard = !focusActive && p >= 0.93
+    const { focusActive: faFinal } = getFocusState()
+    const isLocked = !faFinal && p >= 0.58 && p < 0.93
+    const isKeyboard = !faFinal && p >= 0.93
     if (isLocked) {
       curPos.current.copy(tPos)
       curLook.current.copy(tLook)
@@ -1105,14 +862,14 @@ function CameraRig() {
       curPos.current.lerp(tPos, 0.06)
       curLook.current.lerp(tLook, 0.06)
     } else {
-      const ls = focusActive ? 0.18 : 0.08
+      const ls = faFinal ? 0.18 : 0.08
       curPos.current.lerp(tPos, ls); curLook.current.lerp(tLook, ls)
     }
 
     camera.position.copy(curPos.current)
 
     // Subtle head-bob during corridor walk (sinusoidal Y offset)
-    if (!focusActive && p < 0.58) {
+    if (!faFinal && p < 0.58) {
       const walkSpeed = Math.abs(p - prevOff.current) * 400
       const bobAmount = Math.min(walkSpeed, 1) * 0.02
       camera.position.y += Math.sin(clock.elapsedTime * 3.5) * bobAmount
@@ -1126,12 +883,12 @@ function CameraRig() {
       perspCam.updateProjectionMatrix()
     }
 
-    if (!focusActive && p >= 0.88 && p < 0.93) {
+    if (!faFinal && p >= 0.88 && p < 0.93) {
       // Manual Y rotation for the turn
       const turnT = (p - 0.88) / 0.05
       const ease = turnT * turnT * (3 - 2 * turnT)
       camera.rotation.set(0, -ease * Math.PI / 2, 0)
-    } else if (!focusActive && p >= 0.93) {
+    } else if (!faFinal && p >= 0.93) {
       camera.lookAt(curLook.current)
     } else {
       camera.lookAt(curLook.current)
@@ -1155,16 +912,16 @@ function GalleryCorridor() {
       {/* Floor — Glossy Museum Concrete */}
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[KB_X / 2, FLOOR_Y, KB_Z]}>
         <planeGeometry args={[200, 200]} />
-        <MeshReflectorMaterial 
-          blur={[2000, 2000]} 
-          resolution={512} 
-          mixBlur={2.5} 
-          mixStrength={1.5} 
-          roughness={0.9} 
-          depthScale={0} 
-          color="#8A7A62" 
-          metalness={0.05} 
-          mirror={0.05} 
+        <MeshReflectorMaterial
+          blur={[400, 200]}
+          resolution={256}
+          mixBlur={2.5}
+          mixStrength={1.5}
+          roughness={0.9}
+          depthScale={0}
+          color="#8A7A62"
+          metalness={0.05}
+          mirror={0.05}
         />
       </mesh>
 
@@ -1209,13 +966,13 @@ function GalleryCorridor() {
           <planeGeometry args={[5, 1.2]} />
           <meshBasicMaterial color="#C8A45C" transparent opacity={0.02} />
         </mesh>
-        
+
         {/* Main Neon Title */}
         <Text position={[0, 1.75, 0]} fontSize={0.8} color="#FFE0B0" anchorX="center" anchorY="bottom" letterSpacing={0.05} font="/fonts/poseidon.otf">
           VISHAL RAJ
         </Text>
         <mesh position={[0, 1.65, 0]}><planeGeometry args={[2.5, 0.003]} /><meshBasicMaterial color="#C8A45C" /></mesh>
-        
+
         {/* Description Bio */}
         <Text position={[0, 1.5, 0]} fontSize={0.11} color="#C4B496" anchorX="center" anchorY="top" maxWidth={4.2} textAlign="center" lineHeight={1.5} letterSpacing={0.02} font="/flutter/assets/fonts/inconsolata_nerd_mono_regular.ttf">
           I make software that works quietly and well. For a decade, I've been building mobile apps,
@@ -1329,7 +1086,7 @@ function KeyboardOrbit() {
   const controlsRef = useRef<any>(null)
   useFrame(() => {
     if (!controlsRef.current) return
-    const active = _scrollProgress >= 0.97
+    const active = getScrollProgress() >= 0.97
     controlsRef.current.enabled = active
     if (active) {
       controlsRef.current.target.set(KB_X, 0, KB_Z)
@@ -1358,11 +1115,11 @@ function ReverseScroll() {
     if (attached.current || !scroll.el) return
     attached.current = true
     const el = scroll.el
-    _scrollContainer = el
+    setScrollContainer(el)
 
     el.addEventListener('wheel', (e: WheelEvent) => {
       // When keyboard is focused, let OrbitControls handle wheel events
-      if (_kbFocused) return
+      if (isKbFocused()) return
       e.preventDefault()
       el.scrollTop -= e.deltaY
     }, { passive: false })
@@ -1391,16 +1148,15 @@ export function GalleryScene() {
       dpr={Math.min(window.devicePixelRatio, 2)}
       camera={{ position: [0, 0.3, 3], fov: 65 }}
       gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.6, preserveDrawingBuffer: true, powerPreference: 'high-performance' }}
-      shadows
       style={{ position: 'absolute', inset: 0 }}
       onCreated={({ gl }) => { gl.setClearColor(new THREE.Color('#C4B496'), 1) }}
     >
       <color attach="background" args={['#C4B496']} />
       <fog attach="fog" args={['#C4B496', 25, 80]} />
-      
+
       <ambientLight intensity={0.35} color="#FFF8E8" />
       <hemisphereLight args={['#FFF8E8', '#C4B496', 0.4]} />
-      
+
       <KeyboardOrbit />
       <ShaderWarmup />
 

@@ -7,6 +7,29 @@
     <title>Vishal Raj — Portfolio</title>
     <meta name="description" content="Platform Architect. System Thinker. AI-Native Builder." />
     <!-- Fonts loaded via @font-face in index.css — shared with Flutter -->
+
+    <!--
+      NOTE: Preload hints for Flutter assets (canvaskit.wasm, main.dart.js) are NOT
+      useful while Flutter runs inside an iframe — the iframe has its own document
+      context and can't use the parent page's preloaded resources. Preload hints
+      will be re-added when FlutterHost (hostElement mode) is activated.
+    -->
+
+    <!--
+      Flutter↔React interop namespace.
+      Currently Flutter runs in an iframe (postMessage bridge).
+      FlutterHost.tsx (hostElement mode) is ready but requires a Flutter rebuild
+      with CanvasLifecyclePort(useDirectInterop: true) to fully eliminate the iframe.
+    -->
+    <script>
+      window._flutterToReact = {
+        onLoading: function() {},
+        onReady: function() {},
+        onHandoff: function() {},
+        onError: function() {},
+      };
+      window._registerFlutterCallback = function() {};
+    </script>
   </head>
   <body>
     <div id="root"></div>

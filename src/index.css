@@ -84,7 +84,62 @@
   --color-accent-light: #E8C97A;
   --color-accent-dim: #8B7340;
 
+  /* Gold family */
+  --color-gold-100: #F5E4C0;
+  --color-gold-200: #E8C97A;
+  --color-gold-300: #C8A45C;
+  --color-gold-400: #A88500;
+  --color-gold-500: #8B6835;
+  --color-gold-600: #5C3A1E;
+
+  /* Parchment family (Flutter world) */
+  --color-parchment-100: #EDE0CE;
+  --color-parchment-200: #D9C9AD;
+  --color-parchment-300: #C4B496;
+  --color-parchment-400: #A89070;
+  --color-parchment-500: #8B7458;
+
+  /* Text on gold surfaces */
+  --color-text-on-gold: #2A2420;
+
+  /* Glass material tokens */
+  --color-surface-glass: rgba(17, 17, 20, 0.72);
+  --color-border-glass: rgba(255, 255, 255, 0.07);
+  --color-border-accent: rgba(200, 164, 92, 0.25);
+
+  /* Radius tokens */
+  --radius-card: 16px;
+  --radius-input: 8px;
+
+  /* 8px spacing grid */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+
+  /* Type scale — Perfect Fourth (1.333) */
+  --text-xs: 0.625rem;
+  --text-sm: 0.8125rem;
+  --text-base: 1rem;
+  --text-md: 1.333rem;
+  --text-lg: 1.778rem;
+  --text-xl: 2.333rem;
+  --text-2xl: 3.111rem;
+  --text-3xl: 4.222rem;
+  --text-4xl: 5.556rem;
+  --text-5xl: 7.444rem;
+
+  /* Font roles */
+  --font-headline: 'DuneRise', sans-serif;
   --font-display: 'ModrntUrban', sans-serif;
+  --font-marquee: 'Broadway', serif;
+  --font-decorative: 'Poseidon', serif;
   --font-sans: 'ModrntUrban', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'InconsolataNerd', 'Fira Code', monospace;
 }
@@ -149,12 +204,30 @@ html.lenis, html.lenis body {
   color: var(--color-text-muted);
 }
 
-/* Premium card glass */
-.card-glass {
-  background: linear-gradient(135deg, rgba(26, 26, 31, 0.8) 0%, rgba(17, 17, 20, 0.9) 100%);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 16px;
+/* Glass material system — three modes */
+.card-glass,
+.glass-dark {
+  background: linear-gradient(135deg, rgba(26, 26, 31, 0.72) 0%, rgba(17, 17, 20, 0.72) 100%);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--color-border-glass);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 24px 48px rgba(0, 0, 0, 0.5);
+  border-radius: var(--radius-card);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+}
+
+.glass-accent {
+  background: rgba(200, 164, 92, 0.10);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-accent);
+  box-shadow: 0 0 40px rgba(200, 164, 92, 0.08);
+  border-radius: var(--radius-card);
 }
 
 /* Subtle glow */

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
-import { GalleryScene, subscribeCTAClick, subscribeBackClick, subscribeConnectClick } from '../three/GalleryScene'
+import { GalleryScene } from '../three/GalleryScene'
+import { subscribeCTAClick, subscribeBackClick, subscribeConnectClick } from '../three/gallery/galleryStore'
 import { RecommendationOverlay } from '../ui/RecommendationOverlay'
 import type { Testimonial } from '../../config/testimonials'
 
