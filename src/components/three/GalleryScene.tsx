@@ -21,32 +21,31 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { ScrollControls, useScroll, Text, OrbitControls, MeshReflectorMaterial } from '@react-three/drei'
 import { EffectComposer, Bloom, ToneMapping } from '@react-three/postprocessing'
 import * as THREE from 'three'
-import { LEFT_PROJECTS, RIGHT_PROJECTS, PROJECTS, type Project } from '../../config/projects'
+import { LEFT_PROJECTS, RIGHT_PROJECTS, type Project } from '../../config/projects'
 import { trackProjectClicked } from '../../analytics/posthog'
-import { TESTIMONIALS, type Testimonial } from '../../config/testimonials'
+import { type Testimonial } from '../../config/testimonials'
 import { Keyboard as SkillKeyboard, resetBoot, Particles as KBParticles } from '../three/KeyboardScene'
 import { getAudioEngine } from '../../audio'
 
 // State & events
 import {
   getScrollProgress, setScrollProgress,
-  isKbFocused, setKbFocused, subscribeKbFocus,
+  isKbFocused, setKbFocused,
   getFocusState, setClickTarget, clearFocus,
   isCameraResetRequested, consumeCameraReset,
   isScrollUnlockRequested, consumeScrollUnlock,
-  getScrollContainer, setScrollContainer,
+  setScrollContainer,
   fireCTAClick, fireBackClick, fireConnectClick,
-  requestScrollUnlock,
 } from './gallery/galleryStore'
 
 // Constants
 import {
   CW, CH, FRAME_MAX_H, FRAME_DEPTH, FRAME_BORDER, FRAME_Y, SPACING,
-  WALL_X, FLOOR_Y, CEIL_Y, FOV_RAD, FOCUS_MARGIN,
+  WALL_X, FLOOR_Y, CEIL_Y,
   CORRIDOR_LEN, BACK_WALL_Z, RIGHT_WALL_LEN,
   TEST_CARDS, ALL_TEST_CARDS, TEST_SPACING, TEST_START_X, TEST_PAN_END,
   KB_ROOM, KB_X, KB_Z, KB_ENTRY_X, KB_END_X,
-  WALL_LOCK_DIST, WALL_LOCK_Z,
+  WALL_LOCK_Z,
 } from './gallery/dimensions'
 
 // Utilities
@@ -60,9 +59,8 @@ import { useProjectTexture } from './gallery/textures'
 
 // Radio
 import {
-  preloadRadio, stopRadio, startRadioOnGalleryEnter,
   toggleRadioMute, setRadioVolume, nextRadioChannel,
-  subscribeRadio, getRadioState, RADIO_CHANNELS, _playRadio,
+  subscribeRadio, getRadioState, _playRadio,
 } from '../../audio/RadioEngine'
 
 /* ── Re-exports for backward compatibility ─────────────────── */
@@ -782,7 +780,7 @@ function CameraRig() {
       }
     }
 
-    const { focusActive, focusProjectIndex } = getFocusState()
+    const { active: focusActive } = getFocusState()
 
     if (p < 0.92) { kbTriggered.current = false }
     if (focusActive && Math.abs(p - prevOff.current) > 0.002) { clearFocus() }
@@ -791,7 +789,7 @@ function CameraRig() {
     let tPos: THREE.Vector3, tLook: THREE.Vector3
 
     // Re-read focus state after potential clearFocus() call
-    const { focusActive: fa, focusProjectIndex: fpi } = getFocusState()
+    const { active: fa, index: fpi } = getFocusState()
 
     if (fa && fpi >= 0) {
       // Focus on a project frame (click-to-zoom)
@@ -853,7 +851,7 @@ function CameraRig() {
     }
 
     // Direct position for wall-lock + pan + turn; lerp for walk + focus + keyboard zoom
-    const { focusActive: faFinal } = getFocusState()
+    const { active: faFinal } = getFocusState()
     const isLocked = !faFinal && p >= 0.58 && p < 0.93
     const isKeyboard = !faFinal && p >= 0.93
     if (isLocked) {

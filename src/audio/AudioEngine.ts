@@ -9,7 +9,7 @@ export class AudioEngine {
   private ctx: AudioContext | null = null
   private masterGain: GainNode | null = null
   private uiGain: GainNode | null = null
-  private currentSection: SectionName = 'none'
+  // Section tracking reserved for future ambient audio per section
   private _muted = false
   private _initialized = false
 
@@ -62,7 +62,7 @@ export class AudioEngine {
 
   /** Track current section (no ambient audio) */
   async setSection(section: SectionName) {
-    this.currentSection = section
+    void section // reserved for future ambient audio per section
   }
 
   // ─── UI Sounds ────────────────────────────────────────

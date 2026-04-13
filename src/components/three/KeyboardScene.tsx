@@ -67,7 +67,7 @@ const SKILL_DISPLAY_NAMES: Record<string, string> = {
 }
 
 /* ── Single keycap with boot-up power-on ──────────────────── */
-function Keycap({ skill, position, globalIdx, bootDelay, rowIdx }: {
+function Keycap({ skill, position, globalIdx: _globalIdx, bootDelay, rowIdx }: {
   skill: Skill
   position: [number, number, number]
   globalIdx: number

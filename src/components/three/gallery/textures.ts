@@ -17,7 +17,7 @@ function drawStats(ctx: CanvasRenderingContext2D, S: number, stats: string[]) {
   ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(S * .15, y - 25); ctx.lineTo(S * .85, y - 25); ctx.stroke()
 }
 
-function drawTitle(ctx: CanvasRenderingContext2D, S: number, t: string) { ctx.font = 'bold 56px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.textAlign = 'left'; ctx.fillText(t, 50, 70) }
+function drawTitle(ctx: CanvasRenderingContext2D, _S: number, t: string) { ctx.font = 'bold 56px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.textAlign = 'left'; ctx.fillText(t, 50, 70) }
 
 function drawMesh(c: CanvasRenderingContext2D, S: number) { const ns = [{x:S*.5,y:S*.3,r:35,l:'PC'},{x:S*.25,y:S*.6,r:28,l:'Pi'},{x:S*.75,y:S*.6,r:24,l:'Phone'}]; c.strokeStyle='rgba(255,255,255,0.25)';c.lineWidth=2;ns.forEach((a,i)=>ns.forEach((b,j)=>{if(j>i){c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke()}}));for(let i=1;i<=4;i++){c.strokeStyle=`rgba(255,255,255,${.08-i*.015})`;c.lineWidth=1;c.beginPath();c.arc(S*.5,S*.45,60+i*40,0,Math.PI*2);c.stroke()}ns.forEach(n=>{c.fillStyle='rgba(255,255,255,0.2)';c.beginPath();c.arc(n.x,n.y,n.r,0,Math.PI*2);c.fill();c.fillStyle='rgba(255,255,255,0.7)';c.font='bold 22px monospace';c.textAlign='center';c.textBaseline='middle';c.fillText(n.l,n.x,n.y)}) }
 

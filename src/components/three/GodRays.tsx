@@ -9,7 +9,7 @@ interface GodRaysProps {
   opacity?: number
 }
 
-export function GodRays({ logoTexture, opacity = 1 }: GodRaysProps) {
+export function GodRays({ logoTexture, opacity: _opacity = 1 }: GodRaysProps) {
   const ref = useRef<ShaderMaterial>(null)
   const { viewport, size } = useThree()
 

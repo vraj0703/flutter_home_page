@@ -50,3 +50,5 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
           projectId: vishal-raj-space-firebase-home
+        env:
+          FIREBASE_CLI_EXPERIMENTS: webframeworks

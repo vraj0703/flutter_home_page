@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import type { Group, ShaderMaterial } from 'three'
 import logoVert from '../../shaders/logo.vert?raw'
