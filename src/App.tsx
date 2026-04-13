@@ -9,6 +9,7 @@ import { useAssetLoader } from './hooks/useAssetLoader'
 import { AudioProvider, useAudio } from './audio/AudioProvider'
 import { preloadRadio, startRadioOnGalleryEnter, stopRadio } from './audio/RadioEngine'
 import { resetGalleryScroll } from './components/three/gallery/galleryStore'
+import { initAnalytics, trackLandingViewed, trackGalleryEntered, trackContactViewed } from './analytics/posthog'
 
 type Phase = 'flutter' | 'react' | 'contact'
 type TransitionDirection = 'forward' | 'reverse'
@@ -35,8 +36,8 @@ function AppInner() {
     return Math.min(fp * 0.8 + rp * 0.2, 1)
   }, [flutterProgress, flutterReady, reactProgress, reactReady])
 
-  // Preload radio stream during loading phase
-  useEffect(() => { preloadRadio() }, [])
+  // Initialize analytics + preload radio during loading phase
+  useEffect(() => { initAnalytics(); preloadRadio() }, [])
 
   // Trigger reveal when both are ready
   useEffect(() => {
@@ -46,11 +47,17 @@ function AppInner() {
   }, [flutterReady, reactReady, preloaderPhase])
 
   // Start radio + reset scroll when entering React, stop when leaving
+  // Track phase transitions for analytics
   useEffect(() => {
     if (phase === 'react') {
-      resetGalleryScroll() // Always start gallery from the beginning
+      resetGalleryScroll()
       startRadioOnGalleryEnter()
-    } else {
+      trackGalleryEntered()
+    } else if (phase === 'flutter') {
+      trackLandingViewed()
+      stopRadio()
+    } else if (phase === 'contact') {
+      trackContactViewed()
       stopRadio()
     }
   }, [phase])

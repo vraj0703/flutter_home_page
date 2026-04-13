@@ -29,6 +29,10 @@
         "destination": "/privacy-policy.html"
       },
       {
+        "source": "/static",
+        "destination": "/static/index.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

@@ -21,7 +21,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { ScrollControls, useScroll, Text, OrbitControls, MeshReflectorMaterial } from '@react-three/drei'
 import { EffectComposer, Bloom, ToneMapping } from '@react-three/postprocessing'
 import * as THREE from 'three'
-import { LEFT_PROJECTS, RIGHT_PROJECTS, type Project } from '../../config/projects'
+import { LEFT_PROJECTS, RIGHT_PROJECTS, PROJECTS, type Project } from '../../config/projects'
+import { trackProjectClicked } from '../../analytics/posthog'
 import { TESTIMONIALS, type Testimonial } from '../../config/testimonials'
 import { Keyboard as SkillKeyboard, resetBoot, Particles as KBParticles } from '../three/KeyboardScene'
 import { getAudioEngine } from '../../audio'
@@ -122,7 +123,7 @@ function WallFrame({ project, position, side, projectIndex, mats }: {
   return (
     <group position={position} rotation={[0, rotY, 0]}>
       <group ref={grp}>
-        <mesh onClick={() => { setClickTarget(projectIndex); getAudioEngine()?.playShutterClick() }} onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer'; getAudioEngine()?.playHoverPing() }} onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }} material={mats.frameOuter}><boxGeometry args={[frame.w + FRAME_BORDER * 2 + mw * 2, frame.h + FRAME_BORDER * 2 + mw * 2, FRAME_DEPTH]} /></mesh>
+        <mesh onClick={() => { setClickTarget(projectIndex); trackProjectClicked(project.id, project.title); getAudioEngine()?.playShutterClick() }} onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer'; getAudioEngine()?.playHoverPing() }} onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }} material={mats.frameOuter}><boxGeometry args={[frame.w + FRAME_BORDER * 2 + mw * 2, frame.h + FRAME_BORDER * 2 + mw * 2, FRAME_DEPTH]} /></mesh>
         {/* Proximity glow border */}
         <mesh ref={glowRef} material={glowMat}><boxGeometry args={[frame.w + FRAME_BORDER * 2 + mw * 2 + 0.08, frame.h + FRAME_BORDER * 2 + mw * 2 + 0.08, FRAME_DEPTH + 0.04]} /></mesh>
         <mesh position={[0, 0, 0.01]} material={mats.frameInner}><boxGeometry args={[frame.w + mw * 2 + 0.02, frame.h + mw * 2 + 0.02, FRAME_DEPTH - 0.02]} /></mesh>
