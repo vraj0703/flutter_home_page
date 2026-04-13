@@ -6,7 +6,7 @@
  */
 import posthog from 'posthog-js'
 
-const POSTHOG_KEY = '__POSTHOG_API_KEY__' // Replace with your project API key
+const POSTHOG_KEY = 'phc_yKgFcN6iPFfEXnSyJuVEfEpBvapnVs7J6JBGWyuvQvud'
 const POSTHOG_HOST = 'https://us.i.posthog.com'
 
 let initialized = false
