@@ -267,111 +267,115 @@ function FrameSpotlight({ position, side }: { position: [number, number, number]
   )
 }
 
-/* ── Threshold Cue — suspended light line + text at gallery entrance ──
+/* ── Threshold Cue — neon stair-lines receding into corridor ──────────
  *
- * TIMELINE per cycle (~3.5s):
- *   0.0–1.0s   Rest: line breathes at low emissive, subtle Y float
- *   1.0–2.2s   Beckon: asymmetric Z-lunge forward + emissive peak + Y-lift
- *   2.2–3.5s   Return: slow float back, emissive dims
+ * 6 neon lines on the floor like a runway/staircase leading into the gallery.
+ * Each line progressively narrower, dimmer, and more spaced — forced perspective.
+ * Staggered pulse wave travels INTO the corridor (directional invitation).
+ * Neon HDR glow via meshBasicMaterial + toneMapped=false + Bloom post-process.
+ * "SCROLL" text after the first line.
  *
- * Idle escalation: after 4s no scroll, amplitude grows 8%/s (caps 1.6x)
- * First-scroll reward: brief 15% scale-up before graceful fade
- * Fade window: scrollProgress 0.03–0.12 (power curve, unhurried)
+ * Idle escalation: after 4s no scroll, pulse speed increases
+ * First-scroll reward: brief scale-up before graceful fade
+ * Fade window: scrollProgress 0.03–0.12 (power curve)
  */
+
+// Stair line config: each line narrower + dimmer as it recedes
+const STAIR_LINES = [
+  { z: 0,    w: 3.4, h: 0.012, brightness: 1.0  },
+  { z: -1.2, w: 3.0, h: 0.010, brightness: 0.75 },
+  { z: -2.4, w: 2.6, h: 0.008, brightness: 0.55 },
+  { z: -3.6, w: 2.2, h: 0.007, brightness: 0.38 },
+  { z: -4.8, w: 1.8, h: 0.006, brightness: 0.24 },
+  { z: -6.0, w: 1.4, h: 0.005, brightness: 0.14 },
+]
+
+// Neon gold HDR color — values > 1.0 make Bloom glow (like the radio/back button)
+const NEON_GOLD: [number, number, number] = [2.5, 1.8, 0.6]
+
 function ThresholdCue() {
   const grp = useRef<THREE.Group>(null)
   const opacity = useRef(1)
   const firstScrollRef = useRef(false)
-
-  // Primary light line — razor thin, full-width emissive filament
-  const lineMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#000000', emissive: '#F5E6C8', emissiveIntensity: 0.5,
-    roughness: 0.0, metalness: 1.0, transparent: true, opacity: 1,
-    side: THREE.DoubleSide,
-  }), [])
-
-  // Secondary line — thinner, dimmer (double-rule typography motif)
-  const lineMatDim = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#000000', emissive: '#F5E6C8', emissiveIntensity: 0.2,
-    roughness: 0.0, metalness: 1.0, transparent: true, opacity: 1,
-    side: THREE.DoubleSide,
-  }), [])
-
-  useEffect(() => () => { lineMat.dispose(); lineMatDim.dispose() }, [lineMat, lineMatDim])
+  const lineRefs = useRef<(THREE.Mesh | null)[]>([])
 
   useFrame(({ clock }, delta) => {
     if (!grp.current) return
     const t = clock.elapsedTime
     const p = getScrollProgress()
 
-    // ── Asymmetric beckon waveform ──
-    // Fast forward (0.3 of cycle), slow float back (0.7)
-    const raw = Math.sin(t * 1.8)
-    const skewed = raw > 0
-      ? Math.pow(raw, 0.6)    // compress peak — arrives fast, lingers
-      : -Math.pow(-raw, 1.4)  // deepen return — slow departure
-    const bounce = skewed * 0.18
-
-    // Idle escalation: after 4s no scroll, amplitude grows
+    // Idle escalation: pulse travels faster after 4s idle
     const idleTime = p < 0.01 ? Math.max(0, t - 4.0) : 0
-    const idleScale = 1 + Math.min(idleTime * 0.08, 0.6) // caps at 1.6x
+    const idleSpeed = 1 + Math.min(idleTime * 0.06, 0.5) // up to 1.5x speed
 
-    // Z position: beckon into corridor
-    grp.current.position.z = -3.5 + bounce * idleScale
+    // ── Staggered neon pulse wave — travels INTO the corridor ──
+    // Each line pulses with a 0.35s offset from the previous
+    for (let i = 0; i < STAIR_LINES.length; i++) {
+      const mesh = lineRefs.current[i]
+      if (!mesh) continue
+      const mat = mesh.material as THREE.MeshBasicMaterial
 
-    // Subtle Y hover above floor surface
-    const liftPhase = Math.sin(t * 1.8 + 0.3)
-    grp.current.position.y = FLOOR_Y + 0.04 + Math.max(0, liftPhase) * 0.02 * idleScale
+      // Phase offset per line: pulse wave propagates forward
+      const phase = t * 2.2 * idleSpeed - i * 0.35
+      const pulse = Math.pow(Math.max(0, Math.sin(phase)), 2.0) // squared sin = sharp bright peaks
 
-    // Emissive breathing: asymmetric (dwell bright, snap dark)
-    const breathRaw = Math.sin(t * 2.85)
-    const breathSkew = breathRaw > 0
-      ? Math.pow(breathRaw, 0.5)  // lingers near bright
-      : breathRaw                  // snaps through dark
-    const emissive = 0.35 + breathSkew * 0.25 // range: 0.35–0.60
-    lineMat.emissiveIntensity = emissive * idleScale
-    lineMatDim.emissiveIntensity = emissive * 0.4 * idleScale
+      // Base brightness from config + pulse boost
+      const base = STAIR_LINES[i].brightness
+      const glow = base * (0.4 + pulse * 0.6) // range: 40%–100% of base brightness
+
+      // Apply HDR neon color scaled by glow
+      mat.color.setRGB(
+        NEON_GOLD[0] * glow,
+        NEON_GOLD[1] * glow,
+        NEON_GOLD[2] * glow,
+      )
+      mat.opacity = opacity.current * base
+    }
 
     // ── Fade choreography ──
-    // First-scroll reward: brief scale-up before fade
     if (!firstScrollRef.current && p > 0.005) firstScrollRef.current = true
     const justStarted = firstScrollRef.current && p < 0.02
     const targetScale = justStarted ? 1.15 : 1.0
     const s = grp.current.scale.x
     grp.current.scale.setScalar(s + (targetScale - s) * (1 - Math.exp(-6 * delta)))
 
-    // Extended fade: 0.03–0.12, power curve (slow departure, fast arrival at zero)
+    // Extended fade: 0.03–0.12
     const fadeTarget = p < 0.03 ? 1
       : p < 0.12 ? 1 - Math.pow((p - 0.03) / 0.09, 1.6)
       : 0
     opacity.current = damp(opacity.current, fadeTarget, 5, delta)
-    lineMat.opacity = opacity.current
-    lineMatDim.opacity = opacity.current * 0.7
     grp.current.visible = opacity.current > 0.01
   })
 
   return (
-    <group ref={grp} position={[0, FLOOR_Y + 0.04, -3.5]} rotation={[-Math.PI / 2, 0, 0]}>
-      {/* Primary light line — on floor, spanning corridor width */}
-      <mesh material={lineMat}>
-        <planeGeometry args={[3.2, 0.008]} />
-      </mesh>
+    <group ref={grp} position={[0, FLOOR_Y + 0.03, -3]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Neon stair lines — receding into corridor like a runway */}
+      {STAIR_LINES.map((line, i) => (
+        <mesh
+          key={i}
+          ref={el => { lineRefs.current[i] = el }}
+          position={[0, line.z, 0]}
+        >
+          <planeGeometry args={[line.w, line.h]} />
+          <meshBasicMaterial
+            color={NEON_GOLD}
+            transparent
+            opacity={line.brightness}
+            toneMapped={false}
+          />
+        </mesh>
+      ))}
 
-      {/* Secondary line — double-rule motif (thinner, dimmer, offset into corridor) */}
-      <mesh position={[0, -0.25, 0]} material={lineMatDim}>
-        <planeGeometry args={[2.8, 0.004]} />
-      </mesh>
-
-      {/* "SCROLL" text — spaced capitals on floor, behind the lines (into corridor) */}
+      {/* "SCROLL" neon text — after the first line, on the floor */}
       <Text
-        position={[0, -0.55, 0]}
-        fontSize={0.12}
-        color="#C8A45C"
+        position={[0, -0.6, 0]}
+        fontSize={0.14}
         anchorX="center"
         anchorY="middle"
         letterSpacing={0.35}
         font="/fonts/inconsolata_nerd_mono_regular.ttf"
       >
+        <meshBasicMaterial color={NEON_GOLD} toneMapped={false} transparent opacity={0.8} />
         SCROLL
       </Text>
     </group>
