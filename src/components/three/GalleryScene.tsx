@@ -319,10 +319,9 @@ function ThresholdCue() {
     // Z position: beckon into corridor
     grp.current.position.z = -3.5 + bounce * idleScale
 
-    // Y lift: subtle upward component in phase with forward stroke
-    // Links visual axis to scroll gesture (scroll UP = walk forward)
+    // Subtle Y hover above floor surface
     const liftPhase = Math.sin(t * 1.8 + 0.3)
-    grp.current.position.y = 1.1 + Math.max(0, liftPhase) * 0.03 * idleScale
+    grp.current.position.y = FLOOR_Y + 0.04 + Math.max(0, liftPhase) * 0.02 * idleScale
 
     // Emissive breathing: asymmetric (dwell bright, snap dark)
     const breathRaw = Math.sin(t * 2.85)
@@ -352,21 +351,21 @@ function ThresholdCue() {
   })
 
   return (
-    <group ref={grp} position={[0, 1.1, -3.5]}>
-      {/* Primary light line — suspended across corridor at eye level */}
+    <group ref={grp} position={[0, FLOOR_Y + 0.04, -3.5]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Primary light line — on floor, spanning corridor width */}
       <mesh material={lineMat}>
         <planeGeometry args={[3.2, 0.008]} />
       </mesh>
 
-      {/* Secondary line — double-rule motif (thinner, dimmer, offset below) */}
-      <mesh position={[0, -0.06, 0]} material={lineMatDim}>
+      {/* Secondary line — double-rule motif (thinner, dimmer, offset into corridor) */}
+      <mesh position={[0, -0.25, 0]} material={lineMatDim}>
         <planeGeometry args={[2.8, 0.004]} />
       </mesh>
 
-      {/* "SCROLL" text — spaced capitals below the light lines */}
+      {/* "SCROLL" text — spaced capitals on floor, behind the lines (into corridor) */}
       <Text
-        position={[0, -0.18, 0]}
-        fontSize={0.09}
+        position={[0, -0.55, 0]}
+        fontSize={0.12}
         color="#C8A45C"
         anchorX="center"
         anchorY="middle"
