@@ -304,26 +304,46 @@ function ThresholdCue() {
     const t = clock.elapsedTime
     const p = getScrollProgress()
 
-    // Idle escalation: pulse travels faster after 4s idle
+    // ── Idle escalation: after 4s no scroll, amplitude + speed grow ──
     const idleTime = p < 0.01 ? Math.max(0, t - 4.0) : 0
-    const idleSpeed = 1 + Math.min(idleTime * 0.06, 0.5) // up to 1.5x speed
+    const idleScale = 1 + Math.min(idleTime * 0.08, 0.6) // caps at 1.6x amplitude
+    const idleSpeed = 1 + Math.min(idleTime * 0.06, 0.5)  // caps at 1.5x pulse speed
+
+    // ── Beckon motion: asymmetric Z-bounce on the whole group ──
+    // Fast lunge forward (0.3 of cycle), slow float back (0.7)
+    const raw = Math.sin(t * 1.8)
+    const skewed = raw > 0
+      ? Math.pow(raw, 0.6)    // compress peak — arrives fast, lingers
+      : -Math.pow(-raw, 1.4)  // deepen return — slow departure
+    const beckonZ = skewed * 0.22 * idleScale
+    grp.current.position.z = -3 + beckonZ
+
+    // Subtle Y hover — lifts slightly on forward stroke
+    const liftPhase = Math.sin(t * 1.8 + 0.3)
+    grp.current.position.y = FLOOR_Y + 0.03 + Math.max(0, liftPhase) * 0.015 * idleScale
+
+    // ── Emissive breathing: asymmetric (dwell bright, snap dark) ──
+    // This modulates ALL lines globally on top of the per-line pulse wave
+    const breathRaw = Math.sin(t * 2.1) // ~3s period
+    const breathSkew = breathRaw > 0
+      ? Math.pow(breathRaw, 0.5)  // lingers near bright
+      : breathRaw                  // snaps through dark
+    const breathMul = 0.6 + breathSkew * 0.4 // range: 0.6–1.0 multiplier
 
     // ── Staggered neon pulse wave — travels INTO the corridor ──
-    // Each line pulses with a 0.35s offset from the previous
     for (let i = 0; i < STAIR_LINES.length; i++) {
       const mesh = lineRefs.current[i]
       if (!mesh) continue
       const mat = mesh.material as THREE.MeshBasicMaterial
 
-      // Phase offset per line: pulse wave propagates forward
+      // Per-line phase offset: pulse propagates forward (0.35s stagger)
       const phase = t * 2.2 * idleSpeed - i * 0.35
-      const pulse = Math.pow(Math.max(0, Math.sin(phase)), 2.0) // squared sin = sharp bright peaks
+      const pulse = Math.pow(Math.max(0, Math.sin(phase)), 2.0)
 
-      // Base brightness from config + pulse boost
+      // Combine: base brightness × pulse × global breath × idle
       const base = STAIR_LINES[i].brightness
-      const glow = base * (0.4 + pulse * 0.6) // range: 40%–100% of base brightness
+      const glow = base * (0.4 + pulse * 0.6) * breathMul * idleScale
 
-      // Apply HDR neon color scaled by glow
       mat.color.setRGB(
         NEON_GOLD[0] * glow,
         NEON_GOLD[1] * glow,
@@ -333,13 +353,14 @@ function ThresholdCue() {
     }
 
     // ── Fade choreography ──
+    // First-scroll reward: brief 15% scale-up on first movement
     if (!firstScrollRef.current && p > 0.005) firstScrollRef.current = true
     const justStarted = firstScrollRef.current && p < 0.02
     const targetScale = justStarted ? 1.15 : 1.0
     const s = grp.current.scale.x
     grp.current.scale.setScalar(s + (targetScale - s) * (1 - Math.exp(-6 * delta)))
 
-    // Extended fade: 0.03–0.12
+    // Extended fade: scrollProgress 0.03–0.12, power curve (unhurried)
     const fadeTarget = p < 0.03 ? 1
       : p < 0.12 ? 1 - Math.pow((p - 0.03) / 0.09, 1.6)
       : 0
