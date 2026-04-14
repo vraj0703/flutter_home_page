@@ -10,7 +10,7 @@
  *   - ../../audio/RadioEngine   — radio playback & state
  *
  * Components defined here:
- *   WallFrame, TestimonialFrame, TubeLight, FrameSpotlight, ScrollArrow,
+ *   WallFrame, TestimonialFrame, TubeLight, FrameSpotlight, ThresholdCue,
  *   GraffitiBackButton, WallRadio, LetsConnectFrame, BackWallSpotlight,
  *   TestimonialSpotlight, FloatingKB, CameraRig, GalleryCorridor,
  *   KeyboardOrbit, ReverseScroll, ShaderWarmup, GalleryScene (exported)
@@ -267,60 +267,114 @@ function FrameSpotlight({ position, side }: { position: [number, number, number]
   )
 }
 
-/* ── Scroll arrow — 3D chevron on the gallery floor ── */
-function ScrollArrow() {
+/* ── Threshold Cue — suspended light line + text at gallery entrance ──
+ *
+ * TIMELINE per cycle (~3.5s):
+ *   0.0–1.0s   Rest: line breathes at low emissive, subtle Y float
+ *   1.0–2.2s   Beckon: asymmetric Z-lunge forward + emissive peak + Y-lift
+ *   2.2–3.5s   Return: slow float back, emissive dims
+ *
+ * Idle escalation: after 4s no scroll, amplitude grows 8%/s (caps 1.6x)
+ * First-scroll reward: brief 15% scale-up before graceful fade
+ * Fade window: scrollProgress 0.03–0.12 (power curve, unhurried)
+ */
+function ThresholdCue() {
   const grp = useRef<THREE.Group>(null)
   const opacity = useRef(1)
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#3A3A42', emissive: '#C8A45C', emissiveIntensity: 0.15,
-    roughness: 0.25, metalness: 0.7, transparent: true, opacity: 1,
+  const firstScrollRef = useRef(false)
+
+  // Primary light line — razor thin, full-width emissive filament
+  const lineMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: '#000000', emissive: '#F5E6C8', emissiveIntensity: 0.5,
+    roughness: 0.0, metalness: 1.0, transparent: true, opacity: 1,
     side: THREE.DoubleSide,
   }), [])
 
-  // Build arrow shape: chevron + shaft as a single extruded geometry
-  const arrowGeo = useMemo(() => {
-    const shape = new THREE.Shape()
-    // Chevron arrow pointing up (+Y in shape space, becomes -Z when rotated flat)
-    //   Outer chevron
-    shape.moveTo(0, 0.7)        // tip
-    shape.lineTo(0.45, 0.15)    // right wing outer
-    shape.lineTo(0.25, 0.15)    // right wing inner notch
-    shape.lineTo(0.25, -0.1)    // right shaft top
-    shape.lineTo(0.1, -0.1)     // right shaft inner
-    shape.lineTo(0.1, 0.25)     // inner right of chevron
-    shape.lineTo(0, 0.42)       // inner tip
-    shape.lineTo(-0.1, 0.25)    // inner left of chevron
-    shape.lineTo(-0.1, -0.1)    // left shaft inner
-    shape.lineTo(-0.25, -0.1)   // left shaft top
-    shape.lineTo(-0.25, 0.15)   // left wing inner notch
-    shape.lineTo(-0.45, 0.15)   // left wing outer
-    shape.closePath()
+  // Secondary line — thinner, dimmer (double-rule typography motif)
+  const lineMatDim = useMemo(() => new THREE.MeshStandardMaterial({
+    color: '#000000', emissive: '#F5E6C8', emissiveIntensity: 0.2,
+    roughness: 0.0, metalness: 1.0, transparent: true, opacity: 1,
+    side: THREE.DoubleSide,
+  }), [])
 
-    const extrudeSettings = { depth: 0.06, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 2 }
-    const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings)
-    geo.center()
-    return geo
-  }, [])
-
-  useEffect(() => () => { mat.dispose(); arrowGeo.dispose() }, [mat, arrowGeo])
+  useEffect(() => () => { lineMat.dispose(); lineMatDim.dispose() }, [lineMat, lineMatDim])
 
   useFrame(({ clock }, delta) => {
     if (!grp.current) return
     const t = clock.elapsedTime
+    const p = getScrollProgress()
 
-    // Gentle bounce along Z (into corridor)
-    grp.current.position.z = -4 + Math.sin(t * 2) * 0.12
+    // ── Asymmetric beckon waveform ──
+    // Fast forward (0.3 of cycle), slow float back (0.7)
+    const raw = Math.sin(t * 1.8)
+    const skewed = raw > 0
+      ? Math.pow(raw, 0.6)    // compress peak — arrives fast, lingers
+      : -Math.pow(-raw, 1.4)  // deepen return — slow departure
+    const bounce = skewed * 0.18
 
-    // Show when near entrance (progress < 0.03), fade when scrolling, reappear when back to top
-    const fadeTarget = getScrollProgress() < 0.01 ? 1 : getScrollProgress() < 0.06 ? 1 - (getScrollProgress() - 0.01) / 0.05 : 0
-    opacity.current = damp(opacity.current, fadeTarget, 8, delta)
-    mat.opacity = opacity.current
+    // Idle escalation: after 4s no scroll, amplitude grows
+    const idleTime = p < 0.01 ? Math.max(0, t - 4.0) : 0
+    const idleScale = 1 + Math.min(idleTime * 0.08, 0.6) // caps at 1.6x
+
+    // Z position: beckon into corridor
+    grp.current.position.z = -3.5 + bounce * idleScale
+
+    // Y lift: subtle upward component in phase with forward stroke
+    // Links visual axis to scroll gesture (scroll UP = walk forward)
+    const liftPhase = Math.sin(t * 1.8 + 0.3)
+    grp.current.position.y = 1.1 + Math.max(0, liftPhase) * 0.03 * idleScale
+
+    // Emissive breathing: asymmetric (dwell bright, snap dark)
+    const breathRaw = Math.sin(t * 2.85)
+    const breathSkew = breathRaw > 0
+      ? Math.pow(breathRaw, 0.5)  // lingers near bright
+      : breathRaw                  // snaps through dark
+    const emissive = 0.35 + breathSkew * 0.25 // range: 0.35–0.60
+    lineMat.emissiveIntensity = emissive * idleScale
+    lineMatDim.emissiveIntensity = emissive * 0.4 * idleScale
+
+    // ── Fade choreography ──
+    // First-scroll reward: brief scale-up before fade
+    if (!firstScrollRef.current && p > 0.005) firstScrollRef.current = true
+    const justStarted = firstScrollRef.current && p < 0.02
+    const targetScale = justStarted ? 1.15 : 1.0
+    const s = grp.current.scale.x
+    grp.current.scale.setScalar(s + (targetScale - s) * (1 - Math.exp(-6 * delta)))
+
+    // Extended fade: 0.03–0.12, power curve (slow departure, fast arrival at zero)
+    const fadeTarget = p < 0.03 ? 1
+      : p < 0.12 ? 1 - Math.pow((p - 0.03) / 0.09, 1.6)
+      : 0
+    opacity.current = damp(opacity.current, fadeTarget, 5, delta)
+    lineMat.opacity = opacity.current
+    lineMatDim.opacity = opacity.current * 0.7
     grp.current.visible = opacity.current > 0.01
   })
 
   return (
-    <group ref={grp} position={[0, FLOOR_Y + 0.03, -4]} rotation={[-Math.PI / 2, 0, 0]}>
-      <mesh geometry={arrowGeo} material={mat} scale={[1.2, 1.2, 1]} />
+    <group ref={grp} position={[0, 1.1, -3.5]}>
+      {/* Primary light line — suspended across corridor at eye level */}
+      <mesh material={lineMat}>
+        <planeGeometry args={[3.2, 0.008]} />
+      </mesh>
+
+      {/* Secondary line — double-rule motif (thinner, dimmer, offset below) */}
+      <mesh position={[0, -0.06, 0]} material={lineMatDim}>
+        <planeGeometry args={[2.8, 0.004]} />
+      </mesh>
+
+      {/* "SCROLL" text — spaced capitals below the light lines */}
+      <Text
+        position={[0, -0.18, 0]}
+        fontSize={0.09}
+        color="#C8A45C"
+        anchorX="center"
+        anchorY="middle"
+        letterSpacing={0.35}
+        font="/fonts/inconsolata_nerd_mono_regular.ttf"
+      >
+        SCROLL
+      </Text>
     </group>
   )
 }
@@ -945,8 +999,8 @@ function GalleryCorridor() {
         <mesh material={mats.wall}><planeGeometry args={[CW, CH + 2]} /></mesh>
       </group>
 
-      {/* Scroll cue arrow on floor */}
-      <ScrollArrow />
+      {/* Threshold cue — suspended light line at corridor entrance */}
+      <ThresholdCue />
 
       {/* ── BACK WALL — About Me + Testimonials ────────── */}
       {/* Stops at keyboard room entry */}
