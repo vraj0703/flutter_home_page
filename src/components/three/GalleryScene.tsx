@@ -280,14 +280,14 @@ function FrameSpotlight({ position, side }: { position: [number, number, number]
  * Fade window: scrollProgress 0.03–0.12 (power curve)
  */
 
-// Stair line config: each line shorter + dimmer + tighter spacing → forms a triangle/arrow shape
+// Stair line config: lines widen as they recede → inverted triangle pointing INTO corridor
 const STAIR_LINES = [
-  { z: 0,     w: 3.6, h: 0.012, brightness: 1.0  },
-  { z: -1.3,  w: 2.6, h: 0.010, brightness: 0.75 },
-  { z: -2.3,  w: 1.8, h: 0.008, brightness: 0.55 },
-  { z: -3.1,  w: 1.2, h: 0.007, brightness: 0.38 },
-  { z: -3.7,  w: 0.6, h: 0.006, brightness: 0.24 },
-  { z: -4.2,  w: 0.2, h: 0.005, brightness: 0.14 },
+  { z: 0,     w: 0.2, h: 0.005, brightness: 1.0  },
+  { z: -1.3,  w: 0.6, h: 0.006, brightness: 0.75 },
+  { z: -2.3,  w: 1.2, h: 0.007, brightness: 0.55 },
+  { z: -3.1,  w: 1.8, h: 0.008, brightness: 0.38 },
+  { z: -3.7,  w: 2.6, h: 0.010, brightness: 0.24 },
+  { z: -4.2,  w: 3.6, h: 0.012, brightness: 0.14 },
 ]
 
 // Neon gold HDR color — values > 1.0 make Bloom glow (like the radio/back button)
