@@ -7,7 +7,9 @@
 import posthog from 'posthog-js'
 
 const POSTHOG_KEY = 'phc_yKgFcN6iPFfEXnSyJuVEfEpBvapnVs7J6JBGWyuvQvud'
-const POSTHOG_HOST = 'https://us.i.posthog.com'
+// Proxied through Cloudflare Worker at /ingest to bypass ad blockers.
+// Cloudflare Worker routes vishalraj.space/ingest/* → us.i.posthog.com/*
+const POSTHOG_HOST = 'https://vishalraj.space/ingest'
 
 let initialized = false
 
@@ -16,6 +18,7 @@ export function initAnalytics() {
   if (initialized || POSTHOG_KEY.startsWith('__')) return
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
+    ui_host: 'https://us.posthog.com', // Dashboard links point here, not the proxy
     capture_pageview: false,  // We track manually
     capture_pageleave: true,
     persistence: 'localStorage',

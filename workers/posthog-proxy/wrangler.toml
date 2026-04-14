@@ -1,0 +1,8 @@
+name = "posthog-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Route: only trigger on /ingest/* requests to vishalraj.space
+routes = [
+  { pattern = "vishalraj.space/ingest/*", zone_name = "vishalraj.space" }
+]
