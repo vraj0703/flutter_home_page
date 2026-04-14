@@ -13,9 +13,10 @@ const POSTHOG_HOST = 'https://vishalraj.space/ingest'
 
 let initialized = false
 
-/** Initialize PostHog — call once at app startup */
+/** Initialize PostHog — call once at app startup. Skipped on localhost. */
 export function initAnalytics() {
   if (initialized || POSTHOG_KEY.startsWith('__')) return
+  if (window.location.hostname === 'localhost') return // no analytics noise in dev
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
     ui_host: 'https://us.posthog.com', // Dashboard links point here, not the proxy

@@ -30,16 +30,27 @@ export default {
       body: request.method !== 'GET' ? request.body : undefined,
     })
 
-    // Return with CORS headers for the origin
-    const responseHeaders = new Headers(response.headers)
-    responseHeaders.set('Access-Control-Allow-Origin', url.origin)
-    responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type')
+    // CORS: allow both production and localhost origins
+    const origin = request.headers.get('Origin') || ''
+    const allowedOrigin = origin.includes('localhost') || origin.includes('vishalraj.space')
+      ? origin
+      : 'https://vishalraj.space'
 
     // Handle preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: responseHeaders })
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': allowedOrigin,
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Max-Age': '86400',
+        },
+      })
     }
+
+    const responseHeaders = new Headers(response.headers)
+    responseHeaders.set('Access-Control-Allow-Origin', allowedOrigin)
 
     return new Response(response.body, {
       status: response.status,
