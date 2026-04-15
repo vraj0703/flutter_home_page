@@ -33,7 +33,8 @@ import {
   isKbFocused, setKbFocused,
   getFocusState, setClickTarget, clearFocus,
   isCameraResetRequested, consumeCameraReset,
-  isScrollUnlockRequested, consumeScrollUnlock,
+  isScrollUnlockRequested, consumeScrollUnlock, requestScrollUnlock,
+  isScrollAnimating, setScrollAnimating,
   setScrollContainer,
   fireCTAClick, fireBackClick, fireConnectClick,
 } from './gallery/galleryStore'
@@ -280,14 +281,15 @@ function FrameSpotlight({ position, side }: { position: [number, number, number]
  * Fade window: scrollProgress 0.03–0.12 (power curve)
  */
 
-// Stair line config: lines widen as they recede → inverted triangle pointing INTO corridor
+// Stair line config: vertical crosswalk stripes across the floor, receding into corridor.
+// Each line is a thin upright plane (width × height) at the floor level.
+// w = width across corridor (widens = funnel), h = visible height, z = depth into corridor
 const STAIR_LINES = [
-  { z: 0,     w: 0.2, h: 0.005, brightness: 1.0  },
-  { z: -1.3,  w: 0.6, h: 0.006, brightness: 0.75 },
-  { z: -2.3,  w: 1.2, h: 0.007, brightness: 0.55 },
-  { z: -3.1,  w: 1.8, h: 0.008, brightness: 0.38 },
-  { z: -3.7,  w: 2.6, h: 0.010, brightness: 0.24 },
-  { z: -4.2,  w: 3.6, h: 0.012, brightness: 0.14 },
+  { z: -2.5, w: 3.2, h: 0.02 },  // line 1 — widest
+  { z: -3.3, w: 2.4, h: 0.02 },  // line 2
+  // SCROLL text sits here at z=-4.0
+  { z: -4.7, w: 1.2, h: 0.02 },  // line 3
+  { z: -5.5, w: 0.4, h: 0.02 },  // line 4 — narrowest
 ]
 
 // Neon gold HDR color — values > 1.0 make Bloom glow (like the radio/back button)
@@ -316,11 +318,12 @@ function ThresholdCue() {
       ? Math.pow(raw, 0.6)    // compress peak — arrives fast, lingers
       : -Math.pow(-raw, 1.4)  // deepen return — slow departure
     const beckonZ = skewed * 0.22 * idleScale
-    grp.current.position.z = -3 + beckonZ
+    // Beckon shifts whole group forward into corridor
+    grp.current.position.z = beckonZ
 
-    // Subtle Y hover — lifts slightly on forward stroke
+    // Subtle Y hover
     const liftPhase = Math.sin(t * 1.8 + 0.3)
-    grp.current.position.y = FLOOR_Y + 0.03 + Math.max(0, liftPhase) * 0.015 * idleScale
+    grp.current.position.y = Math.max(0, liftPhase) * 0.015 * idleScale
 
     // ── Emissive breathing: asymmetric (dwell bright, snap dark) ──
     // This modulates ALL lines globally on top of the per-line pulse wave
@@ -340,20 +343,21 @@ function ThresholdCue() {
       const phase = t * 2.2 * idleSpeed - i * 0.35
       const pulse = Math.pow(Math.max(0, Math.sin(phase)), 2.0)
 
-      // Combine: base brightness × pulse × global breath × idle
-      const base = STAIR_LINES[i].brightness
-      const glow = base * (0.4 + pulse * 0.6) * breathMul * idleScale
+      // Combine: pulse + breath. Floor at 0.5 so lines never go invisible
+      const glow = (0.5 + pulse * 0.5) * breathMul * idleScale
 
       mat.color.setRGB(
         NEON_GOLD[0] * glow,
         NEON_GOLD[1] * glow,
         NEON_GOLD[2] * glow,
       )
-      mat.opacity = opacity.current * base
+      mat.opacity = opacity.current
     }
 
     // ── Fade choreography ──
     // First-scroll reward: brief 15% scale-up on first movement
+    // Reset when user returns to entrance (scroll back to top)
+    if (firstScrollRef.current && p < 0.003) firstScrollRef.current = false
     if (!firstScrollRef.current && p > 0.005) firstScrollRef.current = true
     const justStarted = firstScrollRef.current && p < 0.02
     const targetScale = justStarted ? 1.15 : 1.0
@@ -369,28 +373,31 @@ function ThresholdCue() {
   })
 
   return (
-    <group ref={grp} position={[0, FLOOR_Y + 0.03, -3]} rotation={[-Math.PI / 2, 0, 0]}>
-      {/* Neon stair lines — receding into corridor like a runway */}
+    <group ref={grp}>
+      {/* Neon stair lines — flat on floor, receding into corridor like runway stripes */}
       {STAIR_LINES.map((line, i) => (
         <mesh
           key={i}
           ref={el => { lineRefs.current[i] = el }}
-          position={[0, line.z, 0]}
+          position={[0, FLOOR_Y + 0.02, line.z]}
+          rotation={[-Math.PI / 2, 0, 0]}
         >
           <planeGeometry args={[line.w, line.h]} />
           <meshBasicMaterial
             color={NEON_GOLD}
             transparent
-            opacity={line.brightness}
+            opacity={1.0}
             toneMapped={false}
+            side={THREE.DoubleSide}
           />
         </mesh>
       ))}
 
-      {/* "SCROLL" neon text — after the first line, on the floor */}
+      {/* "SCROLL" neon text — flat on floor between first two lines */}
       <Text
-        position={[0, -0.6, 0]}
-        fontSize={0.14}
+        position={[0, FLOOR_Y + 0.02, -4.0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        fontSize={0.35}
         anchorX="center"
         anchorY="middle"
         letterSpacing={0.35}
@@ -809,58 +816,173 @@ function CameraRig() {
   const prevOff = useRef(0)
   const kbTriggered = useRef(false)
   const kbFocused = useRef(false)
+  // ── Scroll gate at last testimonial card ──
+  const gateActive = useRef(true)
+  const GATE = 0.86                   // scroll progress where pan ends
+  const KB_TARGET = 0.97              // scroll progress for keyboard orbit
+  const audioFired = useRef(false)    // tracks boot sweep firing during animation
 
-  useFrame(() => {
+  /**
+   * Animate scroll from current position to target with anticipation + follow-through.
+   * Frame-rate independent (uses performance.now() timestamps).
+   * Forward: 80ms anticipation → cubic ease body → spring settle
+   * Reverse: 80ms recoil hold → power2 pull → soft land
+   */
+  const animateScrollTo = useCallback((target: number, isReverse = false) => {
+    const el = scroll.el
+    if (!el || isScrollAnimating()) return
+    setScrollAnimating(true)
+    audioFired.current = false
+
+    const startTime = performance.now()
+    const startScroll = el.scrollTop / el.scrollHeight
+    const anticipationMs = isReverse ? 80 : 80
+    const totalMs = isReverse ? 950 : 1100
+
+    const step = (now: number) => {
+      const elapsed = now - startTime
+      const current = el.scrollTop / el.scrollHeight
+      const dist = target - current
+
+      // Fire boot sweep 80ms into forward transition (during turn phase)
+      if (!isReverse && !audioFired.current && elapsed >= 80) {
+        audioFired.current = true
+        getAudioEngine()?.playBootSweep()
+      }
+
+      if (elapsed < anticipationMs) {
+        // Anticipation phase: very slow start (ease-in quadratic)
+        const t = elapsed / anticipationMs
+        const easeIn = t * t * 0.003
+        el.scrollTop += (target - current) * el.scrollHeight * easeIn
+      } else if (Math.abs(dist) > 0.002) {
+        // Body phase: cubic ease-in-out with spring-like overshoot near target
+        const bodyElapsed = elapsed - anticipationMs
+        const bodyT = Math.min(1, bodyElapsed / (totalMs - anticipationMs))
+        // cubic easeInOut
+        const shaped = bodyT < 0.5
+          ? 4 * bodyT * bodyT * bodyT
+          : 1 - Math.pow(-2 * bodyT + 2, 3) / 2
+        // Lerp factor scales with shaped progress — fast in middle, slow at ends
+        const lerpFactor = 0.015 + shaped * 0.055
+        el.scrollTop += dist * el.scrollHeight * lerpFactor
+      } else {
+        el.scrollTop = el.scrollHeight * target
+        setScrollAnimating(false)
+        return
+      }
+
+      // Safety timeout — if animation runs longer than expected, snap
+      if (elapsed > totalMs + 500) {
+        el.scrollTop = el.scrollHeight * target
+        setScrollAnimating(false)
+        return
+      }
+
+      requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+    void startScroll // retained for future easing that needs start reference
+  }, [scroll])
+
+  useFrame((_, delta) => {
+    // Clamp delta to avoid huge jumps on tab switch / cold start
+    const dt = Math.min(delta, 0.05)
+
     // Reset camera state when gallery re-enters
     if (isCameraResetRequested()) {
       consumeCameraReset()
       kbTriggered.current = false
       kbFocused.current = false
+      gateActive.current = true
+      setScrollAnimating(false)
       setKbFocused(false)
       curPos.current.set(0, 0.5, 3)
       curLook.current.set(0, 0.5, -10)
       prevOff.current = 0
+      audioFired.current = false
       clearFocus()
     }
 
-    const p = scroll.offset
+    let p = scroll.offset
     setScrollProgress(p)
 
-    // Handle scroll unlock request (back scroll from keyboard)
-    if (isScrollUnlockRequested() && kbFocused.current) {
-      consumeScrollUnlock()
-      kbTriggered.current = false
-      kbFocused.current = false
-      setKbFocused(false)
-      const el = scroll.el
-      if (el) {
-        // Snap directly — no smooth scroll which fights drei's tracking
-        el.scrollTop = el.scrollHeight * 0.85
+    // Skip all gate/keyboard logic while animating — let the animation drive scroll
+    if (isScrollAnimating()) {
+      prevOff.current = p
+      // Trigger keyboard boot sequence when approaching keyboard zone
+      if (p >= 0.91 && !kbTriggered.current) {
+        kbTriggered.current = true
+        resetBoot()
       }
-      return
-    }
+      if (p >= KB_TARGET - 0.005) {
+        kbFocused.current = true
+        setKbFocused(true)
+      }
+      // Fall through to camera position calculations below
+    } else {
+      // ── Gate logic (only when not animating) ──
 
-    // Hysteresis: once KB focused, detect back-scroll to exit
-    if (kbFocused.current) {
-      if (p < 0.96) {
-        // User scrolled back — exit keyboard
+      // Re-engage gate when user scrolls back into pan territory
+      if (p < GATE - 0.02) {
+        gateActive.current = true
+      }
+
+      // Gate clamp: hold scroll at last testimonial
+      if (gateActive.current && p >= GATE) {
+        const scrollDelta = p - prevOff.current
+        if (scrollDelta > 0.005) {
+          // Forward scroll at gate → animate to keyboard
+          gateActive.current = false
+          animateScrollTo(KB_TARGET)
+        } else {
+          // Soft-clamp at gate: small overshoot → hard clamp, large → ease back
+          const el = scroll.el
+          if (el) {
+            const overshoot = p - GATE
+            if (overshoot < 0.008) {
+              el.scrollTop = el.scrollHeight * GATE
+            } else {
+              // Ease back for large overshoots (fast scroll/momentum)
+              const target = el.scrollHeight * GATE
+              el.scrollTop += (target - el.scrollTop) * 0.25
+            }
+          }
+          p = GATE
+          setScrollProgress(p)
+        }
+      }
+
+      // Handle back-scroll from keyboard (via requestScrollUnlock from ReverseScroll)
+      if (isScrollUnlockRequested() && kbFocused.current) {
+        consumeScrollUnlock()
         kbTriggered.current = false
         kbFocused.current = false
         setKbFocused(false)
-        const el = scroll.el
-        if (el) {
-          // Snap to turn phase — no smooth scroll
-          el.scrollTop = el.scrollHeight * 0.87
-        }
-      } else {
-        setScrollProgress(Math.max(p, 0.97))
+        gateActive.current = true
+        animateScrollTo(GATE, true) // isReverse=true (80ms recoil hold)
         return
+      }
+
+      // Hysteresis: detect back-scroll while KB focused (fallback)
+      if (kbFocused.current) {
+        if (p < 0.96) {
+          kbTriggered.current = false
+          kbFocused.current = false
+          setKbFocused(false)
+          gateActive.current = true
+          animateScrollTo(GATE, true)
+        } else {
+          // Don't mutate _scrollProgress — keep it in sync with scroll.offset
+          // Wheel handler in ReverseScroll clamps scrollTop to prevent drift
+          return
+        }
       }
     }
 
     const { active: focusActive } = getFocusState()
 
-    if (p < 0.92) { kbTriggered.current = false }
+    if (p < 0.90) { kbTriggered.current = false }
     if (focusActive && Math.abs(p - prevOff.current) > 0.002) { clearFocus() }
     prevOff.current = p
 
@@ -884,24 +1006,48 @@ function CameraRig() {
       const wallProximity = Math.max(0, (p - 0.45) / 0.13)
       const lookZ = (z - 10) + (BACK_WALL_Z - (z - 10)) * wallProximity * wallProximity
       tLook = new THREE.Vector3(0, 0.5, lookZ)
-    } else if (p < 0.88) {
-      // Pan right along the back wall
-      const t = (p - 0.58) / 0.30
+    } else if (p < 0.86) {
+      // Pan right along the back wall (testimonials)
+      const t = (p - 0.58) / 0.28
       const panX = t * TEST_PAN_END
       tPos = new THREE.Vector3(panX, 0.6, WALL_LOCK_Z)
-      tLook = new THREE.Vector3(panX, 0.6, BACK_WALL_Z)
-    } else if (p < 0.93) {
-      // Turn right — look down the corridor at the keyboard
+      // Micro-lean: at p=0.84–0.86, glance slightly toward KB room (anticipation)
+      let lookX = panX
+      let lookZ = BACK_WALL_Z
+      if (p >= 0.84) {
+        const leanT = (p - 0.84) / 0.02
+        const leanEase = leanT * leanT // quadratic ease-in, subtle
+        lookX += leanEase * (KB_X - TEST_PAN_END) * 0.12
+        lookZ -= leanEase * 0.8 // nudge look point forward (around the corner)
+      }
+      tLook = new THREE.Vector3(lookX, 0.6, lookZ)
+    } else if (p < 0.91) {
+      // Turn + approach: ease-in (hesitate) then ease-out (commit)
+      // First 40% of phase: cubic ease-in (camera leans into the turn)
+      // Last 60% of phase: cubic ease-out (camera commits decisively)
+      const t = (p - 0.86) / 0.05
+      const ease = t < 0.4
+        ? Math.pow(t / 0.4, 3) * 0.4                          // ease-in to 0.4
+        : 0.4 + (1 - Math.pow(1 - (t - 0.4) / 0.6, 3)) * 0.6  // ease-out remainder
       const cx = TEST_PAN_END
-      tPos = new THREE.Vector3(cx, 0.8, KB_Z)
-      tLook = new THREE.Vector3(KB_X, 0.8, KB_Z)
+      tPos = new THREE.Vector3(
+        cx,
+        0.6 + ease * 0.2,
+        WALL_LOCK_Z + ease * (KB_Z - WALL_LOCK_Z),
+      )
+      tLook = new THREE.Vector3(
+        cx + ease * (KB_X - cx),
+        0.6 + ease * 0.2,
+        BACK_WALL_Z + ease * (KB_Z - BACK_WALL_Z),
+      )
     } else if (p < 0.97 || !kbTriggered.current) {
-      // Zoom in — stay below ceiling, camera max y = 2.5
-      // Also enters here if p >= 0.97 but kbTriggered is false (fast scroll skip)
-      // This prevents teleporting to orbit before the zoom phase completes
-      if (!kbTriggered.current) { kbTriggered.current = true; resetBoot(); getAudioEngine()?.playBootSweep() }
-      const t = Math.min(1, (p - 0.93) / 0.04)
-      const ease = Math.sin(t * Math.PI / 2)
+      // Zoom into keyboard with spring overshoot (~6% past target, then settle)
+      if (!kbTriggered.current) { kbTriggered.current = true; resetBoot() }
+      const t = Math.min(1, (p - 0.91) / 0.06)
+      // Damped spring approximation — overshoots to ~1.06 at t≈0.82, settles to 1.0
+      const c4 = (2 * Math.PI) / 3
+      const ease = t === 0 ? 0 : t >= 1 ? 1
+        : Math.pow(2, -8 * t) * Math.sin((t * 10 - 0.75) * c4) + 1
       const cx = TEST_PAN_END
       tPos = new THREE.Vector3(
         cx + ease * (KB_X - cx),
@@ -909,7 +1055,6 @@ function CameraRig() {
         KB_Z + ease * 5
       )
       tLook = new THREE.Vector3(KB_X, FLOOR_Y, KB_Z)
-      // Only allow orbit focus once the camera has actually arrived (lerped close enough)
       if (p >= 0.97 && curPos.current.distanceTo(tPos) < 1.0) {
         kbFocused.current = true
         setKbFocused(true)
@@ -928,20 +1073,34 @@ function CameraRig() {
       return
     }
 
-    // Direct position for wall-lock + pan + turn; lerp for walk + focus + keyboard zoom
+    // Continuous damp speed — no step-function at phase boundaries
     const { active: faFinal } = getFocusState()
-    const isLocked = !faFinal && p >= 0.58 && p < 0.93
-    const isKeyboard = !faFinal && p >= 0.93
-    if (isLocked) {
-      curPos.current.copy(tPos)
-      curLook.current.copy(tLook)
-    } else if (isKeyboard) {
-      curPos.current.lerp(tPos, 0.06)
-      curLook.current.lerp(tLook, 0.06)
+    let dampSpeed: number
+    if (faFinal) {
+      dampSpeed = 12
+    } else if (p < 0.58) {
+      dampSpeed = 6          // walk forward
+    } else if (p < 0.83) {
+      dampSpeed = 10         // pan through testimonials
+    } else if (p < 0.86) {
+      // Brake approach: taper 10 → 3 over last 3% of pan (pre-gate deceleration)
+      const t = (p - 0.83) / 0.03
+      dampSpeed = 10 - t * 7
+    } else if (p < 0.91) {
+      // Turn phase: smooth 3.5
+      dampSpeed = 3.5
     } else {
-      const ls = faFinal ? 0.18 : 0.08
-      curPos.current.lerp(tPos, ls); curLook.current.lerp(tLook, ls)
+      // Keyboard zoom: 4 → 5 as we settle (snappier final landing)
+      const t = Math.min((p - 0.91) / 0.06, 1)
+      dampSpeed = 4 + t * 1
     }
+
+    curPos.current.x = damp(curPos.current.x, tPos.x, dampSpeed, dt)
+    curPos.current.y = damp(curPos.current.y, tPos.y, dampSpeed, dt)
+    curPos.current.z = damp(curPos.current.z, tPos.z, dampSpeed, dt)
+    curLook.current.x = damp(curLook.current.x, tLook.x, dampSpeed, dt)
+    curLook.current.y = damp(curLook.current.y, tLook.y, dampSpeed, dt)
+    curLook.current.z = damp(curLook.current.z, tLook.z, dampSpeed, dt)
 
     camera.position.copy(curPos.current)
 
@@ -952,20 +1111,38 @@ function CameraRig() {
       camera.position.y += Math.sin(clock.elapsedTime * 3.5) * bobAmount
     }
 
-    // FOV transition: 65 (gallery) -> 50 (keyboard intimate) during zoom
+    // FOV transition: 65 (gallery) → 62 (brake) → 58 (turn) → 50 (keyboard landing)
+    // Starts tightening at gate approach (p=0.83) — FOV is part of anticipation
     const perspCam = camera as THREE.PerspectiveCamera
-    const targetFov = p >= 0.97 ? 50 : (p >= 0.93 ? 65 - (Math.sin(((p - 0.93) / 0.04) * Math.PI / 2)) * 15 : 65)
-    if (Math.abs(perspCam.fov - targetFov) > 0.1) {
-      perspCam.fov += (targetFov - perspCam.fov) * 0.08
+    let targetFov: number
+    if (p >= 0.97) {
+      targetFov = 50
+    } else if (p >= 0.91) {
+      // Keyboard zoom: 58 → 50 (final narrowing)
+      const t = (p - 0.91) / 0.06
+      targetFov = 58 - t * 8
+    } else if (p >= 0.86) {
+      // Turn phase: 62 → 58
+      const t = (p - 0.86) / 0.05
+      targetFov = 62 - t * 4
+    } else if (p >= 0.83) {
+      // Brake approach: 65 → 62 (subtle anticipation)
+      const t = (p - 0.83) / 0.03
+      targetFov = 65 - t * 3
+    } else {
+      targetFov = 65
+    }
+    // Frame-rate independent FOV damp (speed 5 = ~140ms half-life)
+    const newFov = damp(perspCam.fov, targetFov, 5, dt)
+    if (Math.abs(perspCam.fov - newFov) > 0.01) {
+      perspCam.fov = newFov
       perspCam.updateProjectionMatrix()
     }
 
-    if (!faFinal && p >= 0.88 && p < 0.93) {
-      // Manual Y rotation for the turn
-      const turnT = (p - 0.88) / 0.05
-      const ease = turnT * turnT * (3 - 2 * turnT)
-      camera.rotation.set(0, -ease * Math.PI / 2, 0)
-    } else if (!faFinal && p >= 0.93) {
+    if (!faFinal && p >= 0.86 && p < 0.91) {
+      // Turn phase: lookAt handles the rotation naturally via the blended tLook target
+      camera.lookAt(curLook.current)
+    } else if (!faFinal && p >= 0.91) {
       camera.lookAt(curLook.current)
     } else {
       camera.lookAt(curLook.current)
@@ -1161,12 +1338,20 @@ function GalleryCorridor() {
 
 function KeyboardOrbit() {
   const controlsRef = useRef<any>(null)
+  const lastEnabled = useRef(false)
+
   useFrame(() => {
     if (!controlsRef.current) return
-    const active = getScrollProgress() >= 0.97
-    controlsRef.current.enabled = active
-    if (active) {
-      controlsRef.current.target.set(KB_X, 0, KB_Z)
+    const active = getScrollProgress() >= 0.97 && isKbFocused()
+    // Only mutate on state change — avoid per-frame property writes
+    if (lastEnabled.current !== active) {
+      lastEnabled.current = active
+      controlsRef.current.enabled = active
+      if (active) {
+        // Lock target + force decompose of incoming camera state
+        controlsRef.current.target.set(KB_X, 0, KB_Z)
+        controlsRef.current.update()
+      }
     }
   })
   return (
@@ -1175,8 +1360,8 @@ function KeyboardOrbit() {
       enabled={false}
       enableZoom={false}
       enablePan={false}
-      minPolarAngle={Math.PI / 4}
-      maxPolarAngle={Math.PI / 2.2}
+      minPolarAngle={Math.PI / 6}   // tighter bowl — prevents pole dead-zone
+      maxPolarAngle={Math.PI / 2.4}
       dampingFactor={0.05}
       makeDefault
     />
@@ -1195,9 +1380,20 @@ function ReverseScroll() {
     setScrollContainer(el)
 
     el.addEventListener('wheel', (e: WheelEvent) => {
-      // When keyboard is focused, let OrbitControls handle wheel events
-      if (isKbFocused()) return
+      // Always prevent default — we own scroll entirely
       e.preventDefault()
+      // Block all manual scroll during animated transitions
+      if (isScrollAnimating()) return
+      if (isKbFocused()) {
+        // In keyboard orbit mode: back-scroll (deltaY > 0 in reversed mode) exits
+        if (e.deltaY > 0) {
+          requestScrollUnlock()
+        } else {
+          // Forward scroll while kb-focused: clamp to prevent drift above 0.97
+          el.scrollTop = el.scrollHeight * 0.97
+        }
+        return
+      }
       el.scrollTop -= e.deltaY
     }, { passive: false })
   })
@@ -1234,7 +1430,6 @@ export function GalleryScene() {
       <ambientLight intensity={0.35} color="#FFF8E8" />
       <hemisphereLight args={['#FFF8E8', '#C4B496', 0.4]} />
 
-      <KeyboardOrbit />
       <ShaderWarmup />
 
       {/* Post-Processing fixed pipeline: Render Scene -> Bloom over 1.0 -> ACES Filmic mapping -> Screen */}
@@ -1247,6 +1442,7 @@ export function GalleryScene() {
         <ScrollControls pages={16} damping={0.2}>
           <ReverseScroll />
           <CameraRig />
+          <KeyboardOrbit />
           <GalleryCorridor />
         </ScrollControls>
       </Suspense>
