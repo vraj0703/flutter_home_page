@@ -35,6 +35,7 @@ import {
   isCameraResetRequested, consumeCameraReset,
   isScrollUnlockRequested, consumeScrollUnlock, requestScrollUnlock,
   isScrollAnimating, setScrollAnimating,
+  isGateReleaseRequested, requestGateRelease, consumeGateRelease,
   setScrollContainer,
   fireCTAClick, fireBackClick, fireConnectClick,
 } from './gallery/galleryStore'
@@ -821,6 +822,8 @@ function CameraRig() {
   const GATE = 0.86                   // scroll progress where pan ends
   const KB_TARGET = 0.97              // scroll progress for keyboard orbit
   const audioFired = useRef(false)    // tracks boot sweep firing during animation
+  const animationEndTime = useRef(0)  // timestamp of last animation end (for debounce)
+  const logTick = useRef(0)           // frame counter for rate-limited logging
 
   /**
    * Animate scroll from current position to target with anticipation + follow-through.
@@ -831,58 +834,61 @@ function CameraRig() {
   const animateScrollTo = useCallback((target: number, isReverse = false) => {
     const el = scroll.el
     if (!el || isScrollAnimating()) return
+    // drei ScrollControls: scroll.offset = scrollTop / (scrollHeight - clientHeight)
+    // NOT scrollTop / scrollHeight. Use the correct scrollable range.
+    const range = el.scrollHeight - el.clientHeight
+    const startFraction = range > 0 ? el.scrollTop / range : 0
+    console.log(`[ANIM START] ${isReverse ? 'REVERSE' : 'FORWARD'} from=${startFraction.toFixed(4)} to=${target.toFixed(4)}`)
     setScrollAnimating(true)
     audioFired.current = false
 
     const startTime = performance.now()
-    const startScroll = el.scrollTop / el.scrollHeight
-    const anticipationMs = isReverse ? 80 : 80
+    const anticipationMs = 80
     const totalMs = isReverse ? 950 : 1100
+
+    const finish = () => {
+      el.scrollTop = range * target
+      setScrollAnimating(false)
+      animationEndTime.current = performance.now()
+      const endFraction = el.scrollTop / range
+      console.log(`[ANIM END] ${isReverse ? 'REVERSE' : 'FORWARD'} scrollTop=${el.scrollTop.toFixed(0)} range=${range.toFixed(0)} frac=${endFraction.toFixed(4)}`)
+    }
 
     const step = (now: number) => {
       const elapsed = now - startTime
-      const current = el.scrollTop / el.scrollHeight
+      const current = el.scrollTop / range
       const dist = target - current
 
-      // Fire boot sweep 80ms into forward transition (during turn phase)
       if (!isReverse && !audioFired.current && elapsed >= 80) {
         audioFired.current = true
         getAudioEngine()?.playBootSweep()
       }
 
       if (elapsed < anticipationMs) {
-        // Anticipation phase: very slow start (ease-in quadratic)
         const t = elapsed / anticipationMs
         const easeIn = t * t * 0.003
-        el.scrollTop += (target - current) * el.scrollHeight * easeIn
+        el.scrollTop += (target - current) * range * easeIn
       } else if (Math.abs(dist) > 0.002) {
-        // Body phase: cubic ease-in-out with spring-like overshoot near target
         const bodyElapsed = elapsed - anticipationMs
         const bodyT = Math.min(1, bodyElapsed / (totalMs - anticipationMs))
-        // cubic easeInOut
         const shaped = bodyT < 0.5
           ? 4 * bodyT * bodyT * bodyT
           : 1 - Math.pow(-2 * bodyT + 2, 3) / 2
-        // Lerp factor scales with shaped progress — fast in middle, slow at ends
         const lerpFactor = 0.015 + shaped * 0.055
-        el.scrollTop += dist * el.scrollHeight * lerpFactor
+        el.scrollTop += dist * range * lerpFactor
       } else {
-        el.scrollTop = el.scrollHeight * target
-        setScrollAnimating(false)
+        finish()
         return
       }
 
-      // Safety timeout — if animation runs longer than expected, snap
       if (elapsed > totalMs + 500) {
-        el.scrollTop = el.scrollHeight * target
-        setScrollAnimating(false)
+        finish()
         return
       }
 
       requestAnimationFrame(step)
     }
     requestAnimationFrame(step)
-    void startScroll // retained for future easing that needs start reference
   }, [scroll])
 
   useFrame((_, delta) => {
@@ -905,76 +911,81 @@ function CameraRig() {
     }
 
     let p = scroll.offset
+    const rawP = p // raw (unclamped) scroll.offset — used for prevOff tracking
     setScrollProgress(p)
+
+    // Rate-limited state dump every ~1s
+    logTick.current++
+    if (logTick.current % 60 === 0) {
+      console.log(`[STATE] p=${p.toFixed(4)} prevOff=${prevOff.current.toFixed(4)} gate=${gateActive.current} kbFocused=${kbFocused.current} anim=${isScrollAnimating()}`)
+    }
 
     // Skip all gate/keyboard logic while animating — let the animation drive scroll
     if (isScrollAnimating()) {
       prevOff.current = p
-      // Trigger keyboard boot sequence when approaching keyboard zone
-      if (p >= 0.91 && !kbTriggered.current) {
+      // Trigger keyboard boot ONLY if we're moving toward the keyboard
+      // (gate released forward animation, not the reverse exit animation)
+      if (!gateActive.current && p >= 0.91 && !kbTriggered.current) {
         kbTriggered.current = true
         resetBoot()
       }
-      if (p >= KB_TARGET - 0.005) {
+      if (!gateActive.current && p >= KB_TARGET - 0.01 && !kbFocused.current) {
+        console.log(`[KB FOCUS SET] p=${p.toFixed(4)} (during forward animation)`)
         kbFocused.current = true
         setKbFocused(true)
       }
       // Fall through to camera position calculations below
     } else {
-      // ── Gate logic (only when not animating) ──
+      // ── Debounce window after animation ends ──
+      // drei ScrollControls has damping so scroll.offset lags scrollTop.
+      // During the 400ms after an animation ends, we ignore the gate
+      // release check to prevent false forward-scroll detection as
+      // scroll.offset catches up with the snapped scrollTop.
+      const msSinceAnim = performance.now() - animationEndTime.current
+      const inDebounce = msSinceAnim < 400
 
       // Re-engage gate when user scrolls back into pan territory
       if (p < GATE - 0.02) {
+        if (!gateActive.current) console.log(`[GATE ENGAGE] p=${p.toFixed(4)}`)
         gateActive.current = true
       }
 
-      // Gate clamp: hold scroll at last testimonial
-      if (gateActive.current && p >= GATE) {
-        const scrollDelta = p - prevOff.current
-        if (scrollDelta > 0.005) {
-          // Forward scroll at gate → animate to keyboard
-          gateActive.current = false
-          animateScrollTo(KB_TARGET)
-        } else {
-          // Soft-clamp at gate: small overshoot → hard clamp, large → ease back
-          const el = scroll.el
-          if (el) {
-            const overshoot = p - GATE
-            if (overshoot < 0.008) {
-              el.scrollTop = el.scrollHeight * GATE
-            } else {
-              // Ease back for large overshoots (fast scroll/momentum)
-              const target = el.scrollHeight * GATE
-              el.scrollTop += (target - el.scrollTop) * 0.25
-            }
-          }
-          p = GATE
-          setScrollProgress(p)
-        }
+      // Gate release — triggered by wheel handler accumulating forward force
+      if (gateActive.current && isGateReleaseRequested() && !inDebounce) {
+        console.log(`[GATE RELEASE] (wheel force) p=${p.toFixed(4)}`)
+        consumeGateRelease()
+        gateActive.current = false
+        animateScrollTo(KB_TARGET)
+      } else if (gateActive.current && p >= GATE) {
+        // Clamp scroll.offset to GATE while gate is active.
+        // The wheel handler itself prevents scrollTop from exceeding gate,
+        // but drei's damping may still report p > GATE for a few frames.
+        p = GATE
+        setScrollProgress(p)
       }
 
       // Handle back-scroll from keyboard (via requestScrollUnlock from ReverseScroll)
       if (isScrollUnlockRequested() && kbFocused.current) {
+        console.log(`[UNLOCK REQUESTED] p=${p.toFixed(4)} → starting reverse animation`)
         consumeScrollUnlock()
         kbTriggered.current = false
         kbFocused.current = false
         setKbFocused(false)
         gateActive.current = true
-        animateScrollTo(GATE, true) // isReverse=true (80ms recoil hold)
+        animateScrollTo(GATE, true)
         return
       }
 
       // Hysteresis: detect back-scroll while KB focused (fallback)
       if (kbFocused.current) {
         if (p < 0.96) {
+          console.log(`[HYSTERESIS EXIT] p=${p.toFixed(4)} → starting reverse animation`)
           kbTriggered.current = false
           kbFocused.current = false
           setKbFocused(false)
           gateActive.current = true
           animateScrollTo(GATE, true)
         } else {
-          // Don't mutate _scrollProgress — keep it in sync with scroll.offset
-          // Wheel handler in ReverseScroll clamps scrollTop to prevent drift
           return
         }
       }
@@ -984,7 +995,9 @@ function CameraRig() {
 
     if (p < 0.90) { kbTriggered.current = false }
     if (focusActive && Math.abs(p - prevOff.current) > 0.002) { clearFocus() }
-    prevOff.current = p
+    // Always track raw scroll.offset for prevOff (not the clamped p)
+    // This prevents false forward-delta detection after gate clamps to GATE
+    prevOff.current = rawP
 
     let tPos: THREE.Vector3, tLook: THREE.Vector3
 
@@ -1040,11 +1053,15 @@ function CameraRig() {
         0.6 + ease * 0.2,
         BACK_WALL_Z + ease * (KB_Z - BACK_WALL_Z),
       )
-    } else if (p < 0.97 || !kbTriggered.current) {
-      // Zoom into keyboard with spring overshoot (~6% past target, then settle)
+    } else {
+      // p >= 0.91 — keyboard zoom phase or settled orbit
+      // If OrbitControls has taken over, skip all camera writes
+      if (kbFocused.current) {
+        return
+      }
       if (!kbTriggered.current) { kbTriggered.current = true; resetBoot() }
+      // Zoom into keyboard with spring overshoot (~6% past target, then settle)
       const t = Math.min(1, (p - 0.91) / 0.06)
-      // Damped spring approximation — overshoots to ~1.06 at t≈0.82, settles to 1.0
       const c4 = (2 * Math.PI) / 3
       const ease = t === 0 ? 0 : t >= 1 ? 1
         : Math.pow(2, -8 * t) * Math.sin((t * 10 - 0.75) * c4) + 1
@@ -1055,22 +1072,12 @@ function CameraRig() {
         KB_Z + ease * 5
       )
       tLook = new THREE.Vector3(KB_X, FLOOR_Y, KB_Z)
-      if (p >= 0.97 && curPos.current.distanceTo(tPos) < 1.0) {
-        kbFocused.current = true
-        setKbFocused(true)
+      // Handoff target snap — only if gate allowed forward progression
+      if (p >= 0.97 && !gateActive.current && curPos.current.distanceTo(tPos) < 1.0) {
         camera.position.set(KB_X, 2.5, KB_Z + 5)
         camera.lookAt(KB_X, FLOOR_Y, KB_Z)
         return
       }
-    } else {
-      // Keyboard focus — OrbitControls takes over
-      if (!kbFocused.current) {
-        kbFocused.current = true
-        setKbFocused(true)
-        camera.position.set(KB_X, 2.5, KB_Z + 5)
-        camera.lookAt(KB_X, FLOOR_Y, KB_Z)
-      }
-      return
     }
 
     // Continuous damp speed — no step-function at phase boundaries
@@ -1321,6 +1328,13 @@ function GalleryCorridor() {
       {/* Let's Connect — on right wall of keyboard room */}
       <LetsConnectFrame />
 
+      {/* Keyboard room fill lights — prevent black walls during orbit */}
+      <pointLight position={[KB_X, CEIL_Y - 0.5, KB_Z]} intensity={1.8} color="#FFE8C8" distance={18} decay={1.5} />
+      <pointLight position={[KB_X, 1.5, KB_Z + 6]} intensity={0.8} color="#FFF0D8" distance={12} decay={2} />
+      <pointLight position={[KB_X, 1.5, KB_Z - 6]} intensity={0.8} color="#FFF0D8" distance={12} decay={2} />
+      <pointLight position={[KB_X - 6, 1.5, KB_Z]} intensity={0.6} color="#FFF0D8" distance={12} decay={2} />
+      <pointLight position={[KB_X + 6, 1.5, KB_Z]} intensity={0.6} color="#FFF0D8" distance={12} decay={2} />
+
       {/* Keyboard — centered in the hall */}
       <FloatingKB position={[KB_X, 0.6, KB_Z]} />
 
@@ -1342,14 +1356,16 @@ function KeyboardOrbit() {
 
   useFrame(() => {
     if (!controlsRef.current) return
-    const active = getScrollProgress() >= 0.97 && isKbFocused()
-    // Only mutate on state change — avoid per-frame property writes
+    // Trust isKbFocused() alone — CameraRig sets it when p >= 0.96,
+    // but drei ScrollControls damping may never let scroll.offset reach 0.97 exactly.
+    const active = isKbFocused()
     if (lastEnabled.current !== active) {
       lastEnabled.current = active
       controlsRef.current.enabled = active
+      console.log(`[ORBIT ${active ? 'ENABLED' : 'DISABLED'}] p=${getScrollProgress().toFixed(4)}`)
       if (active) {
-        // Lock target + force decompose of incoming camera state
-        controlsRef.current.target.set(KB_X, 0, KB_Z)
+        // Target the keyboard itself (Y=0.6), not the floor
+        controlsRef.current.target.set(KB_X, 0.6, KB_Z)
         controlsRef.current.update()
       }
     }
@@ -1360,9 +1376,11 @@ function KeyboardOrbit() {
       enabled={false}
       enableZoom={false}
       enablePan={false}
-      minPolarAngle={Math.PI / 6}   // tighter bowl — prevents pole dead-zone
-      maxPolarAngle={Math.PI / 2.4}
-      dampingFactor={0.05}
+      minPolarAngle={Math.PI * 0.34}
+      maxPolarAngle={Math.PI * 0.48}
+      enableDamping={true}
+      dampingFactor={0.08}
+      rotateSpeed={0.6}
       makeDefault
     />
   )
@@ -1372,6 +1390,9 @@ function KeyboardOrbit() {
 function ReverseScroll() {
   const scroll = useScroll()
   const attached = useRef(false)
+  // Wheel force accumulator for gate release — resets on backward/stop
+  const forwardForce = useRef(0)
+  const lastWheelTime = useRef(0)
 
   useFrame(() => {
     if (attached.current || !scroll.el) return
@@ -1380,20 +1401,52 @@ function ReverseScroll() {
     setScrollContainer(el)
 
     el.addEventListener('wheel', (e: WheelEvent) => {
-      // Always prevent default — we own scroll entirely
       e.preventDefault()
-      // Block all manual scroll during animated transitions
+
+      // Decay accumulator if wheel has been idle > 250ms
+      const now = performance.now()
+      if (now - lastWheelTime.current > 250) {
+        forwardForce.current = 0
+      }
+      lastWheelTime.current = now
+
       if (isScrollAnimating()) return
+
       if (isKbFocused()) {
-        // In keyboard orbit mode: back-scroll (deltaY > 0 in reversed mode) exits
         if (e.deltaY > 0) {
           requestScrollUnlock()
         } else {
-          // Forward scroll while kb-focused: clamp to prevent drift above 0.97
-          el.scrollTop = el.scrollHeight * 0.97
+          const range = el.scrollHeight - el.clientHeight
+          if (range > 0) el.scrollTop = range * 0.97
         }
         return
       }
+
+      // Check gate state BEFORE moving scroll
+      const range = el.scrollHeight - el.clientHeight
+      if (range > 0) {
+        const currentFrac = el.scrollTop / range
+        // If we're at/near the gate and user is pushing forward, accumulate force
+        if (currentFrac >= 0.855 && e.deltaY < 0) {
+          forwardForce.current += Math.abs(e.deltaY)
+          console.log(`[WHEEL GATE] forwardForce=${forwardForce.current} delta=${e.deltaY} frac=${currentFrac.toFixed(4)}`)
+          // Release threshold: 400 units of wheel force (~4 clicks of 100)
+          if (forwardForce.current > 400) {
+            console.log(`[WHEEL GATE RELEASE] force=${forwardForce.current}`)
+            forwardForce.current = 0
+            requestGateRelease()
+          }
+          // Block the scroll movement — clamp to gate
+          el.scrollTop = range * 0.86
+          return
+        }
+        // Reset accumulator on backward scroll
+        if (e.deltaY > 0) {
+          forwardForce.current = 0
+        }
+      }
+
+      // Normal scroll (reversed): wheel down (deltaY>0) = walk backward
       el.scrollTop -= e.deltaY
     }, { passive: false })
   })

@@ -55,6 +55,20 @@ export function isScrollUnlockRequested() { return _scrollUnlockRequested }
 export function requestScrollUnlock() { _scrollUnlockRequested = true }
 export function consumeScrollUnlock() { _scrollUnlockRequested = false }
 
+/* ── Scroll animation lock ─────────────────────────── */
+
+let _scrollAnimating = false
+export function isScrollAnimating() { return _scrollAnimating }
+export function setScrollAnimating(v: boolean) { _scrollAnimating = v }
+
+/* ── Gate release intent (wheel-force-driven) ──────── */
+// Wheel handler signals "user wants to push past gate" based on accumulated
+// forward wheel force, not damped scroll.offset deltas.
+let _gateReleaseRequested = false
+export function isGateReleaseRequested() { return _gateReleaseRequested }
+export function requestGateRelease() { _gateReleaseRequested = true }
+export function consumeGateRelease() { _gateReleaseRequested = false }
+
 /* ── Navigation event bus (CTA, Back, Connect) ─────── */
 
 let _ctaClickListeners: Array<() => void> = []
