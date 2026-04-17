@@ -30,8 +30,12 @@ function makeWallRoughnessMap(): THREE.CanvasTexture {
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(16, 16); return t
 }
 
-const _wallNormal = makeWallNormalMap()
-const _wallRoughness = makeWallRoughnessMap()
+// Lazy-init: defer 512x512 + 256x256 canvas pixel loops until first useMaterials()
+// call instead of blocking the main thread at module import time.
+let _wallNormal: THREE.CanvasTexture | null = null
+let _wallRoughness: THREE.CanvasTexture | null = null
+function getWallNormal() { return _wallNormal ?? (_wallNormal = makeWallNormalMap()) }
+function getWallRoughness() { return _wallRoughness ?? (_wallRoughness = makeWallRoughnessMap()) }
 
 export type MaterialPalette = ReturnType<typeof useMaterials>
 
@@ -39,7 +43,7 @@ export function useMaterials() {
   const mats = useMemo(() => ({
     wall: new THREE.MeshStandardMaterial({
       color: new THREE.Color('#D4A97E'), roughness: 0.75, metalness: 0.08,
-      normalMap: _wallNormal, normalScale: new THREE.Vector2(0.3, 0.3), roughnessMap: _wallRoughness,
+      normalMap: getWallNormal(), normalScale: new THREE.Vector2(0.3, 0.3), roughnessMap: getWallRoughness(),
     }),
     wallDouble: new THREE.MeshStandardMaterial({
       color: new THREE.Color('#D4A97E'), roughness: 0.75, metalness: 0.08,

@@ -26,11 +26,7 @@ export const MOTION = {
     snappy: 12,  // gallery frame glow, locked camera
     medium:  8,  // camera walk
     floaty:  3,  // floating keyboard
-    godRays: 2.5, // pointer-follow light
   },
-
-  /** BouncyLines spring constants */
-  bouncyLines: { mass: 20, stiffness: 500, damping: 50 },
 
   /** Stagger units in seconds */
   stagger: {

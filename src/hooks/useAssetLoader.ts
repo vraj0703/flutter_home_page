@@ -7,7 +7,6 @@ const PRIORITY_AUDIO: Record<string, string> = {
   harpEnter: '/audio/harp_enter.mp3',
   boldText: '/audio/bold_text.mp3',
   enterSound: '/audio/enter_sound.mp3',
-  bouncyArrow: '/audio/bouncy_arrow.mp3',
   whoosh: '/audio/whoosh.mp3',
 }
 

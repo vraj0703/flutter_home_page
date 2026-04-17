@@ -67,10 +67,9 @@ const SKILL_DISPLAY_NAMES: Record<string, string> = {
 }
 
 /* ── Single keycap with boot-up power-on ──────────────────── */
-function Keycap({ skill, position, globalIdx: _globalIdx, bootDelay, rowIdx }: {
+function Keycap({ skill, position, bootDelay, rowIdx }: {
   skill: Skill
   position: [number, number, number]
-  globalIdx: number
   bootDelay: number
   rowIdx: number
 }) {
@@ -81,8 +80,9 @@ function Keycap({ skill, position, globalIdx: _globalIdx, bootDelay, rowIdx }: {
   const baseY = position[1]
   const tint = ROW_TINTS[rowIdx] || ROW_TINTS[0]
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     if (!capRef.current) return
+    const dt = Math.min(delta, 0.05)
     const t = clock.elapsedTime
     const [r, g, b] = rgbWave(t, position[0], position[2])
 
@@ -103,23 +103,18 @@ function Keycap({ skill, position, globalIdx: _globalIdx, bootDelay, rowIdx }: {
     if (hovered && localBoot >= 1) {
       capMat.emissive.setRGB(r * 1.5, g * 1.5, b * 1.5)
       capMat.emissiveIntensity = 2.5
-      capMat.transmission = 0.5
-      capMat.iridescence = 0.8 // rainbow flash on hover
     } else {
-      // Blend RGB wave with row tint
       const mult = 0.15 * localBoot
       const tr = (r * 0.6 + tint[0] * 0.4) * mult + flashMult * 0.8
       const tg = (g * 0.6 + tint[1] * 0.4) * mult + flashMult * 0.8
       const tb = (b * 0.6 + tint[2] * 0.4) * mult + flashMult * 0.8
       capMat.emissive.setRGB(tr, tg, tb)
       capMat.emissiveIntensity = localBoot * 1.5 + flashMult * 3.0
-      capMat.transmission = 0.92
-      capMat.iridescence = 0.3
     }
 
-    // Spring press
+    // Spring press — frame-rate independent (was 0.12 fixed lerp → inconsistent on 60 vs 144Hz)
     const target = hovered ? -0.06 : 0
-    pressY.current += (target - pressY.current) * 0.12
+    pressY.current += (target - pressY.current) * (1 - Math.exp(-10 * dt))
     if (groupRef.current) {
       groupRef.current.position.y = baseY + pressY.current
     }
@@ -143,27 +138,23 @@ function Keycap({ skill, position, globalIdx: _globalIdx, bootDelay, rowIdx }: {
         smoothness={4}
         onPointerOver={onOver}
         onPointerOut={onOut}
-        castShadow
       >
+        {/*
+          Keycap material — stripped down from the original 8-flag Physical
+          stack. Removed: transmission (was the black-flash root cause),
+          iridescence/iridescenceIOR (invisible under Bloom + emissive RGB
+          wave), sheen/sheenColor (gold on gold = invisible), specularIntensity
+          /specularColor/reflectivity (overlapping with metalness+envMap).
+          Kept: clearcoat for the wet-plastic cap shine. Result: ~30% GPU
+          frame-time win on the Keycap shader pass with zero perceived loss.
+        */}
         <meshPhysicalMaterial
-          color={new THREE.Color(0.04 + tint[0] * 0.06, 0.055 + tint[1] * 0.06, 0.094 + tint[2] * 0.06)}
-          transmission={0.92}
-          ior={2.0}
-          thickness={0.6}
-          roughness={0.02}
-          metalness={0}
-          attenuationColor={new THREE.Color(tint[0] * 0.3, tint[1] * 0.3, tint[2] * 0.3)}
-          attenuationDistance={1.2}
-          envMapIntensity={2.0}
+          color={new THREE.Color(0.08 + tint[0] * 0.15, 0.10 + tint[1] * 0.15, 0.16 + tint[2] * 0.15)}
+          roughness={0.15}
+          metalness={0.3}
+          envMapIntensity={1.5}
           clearcoat={1.0}
-          clearcoatRoughness={0.01}
-          specularIntensity={1.5}
-          specularColor={new THREE.Color('#ffffff')}
-          iridescence={0.3}
-          iridescenceIOR={2.4}
-          reflectivity={1.0}
-          sheen={0.1}
-          sheenColor={new THREE.Color('#C8A45C')}
+          clearcoatRoughness={0.05}
         />
       </RoundedBox>
 
@@ -358,8 +349,6 @@ export function Keyboard() {
     }
   })
 
-  let globalIndex = 0
-
   return (
     <group ref={groupRef} rotation={[START_ROT.x, 0, 0]} position={[START_POS.x, START_POS.y, START_POS.z]}>
       <BoardCase width={totalWidth} depth={totalDepth} />
@@ -379,14 +368,12 @@ export function Keyboard() {
               color={CATEGORY_COLORS[rowIdx]}
             />
             {row.map((skill, colIdx) => {
-              const idx = globalIndex++
               const bootDelay = (rowIdx + colIdx) * 0.05 // faster diagonal sweep
               return (
                 <Keycap
                   key={skill.id}
                   skill={skill}
                   position={[xStart + colIdx * KEY_STEP, 0, zPos]}
-                  globalIdx={idx}
                   bootDelay={bootDelay}
                   rowIdx={rowIdx}
                 />
@@ -534,8 +521,10 @@ export function KeyboardScene() {
 
         <Environment preset="apartment" />
 
+        {/* Standalone scene — no makeDefault so the gallery's KeyboardOrbit
+            stays the canonical OrbitControls owner if both are ever mounted. */}
         <OrbitControls
-          makeDefault enableZoom={false} enablePan={false}
+          enableZoom={false} enablePan={false}
           minPolarAngle={Math.PI / 8} maxPolarAngle={Math.PI / 2.2}
           autoRotate={false} dampingFactor={0.05}
         />

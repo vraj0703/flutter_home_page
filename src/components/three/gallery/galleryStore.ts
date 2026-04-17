@@ -15,7 +15,6 @@ export function getScrollProgress() { return _scrollProgress }
 export function setScrollProgress(p: number) { _scrollProgress = p }
 
 let _scrollContainer: HTMLElement | null = null
-export function getScrollContainer() { return _scrollContainer }
 export function setScrollContainer(el: HTMLElement | null) { _scrollContainer = el }
 
 let _cameraResetRequested = false
