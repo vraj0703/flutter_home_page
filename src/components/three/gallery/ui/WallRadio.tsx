@@ -15,19 +15,17 @@ import { WALL_X, FRAME_Y } from '../dimensions'
 const NEON_CYAN: [number, number, number] = [0.2, 2.0, 2.5]
 const NEON_PINK: [number, number, number] = [2.8, 0.4, 1.5]
 const NEON_YELLOW: [number, number, number] = [2.5, 2.0, 0.4]
-const NEON_RED: [number, number, number] = [2.5, 0.5, 0.5]
 const NEON_GREEN: [number, number, number] = [0.4, 2.5, 0.6]
 const NEON_DISABLED: [number, number, number] = [0.8, 0.8, 0.8]
 import { damp, tmpVec3 } from '../utils'
 import {
-  toggleRadioMute, setRadioVolume, nextRadioChannel,
+  nextRadioChannel, stopRadio,
   subscribeRadio, getRadioState, _playRadio,
 } from '../../../../audio/RadioEngine'
 import { getAudioEngine } from '../../../../audio'
 
 export function WallRadio() {
   const grp = useRef<THREE.Group>(null)
-  const hov = useRef(false)
   const knobRef = useRef<THREE.Group>(null)
   const [, forceUpdate] = useState(0)
   const glowRef = useRef<THREE.Mesh>(null)
@@ -41,9 +39,14 @@ export function WallRadio() {
     return subscribeRadio(listener)
   }, [])
 
-  // M key to mute
+  // P key toggles radio play/stop (M key used to mute — no longer needed)
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'm' || e.key === 'M') toggleRadioMute() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'p' || e.key === 'P') {
+        const { playing } = getRadioState()
+        if (playing) stopRadio(); else _playRadio()
+      }
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
@@ -55,10 +58,8 @@ export function WallRadio() {
     grp.current.getWorldPosition(tmpVec3)
     const dist = camera.position.distanceTo(tmpVec3)
     const proximity = Math.max(0, 1 - dist / 6)
-    const targetGlow = hov.current ? 0.7 : proximity * 0.2
-    const targetOpacity = hov.current ? 0.12 : proximity * 0.05
-    glowMat.emissiveIntensity = damp(glowMat.emissiveIntensity, targetGlow, 10, delta)
-    glowMat.opacity = damp(glowMat.opacity, targetOpacity, 10, delta)
+    glowMat.emissiveIntensity = damp(glowMat.emissiveIntensity, proximity * 0.2, 10, delta)
+    glowMat.opacity = damp(glowMat.opacity, proximity * 0.05, 10, delta)
     // Knob rotation: 0 vol = -135°, 1 vol = +135°
     if (knobRef.current) {
       const { volume } = getRadioState()
@@ -67,24 +68,13 @@ export function WallRadio() {
     }
   })
 
-  // Cycle volume: 0 → 0.25 → 0.5 → 0.75 → 1.0 → 0 (mute)
-  const handleVolumeCycle = useCallback(() => {
-    const { volume: _radioVolume, playing: _radioPlaying } = getRadioState()
-    const steps = [0, 0.25, 0.5, 0.75, 1.0]
-    const current = steps.findIndex(s => Math.abs(s - _radioVolume) < 0.05)
-    const next = (current + 1) % steps.length
-    setRadioVolume(steps[next])
-    // Auto-start if off and volume > 0
-    if (!_radioPlaying && steps[next] > 0) _playRadio()
-    getAudioEngine()?.playButtonClick()
-  }, [])
-
-  const handleMuteToggle = useCallback(() => {
+  // Two-state toggle: PLAY ⇄ STOP (no intermediate mute state)
+  const handlePlayToggle = useCallback(() => {
     const { playing: _radioPlaying } = getRadioState()
-    if (!_radioPlaying) {
-      _playRadio()
+    if (_radioPlaying) {
+      stopRadio()
     } else {
-      toggleRadioMute()
+      _playRadio()
     }
     getAudioEngine()?.playButtonClick()
   }, [])
@@ -94,10 +84,9 @@ export function WallRadio() {
     getAudioEngine()?.playButtonClick()
   }, [])
 
-  const { playing: _radioPlaying, muted: _radioMuted, loading: _radioLoading, channel: channelName, volume: _radioVolume } = getRadioState()
-  const statusText = _radioLoading ? 'TUNING...' : _radioPlaying ? (_radioMuted ? 'MUTED' : 'ON AIR') : 'OFF'
-
-  const statusColor = _radioLoading ? NEON_YELLOW : _radioPlaying ? (_radioMuted ? NEON_RED : NEON_GREEN) : NEON_DISABLED
+  const { playing: _radioPlaying, loading: _radioLoading, channel: channelName } = getRadioState()
+  const statusText = _radioLoading ? 'TUNING...' : _radioPlaying ? 'ON AIR' : 'OFF'
+  const statusColor = _radioLoading ? NEON_YELLOW : _radioPlaying ? NEON_GREEN : NEON_DISABLED
 
   return (
     <group position={[WALL_X - 0.1, FRAME_Y, -1]} rotation={[0, -Math.PI / 2, 0]}>
@@ -127,35 +116,24 @@ export function WallRadio() {
 
         {/* ── Controls Row (Pure Stencil Text) ── */}
 
-        {/* VOL Cycle Button */}
-        <group position={[-0.4, -0.3, 0.01]}
-          onClick={handleVolumeCycle}
+        {/* Play/Stop Button — two-state toggle. Positioned + sized so click
+            plane does NOT overlap with NEXT (was at x=-0.25 width 0.8 which
+            overlapped NEXT at x=+0.25 width 0.6 → STOP would trigger NEXT). */}
+        <group position={[-0.35, -0.3, 0.01]}
+          onClick={(e) => { e.stopPropagation(); handlePlayToggle() }}
           onPointerOver={() => { document.body.style.cursor = 'pointer' }}
           onPointerOut={() => { document.body.style.cursor = 'default' }}
         >
           <Text fontSize={0.09} anchorX="center" anchorY="middle" letterSpacing={0.1} font="/flutter/assets/fonts/modrnt_urban.otf">
-            <meshBasicMaterial color={NEON_YELLOW} toneMapped={false} />
-            VOL+
+            <meshBasicMaterial color={_radioPlaying ? NEON_CYAN : NEON_PINK} toneMapped={false} />
+            {_radioPlaying ? 'STOP' : 'PLAY'}
           </Text>
-          <mesh><planeGeometry args={[0.4, 0.2]} /><meshBasicMaterial transparent opacity={0} /></mesh>
-        </group>
-
-        {/* Mute/Play Button */}
-        <group position={[0, -0.3, 0.01]}
-          onClick={handleMuteToggle}
-          onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer' }}
-          onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }}
-        >
-          <Text fontSize={0.09} anchorX="center" anchorY="middle" letterSpacing={0.1} font="/flutter/assets/fonts/modrnt_urban.otf">
-            <meshBasicMaterial color={_radioPlaying ? (_radioMuted ? NEON_DISABLED : NEON_CYAN) : NEON_PINK} toneMapped={false} />
-            {_radioPlaying ? (_radioMuted ? 'UNMUTE' : 'MUTE') : 'PLAY'}
-          </Text>
-          <mesh><planeGeometry args={[0.4, 0.2]} /><meshBasicMaterial transparent opacity={0} /></mesh>
+          <mesh><planeGeometry args={[0.55, 0.35]} /><meshBasicMaterial transparent opacity={0} /></mesh>
         </group>
 
         {/* Next Button */}
-        <group position={[0.4, -0.3, 0.01]}
-          onClick={handleNext}
+        <group position={[0.35, -0.3, 0.01]}
+          onClick={(e) => { e.stopPropagation(); handleNext() }}
           onPointerOver={() => { document.body.style.cursor = 'pointer' }}
           onPointerOut={() => { document.body.style.cursor = 'default' }}
         >
@@ -163,7 +141,7 @@ export function WallRadio() {
             <meshBasicMaterial color={NEON_PINK} toneMapped={false} />
             NEXT
           </Text>
-          <mesh><planeGeometry args={[0.4, 0.2]} /><meshBasicMaterial transparent opacity={0} /></mesh>
+          <mesh><planeGeometry args={[0.55, 0.35]} /><meshBasicMaterial transparent opacity={0} /></mesh>
         </group>
 
         {/* Graffiti Underline */}

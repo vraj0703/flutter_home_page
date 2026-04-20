@@ -46,9 +46,14 @@ function _playRadio() {
 export function stopRadio() {
   if (_radioAudio) {
     _radioAudio.pause()
-    _radioAudio.src = '' // Close streaming connection (memory fix)
+    _radioAudio.src = ''       // Close streaming connection (memory fix)
+    _radioAudio.load()         // Force the element to release buffered data
+    _radioAudio = null         // Null so _playRadio's !_radioAudio guard triggers
+    // and preloadRadio() creates a fresh element on next play. Without this,
+    // play() would fail silently because src is empty but the element exists.
   }
   _radioPlaying = false
+  _radioLoading = false
   _notifyRadio()
 }
 

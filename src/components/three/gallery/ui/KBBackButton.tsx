@@ -18,7 +18,6 @@ const BUTTON_Y = 1.8
 
 export function KBBackButton() {
   const grp = useRef<THREE.Group>(null)
-  const hov = useRef(false)
   const glowRef = useRef<THREE.Mesh>(null)
   const glowMat = useMemo(() => new THREE.MeshStandardMaterial({
     color: '#FFFFFF', emissive: '#FFFFFF', emissiveIntensity: 0,
@@ -32,10 +31,8 @@ export function KBBackButton() {
     grp.current.getWorldPosition(tmpVec3)
     const dist = camera.position.distanceTo(tmpVec3)
     const proximity = Math.max(0, 1 - dist / 14)
-    const targetGlow = hov.current ? 0.8 : proximity * 0.25
-    const targetOpacity = hov.current ? 0.15 : proximity * 0.08
-    glowMat.emissiveIntensity = damp(glowMat.emissiveIntensity, targetGlow, 10, delta)
-    glowMat.opacity = damp(glowMat.opacity, targetOpacity, 10, delta)
+    glowMat.emissiveIntensity = damp(glowMat.emissiveIntensity, proximity * 0.25, 10, delta)
+    glowMat.opacity = damp(glowMat.opacity, proximity * 0.08, 10, delta)
   })
 
   return (
@@ -53,24 +50,10 @@ export function KBBackButton() {
           <planeGeometry args={[2.4, 1.2]} />
         </mesh>
 
-        {/* Arrow ← (default font — modrnt_urban.otf doesn't have the glyph).
-            Kept close to BACK text (0.33u apart total) so both fit inside FOV
-            cone from any orbit angle. Previous design had ~0.85u separation
-            which clipped out parts at extreme angles. */}
+        {/* Text: BACK — centered, no arrow */}
         <Text
-          position={[-0.32, 0.02, 0.01]}
+          position={[0, 0.02, 0.01]}
           fontSize={0.42}
-          anchorX="center"
-          anchorY="middle"
-        >
-          <meshBasicMaterial color={[1.8, 1.5, 1.1]} toneMapped={false} side={THREE.DoubleSide} />
-          {'\u2190'}
-        </Text>
-
-        {/* Text: BACK */}
-        <Text
-          position={[0.12, 0.02, 0.01]}
-          fontSize={0.38}
           anchorX="center"
           anchorY="middle"
           letterSpacing={0.12}
@@ -90,8 +73,8 @@ export function KBBackButton() {
         <mesh
           position={[0, 0, 0.02]}
           onClick={() => { fireKBBackClick(); getAudioEngine()?.playButtonClick() }}
-          onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer' }}
-          onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }}
+          onPointerOver={() => { document.body.style.cursor = 'pointer' }}
+          onPointerOut={() => { document.body.style.cursor = 'default' }}
         >
           <planeGeometry args={[2.4, 1.2]} />
           <meshStandardMaterial transparent opacity={0} />

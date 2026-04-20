@@ -17,7 +17,6 @@ import { getAudioEngine } from '../../../../audio'
 
 export function SkillsButton() {
   const grp = useRef<THREE.Group>(null)
-  const hov = useRef(false)
   const glowRef = useRef<THREE.Mesh>(null)
   const glowMat = useMemo(() => new THREE.MeshStandardMaterial({
     color: '#FFFFFF', emissive: '#FFFFFF', emissiveIntensity: 0,
@@ -31,10 +30,8 @@ export function SkillsButton() {
     grp.current.getWorldPosition(tmpVec3)
     const dist = camera.position.distanceTo(tmpVec3)
     const proximity = Math.max(0, 1 - dist / 6)
-    const targetGlow = hov.current ? 0.8 : proximity * 0.2
-    const targetOpacity = hov.current ? 0.15 : proximity * 0.06
-    glowMat.emissiveIntensity = damp(glowMat.emissiveIntensity, targetGlow, 10, delta)
-    glowMat.opacity = damp(glowMat.opacity, targetOpacity, 10, delta)
+    glowMat.emissiveIntensity = damp(glowMat.emissiveIntensity, proximity * 0.2, 10, delta)
+    glowMat.opacity = damp(glowMat.opacity, proximity * 0.06, 10, delta)
   })
 
   return (
@@ -87,8 +84,8 @@ export function SkillsButton() {
         <mesh
           position={[0, 0, 0.02]}
           onClick={() => { fireSkillsClick(); getAudioEngine()?.playButtonClick() }}
-          onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer' }}
-          onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }}
+          onPointerOver={() => { document.body.style.cursor = 'pointer' }}
+          onPointerOut={() => { document.body.style.cursor = 'default' }}
         >
           <planeGeometry args={[1.6, 1.0]} />
           <meshStandardMaterial transparent opacity={0} />

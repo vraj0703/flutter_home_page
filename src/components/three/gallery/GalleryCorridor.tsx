@@ -84,17 +84,36 @@ export function GalleryCorridor() {
         <planeGeometry args={[KB_ENTRY_X - WALL_X, CH + 2]} />
       </mesh>
 
-      {/* About Me — center of corridor (x=0) */}
+      {/* About Me — center of corridor (x=0). Title in Space Mono neon HDR,
+          description in Yomogi. Underline also HDR gold for consistent bloom. */}
       <group position={[0, 0, BACK_WALL_Z + 0.02]}>
-        <mesh position={[0, 1.8, -0.02]}>
-          <planeGeometry args={[5, 1.2]} />
-          <meshBasicMaterial color="#C8A45C" transparent opacity={0.02} />
-        </mesh>
-        <Text position={[0, 1.75, 0]} fontSize={0.8} color="#FFE0B0" anchorX="center" anchorY="bottom" letterSpacing={0.05} font="/fonts/poseidon.otf">
+        <Text
+          position={[0, 1.75, 0]}
+          fontSize={0.8}
+          anchorX="center"
+          anchorY="bottom"
+          letterSpacing={0.05}
+          font="/fonts/chlakh-demo.ttf"
+        >
+          <meshBasicMaterial color={[2.5, 1.8, 0.8]} toneMapped={false} side={THREE.DoubleSide} />
           VISHAL RAJ
         </Text>
-        <mesh position={[0, 1.65, 0]}><planeGeometry args={[2.5, 0.003]} /><meshBasicMaterial color="#C8A45C" /></mesh>
-        <Text position={[0, 1.5, 0]} fontSize={0.11} color="#C4B496" anchorX="center" anchorY="top" maxWidth={4.2} textAlign="center" lineHeight={1.5} letterSpacing={0.02} font="/flutter/assets/fonts/inconsolata_nerd_mono_regular.ttf">
+        <mesh position={[0, 1.55, 0]}>
+          <planeGeometry args={[2.5, 0.003]} />
+          <meshBasicMaterial color={[2.5, 1.8, 0.8]} toneMapped={false} />
+        </mesh>
+        <Text
+          position={[0, 1.15, 0]}
+          fontSize={0.24}
+          color="#C4B496"
+          anchorX="center"
+          anchorY="top"
+          maxWidth={7.0}
+          textAlign="center"
+          lineHeight={1.5}
+          letterSpacing={0.02}
+          font="/fonts/lifestyle.ttf"
+        >
           I make software that works quietly and well. For a decade, I've been building mobile apps,
           developer tools, and lately, AI systems that can think for themselves. I believe good
           engineering is invisible — you only notice it when it's missing.
