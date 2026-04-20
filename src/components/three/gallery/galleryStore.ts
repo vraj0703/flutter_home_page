@@ -1,11 +1,9 @@
 /**
  * Gallery state store — replaces module-level mutable state.
  *
- * This is a minimal reactive store (no Zustand dependency) that centralizes
- * all cross-component gallery state. Components read via getGalleryState()
- * and write via the exported setters. The pub/sub event bus for navigation
- * events (CTA click, Back, Connect) remains as it correctly crosses the
- * Three.js → React boundary.
+ * Minimal reactive store: components read via getters, write via setters.
+ * Pub/sub event bus for navigation (CTA, Back, Connect, Skills, KBBack)
+ * crosses the Three.js → React boundary.
  */
 
 /* ── Scroll & Camera state ─────────────────────────── */
@@ -47,28 +45,13 @@ export function subscribeKbFocus(fn: (focused: boolean) => void) {
   return () => { _kbFocusListeners = _kbFocusListeners.filter(f => f !== fn) }
 }
 
-/* ── Scroll unlock request ─────────────────────────── */
-
-let _scrollUnlockRequested = false
-export function isScrollUnlockRequested() { return _scrollUnlockRequested }
-export function requestScrollUnlock() { _scrollUnlockRequested = true }
-export function consumeScrollUnlock() { _scrollUnlockRequested = false }
-
 /* ── Scroll animation lock ─────────────────────────── */
 
 let _scrollAnimating = false
 export function isScrollAnimating() { return _scrollAnimating }
 export function setScrollAnimating(v: boolean) { _scrollAnimating = v }
 
-/* ── Gate release intent (wheel-force-driven) ──────── */
-// Wheel handler signals "user wants to push past gate" based on accumulated
-// forward wheel force, not damped scroll.offset deltas.
-let _gateReleaseRequested = false
-export function isGateReleaseRequested() { return _gateReleaseRequested }
-export function requestGateRelease() { _gateReleaseRequested = true }
-export function consumeGateRelease() { _gateReleaseRequested = false }
-
-/* ── Navigation event bus (CTA, Back, Connect) ─────── */
+/* ── Navigation event bus ─────────────────────────── */
 
 let _ctaClickListeners: Array<() => void> = []
 export function subscribeCTAClick(fn: () => void) {
@@ -90,6 +73,20 @@ export function subscribeConnectClick(fn: () => void) {
   return () => { _connectClickListeners = _connectClickListeners.filter(f => f !== fn) }
 }
 export function fireConnectClick() { _connectClickListeners.forEach(fn => fn()) }
+
+let _skillsClickListeners: Array<() => void> = []
+export function subscribeSkillsClick(fn: () => void) {
+  _skillsClickListeners.push(fn)
+  return () => { _skillsClickListeners = _skillsClickListeners.filter(f => f !== fn) }
+}
+export function fireSkillsClick() { _skillsClickListeners.forEach(fn => fn()) }
+
+let _kbBackClickListeners: Array<() => void> = []
+export function subscribeKBBackClick(fn: () => void) {
+  _kbBackClickListeners.push(fn)
+  return () => { _kbBackClickListeners = _kbBackClickListeners.filter(f => f !== fn) }
+}
+export function fireKBBackClick() { _kbBackClickListeners.forEach(fn => fn()) }
 
 /* ── Compound actions ──────────────────────────────── */
 

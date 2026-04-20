@@ -24,7 +24,7 @@ export const TEST_PAN_END = TEST_START_X + (ALL_TEST_CARDS.length - 1) * TEST_SP
 /* ── Keyboard exhibition hall ──────────────────────── */
 export const KB_ROOM = 24
 const LAST_CARD_X = TEST_START_X + 6 * TEST_SPACING
-export const KB_X = LAST_CARD_X + 3 + KB_ROOM / 2
+export const KB_X = LAST_CARD_X + 8 + KB_ROOM / 2
 export const KB_Z = BACK_WALL_Z + CW / 2
 export const KB_ENTRY_X = KB_X - KB_ROOM / 2
 export const KB_END_X = KB_X + KB_ROOM / 2

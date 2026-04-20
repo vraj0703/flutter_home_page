@@ -31,6 +31,8 @@ import { ThresholdCue } from './ui/ThresholdCue'
 import { GraffitiBackButton } from './ui/GraffitiBackButton'
 import { WallRadio } from './ui/WallRadio'
 import { LetsConnectFrame } from './ui/LetsConnectFrame'
+import { SkillsButton } from './ui/SkillsButton'
+import { KBBackButton } from './ui/KBBackButton'
 
 // Keyboard
 import { FloatingKB } from './FloatingKB'
@@ -115,6 +117,9 @@ export function GalleryCorridor() {
       <GraffitiBackButton />
       <WallRadio />
 
+      {/* Skills neon button — on back wall past last testimonial card */}
+      <SkillsButton />
+
       {/* Left wall frames */}
       {LEFT_PROJECTS.map((proj, i) => {
         const z = -(i + 1) * SPACING
@@ -163,6 +168,9 @@ export function GalleryCorridor() {
       </mesh>
 
       <LetsConnectFrame />
+
+      {/* Back neon button — on entry wall upper panel above corridor passage */}
+      <KBBackButton />
 
       {/* Keyboard room fill lights */}
       <pointLight position={[KB_X, CEIL_Y - 0.5, KB_Z]} intensity={1.8} color="#FFE8C8" distance={18} decay={1.5} />

@@ -28,7 +28,7 @@ import { ShaderWarmup } from './gallery/camera/ShaderWarmup'
 /* ── Re-exports for backward compatibility ─────────────────── */
 export {
   subscribeCTAClick, subscribeBackClick, subscribeConnectClick,
-  subscribeKbFocus, requestScrollUnlock, setClickTarget,
+  subscribeKbFocus, setClickTarget,
   resetGalleryScroll,
 } from './gallery/galleryStore'
 export {

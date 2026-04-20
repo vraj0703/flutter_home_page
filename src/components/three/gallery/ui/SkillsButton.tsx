@@ -1,6 +1,8 @@
 /**
- * LetsConnectFrame — neon CTA on KB end wall (opposite from Back button).
- * Vertically aligned with KBBackButton at Y=1.8.
+ * SkillsButton — neon CTA on the back wall, pointing toward skills
+ *
+ * Cloned from GraffitiBackButton pattern (glow backdrop, HDR text,
+ * underline drip, invisible click plane, proximity glow in useFrame).
  */
 
 import { useRef, useMemo, useEffect } from 'react'
@@ -8,15 +10,12 @@ import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 
-import { KB_ENTRY_X, BACK_WALL_Z, KB_Z, KB_ROOM } from '../dimensions'
+import { FRAME_Y, BACK_WALL_Z } from '../dimensions'
 import { damp, tmpVec3 } from '../utils'
-import { fireConnectClick } from '../galleryStore'
+import { fireSkillsClick } from '../galleryStore'
 import { getAudioEngine } from '../../../../audio'
 
-// Shared Y with KBBackButton for vertical alignment
-const BUTTON_Y = 1.8
-
-export function LetsConnectFrame() {
+export function SkillsButton() {
   const grp = useRef<THREE.Group>(null)
   const hov = useRef(false)
   const glowRef = useRef<THREE.Mesh>(null)
@@ -31,51 +30,67 @@ export function LetsConnectFrame() {
     if (!grp.current || !glowRef.current) return
     grp.current.getWorldPosition(tmpVec3)
     const dist = camera.position.distanceTo(tmpVec3)
-    const proximity = Math.max(0, 1 - dist / 14)
-    const targetGlow = hov.current ? 0.8 : proximity * 0.25
-    const targetOpacity = hov.current ? 0.15 : proximity * 0.08
+    const proximity = Math.max(0, 1 - dist / 6)
+    const targetGlow = hov.current ? 0.8 : proximity * 0.2
+    const targetOpacity = hov.current ? 0.15 : proximity * 0.06
     glowMat.emissiveIntensity = damp(glowMat.emissiveIntensity, targetGlow, 10, delta)
     glowMat.opacity = damp(glowMat.opacity, targetOpacity, 10, delta)
   })
 
   return (
-    <group
-      position={[KB_ENTRY_X + 0.1, BUTTON_Y, (BACK_WALL_Z + KB_Z - KB_ROOM / 2) / 2]}
-      rotation={[0, Math.PI / 2, 0]}
-    >
+    <group position={[41, FRAME_Y, BACK_WALL_Z + 0.08]} rotation={[0, 0, 0]}>
       <group ref={grp}>
         {/* Hover glow backdrop */}
         <mesh ref={glowRef} material={glowMat} position={[0, 0, -0.01]}>
-          <planeGeometry args={[3.6, 1.2]} />
+          <planeGeometry args={[1.6, 1.0]} />
         </mesh>
 
-        {/* Text: LET'S CONNECT */}
+        {/* Paint drip / splatter background */}
+        <mesh position={[0, 0, 0.005]}>
+          <planeGeometry args={[1.4, 0.75]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+
+        {/* Text: SKILLS */}
         <Text
-          position={[0, 0.02, 0.01]}
-          fontSize={0.38}
+          position={[-0.1, 0.02, 0.01]}
+          fontSize={0.22}
           anchorX="center"
           anchorY="middle"
-          letterSpacing={0.1}
+          letterSpacing={0.15}
           font="/flutter/assets/fonts/modrnt_urban.otf"
         >
           <meshBasicMaterial color={[2.5, 1.8, 0.8]} toneMapped={false} />
-          LET'S CONNECT
+          SKILLS
+        </Text>
+
+        {/* Arrow -> */}
+        <Text
+          position={[0.42, 0.02, 0.01]}
+          fontSize={0.28}
+          anchorX="center"
+          anchorY="middle"
+          letterSpacing={0}
+          font={undefined}
+        >
+          <meshBasicMaterial color={[1.5, 1.3, 1.0]} toneMapped={false} />
+          {'\u2192'}
         </Text>
 
         {/* Underline drip */}
-        <mesh position={[0, -0.35, 0.008]}>
-          <planeGeometry args={[2.6, 0.025]} />
+        <mesh position={[0, -0.22, 0.008]}>
+          <planeGeometry args={[1.1, 0.02]} />
           <meshStandardMaterial color="#E8E0D0" transparent opacity={0.4} roughness={1} metalness={0} />
         </mesh>
 
         {/* Invisible click plane */}
         <mesh
           position={[0, 0, 0.02]}
-          onClick={() => { fireConnectClick(); getAudioEngine()?.playButtonClick() }}
+          onClick={() => { fireSkillsClick(); getAudioEngine()?.playButtonClick() }}
           onPointerOver={() => { hov.current = true; document.body.style.cursor = 'pointer' }}
           onPointerOut={() => { hov.current = false; document.body.style.cursor = 'default' }}
         >
-          <planeGeometry args={[3.6, 1.2]} />
+          <planeGeometry args={[1.6, 1.0]} />
           <meshStandardMaterial transparent opacity={0} />
         </mesh>
       </group>
