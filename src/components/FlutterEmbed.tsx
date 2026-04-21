@@ -1,11 +1,16 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import { gsap } from 'gsap'
 import { MOTION } from '../config/motion'
+import { flutterBridge } from '../bridge/flutterBridge'
 
+/**
+ * The handle callers get from the ref. Previously included `sendMessage`; that
+ * moved to `flutterBridge` so there's a single message surface. Consumers
+ * who need to send should import `flutterBridge` directly.
+ */
 export interface FlutterEmbedHandle {
   show: () => void
   hide: () => void
-  sendMessage: (msg: Record<string, string>) => void
 }
 
 interface FlutterEmbedProps {
@@ -18,12 +23,10 @@ interface FlutterEmbedProps {
 export const FlutterEmbed = forwardRef<FlutterEmbedHandle, FlutterEmbedProps>(
   ({ src, onReady, onHandoff, onLoadingProgress }, ref) => {
     const iframeRef = useRef<HTMLIFrameElement>(null)
-    const handoffTriggered = useRef(false)
 
     useImperativeHandle(ref, () => ({
       show() {
         if (!iframeRef.current) return
-        handoffTriggered.current = false
         // Pure opacity fade — no y-slide (the flutter frame is already in place)
         gsap.fromTo(iframeRef.current,
           { opacity: 0 },
@@ -35,49 +38,36 @@ export const FlutterEmbed = forwardRef<FlutterEmbedHandle, FlutterEmbedProps>(
         iframeRef.current.style.pointerEvents = 'none'
         gsap.to(iframeRef.current, { opacity: 0, duration: MOTION.flutter.hideDuration })
       },
-      sendMessage(msg: Record<string, string>) {
-        iframeRef.current?.contentWindow?.postMessage(msg, window.location.origin)
-        if (msg.type === 'goto-contact' && iframeRef.current?.contentWindow) {
-          iframeRef.current.contentWindow.scrollTo(0, 0)
-        }
-      },
     }))
 
-    // Use refs for callbacks to avoid re-registering the listener on every prop change
+    // Callback refs — the bridge subscription is registered once (empty-deps
+    // effect) but should always call the latest prop callbacks. Sync via a
+    // post-commit effect so we don't write refs during render.
     const onReadyRef = useRef(onReady)
     const onHandoffRef = useRef(onHandoff)
     const onLoadingProgressRef = useRef(onLoadingProgress)
-    onReadyRef.current = onReady
-    onHandoffRef.current = onHandoff
-    onLoadingProgressRef.current = onLoadingProgress
-
     useEffect(() => {
-      function handleMessage(event: MessageEvent) {
-        const data = event.data
-        if (!data || typeof data !== 'object') return
+      onReadyRef.current = onReady
+      onHandoffRef.current = onHandoff
+      onLoadingProgressRef.current = onLoadingProgress
+    })
 
-        // Only handle known flutter-* message types to filter out noise
-        const type = data.type || data['type']
-        if (!type || typeof type !== 'string' || !type.startsWith('flutter-')) return
+    // Wire to the singleton FlutterBridge. The bridge owns all inbound
+    // message handling (origin-checked, type-switched, queue-drained).
+    useEffect(() => {
+      if (!iframeRef.current) return
+      flutterBridge.attach(iframeRef.current)
 
-        if (type === 'flutter-loading' && typeof data.progress === 'number') {
-          const clamped = Math.max(0, Math.min(1, data.progress))
-          onLoadingProgressRef.current?.(clamped)
-        }
+      const unsubReady = flutterBridge.onReady(() => onReadyRef.current?.())
+      const unsubHandoff = flutterBridge.onHandoff(() => onHandoffRef.current?.())
+      const unsubLoading = flutterBridge.onLoading((p) => onLoadingProgressRef.current?.(p))
 
-        if (type === 'flutter-ready') {
-          onReadyRef.current?.()
-        }
-
-        if (type === 'flutter-handoff' && !handoffTriggered.current) {
-          handoffTriggered.current = true
-          onHandoffRef.current?.()
-        }
+      return () => {
+        unsubReady()
+        unsubHandoff()
+        unsubLoading()
       }
-
-      window.addEventListener('message', handleMessage)
-      return () => window.removeEventListener('message', handleMessage)
-    }, []) // stable — reads refs
+    }, [])
 
     return (
       <iframe

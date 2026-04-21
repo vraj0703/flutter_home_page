@@ -1,6 +1,10 @@
 /**
  * Typed Flutter-React communication bridge.
  * Replaces raw postMessage with versioned, queued, acknowledged messages.
+ *
+ * Security: inbound messages are filtered by `event.origin` — only same-origin
+ * messages are processed. Prevents a malicious iframe or browser extension
+ * from spoofing `flutter-handoff` to force-navigate the user out of Flutter.
  */
 
 const PROTOCOL_VERSION = '2.0'
@@ -55,7 +59,7 @@ type LoadingCallback = (progress: number) => void
 
 export class FlutterBridge {
   private iframe: HTMLIFrameElement | null = null
-  private messageQueue: BridgeMessage[] = []
+  private messageQueue: Record<string, unknown>[] = []
   private isReady = false
   private readyTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -99,6 +103,31 @@ export class FlutterBridge {
 
   /* ── Outbound messages ──────────────────────────── */
 
+  /**
+   * Route-change methods. These emit the concrete message types that today's
+   * Flutter build handles (goto-home, goto-contact). The generic `navigate()`
+   * below sends a versioned `{type:'navigate', route}` for future Flutter
+   * builds that move to the typed protocol — current Flutter ignores it, so
+   * don't call it yet.
+   */
+  gotoHome() {
+    this.send({ type: 'goto-home', version: PROTOCOL_VERSION, timestamp: Date.now() })
+  }
+
+  gotoContact() {
+    this.send({ type: 'goto-contact', version: PROTOCOL_VERSION, timestamp: Date.now() })
+    // Parent-side scroll workaround: reset the iframe's viewport scroll
+    // position. Conceptually this belongs inside Flutter — once Flutter ships
+    // a `scroll-reset` handler this can move to a message and delete the
+    // direct contentWindow reach-in.
+    try {
+      this.iframe?.contentWindow?.scrollTo(0, 0)
+    } catch {
+      // cross-origin — iframe may be on a different domain in the future
+    }
+  }
+
+  /** Versioned successor to gotoHome/gotoContact. Not wired in Flutter yet. */
   navigate(route: 'home' | 'contact') {
     this.send({
       type: 'navigate',
@@ -117,7 +146,7 @@ export class FlutterBridge {
   }
 
   sendReducedMotion(enabled: boolean) {
-    this.send({ type: 'reduced-motion', version: PROTOCOL_VERSION, enabled, timestamp: Date.now() } as any)
+    this.send({ type: 'reduced-motion', version: PROTOCOL_VERSION, enabled, timestamp: Date.now() } as Record<string, unknown>)
   }
 
   /* ── Visibility control (GSAP-free — managed by FlutterEmbed) ── */
@@ -127,6 +156,11 @@ export class FlutterBridge {
   /* ── Inbound message handler ────────────────────── */
 
   private handleMessage(event: MessageEvent) {
+    // Security: only accept same-origin messages. Browser extensions and
+    // third-party iframes can post to our window — without this check they
+    // could spoof flutter-handoff and force a phase transition.
+    if (event.origin !== window.location.origin) return
+
     const data = event.data
     if (!data || typeof data !== 'object') return
 
@@ -175,7 +209,7 @@ export class FlutterBridge {
 
   private send(message: Record<string, unknown>) {
     if (!this.iframe?.contentWindow || !this.isReady) {
-      this.messageQueue.push(message as any)
+      this.messageQueue.push(message)
       return
     }
     this.iframe.contentWindow.postMessage(message, window.location.origin)

@@ -11,6 +11,7 @@ import { AudioProvider, useAudio } from './audio/AudioProvider'
 import { preloadRadio, startRadioOnGalleryEnter, stopRadio } from './audio/RadioEngine'
 import { resetGalleryScroll, setGalleryFrameloopActive } from './components/three/gallery/galleryStore'
 import { initAnalytics, trackLandingViewed, trackGalleryEntered, trackContactViewed } from './analytics/posthog'
+import { flutterBridge } from './bridge/flutterBridge'
 
 type Phase = 'flutter' | 'react' | 'contact'
 type TransitionDirection = 'forward' | 'reverse'
@@ -103,12 +104,12 @@ function AppInner() {
     // Flutter's beach shader + reflection capture has the GPU to itself.
     if (targetPhase === 'contact') {
       setGalleryFrameloopActive(false)
-      flutterRef.current?.sendMessage({ type: 'flutter-resume' })
-      flutterRef.current?.sendMessage({ type: 'goto-contact' })
+      flutterBridge.resume()
+      flutterBridge.gotoContact()
     } else if (targetPhase === 'flutter') {
       setGalleryFrameloopActive(false)
-      flutterRef.current?.sendMessage({ type: 'flutter-resume' })
-      flutterRef.current?.sendMessage({ type: 'goto-home' })
+      flutterBridge.resume()
+      flutterBridge.gotoHome()
     } else if (targetPhase === 'react') {
       // Returning to the gallery — resume R3F rendering.
       setGalleryFrameloopActive(true)
@@ -126,11 +127,11 @@ function AppInner() {
     const p = pendingPhase.current; 
     setPhase(p)
     
-    if (p === 'react') { 
+    if (p === 'react') {
       flutterRef.current?.hide()
-      flutterRef.current?.sendMessage({ type: 'flutter-pause' }) 
+      flutterBridge.pause()
     }
-    else if (p === 'flutter' || p === 'contact') { 
+    else if (p === 'flutter' || p === 'contact') {
       flutterRef.current?.show()
       // Already resumed and routed at transition start
     }
