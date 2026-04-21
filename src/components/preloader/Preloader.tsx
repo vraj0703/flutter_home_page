@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 
@@ -14,33 +14,45 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
   const glowRef = useRef<HTMLDivElement>(null)
   const flashRef = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLDivElement>(null)
+  const textSpanRef = useRef<HTMLSpanElement>(null)
   const hasRevealed = useRef(false)
-  const [displayPct, setDisplayPct] = useState(1)
+  const displayPctRef = useRef({ value: 1 })
   const reducedMotion = useReducedMotion()
 
-  // Smooth percentage counter — starts at 01, counts to 100
+  // Animate the progress and manually push to DOM refs to avoid React re-renders
   useEffect(() => {
     const target = Math.max(1, Math.round(progress * 100))
-    if (target <= displayPct) return
-    const step = () => {
-      setDisplayPct(prev => {
-        if (prev >= target) return target
-        return prev + 1
-      })
-    }
-    const id = setInterval(step, 20)
-    return () => clearInterval(id)
-  }, [progress, displayPct])
+    
+    gsap.to(displayPctRef.current, {
+      value: target,
+      duration: 0.3,
+      ease: 'power2.out',
+      onUpdate: () => {
+        const val = Math.round(displayPctRef.current.value)
+        const pctText = val < 100 ? String(val).padStart(2, '0') : '100'
+        const p = val / 100
 
-  // Zero-padded: 01–99, then 100
-  const pctText = displayPct < 100 ? String(displayPct).padStart(2, '0') : '100'
+        if (textSpanRef.current) {
+          textSpanRef.current.innerText = `L O A D I N G...  ${pctText} %`
+          textSpanRef.current.style.color = `rgba(255, 255, 255, ${0.35 + p * 0.35})`
+        }
 
-  // Energy buildup — glow intensifies with progress
-  const p = progress
-  const glowOpacity = p * p * 0.7          // quadratic ramp: subtle early, intense late
-  const glowScale = 1 + p * 0.6            // grows from 1.0 → 1.6
-  const glowBlur = 40 + p * 80             // blur: 40px → 120px
-  const logoDropShadow = `drop-shadow(0 0 ${Math.round(p * 30)}px rgba(200, 164, 92, ${p * 0.8}))`
+        if (glowRef.current) {
+          const glowOpacity = p * p * 0.7
+          const glowScale = 1 + p * 0.6
+          const glowBlur = 40 + p * 80
+          glowRef.current.style.opacity = `${glowOpacity}`
+          glowRef.current.style.transform = `translate(-50%, -55%) scale(${glowScale})`
+          glowRef.current.style.filter = `blur(${glowBlur}px)`
+        }
+
+        if (logoRef.current) {
+          const logoDropShadow = `drop-shadow(0 0 ${Math.round(p * 30)}px rgba(200, 164, 92, ${p * 0.8}))`
+          logoRef.current.style.filter = `invert(1) ${logoDropShadow}`
+        }
+      }
+    })
+  }, [progress])
 
   // Morph reveal animation
   useEffect(() => {
@@ -56,51 +68,23 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
       return
     }
 
-    // 1. Radial bloom (was: full-screen flash at 0.9 — reduced to 0.4 max for safety)
-    tl.to(flashRef.current, {
-      opacity: 0.4,
-      duration: 0.15,
-      ease: 'power4.in',
-    })
+    // 1. Radial bloom
+    tl.to(flashRef.current, { opacity: 0.4, duration: 0.15, ease: 'power4.in' })
 
-    // 2. Flash fades + logo scales up — energy releases
-    tl.to(flashRef.current, {
-      opacity: 0,
-      duration: 0.5,
-      ease: 'power2.out',
-    })
+    // 2. Flash fades
+    tl.to(flashRef.current, { opacity: 0, duration: 0.5, ease: 'power2.out' })
 
     // Simultaneously: text fades
-    tl.to(textRef.current, {
-      opacity: 0,
-      y: -8,
-      duration: 0.3,
-      ease: 'power2.in',
-    }, '<')
+    tl.to(textRef.current, { opacity: 0, y: -8, duration: 0.3, ease: 'power2.in' }, '<')
 
     // Logo scales up and dissolves into the scene
-    tl.to(logoRef.current, {
-      scale: 1.15,
-      filter: 'invert(1) blur(6px)',
-      opacity: 0,
-      duration: 0.8,
-      ease: 'power2.out',
-    }, '<+=0.1')
+    tl.to(logoRef.current, { scale: 1.15, filter: 'invert(1) blur(6px)', opacity: 0, duration: 0.8, ease: 'power2.out' }, '<+=0.1')
 
-    // Glow expands and dissolves (radial bloom replaces full-screen flash)
-    tl.to(glowRef.current, {
-      scale: 4,
-      opacity: 0,
-      duration: 0.8,
-      ease: 'power2.out',
-    }, '<')
+    // Glow expands and dissolves
+    tl.to(glowRef.current, { scale: 4, opacity: 0, duration: 0.8, ease: 'power2.out' }, '<')
 
-    // Container fades — Flutter scene bleeds through
-    tl.to(containerRef.current, {
-      opacity: 0,
-      duration: 0.5,
-      ease: 'power1.inOut',
-    }, '-=0.3')
+    // Container fades
+    tl.to(containerRef.current, { opacity: 0, duration: 0.5, ease: 'power1.inOut' }, '-=0.3')
 
     tl.call(() => onRevealComplete())
   }, [phase, onRevealComplete, reducedMotion])
@@ -111,13 +95,8 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
     <div
       ref={containerRef}
       style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 50,
-        background: '#0A0A0C',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        position: 'fixed', inset: 0, zIndex: 50, background: '#0A0A0C',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
         pointerEvents: phase === 'revealing' ? 'none' : 'auto',
       }}
     >
@@ -125,82 +104,43 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
       <div
         ref={flashRef}
         style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'radial-gradient(circle at center, rgba(200, 164, 92, 0.6), rgba(255, 255, 255, 0.9))',
-          opacity: 0,
-          pointerEvents: 'none',
-          zIndex: 2,
+          position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, rgba(200, 164, 92, 0.6), rgba(255, 255, 255, 0.9))',
+          opacity: 0, pointerEvents: 'none', zIndex: 2,
         }}
       />
 
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        position: 'relative',
-        zIndex: 1,
-      }}>
-        {/* Aura glow — intensifies with progress */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1 }}>
+        {/* Aura glow */}
         <div
           ref={glowRef}
           style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: `translate(-50%, -55%) scale(${glowScale})`,
-            width: 'min(22vw, 340px)',
-            height: 'min(22vw, 340px)',
-            borderRadius: '50%',
+            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -55%) scale(1)',
+            width: 'min(22vw, 340px)', height: 'min(22vw, 340px)', borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(200, 164, 92, 0.5) 0%, rgba(200, 164, 92, 0.1) 50%, transparent 70%)',
-            filter: `blur(${glowBlur}px)`,
-            opacity: glowOpacity,
-            pointerEvents: 'none',
-            willChange: 'transform, opacity, filter',
-            transition: 'opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease',
+            filter: 'blur(40px)', opacity: 0, pointerEvents: 'none', willChange: 'transform, opacity, filter',
           }}
         />
 
-        {/* Logo — with progressive drop-shadow glow */}
+        {/* Logo */}
         <img
           ref={logoRef}
           src="/images/logo.png"
           alt="V"
           style={{
-            width: 'min(22vw, 340px)',
-            height: 'auto',
-            aspectRatio: '175 / 150',
-            objectFit: 'contain',
-            filter: `invert(1) ${logoDropShadow}`,
-            opacity: 0.95,
-            userSelect: 'none',
-            pointerEvents: 'none',
-            willChange: 'transform, filter, opacity',
-            transition: 'filter 0.3s ease',
+            width: 'min(22vw, 340px)', height: 'auto', aspectRatio: '175 / 150', objectFit: 'contain',
+            filter: 'invert(1) drop-shadow(0 0 0px rgba(200, 164, 92, 0))', opacity: 0.95,
+            userSelect: 'none', pointerEvents: 'none', willChange: 'transform, filter, opacity',
           }}
           draggable={false}
         />
 
-        {/* "loading...  XX %" */}
-        <div
-          ref={textRef}
-          style={{
-            width: 'min(22vw, 340px)',
-            marginTop: '20px',
-            textAlign: 'right',
-            willChange: 'opacity, transform',
-          }}
-        >
+        {/* Loading text */}
+        <div ref={textRef} style={{ width: 'min(22vw, 340px)', marginTop: '20px', textAlign: 'right', willChange: 'opacity, transform' }}>
           <span
-            style={{
-              fontFamily: 'Broadway, serif',
-              fontSize: '14px',
-              letterSpacing: '2px',
-              color: `rgba(255, 255, 255, ${0.35 + p * 0.35})`,
-              transition: 'color 0.3s ease',
-            }}
+            ref={textSpanRef}
+            style={{ fontFamily: 'Broadway, serif', fontSize: '14px', letterSpacing: '2px', color: 'rgba(255, 255, 255, 0.35)' }}
           >
-            L O A D I N G...{'  '}{pctText} %
+            L O A D I N G...  01 %
           </span>
         </div>
       </div>
@@ -209,9 +149,7 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
         @font-face {
           font-family: 'Broadway';
           src: url('/fonts/broadway.ttf') format('truetype');
-          font-weight: normal;
-          font-style: normal;
-          font-display: swap;
+          font-weight: normal; font-style: normal; font-display: swap;
         }
       `}</style>
     </div>

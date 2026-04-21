@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_home_page/project/app/interfaces/game_section.dart';
@@ -22,6 +23,19 @@ import 'package:flutter_home_page/project/app/views/components/logo_layer/logo.d
 import 'package:flutter_home_page/project/app/views/components/contact/white_overlay_component.dart';
 import 'package:flutter_home_page/project/app/system/registration/game_component_factory.dart';
 
+class CustomFloatEffect extends Effect {
+  final double start;
+  final double end;
+  final void Function(double) onUpdate;
+
+  CustomFloatEffect(this.start, this.end, this.onUpdate, EffectController controller) : super(controller);
+
+  @override
+  void apply(double progress) {
+    onUpdate(start + (end - start) * progress);
+  }
+}
+
 class ContactSection extends Component implements GameSection {
   @override
   double get maxScrollExtent => _maxHeight;
@@ -36,7 +50,7 @@ class ContactSection extends Component implements GameSection {
   final VoidCallback playCompletionSound;
   final GameAudioSystem _audioSystem;
 
-  // ignore: unused_field — retained for future use (e.g., transition back with flash effect)
+  // ignore: unused_field
   final TransitionCoordinator _transitionCoordinator;
 
   final ContactTextButton homeButton;
@@ -54,9 +68,7 @@ class ContactSection extends Component implements GameSection {
   /// Whether the first reflection capture has been done post-entrance
   bool _reflectionCaptured = false;
 
-  /// Entrance animation progress (0 = hidden, 1 = fully visible)
-  double _entranceProgress = 0.0;
-  static const double _entranceDuration = 2.0; // seconds to fully reveal
+  static const double _entranceDuration = 2.0;
 
   /// Ambient lightning timer
   double _ambientLightningTimer = 0.0;
@@ -80,7 +92,7 @@ class ContactSection extends Component implements GameSection {
     required GameAudioSystem audioSystem,
     required TransitionCoordinator transitionCoordinator,
   }) : _audioSystem = audioSystem,
-       _transitionCoordinator = transitionCoordinator {
+        _transitionCoordinator = transitionCoordinator {
     orchestrator = BeachSceneOrchestrator(background: cloudBackground);
     cloudBackground.setOrchestrator(orchestrator);
     _orchestratorInitialized = true;
@@ -99,17 +111,12 @@ class ContactSection extends Component implements GameSection {
   @override
   VoidCallback? onReverseComplete;
 
-  // freezeCapture removed — was only used by dead _captureRefractionFrame code
 
   @override
   List<Vector2> get snapRegions => [];
 
-  /// Scroll is not used for card reveal in Contact mode.
-  /// We keep setScrollOffset for interface compliance but it does nothing meaningful.
   @override
-  void setScrollOffset(double offset) {
-    // No-op: Contact section is not scroll-driven
-  }
+  void setScrollOffset(double offset) {}
 
   void triggerLightningEffect() {
     cloudBackground.triggerLightningEffect();
@@ -131,67 +138,149 @@ class ContactSection extends Component implements GameSection {
 
   @override
   Future<void> finalizeGhostRender() async {
-    // Skip reflection during ghost render — it blocks GPU for 200-500ms
-    // Reflection will be captured ONCE after entrance animation completes
-
-    // Strict Visibility Reset - Hide all components
     cloudBackground.opacity = 0.0;
     trailComponent.opacity = 0.0;
     titleComponent.opacity = 0.0;
     whiteOverlay.opacity = 0.0;
   }
 
-  /// Primes the reflection texture during the React pre-route window so the
-  /// expensive first render-to-texture doesn't stall mid-entrance. Called
-  /// from _startContactSection() BEFORE the entrance animation begins while
-  /// the iframe is still hidden behind the transition overlay.
   void preloadReflection() {
     if (!_orchestratorInitialized) return;
-    // Register reflection targets now (normally done mid-entrance at
-    // progress > 0.5). Targets are already at their final positions; opacity
-    // is zero at this point but positions/geometry are valid.
     orchestrator.reflection.registerTarget(titleComponent);
     for (final card in trailComponent.cards) {
       orchestrator.reflection.registerTarget(card);
     }
-    // Capture one frame to prime the texture. Temporarily unpause so the
-    // reflection manager will actually render; restore paused state after.
     final wasPaused = orchestrator.reflection.paused;
     orchestrator.reflection.paused = false;
     orchestrator.reflection.updateReflectionTexture();
     orchestrator.reflection.paused = wasPaused;
-    _reflectionCaptured = true; // skip redundant post-entrance capture
+    _reflectionCaptured = true;
   }
 
   @override
   Future<void> enter(ScrollSystem scrollSystem) async {
     _isActive = true;
-    _entranceProgress = 0.0;
     _ambientLightningTimer = 0.0;
-    // Note: _reflectionCaptured may already be true from preloadReflection()
-    // — don't clobber it here so we don't re-trigger the expensive capture.
-    _nextLightningAt = _rng.nextDouble() * 4.0 + 4.0; // first strike 4-8s in
+    _nextLightningAt = _rng.nextDouble() * 4.0 + 4.0;
 
-    // Pause reflection updates during entrance — prevents GPU blocking
     orchestrator.reflection.paused = true;
 
-    // Disable scroll bounds — no scrolling needed
     scrollSystem.resetScroll(0.0);
     scrollSystem.setBounds(0.0, 0.0);
     scrollSystem.setSnapRegions([]);
 
-    // Start with white overlay bridge, then fade it out
-    whiteOverlay.opacity = 1.0;
-    // Back button starts hidden, will fade in with entrance animation
-    backButton.opacity = 0.0;
-
-    // Play entry sound
     playEntrySound();
+
+    // 1. Overlay Fade out
+    whiteOverlay.opacity = 1.0;
+    whiteOverlay.add(OpacityEffect.to(0.0, EffectController(duration: 0.6)));
+
+    // 2. Background Entry
+    cloudBackground.opacity = 0.0;
+    cloudBackground.scale = Vector2.all(ContactSectionLayout.backgroundOverscan);
+    cloudBackground.position = Vector2(-(screenSize.x * ContactSectionLayout.backgroundOverscanMargin), 0.0);
+    cloudBackground.setWaterLevel(screenSize.y * ContactSectionLayout.waterLevelRatio);
+
+    cloudBackground.add(OpacityEffect.to(1.0, EffectController(duration: 0.8, curve: Curves.easeOutCubic)));
+    cloudBackground.add(MoveEffect.to(
+        Vector2(-(screenSize.x * ContactSectionLayout.backgroundOverscanMargin), -ContactSectionLayout.backgroundYShift),
+        EffectController(duration: 0.8, curve: Curves.easeOutCubic)
+    ));
+    cloudBackground.add(CustomFloatEffect(0.0, 0.5, (val) {
+      cloudBackground.setScrollProgress(val);
+    }, EffectController(duration: 0.8, curve: Curves.easeOutCubic)));
+
+    // 3. Title Animation
+    titleComponent.opacity = 0.0;
+    titleComponent.showReflection = true;
+    titleComponent.waterLineY = screenSize.y * ContactSectionLayout.waterLineYRatio;
+
+    final startY = screenSize.y * ContactSectionLayout.titleStartYRatio;
+    final endY = screenSize.y * ContactSectionLayout.titleEndYRatio;
+    titleComponent.position = Vector2(screenSize.x / 2, startY);
+    titleComponent.scale = Vector2.all(ContactSectionLayout.titleInitialScale);
+
+    final titleWait = 0.4;
+    titleComponent.add(OpacityEffect.to(1.0, EffectController(duration: 0.8, startDelay: titleWait)));
+    titleComponent.add(MoveEffect.to(Vector2(screenSize.x / 2, endY), EffectController(duration: 0.8, curve: Curves.elasticOut, startDelay: titleWait)));
+
+    // Scale sequence (overshoot then settle)
+    final overshootDur = 0.8 * ContactSectionLayout.titleOvershootThreshold;
+    final settleDur = 0.8 * (1.0 - ContactSectionLayout.titleOvershootThreshold);
+    titleComponent.add(SequenceEffect([
+      ScaleEffect.to(Vector2.all(ContactSectionLayout.titleOvershootScale), EffectController(duration: overshootDur, startDelay: titleWait)),
+      ScaleEffect.to(Vector2.all(ContactSectionLayout.titleSettleScale), EffectController(duration: settleDur)),
+    ]));
+
+    // 4. Trail and Cards Animation
+    trailComponent.opacity = 0.0;
+    trailComponent.position = Vector2(0, ContactSectionLayout.trailInitialY);
+    trailComponent.scale = Vector2.all(ContactSectionLayout.trailInitialScale);
+
+    final trailWait = 0.6;
+    trailComponent.add(OpacityEffect.to(1.0, EffectController(duration: 1.0, curve: Curves.easeOutCubic, startDelay: trailWait)));
+    trailComponent.add(MoveEffect.to(Vector2.zero(), EffectController(duration: 1.0, curve: Curves.easeOutCubic, startDelay: trailWait)));
+    trailComponent.add(ScaleEffect.to(
+        Vector2.all(ContactSectionLayout.trailInitialScale + ContactSectionLayout.trailScaleRange),
+        EffectController(duration: 1.0, curve: Curves.easeOutCubic, startDelay: trailWait)
+    ));
+    trailComponent.add(CustomFloatEffect(0.0, 2700.0, (val) {
+      trailComponent.setTargetScroll(val);
+      trailComponent.updateTrailAnimation(val);
+    }, EffectController(duration: 1.0, curve: Curves.easeOutCubic, startDelay: trailWait)));
+
+    // 5. Buttons + Logo fade in
+    final btnWait = 1.4;
+    final btnDur = 0.6;
+
+    backButton.opacity = 0.0;
+    backButton.position = Vector2(80.0, screenSize.y - 50.0);
+    backButton.add(OpacityEffect.to(1.0, EffectController(duration: btnDur, startDelay: btnWait)));
+
+    logoComponent.priority = 50;
+    logoComponent.position = Vector2(50.0, 50.0);
+    logoComponent.scale = Vector2.zero();
+    logoComponent.add(ScaleEffect.to(Vector2.all(0.15), EffectController(duration: btnDur, startDelay: btnWait)));
+
+    homeButton.opacity = 0.0;
+    homeButton.position = Vector2(screenSize.x - 160.0, screenSize.y - 50.0);
+    homeButton.add(OpacityEffect.to(1.0, EffectController(duration: btnDur, startDelay: btnWait)));
+
+    audioToggle.opacity = 0.0;
+    audioToggle.position = Vector2(screenSize.x - 50.0, screenSize.y - 50.0);
+    audioToggle.add(OpacityEffect.to(1.0, EffectController(duration: btnDur, startDelay: btnWait)));
+
+    // 6. Registration of Reflection and completion flags
+    add(TimerComponent(
+        period: 1.0,
+        removeOnFinish: true,
+        onTick: () {
+          if (_orchestratorInitialized) {
+            orchestrator.reflection.registerTarget(titleComponent);
+            for (final card in trailComponent.cards) {
+              orchestrator.reflection.registerTarget(card);
+            }
+          }
+        }
+    ));
+
+    add(TimerComponent(
+        period: _entranceDuration,
+        removeOnFinish: true,
+        onTick: () {
+          if (orchestrator.reflection.paused) {
+            orchestrator.reflection.paused = false;
+            if (!_reflectionCaptured) {
+              _reflectionCaptured = true;
+              orchestrator.reflection.updateReflectionTexture();
+            }
+          }
+        }
+    ));
   }
 
   @override
   Future<void> enterReverse(ScrollSystem scrollSystem) async {
-    // Same as enter for Contact section
     await enter(scrollSystem);
   }
 
@@ -199,30 +288,22 @@ class ContactSection extends Component implements GameSection {
   Future<void> exit() async {
     _isActive = false;
 
-    // Strict Visibility Reset - Hide all components
     titleComponent.opacity = 0.0;
     cloudBackground.opacity = 0.0;
     trailComponent.opacity = 0.0;
     backButton.opacity = 0.0;
     whiteOverlay.opacity = 0.0;
     logoComponent.scale = Vector2.zero();
-    logoComponent.priority = 10; // Reset to default zLogo
+    logoComponent.priority = 10;
     homeButton.opacity = 0.0;
     audioToggle.opacity = 0.0;
 
-    // Stop all contact audio on exit
     _audioSystem.stopBoldTextAudio();
 
-    // Clean up reflection resources to prevent memory leaks
     orchestrator.reflection.clearTargets();
     orchestrator.holdProgress = 0.0;
 
-    // Stop background capture loop
-
-    // Reset shader uniforms and state flags
     _cleanupContactComponents();
-
-    // Reset visuals to initial state
     _resetVisuals();
   }
 
@@ -232,175 +313,24 @@ class ContactSection extends Component implements GameSection {
 
     _animTime += dt;
 
-    // --- Entrance Animation ---
-    // Smoothly reveal all components over _entranceDuration seconds
-    if (_entranceProgress < 1.0) {
-      _entranceProgress = (_entranceProgress + dt / _entranceDuration).clamp(
-        0.0,
-        1.0,
-      );
-      _applyEntranceAnimation(_entranceProgress);
-    }
-
     // --- Ambient Lightning ---
     _ambientLightningTimer += dt;
     if (_ambientLightningTimer >= _nextLightningAt) {
       _ambientLightningTimer = 0.0;
       _nextLightningAt =
           _ambientLightningMinInterval +
-          _rng.nextDouble() *
-              (_ambientLightningMaxInterval - _ambientLightningMinInterval);
+              _rng.nextDouble() *
+                  (_ambientLightningMaxInterval - _ambientLightningMinInterval);
 
-      // Trigger a gentle lightning flash
-      orchestrator.lightning.triggerFlash(
-        0.15,
-      ); // Low intensity = distant thunder
+      orchestrator.lightning.triggerFlash(0.15);
       _audioSystem.playSpatialThunder(0.15);
     }
 
-    // --- Enable reflection AFTER entrance completes ---
-    // Always unpause once entrance lands so the reflection resumes per-frame
-    // updates. Only fire the expensive updateReflectionTexture() if we didn't
-    // already prime it via preloadReflection() during the pre-route window.
-    if (_entranceProgress >= 1.0 && orchestrator.reflection.paused) {
-      orchestrator.reflection.paused = false;
-      if (!_reflectionCaptured) {
-        _reflectionCaptured = true;
-        orchestrator.reflection.updateReflectionTexture();
-      }
-    }
-
-    // --- Title breathe animation when fully visible ---
-    if (_entranceProgress >= 1.0) {
-      final breathe =
-          math.sin(_animTime * ContactSectionLayout.breatheFrequency) *
-          ContactSectionLayout.breatheAmplitude;
-      final baseScale = ContactSectionLayout.titleSettleScale;
-      titleComponent.scale = Vector2.all(baseScale + baseScale * breathe);
-    }
-
-    // --- Register reflection targets ---
-    if (_orchestratorInitialized && _entranceProgress > 0.5) {
-      orchestrator.reflection.registerTarget(titleComponent);
-      for (final card in trailComponent.cards) {
-        orchestrator.reflection.registerTarget(card);
-      }
-    }
+    // --- Title breathe animation ---
+    final breathe = math.sin(_animTime * ContactSectionLayout.breatheFrequency) * ContactSectionLayout.breatheAmplitude;
+    final baseScale = ContactSectionLayout.titleSettleScale;
+    titleComponent.scale = Vector2.all(baseScale + baseScale * breathe);
   }
-
-  /// Drives the entrance animation: fades in background, title, trail, and cards together.
-  void _applyEntranceAnimation(double progress) {
-    // Phase 1 (0.0 - 0.3): White overlay fades out, background fades in
-    final overlayFade = (1.0 - (progress / 0.3)).clamp(0.0, 1.0);
-    whiteOverlay.opacity = overlayFade;
-
-    final bgProgress = (progress / 0.4).clamp(0.0, 1.0);
-    final bgCurve = Curves.easeOutCubic.transform(bgProgress);
-    cloudBackground.opacity = bgCurve;
-    cloudBackground.scale = Vector2.all(
-      ContactSectionLayout.backgroundOverscan,
-    );
-    cloudBackground.position = Vector2(
-      -(screenSize.x * ContactSectionLayout.backgroundOverscanMargin),
-      -(bgCurve * ContactSectionLayout.backgroundYShift),
-    );
-
-    // Set water level for shader
-    cloudBackground.setWaterLevel(
-      screenSize.y * ContactSectionLayout.waterLevelRatio,
-    );
-    cloudBackground.setScrollProgress(bgCurve * 0.5); // Midway sky gradient
-
-    // Phase 2 (0.2 - 0.6): Title fades in and floats up
-    if (progress > 0.2) {
-      final titleProgress = ((progress - 0.2) / 0.4).clamp(0.0, 1.0);
-      final titleCurve = Curves.elasticOut.transform(titleProgress);
-
-      titleComponent.opacity = titleProgress;
-      titleComponent.showReflection = true;
-      titleComponent.waterLineY =
-          screenSize.y * ContactSectionLayout.waterLineYRatio;
-
-      final startY = screenSize.y * ContactSectionLayout.titleStartYRatio;
-      final endY = screenSize.y * ContactSectionLayout.titleEndYRatio;
-      final currentY = startY + (endY - startY) * titleCurve;
-      titleComponent.position = Vector2(screenSize.x / 2, currentY);
-
-      // Scale animation
-      double targetScale;
-      if (titleProgress < ContactSectionLayout.titleOvershootThreshold) {
-        targetScale = lerpDouble(
-          ContactSectionLayout.titleInitialScale,
-          ContactSectionLayout.titleOvershootScale,
-          titleProgress / ContactSectionLayout.titleOvershootThreshold,
-        )!;
-      } else {
-        final settleProgress =
-            (titleProgress - ContactSectionLayout.titleOvershootThreshold) /
-            (1.0 - ContactSectionLayout.titleOvershootThreshold);
-        targetScale = lerpDouble(
-          ContactSectionLayout.titleOvershootScale,
-          ContactSectionLayout.titleSettleScale,
-          settleProgress,
-        )!;
-      }
-      titleComponent.scale = Vector2.all(targetScale);
-    } else {
-      titleComponent.opacity = 0.0;
-    }
-
-    // Phase 3 (0.3 - 0.8): Trail and cards appear
-    if (progress > 0.3) {
-      final trailProgress = ((progress - 0.3) / 0.5).clamp(0.0, 1.0);
-      final trailCurve = Curves.easeOutCubic.transform(trailProgress);
-
-      trailComponent.opacity = trailCurve;
-      trailComponent.scale = Vector2.all(
-        ContactSectionLayout.trailInitialScale +
-            (ContactSectionLayout.trailScaleRange * trailCurve),
-      );
-      trailComponent.position = Vector2(
-        0,
-        (1.0 - trailCurve) * ContactSectionLayout.trailInitialY,
-      );
-
-      // Force cards to their final "locked" positions by setting a high scroll offset
-      // This makes all 4 cards visible at their target positions
-      final cardScroll = 2700.0 * trailCurve; // Max lock point for all cards
-      trailComponent.setTargetScroll(cardScroll);
-      trailComponent.updateTrailAnimation(cardScroll);
-    } else {
-      trailComponent.opacity = 0.0;
-    }
-
-    // Phase 4 (0.7 - 1.0): Buttons + logo fade in
-    if (progress > 0.7) {
-      final btnProgress = ((progress - 0.7) / 0.3).clamp(0.0, 1.0);
-
-      // Gallery button — bottom left
-      backButton.opacity = btnProgress;
-      backButton.position = Vector2(80.0, screenSize.y - 50.0);
-
-      // Logo — top left, small, z-above contact content
-      logoComponent.priority = 50;
-      logoComponent.position = Vector2(50.0, 50.0);
-      logoComponent.scale = Vector2.all(0.15 * btnProgress);
-
-      // Home + Audio buttons — bottom right
-      homeButton.opacity = btnProgress;
-      homeButton.position = Vector2(screenSize.x - 160.0, screenSize.y - 50.0);
-      audioToggle.opacity = btnProgress;
-      audioToggle.position = Vector2(screenSize.x - 50.0, screenSize.y - 50.0);
-    } else {
-      backButton.opacity = 0.0;
-      logoComponent.scale = Vector2.zero();
-      homeButton.opacity = 0.0;
-      audioToggle.opacity = 0.0;
-    }
-  }
-
-  // Removed: _captureRefractionFrame() was rendering to a PictureRecorder
-  // that was never finalized (endRecording() never called) — pure wasted GPU work.
 
   @override
   void onResize(Vector2 newSize) {
@@ -415,16 +345,12 @@ class ContactSection extends Component implements GameSection {
 
   @override
   ScrollResult handleScroll(double delta) {
-    // Contact section does not consume scroll.
-    // Any scroll is ignored.
     return ScrollConsumed(0.0);
   }
 
   void _resetVisuals() {
     titleComponent.opacity = 0.0;
-    titleComponent.scale = Vector2.all(
-      ContactSectionLayout.titleInitialScale,
-    );
+    titleComponent.scale = Vector2.all(ContactSectionLayout.titleInitialScale);
     titleComponent.position = Vector2(
       screenSize.x / 2,
       screenSize.y * ContactSectionLayout.titleStartYRatio,
@@ -444,11 +370,9 @@ class ContactSection extends Component implements GameSection {
   void _cleanupContactComponents() {
   }
 
-  /// Sends a message to the parent React frame to navigate back.
-  /// Fades out the Contact section before sending the handoff.
   void navigateBackToReact() {
     if (!_isActive) return;
-    _isActive = false; // Prevent double-taps
+    _isActive = false;
 
     if (kIsWeb) {
       try {

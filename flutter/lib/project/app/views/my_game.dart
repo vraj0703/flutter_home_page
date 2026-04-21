@@ -10,6 +10,7 @@ import 'package:flutter_home_page/project/app/models/cursor_dependent_components
 
 import 'package:flutter_home_page/project/app/views/components/god_ray.dart';
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
@@ -104,13 +105,8 @@ class MyGame extends FlameGame
   /// Communication port to the host page (iframe or hostElement).
   late final CanvasLifecyclePort _port;
 
-  // White overlay fade state machine for smooth Flutter→Flutter transitions
-  String _fadePhase = 'idle'; // idle | fadeIn | hold | fadeOut
-  double _fadeProgress = 0.0;
-  static const double _fadeDuration = 0.4; // seconds per fade direction
-  static const double _holdDuration = 0.1; // seconds to hold at full opacity
-  double _holdTimer = 0.0;
-  VoidCallback? _onFadeMidpoint; // called when overlay is fully opaque
+  // Track if we're currently executing a section swap transition
+  bool _isSwappingSection = false;
 
   @override
   Future<void> onLoad() async {
@@ -293,30 +289,6 @@ class MyGame extends FlameGame
     if (!isLoaded) return;
     if (!shouldProcessTick(dt)) return;
 
-    // White overlay fade state machine (for smooth Flutter→Flutter transitions)
-    if (_fadePhase == 'fadeIn') {
-      _fadeProgress = (_fadeProgress + dt / _fadeDuration).clamp(0.0, 1.0);
-      _componentFactory.whiteOverlay.opacity = _fadeProgress;
-      if (_fadeProgress >= 1.0) {
-        _fadePhase = 'hold';
-        _holdTimer = 0.0;
-        _onFadeMidpoint?.call();
-        _onFadeMidpoint = null;
-      }
-    } else if (_fadePhase == 'hold') {
-      // Hold at full opacity for a short duration to let new section render
-      _holdTimer += dt;
-      if (_holdTimer >= _holdDuration) {
-        _fadePhase = 'fadeOut';
-      }
-    } else if (_fadePhase == 'fadeOut') {
-      _fadeProgress = (_fadeProgress - dt / _fadeDuration).clamp(0.0, 1.0);
-      _componentFactory.whiteOverlay.opacity = _fadeProgress;
-      if (_fadeProgress <= 0.0) {
-        _fadePhase = 'idle';
-      }
-    }
-
     // Check State
     final state = stateProvider.sceneState();
 
@@ -491,6 +463,10 @@ class MyGame extends FlameGame
     _primarySequenceRunner.init([_boldTextSection]);
 
     // Bold section complete → hand off to React
+    _setupHandoffHandlers();
+  }
+
+  void _setupHandoffHandlers() {
     _primarySequenceRunner.onSequenceComplete = () async {
       await _primarySequenceRunner.stop();
       if (kIsWeb && !_handoffSent) {
@@ -503,29 +479,37 @@ class MyGame extends FlameGame
   /// Called when Home button tapped or React sends "goto-home"
   /// Animated white overlay: fade in → swap section → fade out (~0.8s total)
   void _startHomeSection() {
-    if (_fadePhase != 'idle') return; // Prevent double-tap
+    if (_isSwappingSection) return; // Prevent double-tap
+    _isSwappingSection = true;
     _audioSystem.stopAll();
 
-    _fadePhase = 'fadeIn';
-    _fadeProgress = 0.0;
-    _onFadeMidpoint = () async {
-      // This runs when the overlay is fully opaque — user sees white
-      await _primarySequenceRunner.restoreToSection(0, [_boldTextSection]);
+    _componentFactory.whiteOverlay.add(
+      OpacityEffect.to(
+        1.0,
+        EffectController(duration: 0.4),
+        onComplete: () {
+          // This runs when the overlay is fully opaque — user sees white
+          _primarySequenceRunner.restoreToSection(0, [_boldTextSection]).then((_) {
+            // Re-wire handoff
+            _setupHandoffHandlers();
 
-      // Re-wire handoff
-      _primarySequenceRunner.onSequenceComplete = () async {
-        await _primarySequenceRunner.stop();
-        if (kIsWeb && !_handoffSent) {
-          _handoffSent = true;
-          _sendHandoff();
-        }
-      };
+            queuer.queue(event: const SceneEvent.titleLoaded());
+            queuer.queue(event: const SceneEvent.onScroll());
+            queuer.queue(event: const SceneEvent.toggleArrow(true));
+            unblockInput();
 
-      queuer.queue(event: const SceneEvent.titleLoaded());
-      queuer.queue(event: const SceneEvent.onScroll());
-      queuer.queue(event: const SceneEvent.toggleArrow(true));
-      unblockInput();
-    };
+            // Fade out
+            _componentFactory.whiteOverlay.add(
+              OpacityEffect.to(
+                0.0,
+                EffectController(duration: 0.4, startDelay: 0.1),
+                onComplete: () => _isSwappingSection = false,
+              ),
+            );
+          });
+        },
+      ),
+    );
   }
 
   /// Called when React sends "goto-contact" — re-init runner with contact section
