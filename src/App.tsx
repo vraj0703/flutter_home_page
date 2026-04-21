@@ -8,7 +8,7 @@ import { Preloader } from './components/preloader/Preloader'
 import { useAssetLoader } from './hooks/useAssetLoader'
 import { AudioProvider, useAudio } from './audio/AudioProvider'
 import { preloadRadio, startRadioOnGalleryEnter, stopRadio } from './audio/RadioEngine'
-import { resetGalleryScroll } from './components/three/gallery/galleryStore'
+import { resetGalleryScroll, setGalleryFrameloopActive } from './components/three/gallery/galleryStore'
 import { initAnalytics, trackLandingViewed, trackGalleryEntered, trackContactViewed } from './analytics/posthog'
 
 type Phase = 'flutter' | 'react' | 'contact'
@@ -86,12 +86,19 @@ function AppInner() {
 
     // PRE-ROUTE: Awaken and navigate Flutter in the background
     // This gives it ~800ms to process the heavy layout before the overlay reveals it.
+    // GPU contention fix: when leaving the gallery, pause R3F immediately so
+    // Flutter's beach shader + reflection capture has the GPU to itself.
     if (targetPhase === 'contact') {
+      setGalleryFrameloopActive(false)
       flutterRef.current?.sendMessage({ type: 'flutter-resume' })
       flutterRef.current?.sendMessage({ type: 'goto-contact' })
     } else if (targetPhase === 'flutter') {
+      setGalleryFrameloopActive(false)
       flutterRef.current?.sendMessage({ type: 'flutter-resume' })
       flutterRef.current?.sendMessage({ type: 'goto-home' })
+    } else if (targetPhase === 'react') {
+      // Returning to the gallery — resume R3F rendering.
+      setGalleryFrameloopActive(true)
     }
 
     // Flutter→React = forward (left-to-right wipe), React→Flutter/contact = reverse (right-to-left)
@@ -124,7 +131,22 @@ function AppInner() {
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#C4B496', position: 'relative', overflow: 'hidden', userSelect: 'none' }}>
       <FlutterEmbed ref={flutterRef} src="/flutter/index.html" onReady={handleFlutterReady} onHandoff={handleFlutterHandoff} onLoadingProgress={handleFlutterLoadingProgress} />
-      <div style={{ position: 'absolute', inset: 0, zIndex: 30, opacity: phase === 'react' ? 1 : 0, pointerEvents: phase === 'react' ? 'auto' : 'none' }}>
+      {/* Gallery wrapper. Opacity + pointerEvents gate visibility/interaction.
+          `display: none` was tried as a belt-and-suspenders paint-release, but
+          it broke Canvas lifecycle: when the wrapper flipped back to `display:
+          block` on return to gallery, the Canvas would show just its clearColor
+          for a frame while R3F re-established size/WebGL state. R3F
+          `frameloop="never"` (see GalleryScene) is the GPU defense — we don't
+          need the display hack. */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 30,
+          opacity: phase === 'react' ? 1 : 0,
+          pointerEvents: phase === 'react' ? 'auto' : 'none',
+        }}
+      >
         <S3_Gallery onNavigateToContact={handleNavigateToContact} onNavigateBack={handleNavigateBack} />
       </div>
       <SectionTransition active={transitioning} onMidpoint={handleMidpoint} onComplete={handleComplete} duration={1.6} direction={transitionDirection} />

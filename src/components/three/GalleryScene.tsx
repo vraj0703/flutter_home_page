@@ -10,7 +10,7 @@
  * State:   gallery/galleryStore     (all shared state & event buses)
  */
 
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ScrollControls } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
@@ -25,6 +25,9 @@ import { KeyboardOrbit } from './gallery/camera/KeyboardOrbit'
 import { ReverseScroll } from './gallery/camera/ReverseScroll'
 import { ShaderWarmup } from './gallery/camera/ShaderWarmup'
 
+// Frameloop gate — paused when user transitions to contact page
+import { subscribeGalleryFrameloop } from './gallery/galleryStore'
+
 /* ── Re-exports for backward compatibility ─────────────────── */
 export {
   subscribeCTAClick, subscribeBackClick, subscribeConnectClick,
@@ -38,8 +41,15 @@ export {
 } from '../../audio/RadioEngine'
 
 export function GalleryScene() {
+  // frameloop gate — when the app transitions to the contact phase, App.tsx
+  // calls setGalleryFrameloopActive(false), pausing the Canvas so Flutter
+  // can use the GPU without contention during its entrance animation.
+  const [frameloopActive, setFrameloopActive] = useState(true)
+  useEffect(() => subscribeGalleryFrameloop(setFrameloopActive), [])
+
   return (
     <Canvas
+      frameloop={frameloopActive ? 'always' : 'never'}
       dpr={[1, 2]}
       camera={{ position: [0, 0.3, 3], fov: 65 }}
       gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.6, preserveDrawingBuffer: false, powerPreference: 'high-performance' }}

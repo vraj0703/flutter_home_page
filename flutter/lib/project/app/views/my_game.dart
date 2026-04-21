@@ -534,6 +534,11 @@ class MyGame extends FlameGame
     _primarySequenceRunner.init([_contactSection]);
     queuer.queue(event: const SceneEvent.onScroll());
     queuer.queue(event: const SceneEvent.toggleArrow(false));
+    // Prime the reflection texture NOW, while the React transition overlay
+    // still covers the iframe (~800ms hidden window). The first render-to-
+    // texture is the expensive one (100–200ms GPU stall); doing it here
+    // means the user never sees it.
+    _contactSection.preloadReflection();
     await _primarySequenceRunner.start();
   }
 

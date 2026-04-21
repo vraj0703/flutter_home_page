@@ -51,6 +51,26 @@ let _scrollAnimating = false
 export function isScrollAnimating() { return _scrollAnimating }
 export function setScrollAnimating(v: boolean) { _scrollAnimating = v }
 
+/* ── Gallery frameloop gate ─────────────────────────
+   When the app transitions to the contact phase, the R3F Canvas is paused
+   to free GPU cycles for Flutter (eliminates cross-engine GPU contention
+   during the 1.6s transition overlap). Canvas subscribes and switches its
+   `frameloop` prop to "never" → no useFrame ticks, no Bloom pass.            */
+
+let _galleryFrameloopActive = true
+let _galleryFrameloopListeners: Array<(active: boolean) => void> = []
+export function isGalleryFrameloopActive() { return _galleryFrameloopActive }
+export function setGalleryFrameloopActive(active: boolean) {
+  if (active === _galleryFrameloopActive) return
+  _galleryFrameloopActive = active
+  _galleryFrameloopListeners.forEach(fn => fn(active))
+}
+export function subscribeGalleryFrameloop(fn: (active: boolean) => void) {
+  _galleryFrameloopListeners.push(fn)
+  fn(_galleryFrameloopActive)
+  return () => { _galleryFrameloopListeners = _galleryFrameloopListeners.filter(f => f !== fn) }
+}
+
 /* ── Navigation event bus ─────────────────────────── */
 
 let _ctaClickListeners: Array<() => void> = []

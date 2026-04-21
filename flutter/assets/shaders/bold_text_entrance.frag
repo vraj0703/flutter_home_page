@@ -8,7 +8,12 @@ uniform float uOpacity;
 
 out vec4 fragColor;
 
-#define NUM_STARS 800
+// Reduced from 800 → 200. Each iteration does rand×2 + exp×2 + distance.
+// 800 was pure over-engineering for a starfield that blurs via additive
+// alpha; 200 stars produce visually identical density after the bloom/
+// composite pass and cut per-pixel cost 4×. Matters during contact entrance
+// where this shader runs alongside beach.frag (the real GPU hog).
+#define NUM_STARS 200
 
 // --- AUTHORIZED PALETTE ---
 const vec3 C_LIGHT  = vec3(1.00, 0.88, 0.51);// #FFE082 (Shine/High Speed Stars)

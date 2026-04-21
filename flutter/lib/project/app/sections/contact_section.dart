@@ -141,12 +141,35 @@ class ContactSection extends Component implements GameSection {
     whiteOverlay.opacity = 0.0;
   }
 
+  /// Primes the reflection texture during the React pre-route window so the
+  /// expensive first render-to-texture doesn't stall mid-entrance. Called
+  /// from _startContactSection() BEFORE the entrance animation begins while
+  /// the iframe is still hidden behind the transition overlay.
+  void preloadReflection() {
+    if (!_orchestratorInitialized) return;
+    // Register reflection targets now (normally done mid-entrance at
+    // progress > 0.5). Targets are already at their final positions; opacity
+    // is zero at this point but positions/geometry are valid.
+    orchestrator.reflection.registerTarget(titleComponent);
+    for (final card in trailComponent.cards) {
+      orchestrator.reflection.registerTarget(card);
+    }
+    // Capture one frame to prime the texture. Temporarily unpause so the
+    // reflection manager will actually render; restore paused state after.
+    final wasPaused = orchestrator.reflection.paused;
+    orchestrator.reflection.paused = false;
+    orchestrator.reflection.updateReflectionTexture();
+    orchestrator.reflection.paused = wasPaused;
+    _reflectionCaptured = true; // skip redundant post-entrance capture
+  }
+
   @override
   Future<void> enter(ScrollSystem scrollSystem) async {
     _isActive = true;
     _entranceProgress = 0.0;
     _ambientLightningTimer = 0.0;
-    _reflectionCaptured = false;
+    // Note: _reflectionCaptured may already be true from preloadReflection()
+    // — don't clobber it here so we don't re-trigger the expensive capture.
     _nextLightningAt = _rng.nextDouble() * 4.0 + 4.0; // first strike 4-8s in
 
     // Pause reflection updates during entrance — prevents GPU blocking
@@ -235,12 +258,16 @@ class ContactSection extends Component implements GameSection {
       _audioSystem.playSpatialThunder(0.15);
     }
 
-    // --- Enable reflection ONCE after entrance completes ---
-    if (_entranceProgress >= 1.0 && !_reflectionCaptured) {
-      _reflectionCaptured = true;
-      // Un-pause reflection and capture once now that content is stable
+    // --- Enable reflection AFTER entrance completes ---
+    // Always unpause once entrance lands so the reflection resumes per-frame
+    // updates. Only fire the expensive updateReflectionTexture() if we didn't
+    // already prime it via preloadReflection() during the pre-route window.
+    if (_entranceProgress >= 1.0 && orchestrator.reflection.paused) {
       orchestrator.reflection.paused = false;
-      orchestrator.reflection.updateReflectionTexture();
+      if (!_reflectionCaptured) {
+        _reflectionCaptured = true;
+        orchestrator.reflection.updateReflectionTexture();
+      }
     }
 
     // --- Title breathe animation when fully visible ---
