@@ -5,6 +5,7 @@ import { FlutterEmbed, type FlutterEmbedHandle } from './components/FlutterEmbed
 import { S3_Gallery } from './components/sections/S3_Gallery'
 import { SectionTransition } from './components/SectionTransition'
 import { Preloader } from './components/preloader/Preloader'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { useAssetLoader } from './hooks/useAssetLoader'
 import { AudioProvider, useAudio } from './audio/AudioProvider'
 import { preloadRadio, startRadioOnGalleryEnter, stopRadio } from './audio/RadioEngine'
@@ -46,15 +47,23 @@ function AppInner() {
     }
   }, [flutterReady, reactReady, preloaderPhase])
 
-  // Start radio + reset scroll when entering React, stop when leaving
-  // Track phase transitions for analytics
+  // Start radio + reset scroll when entering React, stop when leaving.
+  // Analytics: only track phase transitions TRIGGERED by the user, not the
+  // initial 'flutter' mount — that's tracked post-reveal in
+  // handlePreloaderRevealComplete so the event fires when the user actually
+  // sees something, not while still behind the preloader.
+  const firstPhaseEffect = useRef(true)
   useEffect(() => {
+    const isInitialMount = firstPhaseEffect.current
+    firstPhaseEffect.current = false
+
     if (phase === 'react') {
       resetGalleryScroll()
       startRadioOnGalleryEnter()
       trackGalleryEntered()
     } else if (phase === 'flutter') {
-      trackLandingViewed()
+      // Skip analytics on first mount — fired from reveal-complete instead.
+      if (!isInitialMount) trackLandingViewed()
       stopRadio()
     } else if (phase === 'contact') {
       trackContactViewed()
@@ -73,6 +82,10 @@ function AppInner() {
 
   const handlePreloaderRevealComplete = useCallback(() => {
     setPreloaderPhase('done')
+    // Fire landing analytics now — the user is actually seeing the scene
+    // for the first time. Previously this fired on initial mount while the
+    // preloader was still up, inflating impression counts.
+    trackLandingViewed()
   }, [])
 
   const { setSection } = audio
@@ -147,7 +160,12 @@ function AppInner() {
           pointerEvents: phase === 'react' ? 'auto' : 'none',
         }}
       >
-        <S3_Gallery onNavigateToContact={handleNavigateToContact} onNavigateBack={handleNavigateBack} />
+        {/* ErrorBoundary: an uncaught error in R3F (texture load, material,
+            shader) would otherwise crash the entire app. Fallback is a
+            static contact card so the user still has a path forward. */}
+        <ErrorBoundary>
+          <S3_Gallery onNavigateToContact={handleNavigateToContact} onNavigateBack={handleNavigateBack} />
+        </ErrorBoundary>
       </div>
       <SectionTransition active={transitioning} onMidpoint={handleMidpoint} onComplete={handleComplete} duration={1.6} direction={transitionDirection} />
       <Preloader progress={totalProgress} phase={preloaderPhase} onRevealComplete={handlePreloaderRevealComplete} />

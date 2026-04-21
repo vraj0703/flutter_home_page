@@ -37,7 +37,9 @@ export function isKbFocused() { return _kbFocused }
 export function setKbFocused(v: boolean) {
   if (v === _kbFocused) return
   _kbFocused = v
-  _kbFocusListeners.forEach(fn => fn(v))
+  // Snapshot before iterating — a listener that unsubscribes itself would
+  // otherwise mutate the array we're walking.
+  _kbFocusListeners.slice().forEach(fn => fn(v))
 }
 export function subscribeKbFocus(fn: (focused: boolean) => void) {
   _kbFocusListeners.push(fn)
@@ -63,7 +65,7 @@ export function isGalleryFrameloopActive() { return _galleryFrameloopActive }
 export function setGalleryFrameloopActive(active: boolean) {
   if (active === _galleryFrameloopActive) return
   _galleryFrameloopActive = active
-  _galleryFrameloopListeners.forEach(fn => fn(active))
+  _galleryFrameloopListeners.slice().forEach(fn => fn(active))
 }
 export function subscribeGalleryFrameloop(fn: (active: boolean) => void) {
   _galleryFrameloopListeners.push(fn)
@@ -78,35 +80,35 @@ export function subscribeCTAClick(fn: () => void) {
   _ctaClickListeners.push(fn)
   return () => { _ctaClickListeners = _ctaClickListeners.filter(f => f !== fn) }
 }
-export function fireCTAClick() { _ctaClickListeners.forEach(fn => fn()) }
+export function fireCTAClick() { _ctaClickListeners.slice().forEach(fn => fn()) }
 
 let _backClickListeners: Array<() => void> = []
 export function subscribeBackClick(fn: () => void) {
   _backClickListeners.push(fn)
   return () => { _backClickListeners = _backClickListeners.filter(f => f !== fn) }
 }
-export function fireBackClick() { _backClickListeners.forEach(fn => fn()) }
+export function fireBackClick() { _backClickListeners.slice().forEach(fn => fn()) }
 
 let _connectClickListeners: Array<() => void> = []
 export function subscribeConnectClick(fn: () => void) {
   _connectClickListeners.push(fn)
   return () => { _connectClickListeners = _connectClickListeners.filter(f => f !== fn) }
 }
-export function fireConnectClick() { _connectClickListeners.forEach(fn => fn()) }
+export function fireConnectClick() { _connectClickListeners.slice().forEach(fn => fn()) }
 
 let _skillsClickListeners: Array<() => void> = []
 export function subscribeSkillsClick(fn: () => void) {
   _skillsClickListeners.push(fn)
   return () => { _skillsClickListeners = _skillsClickListeners.filter(f => f !== fn) }
 }
-export function fireSkillsClick() { _skillsClickListeners.forEach(fn => fn()) }
+export function fireSkillsClick() { _skillsClickListeners.slice().forEach(fn => fn()) }
 
 let _kbBackClickListeners: Array<() => void> = []
 export function subscribeKBBackClick(fn: () => void) {
   _kbBackClickListeners.push(fn)
   return () => { _kbBackClickListeners = _kbBackClickListeners.filter(f => f !== fn) }
 }
-export function fireKBBackClick() { _kbBackClickListeners.forEach(fn => fn()) }
+export function fireKBBackClick() { _kbBackClickListeners.slice().forEach(fn => fn()) }
 
 /* ── Compound actions ──────────────────────────────── */
 
