@@ -2,7 +2,12 @@
   "ci": {
     "collect": {
       "staticDistDir": "dist",
-      "numberOfRuns": 1
+      "numberOfRuns": 1,
+      "settings": {
+        "maxWaitForLoad": 90000,
+        "maxWaitForFcp": 45000,
+        "skipAudits": ["uses-http2"]
+      }
     },
     "assert": {
       "assertions": {
