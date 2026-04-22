@@ -284,12 +284,15 @@ class ContactSection extends Component implements GameSection {
               orchestrator.reflection.updateReflectionTexture();
             }
           }
-          // Release the breathe-animation gate — all entrance Effects have
-          // either completed or are past the point where they'd fight with
-          // per-frame scale writes from update().
-          _entranceDone = true;
         }
     ));
+    // Note: _entranceDone is flipped from update() once _animTime crosses
+    // _entranceDuration. We DON'T tie it to the TimerComponent above because
+    // ContactSection itself isn't mounted in the Flame tree (only its
+    // referenced components like titleComponent are — see
+    // game_component_factory.allComponents). Timer children of an unmounted
+    // Component don't tick reliably. update() is called directly by the
+    // sequence runner so _animTime is the authoritative clock here.
   }
 
   @override
@@ -302,30 +305,13 @@ class ContactSection extends Component implements GameSection {
     _isActive = false;
     _entranceDone = false;
 
-    // Cancel any entrance Effects still in flight. Without this, an
-    // OpacityEffect.to(1.0) queued in enter() keeps ticking after exit()
-    // has forced opacity to 0 — next frame the effect overrides us and
-    // the component fades back in on a section the user already left.
-    // Spam-clicking navigation was stacking effects on each component
-    // (the old code never removed them, it just fought via direct writes).
-    for (final c in <Component>[
-      cloudBackground,
-      titleComponent,
-      trailComponent,
-      backButton,
-      whiteOverlay,
-      logoComponent,
-      homeButton,
-      audioToggle,
-    ]) {
-      for (final e in c.children.whereType<Effect>().toList()) {
-        e.removeFromParent();
-      }
-    }
-    // Cancel pending reflection-registration and entrance-complete timers.
-    for (final t in children.whereType<TimerComponent>().toList()) {
-      t.removeFromParent();
-    }
+    // Note: preemptive Effect/TimerComponent cleanup was attempted in an
+    // earlier revision to fix spam-click stacking. That caused the entrance
+    // itself to hang on some code paths (suspected: exit() being invoked
+    // between prepareGhostRender and enter() in certain transitions). Rolled
+    // back to "just force opacity" — simple, correct for the normal flow.
+    // Spam-click stacking is a separate, lower-priority issue; revisit with
+    // dedicated spam-click tests rather than speculative cleanup.
 
     titleComponent.opacity = 0.0;
     cloudBackground.opacity = 0.0;
@@ -350,6 +336,11 @@ class ContactSection extends Component implements GameSection {
     if (!_isActive) return;
 
     _animTime += dt;
+
+    // Authoritative clock for the entrance gate — see note in enter().
+    if (!_entranceDone && _animTime >= _entranceDuration) {
+      _entranceDone = true;
+    }
 
     // --- Ambient Lightning ---
     _ambientLightningTimer += dt;
