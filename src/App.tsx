@@ -159,7 +159,7 @@ function AppInner() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#C4B496', position: 'relative', overflow: 'hidden', userSelect: 'none' }}>
-      <FlutterEmbed ref={flutterRef} src="/flutter/index.html" onReady={handleFlutterReady} onHandoff={handleFlutterHandoff} onLoadingProgress={handleFlutterLoadingProgress} />
+      <FlutterEmbed ref={flutterRef} src={`/flutter/index.html?v=${__BUILD_ID__}`} onReady={handleFlutterReady} onHandoff={handleFlutterHandoff} onLoadingProgress={handleFlutterLoadingProgress} />
       {/* Gallery wrapper. Opacity + pointerEvents gate visibility/interaction.
           `display: none` was tried as a belt-and-suspenders paint-release, but
           it broke Canvas lifecycle: when the wrapper flipped back to `display:

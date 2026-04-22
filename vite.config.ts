@@ -4,7 +4,19 @@ import tailwindcss from '@tailwindcss/vite'
 import { createReadStream, existsSync, statSync } from 'fs'
 import { resolve } from 'path'
 
+// Build-time constant injected into src/App.tsx's iframe src:
+//   <FlutterEmbed src={`/flutter/index.html?v=${__BUILD_ID__}`} ... />
+// Cache-busts the iframe request whenever we deploy — otherwise browsers
+// that cached the pre-fix /flutter/index.html (the React fallback) under
+// the previous 3600s max-age would keep serving the stale response for up
+// to an hour even after we shortened Cache-Control. A new string per build
+// forces a new URL, which forces a fresh request.
+const BUILD_ID = Date.now().toString(36)
+
 export default defineConfig({
+  define: {
+    __BUILD_ID__: JSON.stringify(BUILD_ID),
+  },
   plugins: [
     react(),
     tailwindcss(),

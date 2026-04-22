@@ -29,6 +29,31 @@
         onError: function() {},
       };
       window._registerFlutterCallback = function() {};
+
+      // ── Stale service worker cleanup ───────────────────────────────
+      // The pre-fix deploy shipped without public/flutter/index.html, so
+      // Firebase's `**` rewrite served React's index.html in response to
+      // the iframe's /flutter/index.html request. Users who visited
+      // during that window got Flutter's SW installed with the WRONG
+      // cached response — next visit, SW serves the cached React bundle,
+      // iframe runs React recursively, preloader hangs at 20%. Force-
+      // unregister the Flutter SW and clear its caches on every page
+      // load until we're confident the stale population is gone.
+      // Safe to remove this block a week or two after deploy lands.
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          regs.forEach(function(r) {
+            if (r.scope.indexOf('/flutter/') !== -1) r.unregister();
+          });
+        }).catch(function() {});
+        if ('caches' in window) {
+          caches.keys().then(function(keys) {
+            keys.forEach(function(k) {
+              if (k.indexOf('flutter') !== -1) caches.delete(k);
+            });
+          }).catch(function() {});
+        }
+      }
     </script>
   </head>
   <body>
