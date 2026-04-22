@@ -63,6 +63,11 @@ flutter/.flutter-plugins-dependencies
 # Flutter web build output (generated — rebuild with flutter build web)
 public/flutter/
 
+# Firebase CLI cache — regenerated on every `firebase deploy`; no value in git.
+.firebase/
+firebase-debug.log*
+firebase-debug.*.log*
+
 # Agent Artifacts
 .agent/
 .claude/

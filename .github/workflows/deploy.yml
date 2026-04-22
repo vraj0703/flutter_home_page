@@ -1,5 +1,13 @@
 name: Build, Lighthouse & Deploy
 
+# Hybrid React + Flutter portfolio site.
+# - build job: installs Flutter SDK + Node, runs `npm run build:all`
+#   (flutter web build → copy into public/flutter/ → vite build → dist/),
+#   runs Lighthouse CI against the produced dist/, uploads dist/ as an
+#   artifact so deploy doesn't have to rebuild.
+# - deploy job: on push to main, downloads the dist/ artifact and ships
+#   to Firebase Hosting's `live` channel. Skipped on pull_request runs.
+
 on:
   push:
     branches: [main]
@@ -17,11 +25,37 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Flutter SDK — required because the landing + contact sections are
+      # compiled Flame/Flutter-web WASM, and public/flutter/ is gitignored
+      # (regenerated on every build). Without this step, `npm run build:all`
+      # fails at the `flutter build web` stage. Pin matches the version I
+      # built against locally; bump with your local when you upgrade.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.3'
+          channel: stable
+          cache: true
+
       - run: npm ci
 
-      - run: npm run build
+      # build:all = flutter:build (WASM release) → flutter:copy (rsync into
+      # public/flutter/ excluding index.html) → vite build (tsc + vite).
+      # Ubuntu runners ship with rsync, so flutter:copy works as-is.
+      - run: npm run build:all
 
-      # Lighthouse CI — fail if Performance < 70
+      # Share the built dist/ with the deploy job so we don't rebuild
+      # Flutter (≈80s) twice per workflow run.
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+          if-no-files-found: error
+
+      # Lighthouse CI — runs against the static dist/ produced above.
+      # Thresholds are in .lighthouserc.json; currently all `warn` so it
+      # won't block deploys, just surfaces regressions in the PR view.
       - name: Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
         with:
@@ -30,18 +64,22 @@ jobs:
 
   deploy:
     needs: build
+    # Only deploy on push to main — skip for pull requests (those only run
+    # build + Lighthouse for validation).
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
+      # Checkout is needed for firebase.json / .firebaserc — the Firebase
+      # action uploads only the public directory but reads config from repo.
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      # Reuse the already-built dist/ from the build job instead of running
+      # Flutter + Vite again. Saves ≈2 min per deploy.
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
         with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-      - run: npm run build
+          name: dist
+          path: dist
 
       - name: Deploy to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -50,5 +88,3 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
           projectId: vishal-raj-space-firebase-home
-        env:
-          FIREBASE_CLI_EXPERIMENTS: webframeworks
