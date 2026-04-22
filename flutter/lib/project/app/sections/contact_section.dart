@@ -68,6 +68,13 @@ class ContactSection extends Component implements GameSection {
   /// Whether the first reflection capture has been done post-entrance
   bool _reflectionCaptured = false;
 
+  /// Flips true when the entrance Effects have landed. Gates the breathe
+  /// animation so it doesn't fight ScaleEffect during the first 1.2s of
+  /// entry (the ScaleEffect wins by Flame's update ordering, but writing
+  /// titleComponent.scale here every frame is wasted work and a fragility
+  /// hazard — one reorder of children and the fight becomes visible).
+  bool _entranceDone = false;
+
   static const double _entranceDuration = 2.0;
 
   /// Ambient lightning timer
@@ -160,7 +167,9 @@ class ContactSection extends Component implements GameSection {
   @override
   Future<void> enter(ScrollSystem scrollSystem) async {
     _isActive = true;
+    _entranceDone = false;
     _ambientLightningTimer = 0.0;
+    _animTime = 0.0;
     _nextLightningAt = _rng.nextDouble() * 4.0 + 4.0;
 
     orchestrator.reflection.paused = true;
@@ -275,6 +284,10 @@ class ContactSection extends Component implements GameSection {
               orchestrator.reflection.updateReflectionTexture();
             }
           }
+          // Release the breathe-animation gate — all entrance Effects have
+          // either completed or are past the point where they'd fight with
+          // per-frame scale writes from update().
+          _entranceDone = true;
         }
     ));
   }
@@ -287,6 +300,32 @@ class ContactSection extends Component implements GameSection {
   @override
   Future<void> exit() async {
     _isActive = false;
+    _entranceDone = false;
+
+    // Cancel any entrance Effects still in flight. Without this, an
+    // OpacityEffect.to(1.0) queued in enter() keeps ticking after exit()
+    // has forced opacity to 0 — next frame the effect overrides us and
+    // the component fades back in on a section the user already left.
+    // Spam-clicking navigation was stacking effects on each component
+    // (the old code never removed them, it just fought via direct writes).
+    for (final c in <Component>[
+      cloudBackground,
+      titleComponent,
+      trailComponent,
+      backButton,
+      whiteOverlay,
+      logoComponent,
+      homeButton,
+      audioToggle,
+    ]) {
+      for (final e in c.children.whereType<Effect>().toList()) {
+        e.removeFromParent();
+      }
+    }
+    // Cancel pending reflection-registration and entrance-complete timers.
+    for (final t in children.whereType<TimerComponent>().toList()) {
+      t.removeFromParent();
+    }
 
     titleComponent.opacity = 0.0;
     cloudBackground.opacity = 0.0;
@@ -327,9 +366,15 @@ class ContactSection extends Component implements GameSection {
     }
 
     // --- Title breathe animation ---
-    final breathe = math.sin(_animTime * ContactSectionLayout.breatheFrequency) * ContactSectionLayout.breatheAmplitude;
-    final baseScale = ContactSectionLayout.titleSettleScale;
-    titleComponent.scale = Vector2.all(baseScale + baseScale * breathe);
+    // Only once the entrance ScaleEffect has landed. Before that, the effect
+    // owns scale and the breathe would either fight it (if child-update order
+    // changes) or do visually nothing (current order) — either way, wasted
+    // per-frame writes to a hot Flame property.
+    if (_entranceDone) {
+      final breathe = math.sin(_animTime * ContactSectionLayout.breatheFrequency) * ContactSectionLayout.breatheAmplitude;
+      final baseScale = ContactSectionLayout.titleSettleScale;
+      titleComponent.scale = Vector2.all(baseScale + baseScale * breathe);
+    }
   }
 
   @override

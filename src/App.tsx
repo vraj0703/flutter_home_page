@@ -7,6 +7,7 @@ import { SectionTransition } from './components/SectionTransition'
 import { Preloader } from './components/preloader/Preloader'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useAssetLoader } from './hooks/useAssetLoader'
+import { useReducedMotion } from './hooks/useReducedMotion'
 import { AudioProvider, useAudio } from './audio/AudioProvider'
 import { preloadRadio, startRadioOnGalleryEnter, stopRadio } from './audio/RadioEngine'
 import { resetGalleryScroll, setGalleryFrameloopActive } from './components/three/gallery/galleryStore'
@@ -30,6 +31,15 @@ function AppInner() {
   const [flutterReady, setFlutterReady] = useState(false)
   const { progress: reactProgress, ready: reactReady } = useAssetLoader()
   const [preloaderPhase, setPreloaderPhase] = useState<PreloaderPhase>('loading')
+  const reducedMotion = useReducedMotion()
+
+  // Forward prefers-reduced-motion into Flutter so sections can shorten
+  // elastic/bounce curves. Fires on flutterReady (initial sync) and on
+  // any OS-level change. Safe to send before ready — the bridge queues.
+  useEffect(() => {
+    if (!flutterReady) return
+    flutterBridge.sendReducedMotion(reducedMotion)
+  }, [flutterReady, reducedMotion])
 
   // Flutter is 80% of perceived load, React assets are 20%
   const totalProgress = useMemo(() => {

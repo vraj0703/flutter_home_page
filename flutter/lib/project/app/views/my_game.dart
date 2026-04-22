@@ -104,6 +104,15 @@ class MyGame extends FlameGame
 
   /// Communication port to the host page (iframe or hostElement).
   late final CanvasLifecyclePort _port;
+  /// Gate for _port.send() calls during onLoad — the port is late-final,
+  /// instantiated partway through init; callers before that point must skip.
+  bool _portInitialized = false;
+
+  /// Honours the user's `prefers-reduced-motion` OS setting, forwarded from
+  /// the React host via the `reduced-motion` message. Sections read this
+  /// to shorten elastic/bounce curves.
+  bool _reducedMotion = false;
+  bool get reducedMotion => _reducedMotion;
 
   // Track if we're currently executing a section swap transition
   bool _isSwappingSection = false;
@@ -118,7 +127,28 @@ class MyGame extends FlameGame
       repeat: false,
     );
     _cursorSystem.initialize(size / 2);
+
+    // Fine-grained loading progress. Before this, the React preloader sat at
+    // 0% through the entire onLoad sequence (several seconds on low-end
+    // devices) and only started moving once warmUpAll kicked in. Now we
+    // emit at discrete milestones so the bar feels responsive.
+    // Reserved budget: 0.0 — 0.55 for sync init, 0.55 — 1.0 for warmUpAll.
+    //
+    // Pre-port emits are queued and flushed once _port.listen() is ready —
+    // without the queue the early milestones (0.15, 0.40) were silently
+    // dropped because they fire before the port exists.
+    final pendingProgress = <double>[];
+    void emitProgress(double p) {
+      loadingProgress.value = p;
+      if (_portInitialized) {
+        _port.send({'type': 'flutter-loading', 'progress': p});
+      } else {
+        pendingProgress.add(p);
+      }
+    }
+
     await _audioSystem.initCritical(); // Load only critical audio (logo + title + scroll)
+    emitProgress(0.15);
 
     await _componentFactory.initializeComponents(
       size: size,
@@ -127,6 +157,7 @@ class MyGame extends FlameGame
       backgroundColorCallback: backgroundColor,
       onSectionTap: _handleSectionTap,
     );
+    emitProgress(0.40);
 
     // NOTE: prewarmShaders() removed — it crashes on CanvasKit because
     // shaders have varying uniform counts. Shader compilation happens
@@ -206,13 +237,32 @@ class MyGame extends FlameGame
       _handoffSent = false;
       _startHomeSection();
     });
+    // Reduced-motion signal from React. Sections can read this via
+    // `reducedMotion` getter to shorten elastic/bounce curves.
+    _port.on('reduced-motion', (data) {
+      final enabled = data['enabled'] == true;
+      _reducedMotion = enabled;
+      debugPrint('[Flutter] reduced-motion: $enabled');
+    });
     _port.listen();
+    _portInitialized = true;
+    // Flush everything emitted before the port was alive, in order. React
+    // ignores duplicate or lower-than-current progress values gracefully.
+    for (final p in pendingProgress) {
+      _port.send({'type': 'flutter-loading', 'progress': p});
+    }
+    pendingProgress.clear();
+    emitProgress(0.55);
 
     _primarySequenceRunner
         .warmUpAll(
           onProgress: (progress) {
-            loadingProgress.value = progress;
-            _port.send({'type': 'flutter-loading', 'progress': progress});
+            // Remap warmUpAll's 0 → 1 to our reserved 0.55 → 1.0 slice so
+            // the bar animates through the whole range rather than jumping
+            // back to 0 when warmup starts.
+            final mapped = 0.55 + progress * 0.45;
+            loadingProgress.value = mapped;
+            _port.send({'type': 'flutter-loading', 'progress': mapped});
           },
         )
         .whenComplete(() {
