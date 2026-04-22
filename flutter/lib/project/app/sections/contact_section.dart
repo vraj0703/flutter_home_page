@@ -181,8 +181,15 @@ class ContactSection extends Component implements GameSection {
     playEntrySound();
 
     // 1. Overlay Fade out
+    // NOTE: WhiteOverlayComponent doesn't mix in HasPaint — it manages its
+    // own `double opacity` field via a custom render(). Flame 1.34+ requires
+    // HasPaint for OpacityEffect (via the OpacityProvider interface), so we
+    // drive opacity through CustomFloatEffect writing the field directly.
+    // Same pattern below for cloudBackground (BeachBackgroundComponent).
     whiteOverlay.opacity = 1.0;
-    whiteOverlay.add(OpacityEffect.to(0.0, EffectController(duration: 0.6)));
+    whiteOverlay.add(CustomFloatEffect(1.0, 0.0, (val) {
+      whiteOverlay.opacity = val;
+    }, EffectController(duration: 0.6)));
 
     // 2. Background Entry
     cloudBackground.opacity = 0.0;
@@ -190,7 +197,9 @@ class ContactSection extends Component implements GameSection {
     cloudBackground.position = Vector2(-(screenSize.x * ContactSectionLayout.backgroundOverscanMargin), 0.0);
     cloudBackground.setWaterLevel(screenSize.y * ContactSectionLayout.waterLevelRatio);
 
-    cloudBackground.add(OpacityEffect.to(1.0, EffectController(duration: 0.8, curve: Curves.easeOutCubic)));
+    cloudBackground.add(CustomFloatEffect(0.0, 1.0, (val) {
+      cloudBackground.opacity = val;
+    }, EffectController(duration: 0.8, curve: Curves.easeOutCubic)));
     cloudBackground.add(MoveEffect.to(
         Vector2(-(screenSize.x * ContactSectionLayout.backgroundOverscanMargin), -ContactSectionLayout.backgroundYShift),
         EffectController(duration: 0.8, curve: Curves.easeOutCubic)
