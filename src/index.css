@@ -243,3 +243,10 @@ div[style*="overflow"] {
 div[style*="overflow"]::-webkit-scrollbar {
   display: none;
 }
+
+/* Preloader: layer-promotion hint applied only during the reveal animation
+   so the browser doesn't keep these elements on the compositor for the
+   entire loading phase. Toggled via a className prop on the Preloader. */
+.preloader-animatable {
+  will-change: transform, opacity, filter;
+}

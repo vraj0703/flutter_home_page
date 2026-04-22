@@ -23,15 +23,34 @@ const DEFERRED_AUDIO: Record<string, string> = {
   enterSound: '/audio/enter_sound.mp3',
 }
 
+/**
+ * CSS-declared fonts that DOM text uses. Checked via `document.fonts.load()`
+ * which resolves once the browser has registered the @font-face and fetched
+ * the woff/ttf. All declarations live in src/index.css.
+ */
 const FONT_CHECKS = [
   '400 1em ModrntUrban',
   '400 1em InconsolataNerd',
   '400 1em Poseidon',
 ]
 
+/**
+ * Scene fonts loaded by drei's <Text font="..."/> via troika-text. These
+ * bypass CSS entirely and fetch the URL directly. Preloading them here just
+ * warms the HTTP cache so the gallery doesn't show a pop-in on first paint.
+ */
+const SCENE_FONT_URLS = [
+  '/fonts/chlakh-demo.ttf',
+  '/fonts/lifestyle.ttf',
+  '/fonts/modrnt_urban.otf',
+  '/fonts/inconsolata_nerd_mono_regular.ttf',
+  '/fonts/poseidon.otf',
+]
+
 // Weights sum to 1.0. The old WebGL bucket (20%) was removed — it resolved
 // synchronously and was never a real gate. Redistributed: fonts 30%,
-// essential audio 50%, textures 20%.
+// essential audio 50%, textures 20%. Inside the fonts bucket, CSS fonts and
+// scene fonts contribute 50/50.
 const W = { fonts: 0.3, audio: 0.5, textures: 0.2 }
 
 export interface AssetLoaderResult {
@@ -56,20 +75,43 @@ export function useAssetLoader(): AssetLoaderResult {
     if (started.current) return
     started.current = true
 
-    const cat = { fonts: 0, audio: 0, textures: 0 }
+    const cat = { cssFonts: 0, sceneFonts: 0, audio: 0, textures: 0 }
 
     function updateProgress() {
-      const p = cat.fonts * W.fonts + cat.audio * W.audio + cat.textures * W.textures
+      // CSS fonts and scene fonts each contribute 50% of the fonts bucket.
+      const fontsProgress = (cat.cssFonts + cat.sceneFonts) / 2
+      const p = fontsProgress * W.fonts + cat.audio * W.audio + cat.textures * W.textures
       setProgress(Math.min(p, 1))
     }
 
-    // --- Fonts (30%) ---
-    const fontPromise = Promise.allSettled(
-      FONT_CHECKS.map((f) => document.fonts.load(f))
-    ).then(() => {
-      cat.fonts = 1
-      updateProgress()
-    })
+    // --- CSS fonts (15%, half of fonts bucket) ---
+    // `document.fonts.ready` resolves once the browser has registered every
+    // @font-face declaration from stylesheets — this closes the race where a
+    // fresh page fires `document.fonts.load(...)` before the CSS has been
+    // parsed. After that, we force-load each specific font so the check is
+    // deterministic even if no DOM element currently uses it.
+    const cssFontPromise = document.fonts.ready
+      .then(() => Promise.allSettled(FONT_CHECKS.map((f) => document.fonts.load(f))))
+      .then(() => {
+        cat.cssFonts = 1
+        updateProgress()
+      })
+
+    // --- Scene fonts (15%, half of fonts bucket) ---
+    // Drei's <Text font="..."> loads the URL directly via troika-text. We
+    // warm the HTTP cache here so the first gallery paint doesn't show a
+    // font pop-in on the back wall, testimonial cards, or threshold cue.
+    const perSceneFont = 1 / SCENE_FONT_URLS.length
+    const sceneFontPromise = Promise.allSettled(
+      SCENE_FONT_URLS.map((url) =>
+        fetch(url, { cache: 'force-cache' })
+          .then((r) => (r.ok ? r.blob() : null))
+          .finally(() => {
+            cat.sceneFonts = Math.min(cat.sceneFonts + perSceneFont, 1)
+            updateProgress()
+          })
+      )
+    )
 
     // --- Essential audio (50%) — gates ready ---
     const essentialKeys = Object.keys(ESSENTIAL_AUDIO)
@@ -125,8 +167,9 @@ export function useAssetLoader(): AssetLoaderResult {
 
     // Wait for all essential buckets, then ready. No artificial delay — if
     // the bar is at 100% we don't pad it before the reveal.
-    Promise.allSettled([fontPromise, audioPromise, texturePromise]).then(() => {
-      cat.fonts = 1
+    Promise.allSettled([cssFontPromise, sceneFontPromise, audioPromise, texturePromise]).then(() => {
+      cat.cssFonts = 1
+      cat.sceneFonts = 1
       cat.audio = 1
       cat.textures = 1
       setProgress(1)

@@ -91,6 +91,14 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
 
   if (phase === 'done') return null
 
+  // Layer-promotion hint. Applied only during the reveal animation — during
+  // loading, the GSAP progress tween is light enough that keeping the three
+  // elements permanently on the compositor wastes memory on low-end phones.
+  // The @font-face declaration for Broadway lives in src/index.css; it used
+  // to be duplicated here as an inline <style>, which meant any page that
+  // didn't mount the Preloader was missing Broadway.
+  const animatableClass = phase === 'revealing' ? 'preloader-animatable' : ''
+
   return (
     <div
       ref={containerRef}
@@ -113,29 +121,31 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
         {/* Aura glow */}
         <div
           ref={glowRef}
+          className={animatableClass}
           style={{
             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -55%) scale(1)',
             width: 'min(22vw, 340px)', height: 'min(22vw, 340px)', borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(200, 164, 92, 0.5) 0%, rgba(200, 164, 92, 0.1) 50%, transparent 70%)',
-            filter: 'blur(40px)', opacity: 0, pointerEvents: 'none', willChange: 'transform, opacity, filter',
+            filter: 'blur(40px)', opacity: 0, pointerEvents: 'none',
           }}
         />
 
         {/* Logo */}
         <img
           ref={logoRef}
+          className={animatableClass}
           src="/images/logo.png"
           alt="V"
           style={{
             width: 'min(22vw, 340px)', height: 'auto', aspectRatio: '175 / 150', objectFit: 'contain',
             filter: 'invert(1) drop-shadow(0 0 0px rgba(200, 164, 92, 0))', opacity: 0.95,
-            userSelect: 'none', pointerEvents: 'none', willChange: 'transform, filter, opacity',
+            userSelect: 'none', pointerEvents: 'none',
           }}
           draggable={false}
         />
 
         {/* Loading text */}
-        <div ref={textRef} style={{ width: 'min(22vw, 340px)', marginTop: '20px', textAlign: 'right', willChange: 'opacity, transform' }}>
+        <div ref={textRef} className={animatableClass} style={{ width: 'min(22vw, 340px)', marginTop: '20px', textAlign: 'right' }}>
           <span
             ref={textSpanRef}
             style={{ fontFamily: 'Broadway, serif', fontSize: '14px', letterSpacing: '2px', color: 'rgba(255, 255, 255, 0.35)' }}
@@ -144,14 +154,6 @@ export function Preloader({ progress, phase, onRevealComplete }: PreloaderProps)
           </span>
         </div>
       </div>
-
-      <style>{`
-        @font-face {
-          font-family: 'Broadway';
-          src: url('/fonts/broadway.ttf') format('truetype');
-          font-weight: normal; font-style: normal; font-display: swap;
-        }
-      `}</style>
     </div>
   )
 }
