@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { SKILLS, ALL_SKILLS, type Skill } from '../../config/skills'
 import { getAudioEngine } from '../../audio'
 import { isKbVisible } from './gallery/galleryStore'
+import { bootState, BOOT_DURATION, BOOT_FLASH_DURATION } from './gallery/keyboardStore'
 
 /* ── Keyboard dimensions ──────────────────────────────────── */
 const KEY_UNIT = 0.9
@@ -15,17 +16,13 @@ const BOARD_PAD = 0.5
 const BOARD_H = 0.18
 const ROW_STAGGER = [0, 0.15, 0.3, 0.1]
 
-/* ── Boot-up state (module-level for cross-component access) ── */
-let bootPhase = 0       // 0 = dark/dormant, 1 = fully booted
-let bootStartTime = -1  // -1 = not started
-const BOOT_DURATION = 1.5
-
-/** Call this to trigger the boot-up sequence */
-export function resetBoot() {
-  bootPhase = 0
-  bootStartTime = -1 // will be set on first frame
-  bootFlashTime = -1
-}
+/* ── Boot state ────────────────────────────────────────────
+   Moved out of module-level let bindings into ./gallery/keyboardStore so
+   the state file-of-record is explicit. Consumers read/write bootState.*
+   directly from their useFrame callbacks — per-frame getter calls would
+   be wasted overhead for a mutable cache. CameraRig imports resetBoot
+   from the store directly; this file no longer re-exports it.
+*/
 
 function backOut(t: number): number {
   const s = 1.70158
@@ -40,10 +37,6 @@ const ROW_TINTS: [number, number, number][] = [
   [0.6, 0.35, 0.1],    // Row 2 Tools: orange
   [0.4, 0.15, 0.55],   // Row 3 AI/Platforms: purple
 ]
-
-/* ── Boot flash state ────────────────────────────────────── */
-let bootFlashTime = -1
-const BOOT_FLASH_DURATION = 0.35
 
 /* ── RGB wave: sweeps diagonally across the keyboard ──────── */
 function rgbWave(t: number, x: number, z: number): [number, number, number] {
@@ -91,12 +84,12 @@ function Keycap({ skill, position, bootDelay, rowIdx }: {
     const [r, g, b] = rgbWave(t, position[0], position[2])
 
     // Power-on: each key lights up based on boot delay
-    const localBoot = Math.max(0, Math.min(1, (bootPhase * BOOT_DURATION - bootDelay) / 0.3))
+    const localBoot = Math.max(0, Math.min(1, (bootState.phase * BOOT_DURATION - bootDelay) / 0.3))
 
     // Boot flash: bright pulse when wave completes
     let flashMult = 0
-    if (bootFlashTime > 0) {
-      const flashElapsed = t - bootFlashTime
+    if (bootState.flashTime > 0) {
+      const flashElapsed = t - bootState.flashTime
       if (flashElapsed >= 0 && flashElapsed < BOOT_FLASH_DURATION) {
         flashMult = 1.0 - (flashElapsed / BOOT_FLASH_DURATION)
         flashMult = flashMult * flashMult // quadratic falloff
@@ -256,7 +249,7 @@ function Underglow({ width, depth }: { width: number; depth: number }) {
     const mat = ref.current.material as THREE.MeshBasicMaterial
     mat.color.setRGB(r, g, b)
     // Fade in with boot phase
-    const bootOpacity = Math.max(0, (bootPhase - 0.3) / 0.7) // starts fading in at 30% boot
+    const bootOpacity = Math.max(0, (bootState.phase - 0.3) / 0.7) // starts fading in at 30% boot
     mat.opacity = 0.15 * bootOpacity
   })
 
@@ -336,21 +329,21 @@ export function Keyboard() {
 
   const flashTriggered = useRef(false)
 
-  // Boot-up animation: ramp bootPhase 0→1
+  // Boot-up animation: ramp bootState.phase 0→1
   useFrame(({ clock }) => {
-    if (bootStartTime < 0) bootStartTime = clock.elapsedTime
-    const elapsed = clock.elapsedTime - bootStartTime
-    bootPhase = Math.min(1, elapsed / BOOT_DURATION)
+    if (bootState.startTime < 0) bootState.startTime = clock.elapsedTime
+    const elapsed = clock.elapsedTime - bootState.startTime
+    bootState.phase = Math.min(1, elapsed / BOOT_DURATION)
 
     // Trigger flash when boot wave completes
-    if (bootPhase >= 0.95 && !flashTriggered.current) {
+    if (bootState.phase >= 0.95 && !flashTriggered.current) {
       flashTriggered.current = true
-      bootFlashTime = clock.elapsedTime
+      bootState.flashTime = clock.elapsedTime
     }
 
     // Animate group position/rotation with backOut easing
     if (groupRef.current) {
-      const t = backOut(Math.min(1, bootPhase))
+      const t = backOut(Math.min(1, bootState.phase))
       groupRef.current.position.lerpVectors(START_POS, FINAL_POS, t)
       groupRef.current.rotation.x = START_ROT.x + (FINAL_ROT.x - START_ROT.x) * t
     }

@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useScroll } from '@react-three/drei'
 import * as THREE from 'three'
 import { LEFT_PROJECTS } from '../../../../config/projects'
-import { resetBoot } from '../../KeyboardScene'
+import { resetBoot } from '../keyboardStore'
 import { getAudioEngine } from '../../../../audio'
 
 import {
@@ -311,9 +311,16 @@ export function CameraRig() {
     // Subtle organic camera roll while in the corridor — gives the walk a
     // breathing, hand-held feel. Skipped during orbit so it never
     // fights the scripted look targets.
+    //
+    // Previously: `camera.rotation.z += ...` — relied on `lookAt()` above
+    // zeroing rotation.z each frame to prevent accumulation. That's a
+    // brittle invariant that breaks the moment anyone inserts code between
+    // lookAt and here. `camera.rotateZ` applies a quaternion rotation that
+    // composes correctly regardless of the prior rotation state.
     if (!faFinal && p < 0.58) {
       const t = clock.elapsedTime
-      camera.rotation.z += Math.sin(t * 0.5) * 0.002 + Math.sin(t * 0.3) * 0.001
+      const roll = Math.sin(t * 0.5) * 0.002 + Math.sin(t * 0.3) * 0.001
+      camera.rotateZ(roll)
     }
   })
   return null
