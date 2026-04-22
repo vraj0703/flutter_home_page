@@ -4,6 +4,7 @@ import { Environment, Text, OrbitControls, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 import { SKILLS, ALL_SKILLS, type Skill } from '../../config/skills'
 import { getAudioEngine } from '../../audio'
+import { isKbVisible } from './gallery/galleryStore'
 
 /* ── Keyboard dimensions ──────────────────────────────────── */
 const KEY_UNIT = 0.9
@@ -82,6 +83,9 @@ function Keycap({ skill, position, bootDelay, rowIdx }: {
 
   useFrame(({ clock }, delta) => {
     if (!capRef.current) return
+    // Early-out while the keyboard is parked below the scene. Skips per-keycap
+    // trig (rgbWave, hover spring) × 27 keys that the user can't see anyway.
+    if (!isKbVisible()) return
     const dt = Math.min(delta, 0.05)
     const t = clock.elapsedTime
     const [r, g, b] = rgbWave(t, position[0], position[2])
@@ -207,26 +211,24 @@ function BoardCase({ width, depth }: { width: number; depth: number }) {
   const d = depth + BOARD_PAD * 2
   return (
     <group position={[0, -KEY_H / 2 - BOARD_H / 2 + 0.02, 0]}>
-      {/* Main board body — diamond crystal slab */}
+      {/* Main board body — downgraded from MeshPhysical to MeshStandard.
+          Clearcoat was invisible under the keycaps anyway; reflectivity is
+          implicit in metalness. Saves ~3× the fragment-shader cost. */}
       <RoundedBox args={[w, BOARD_H, d]} radius={0.1} smoothness={4} receiveShadow>
-        <meshPhysicalMaterial
+        <meshStandardMaterial
           color="#8A7040"
           roughness={0.2}
           metalness={0.7}
-          clearcoat={1.0}
-          clearcoatRoughness={0.05}
           envMapIntensity={1.5}
-          reflectivity={0.8}
         />
       </RoundedBox>
-      {/* Top plate — crystal edge with rainbow iridescence */}
+      {/* Top plate — same material downgrade. Visible only as a thin rim;
+          the clearcoat pass had no perceptible contribution there. */}
       <RoundedBox args={[w + 0.04, 0.03, d + 0.04]} radius={0.08} smoothness={3} position={[0, BOARD_H / 2, 0]}>
-        <meshPhysicalMaterial
+        <meshStandardMaterial
           color="#A08050"
           roughness={0.15}
           metalness={0.8}
-          clearcoat={1.0}
-          clearcoatRoughness={0.02}
           envMapIntensity={2.0}
         />
       </RoundedBox>
@@ -247,6 +249,8 @@ function Underglow({ width, depth }: { width: number; depth: number }) {
 
   useFrame(({ clock }) => {
     if (!ref.current) return
+    // Skip RGB wave recompute while the keyboard is hidden below scene.
+    if (!isKbVisible()) return
     const t = clock.elapsedTime
     const [r, g, b] = rgbWave(t, 0, 0)
     const mat = ref.current.material as THREE.MeshBasicMaterial
@@ -288,6 +292,9 @@ export function Particles({ count = 40 }: { count?: number }) {
 
   useFrame(({ clock }) => {
     if (!ref.current) return
+    // No point updating 40 instance matrices while the particles cluster
+    // sits below the floor with the rest of the keyboard room.
+    if (!isKbVisible()) return
     const t = clock.elapsedTime
     data.forEach((p, i) => {
       dummy.position.set(

@@ -28,6 +28,21 @@ export function getFocusState() { return { index: _focusProjectIndex, active: _f
 export function setClickTarget(i: number) { _focusProjectIndex = i; _focusActive = true }
 export function clearFocus() { _focusActive = false; _focusProjectIndex = -1 }
 
+/* ── Keyboard visibility state ─────────────────────
+   Distinct from `_kbFocused` (user is orbiting it). `_kbVisible` tracks
+   whether the keyboard is in its reveal position at all. During preload
+   the keyboard is parked at y=-500 and frustum-culled — no pixels drawn,
+   but every Keycap/Particles/Underglow useFrame would still tick on each
+   Canvas frame. Keycaps, Particles, and Underglow read this flag at the
+   top of their useFrame and early-return when false, so we don't pay CPU
+   for animation the user can't see.
+   Default: true — standalone keyboard mounts (e.g. a hypothetical
+   KeyboardScene in isolation) keep animating without needing to opt in. */
+
+let _kbVisible = true
+export function isKbVisible() { return _kbVisible }
+export function setKbVisible(v: boolean) { _kbVisible = v }
+
 /* ── Keyboard focus state ──────────────────────────── */
 
 let _kbFocused = false

@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Keyboard as SkillKeyboard } from '../KeyboardScene'
-import { getScrollProgress, isKbFocused } from './galleryStore'
+import { getScrollProgress, isKbFocused, setKbVisible } from './galleryStore'
 import { damp } from './utils'
 
 /* ── Keyboard orientation ───────────────────────────
@@ -16,6 +16,13 @@ const KB_REST_ROT = Math.PI
 export function FloatingKB({ position }: { position: [number, number, number] }) {
   const outerRef = useRef<THREE.Group>(null)
   const [phase, setPhase] = useState<'preloading' | 'visible'>('preloading')
+
+  // Publish visibility to the store so Keycap/Particles/Underglow useFrames
+  // can early-return while the keyboard is parked at y=-500.
+  useEffect(() => {
+    setKbVisible(phase === 'visible')
+    return () => setKbVisible(false)
+  }, [phase])
 
   useFrame(({ clock }, delta) => {
     const p = getScrollProgress()

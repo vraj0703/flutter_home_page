@@ -12,7 +12,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { ScrollControls } from '@react-three/drei'
+import { ScrollControls, AdaptiveDpr } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import * as THREE from 'three'
 
@@ -50,12 +50,22 @@ export function GalleryScene() {
   return (
     <Canvas
       frameloop={frameloopActive ? 'always' : 'never'}
-      dpr={[1, 2]}
+      // DPR cap lowered from 2 to 1.5 — on a 2880×1800 retina display that
+      // drops the fragment-shader pixel count by ~43%, which combined with
+      // Bloom's extra pass is the biggest GPU win we can ship cheaply. The
+      // visual difference is imperceptible at the gallery's viewing scale.
+      dpr={[1, 1.5]}
       camera={{ position: [0, 0.3, 3], fov: 65 }}
       gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.6, preserveDrawingBuffer: false, powerPreference: 'high-performance' }}
       style={{ position: 'absolute', inset: 0 }}
       onCreated={({ gl }) => { gl.setClearColor(new THREE.Color('#C4B496'), 1) }}
     >
+      {/* AdaptiveDpr listens to R3F's perf-regression signal and drops DPR
+          when FPS tanks (scroll spam, low-end GPUs). `pixelated` keeps the
+          downscaled canvas sharp via nearest-neighbor instead of the default
+          linear upsample. */}
+      <AdaptiveDpr pixelated />
+
       <color attach="background" args={['#C4B496']} />
       <fog attach="fog" args={['#C4B496', 25, 80]} />
 
