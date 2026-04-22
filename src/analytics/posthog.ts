@@ -13,10 +13,17 @@ const POSTHOG_HOST = 'https://vishalraj.space/ingest'
 
 let initialized = false
 
-/** Initialize PostHog — call once at app startup. Skipped on localhost. */
+/** Initialize PostHog — call once at app startup.
+ *  Only runs on the production custom domain. The CloudFlare Worker proxy
+ *  that forwards /ingest/* to PostHog sets `Access-Control-Allow-Origin` to
+ *  `https://vishalraj.space` specifically — requests from any other origin
+ *  (localhost, *.web.app preview, PR previews) get CORS-blocked, which
+ *  spams the console and retries eat network budget. Gate cleanly here. */
 export function initAnalytics() {
   if (initialized || POSTHOG_KEY.startsWith('__')) return
-  if (window.location.hostname === 'localhost') return // no analytics noise in dev
+  const host = window.location.hostname
+  const isProdDomain = host === 'vishalraj.space' || host === 'www.vishalraj.space'
+  if (!isProdDomain) return
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
     ui_host: 'https://us.posthog.com', // Dashboard links point here, not the proxy

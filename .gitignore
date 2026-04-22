@@ -62,6 +62,14 @@ flutter/.flutter-plugins-dependencies
 
 # Flutter web build output (generated — rebuild with flutter build web)
 public/flutter/
+# ...but DO track the customized index.html entry point. The `flutter:copy`
+# script excludes index.html from the rsync so this file survives rebuilds.
+# Without it tracked, CI deploys lack the Flutter entry point and Firebase's
+# catch-all rewrite serves React's index.html instead — iframe runs React
+# recursively, Flutter never starts, preloader hangs at 20%.
+!public/flutter/
+public/flutter/*
+!public/flutter/index.html
 
 # Firebase CLI cache — regenerated on every `firebase deploy`; no value in git.
 .firebase/
