@@ -1,7 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { FlutterEmbed, type FlutterEmbedHandle } from './components/FlutterEmbed'
-// FlutterHost is ready for iframe elimination — swap after Flutter rebuild
-// import { FlutterHost, type FlutterEmbedHandle } from './components/FlutterHost'
 import { S3_Gallery } from './components/sections/S3_Gallery'
 import { SectionTransition } from './components/SectionTransition'
 import { Preloader } from './components/preloader/Preloader'
@@ -10,7 +8,7 @@ import { useAssetLoader } from './hooks/useAssetLoader'
 import { useReducedMotion } from './hooks/useReducedMotion'
 import { AudioProvider, useAudio } from './audio/AudioProvider'
 import { preloadRadio, startRadioOnGalleryEnter, stopRadio } from './audio/RadioEngine'
-import { resetGalleryScroll, setGalleryFrameloopActive } from './components/three/gallery/galleryStore'
+import { resetGalleryScroll, setGalleryFrameloopActive, setReducedMotion } from './components/three/gallery/galleryStore'
 import { initAnalytics, trackLandingViewed, trackGalleryEntered, trackContactViewed } from './analytics/posthog'
 import { flutterBridge } from './bridge/flutterBridge'
 
@@ -40,6 +38,13 @@ function AppInner() {
     if (!flutterReady) return
     flutterBridge.sendReducedMotion(reducedMotion)
   }, [flutterReady, reducedMotion])
+
+  // Also publish into the gallery store so R3F useFrame callbacks
+  // (camera roll, keycap rgb wave, particle drift) can flatten their
+  // animations. Consumers read via isReducedMotion() inline.
+  useEffect(() => {
+    setReducedMotion(reducedMotion)
+  }, [reducedMotion])
 
   // Flutter is 80% of perceived load, React assets are 20%
   const totalProgress = useMemo(() => {

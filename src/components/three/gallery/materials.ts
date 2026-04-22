@@ -55,10 +55,14 @@ export function useMaterials() {
     artBg: new THREE.MeshBasicMaterial({ color: '#FAF8F2' }),
   }), [])
 
-  // Memory fix: dispose all materials on unmount
+  // Memory fix: dispose materials AND the shared procedural textures on
+  // unmount. Previously only materials were disposed; the wall normal and
+  // roughness CanvasTextures (512² + 256²) leaked on every gallery teardown.
   useEffect(() => {
     return () => {
       Object.values(mats).forEach(m => m.dispose())
+      _wallNormal?.dispose(); _wallNormal = null
+      _wallRoughness?.dispose(); _wallRoughness = null
     }
   }, [mats])
 

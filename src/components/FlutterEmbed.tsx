@@ -1,5 +1,4 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
-import { gsap } from 'gsap'
 import { MOTION } from '../config/motion'
 import { flutterBridge } from '../bridge/flutterBridge'
 
@@ -20,23 +19,39 @@ interface FlutterEmbedProps {
   onLoadingProgress?: (progress: number) => void
 }
 
+// CSS transitions replace GSAP for the fade in/out. The two durations come
+// from MOTION.flutter so the tuning surface is still shared with everything
+// else (SectionTransition etc. still uses GSAP). The ease approximation:
+// `power3.out` ≈ cubic-bezier(0.33, 1, 0.68, 1), which is the canonical
+// "ease-out-cubic" and visually matches the previous GSAP tween within a
+// frame or two.
+const SHOW_TRANSITION = `opacity ${MOTION.flutter.showDuration}s cubic-bezier(0.33, 1, 0.68, 1)`
+const HIDE_TRANSITION = `opacity ${MOTION.flutter.hideDuration}s ease-in`
+
 export const FlutterEmbed = forwardRef<FlutterEmbedHandle, FlutterEmbedProps>(
   ({ src, onReady, onHandoff, onLoadingProgress }, ref) => {
     const iframeRef = useRef<HTMLIFrameElement>(null)
 
     useImperativeHandle(ref, () => ({
       show() {
-        if (!iframeRef.current) return
-        // Pure opacity fade — no y-slide (the flutter frame is already in place)
-        gsap.fromTo(iframeRef.current,
-          { opacity: 0 },
-          { opacity: 1, duration: MOTION.flutter.showDuration, ease: MOTION.ease.enter, onStart: () => { iframeRef.current!.style.pointerEvents = 'auto' } }
-        )
+        const el = iframeRef.current
+        if (!el) return
+        el.style.transition = SHOW_TRANSITION
+        el.style.opacity = '0'
+        // Force a reflow so the 0 opacity takes effect as a starting state
+        // before the transition kicks in. Without this, assigning '0' then
+        // '1' in the same synchronous block coalesces to just '1' with no
+        // animation.
+        void el.offsetHeight
+        el.style.opacity = '1'
+        el.style.pointerEvents = 'auto'
       },
       hide() {
-        if (!iframeRef.current) return
-        iframeRef.current.style.pointerEvents = 'none'
-        gsap.to(iframeRef.current, { opacity: 0, duration: MOTION.flutter.hideDuration })
+        const el = iframeRef.current
+        if (!el) return
+        el.style.transition = HIDE_TRANSITION
+        el.style.pointerEvents = 'none'
+        el.style.opacity = '0'
       },
     }))
 

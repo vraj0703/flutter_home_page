@@ -342,7 +342,6 @@ class ContactSection extends Component implements GameSection {
     orchestrator.reflection.clearTargets();
     orchestrator.holdProgress = 0.0;
 
-    _cleanupContactComponents();
     _resetVisuals();
   }
 
@@ -412,9 +411,6 @@ class ContactSection extends Component implements GameSection {
     audioToggle.opacity = 0.0;
   }
 
-  void _cleanupContactComponents() {
-  }
-
   void navigateBackToReact() {
     if (!_isActive) return;
     _isActive = false;
@@ -423,9 +419,18 @@ class ContactSection extends Component implements GameSection {
       try {
         final msg = <String, String>{'type': 'flutter-handoff'}.jsify();
         web.window.parent?.postMessage(msg, web.window.origin.toJS);
-        debugPrint('[Flutter Contact] postMessage sent: goto-react');
+        assert(() {
+          debugPrint('[Flutter Contact] postMessage sent: goto-react');
+          return true;
+        }());
       } catch (e) {
-        debugPrint('[Flutter Contact] postMessage error: $e');
+        // Dev-only log. In release builds, assert expressions are stripped
+        // so this debugPrint doesn't ship. Previously gated only by kIsWeb
+        // (true in both debug and release) which leaked console noise.
+        assert(() {
+          debugPrint('[Flutter Contact] postMessage error: $e');
+          return true;
+        }());
       }
     }
   }

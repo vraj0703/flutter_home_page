@@ -28,6 +28,17 @@ export function getFocusState() { return { index: _focusProjectIndex, active: _f
 export function setClickTarget(i: number) { _focusProjectIndex = i; _focusActive = true }
 export function clearFocus() { _focusActive = false; _focusProjectIndex = -1 }
 
+/* ── Accessibility: prefers-reduced-motion ─────────
+   Mirror of the OS media query, set from App.tsx via a useReducedMotion
+   hook. Read inside useFrame callbacks that drive non-essential motion
+   (corridor roll, keycap RGB wave, particle drift, camera click-orbit)
+   to skip or flatten the animation when the user asks for less motion.
+   WCAG 2.1 SC 2.3.3. */
+
+let _reducedMotion = false
+export function isReducedMotion() { return _reducedMotion }
+export function setReducedMotion(v: boolean) { _reducedMotion = v }
+
 /* ── Keyboard visibility state ─────────────────────
    Distinct from `_kbFocused` (user is orbiting it). `_kbVisible` tracks
    whether the keyboard is in its reveal position at all. During preload

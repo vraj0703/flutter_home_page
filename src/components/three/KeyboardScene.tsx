@@ -1,10 +1,10 @@
-import { Suspense, useRef, useState, useMemo, useCallback } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { Environment, Text, OrbitControls, RoundedBox } from '@react-three/drei'
+import { useRef, useState, useMemo, useCallback } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { Text, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
-import { SKILLS, ALL_SKILLS, type Skill } from '../../config/skills'
+import { SKILLS, type Skill } from '../../config/skills'
 import { getAudioEngine } from '../../audio'
-import { isKbVisible } from './gallery/galleryStore'
+import { isKbVisible, isReducedMotion } from './gallery/galleryStore'
 import { bootState, BOOT_DURATION, BOOT_FLASH_DURATION } from './gallery/keyboardStore'
 
 /* ── Keyboard dimensions ──────────────────────────────────── */
@@ -81,7 +81,12 @@ function Keycap({ skill, position, bootDelay, rowIdx }: {
     if (!isKbVisible()) return
     const dt = Math.min(delta, 0.05)
     const t = clock.elapsedTime
-    const [r, g, b] = rgbWave(t, position[0], position[2])
+    // Reduced motion: freeze the rgb wave to a static phase. We use t=0
+    // rather than the live clock so every key shares the same deterministic
+    // color with no motion between frames. Hover/press remain active —
+    // those are interaction feedback, not ambient motion.
+    const waveT = isReducedMotion() ? 0 : t
+    const [r, g, b] = rgbWave(waveT, position[0], position[2])
 
     // Power-on: each key lights up based on boot delay
     const localBoot = Math.max(0, Math.min(1, (bootState.phase * BOOT_DURATION - bootDelay) / 0.3))
@@ -244,7 +249,8 @@ function Underglow({ width, depth }: { width: number; depth: number }) {
     if (!ref.current) return
     // Skip RGB wave recompute while the keyboard is hidden below scene.
     if (!isKbVisible()) return
-    const t = clock.elapsedTime
+    // Reduced motion: freeze wave phase (static color, no strobe).
+    const t = isReducedMotion() ? 0 : clock.elapsedTime
     const [r, g, b] = rgbWave(t, 0, 0)
     const mat = ref.current.material as THREE.MeshBasicMaterial
     mat.color.setRGB(r, g, b)
@@ -283,11 +289,31 @@ export function Particles({ count = 40 }: { count?: number }) {
     })),
   [count])
 
+  // Track whether we've painted the reduced-motion static snapshot once.
+  // After one write nothing changes per frame, so subsequent frames skip.
+  const rmSnapshotDone = useRef(false)
+
   useFrame(({ clock }) => {
     if (!ref.current) return
     // No point updating 40 instance matrices while the particles cluster
     // sits below the floor with the rest of the keyboard room.
     if (!isKbVisible()) return
+    // Reduced motion: paint a single static snapshot of all particles at
+    // their base positions, then stop writing — no drift, no waste.
+    if (isReducedMotion()) {
+      if (rmSnapshotDone.current) return
+      data.forEach((p, i) => {
+        dummy.position.set(p.x, p.y, p.z)
+        dummy.scale.setScalar(p.s)
+        dummy.updateMatrix()
+        ref.current!.setMatrixAt(i, dummy.matrix)
+      })
+      ref.current.instanceMatrix.needsUpdate = true
+      rmSnapshotDone.current = true
+      return
+    }
+    // Normal path: drift each particle every frame.
+    rmSnapshotDone.current = false
     const t = clock.elapsedTime
     data.forEach((p, i) => {
       dummy.position.set(
@@ -386,161 +412,11 @@ export function Keyboard() {
   )
 }
 
-/* ── HTML overlays ───────────────────────────────────────── */
-function TitleOverlay() {
-  return (
-    <div style={{
-      position: 'absolute', top: '6%', left: '50%', transform: 'translateX(-50%)',
-      textAlign: 'center', zIndex: 5, pointerEvents: 'none',
-    }}>
-      <h2 style={{
-        fontFamily: 'ModrntUrban, sans-serif', fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
-        fontWeight: 700, color: '#3A3028', letterSpacing: '-0.03em', margin: 0,
-      }}>
-        Tech Stack
-      </h2>
-      <div style={{
-        width: '40px', height: '2px',
-        background: 'linear-gradient(90deg, transparent, #C8A45C, transparent)',
-        margin: '10px auto',
-      }} />
-      <p style={{
-        fontFamily: 'InconsolataNerd, monospace', fontSize: '0.6rem',
-        fontWeight: 300, letterSpacing: '0.2em', color: '#7A7060', margin: 0,
-      }}>
-        {ALL_SKILLS.length} TECHNOLOGIES
-      </p>
-    </div>
-  )
-}
-
-function HintOverlay() {
-  return (
-    <div style={{
-      position: 'absolute', bottom: '4%', left: '50%', transform: 'translateX(-50%)',
-      textAlign: 'center', zIndex: 5, pointerEvents: 'none',
-    }}>
-      <p style={{
-        fontFamily: 'InconsolataNerd, monospace', fontSize: '0.5rem',
-        fontWeight: 300, letterSpacing: '0.15em', color: '#8A7A62',
-      }}>
-        drag to orbit · hover to explore
-      </p>
-    </div>
-  )
-}
-
-/* ── Museum room walls — warm enclosure with texture ──────── */
-function MuseumRoom() {
-  return (
-    <group>
-      {/* Back wall — textured plaster with subtle panel lines */}
-      <mesh position={[0, 2, -8]} receiveShadow>
-        <planeGeometry args={[24, 10]} />
-        <meshStandardMaterial color="#B8A88A" roughness={0.92} metalness={0} />
-      </mesh>
-      {/* Back wall accent strip — horizontal dado rail */}
-      <mesh position={[0, 0.5, -7.98]}>
-        <boxGeometry args={[23.5, 0.08, 0.04]} />
-        <meshStandardMaterial color="#A0906E" roughness={0.6} metalness={0.08} />
-      </mesh>
-      {/* Back wall upper trim */}
-      <mesh position={[0, 4.5, -7.98]}>
-        <boxGeometry args={[23.5, 0.06, 0.04]} />
-        <meshStandardMaterial color="#A0906E" roughness={0.6} metalness={0.08} />
-      </mesh>
-      {/* Left wall */}
-      <mesh position={[-10, 2, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-        <planeGeometry args={[20, 10]} />
-        <meshStandardMaterial color="#B0A080" roughness={0.92} metalness={0} />
-      </mesh>
-      {/* Left wall dado rail */}
-      <mesh position={[-9.96, 0.5, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <boxGeometry args={[19.5, 0.08, 0.04]} />
-        <meshStandardMaterial color="#9A8A6E" roughness={0.6} metalness={0.08} />
-      </mesh>
-      {/* Right wall */}
-      <mesh position={[10, 2, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
-        <planeGeometry args={[20, 10]} />
-        <meshStandardMaterial color="#B0A080" roughness={0.92} metalness={0} />
-      </mesh>
-      {/* Right wall dado rail */}
-      <mesh position={[9.96, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]}>
-        <boxGeometry args={[19.5, 0.08, 0.04]} />
-        <meshStandardMaterial color="#9A8A6E" roughness={0.6} metalness={0.08} />
-      </mesh>
-      {/* Ceiling */}
-      <mesh position={[0, 6, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[24, 20]} />
-        <meshStandardMaterial color="#A09078" roughness={0.9} metalness={0} />
-      </mesh>
-      {/* Floor molding — left */}
-      <mesh position={[-9.96, -0.94, 0]}>
-        <boxGeometry args={[0.08, 0.12, 20]} />
-        <meshStandardMaterial color="#9A8A6E" roughness={0.7} metalness={0.05} />
-      </mesh>
-      {/* Floor molding — right */}
-      <mesh position={[9.96, -0.94, 0]}>
-        <boxGeometry args={[0.08, 0.12, 20]} />
-        <meshStandardMaterial color="#9A8A6E" roughness={0.7} metalness={0.05} />
-      </mesh>
-      {/* Floor molding — back */}
-      <mesh position={[0, -0.94, -7.96]}>
-        <boxGeometry args={[20, 0.12, 0.08]} />
-        <meshStandardMaterial color="#9A8A6E" roughness={0.7} metalness={0.05} />
-      </mesh>
-    </group>
-  )
-}
-
-/* ── Exported scene ───────────────────────────────────────── */
-export function KeyboardScene() {
-  return (
-    <div style={{ position: 'absolute', inset: 0 }}>
-      <TitleOverlay />
-      <HintOverlay />
-
-      <Canvas
-        camera={{ position: [0, 5.5, 7], fov: 42 }}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
-        shadows
-        style={{ position: 'absolute', inset: 0 }}
-      >
-        <color attach="background" args={['#C4B496']} />
-        <fog attach="fog" args={['#B8A88A', 15, 30]} />
-
-        {/* Warm museum lighting */}
-        <ambientLight intensity={0.3} />
-        <hemisphereLight args={['#FFF8E8', '#A09078', 0.3]} />
-        <directionalLight position={[3, 8, 4]} intensity={1.5} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-bias={-0.0005} color="#FFF0D8" />
-        {/* Warm accent lights — matching gallery gold tones */}
-        <pointLight position={[-4, 3, -2]} intensity={0.5} color="#C8A45C" distance={15} decay={2} />
-        <pointLight position={[4, 3, 2]} intensity={0.4} color="#C8A45C" distance={15} decay={2} />
-        {/* Spotlight from above — museum display case light */}
-        <spotLight castShadow position={[0, 5, 2]} angle={0.5} penumbra={0.8} intensity={3} distance={12} decay={2} color="#FFE8C8" shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
-
-        <Environment preset="apartment" />
-
-        {/* Standalone scene — no makeDefault so the gallery's KeyboardOrbit
-            stays the canonical OrbitControls owner if both are ever mounted. */}
-        <OrbitControls
-          enableZoom={false} enablePan={false}
-          minPolarAngle={Math.PI / 8} maxPolarAngle={Math.PI / 2.2}
-          autoRotate={false} dampingFactor={0.05}
-        />
-
-        <Suspense fallback={null}>
-          <Keyboard />
-          <Particles />
-          <MuseumRoom />
-        </Suspense>
-
-        {/* Polished museum floor — warm stone with enhanced reflection */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.0, 0]} receiveShadow>
-          <planeGeometry args={[40, 40]} />
-          <meshPhysicalMaterial color="#C4B496" roughness={0.18} metalness={0.08} reflectivity={0.4} clearcoat={0.3} clearcoatRoughness={0.15} envMapIntensity={1.2} />
-        </mesh>
-      </Canvas>
-    </div>
-  )
-}
+/* ── End of exports ──────────────────────────────────────────
+   Prior versions of this file included a standalone <KeyboardScene />
+   component plus <TitleOverlay>, <HintOverlay>, and <MuseumRoom> — a
+   self-contained preview of the keyboard room. None were ever mounted;
+   the gallery's FloatingKB uses <Keyboard> directly. Deleted 2026-04
+   to cut dead weight. Consumers still reach <Keyboard> and <Particles>
+   via the named exports above.
+*/

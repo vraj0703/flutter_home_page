@@ -14,6 +14,7 @@ import {
   isScrollAnimating, setScrollAnimating,
   subscribeSkillsClick,
   subscribeKBBackClick,
+  isReducedMotion,
 } from '../galleryStore'
 
 import {
@@ -70,6 +71,23 @@ export function CameraRig() {
   // ── Subscribe to Skills click → animate to KB ──
   useEffect(() => {
     return subscribeSkillsClick(() => {
+      // Reduced motion: skip the 2-second orbit choreography, jump directly
+      // to the hero shot. Keyboard boot-up is still reset so the keys still
+      // power on; only the camera swing is suppressed.
+      if (isReducedMotion()) {
+        camera.position.copy(ANIM_D_POS)
+        camera.lookAt(ANIM_D_LOOK)
+        const perspCam = camera as THREE.PerspectiveCamera
+        perspCam.fov = 50
+        perspCam.updateProjectionMatrix()
+        kbFocused.current = true
+        kbSettled.current = true
+        setKbFocused(true)
+        resetBoot()
+        getAudioEngine()?.playBootSweep()
+        return
+      }
+
       const now = performance.now()
       animPhase.current = 'toKB'
       animStart.current = now
@@ -86,6 +104,21 @@ export function CameraRig() {
   // ── Subscribe to KB Back click → animate to testimonial ──
   useEffect(() => {
     return subscribeKBBackClick(() => {
+      // Reduced motion: jump back to testimonial view without the reverse orbit.
+      if (isReducedMotion()) {
+        camera.position.copy(ANIM_A_POS)
+        camera.lookAt(ANIM_A_LOOK)
+        const perspCam = camera as THREE.PerspectiveCamera
+        perspCam.fov = 65
+        perspCam.updateProjectionMatrix()
+        kbFocused.current = false
+        kbSettled.current = false
+        setKbFocused(false)
+        curPos.current.copy(ANIM_A_POS)
+        curLook.current.copy(ANIM_A_LOOK)
+        return
+      }
+
       const now = performance.now()
       animPhase.current = 'toTestimonial'
       animStart.current = now
@@ -310,14 +343,9 @@ export function CameraRig() {
     camera.lookAt(curLook.current)
     // Subtle organic camera roll while in the corridor — gives the walk a
     // breathing, hand-held feel. Skipped during orbit so it never
-    // fights the scripted look targets.
-    //
-    // Previously: `camera.rotation.z += ...` — relied on `lookAt()` above
-    // zeroing rotation.z each frame to prevent accumulation. That's a
-    // brittle invariant that breaks the moment anyone inserts code between
-    // lookAt and here. `camera.rotateZ` applies a quaternion rotation that
-    // composes correctly regardless of the prior rotation state.
-    if (!faFinal && p < 0.58) {
+    // fights the scripted look targets, and skipped entirely when the
+    // user prefers reduced motion (WCAG 2.1 SC 2.3.3).
+    if (!faFinal && p < 0.58 && !isReducedMotion()) {
       const t = clock.elapsedTime
       const roll = Math.sin(t * 0.5) * 0.002 + Math.sin(t * 0.3) * 0.001
       camera.rotateZ(roll)
