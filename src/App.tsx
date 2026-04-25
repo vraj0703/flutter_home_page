@@ -135,10 +135,15 @@ function AppInner() {
       setGalleryFrameloopActive(false)
       flutterBridge.resume()
       flutterBridge.gotoContact()
+      // Re-arm the handoff guard. The bridge's handoffTriggered flag is one-
+      // shot — without resetting, contact's back-to-gallery button (which
+      // also fires flutter-handoff) gets dropped silently.
+      flutterBridge.resetHandoff()
     } else if (targetPhase === 'flutter') {
       setGalleryFrameloopActive(false)
       flutterBridge.resume()
       flutterBridge.gotoHome()
+      flutterBridge.resetHandoff()
     } else if (targetPhase === 'react') {
       // Returning to the gallery — resume R3F rendering.
       setGalleryFrameloopActive(true)

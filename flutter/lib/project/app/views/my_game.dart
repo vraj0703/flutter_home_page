@@ -533,32 +533,39 @@ class MyGame extends FlameGame
     _isSwappingSection = true;
     _audioSystem.stopAll();
 
+    // WhiteOverlayComponent doesn't mix in HasPaint — Flame 1.34+ requires
+    // HasPaint (via OpacityProvider) for OpacityEffect, so we drive opacity
+    // through CustomFloatEffect (defined in contact_section.dart) writing the
+    // field directly. Same pattern as ContactSection.enter().
+    _componentFactory.whiteOverlay.opacity = 0.0;
     _componentFactory.whiteOverlay.add(
-      OpacityEffect.to(
+      CustomFloatEffect(
+        0.0,
         1.0,
+        (val) => _componentFactory.whiteOverlay.opacity = val,
         EffectController(duration: 0.4),
-        onComplete: () {
-          // This runs when the overlay is fully opaque — user sees white
-          _primarySequenceRunner.restoreToSection(0, [_boldTextSection]).then((_) {
-            // Re-wire handoff
-            _setupHandoffHandlers();
+      )..onComplete = () {
+        // This runs when the overlay is fully opaque — user sees white
+        _primarySequenceRunner.restoreToSection(0, [_boldTextSection]).then((_) {
+          // Re-wire handoff
+          _setupHandoffHandlers();
 
-            queuer.queue(event: const SceneEvent.titleLoaded());
-            queuer.queue(event: const SceneEvent.onScroll());
-            queuer.queue(event: const SceneEvent.toggleArrow(true));
-            unblockInput();
+          queuer.queue(event: const SceneEvent.titleLoaded());
+          queuer.queue(event: const SceneEvent.onScroll());
+          queuer.queue(event: const SceneEvent.toggleArrow(true));
+          unblockInput();
 
-            // Fade out
-            _componentFactory.whiteOverlay.add(
-              OpacityEffect.to(
-                0.0,
-                EffectController(duration: 0.4, startDelay: 0.1),
-                onComplete: () => _isSwappingSection = false,
-              ),
-            );
-          });
-        },
-      ),
+          // Fade out
+          _componentFactory.whiteOverlay.add(
+            CustomFloatEffect(
+              1.0,
+              0.0,
+              (val) => _componentFactory.whiteOverlay.opacity = val,
+              EffectController(duration: 0.4, startDelay: 0.1),
+            )..onComplete = () => _isSwappingSection = false,
+          );
+        });
+      },
     );
   }
 
