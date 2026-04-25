@@ -40,7 +40,7 @@
         "destination": "/static/index.html"
       },
       {
-        "source": "**",
+        "source": "**/!(*.*)",
         "destination": "/index.html"
       }
     ]
