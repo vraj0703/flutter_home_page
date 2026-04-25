@@ -56,8 +56,12 @@ jobs:
       # Lighthouse CI — runs against the static dist/ produced above.
       # Thresholds are in .lighthouserc.json; currently all `warn` so it
       # won't block deploys, just surfaces regressions in the PR view.
+      # continue-on-error matches that intent: LHCI runtime errors
+      # (Chrome PROTOCOL_TIMEOUT on the heavy Flutter/WASM page) must
+      # not fail the build job and skip deploy.
       - name: Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
+        continue-on-error: true
         with:
           configPath: .lighthouserc.json
           uploadArtifacts: true
