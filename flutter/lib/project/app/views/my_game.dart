@@ -413,12 +413,18 @@ class MyGame extends FlameGame
       loading: (_, __) {
         _componentFactory.logoComponent.position = gameSize / 2;
         _componentFactory.shadowScene.logoPosition = gameSize / 2;
-        _componentFactory.logoOverlay.position = gameSize / 2;
+        _componentFactory.logoOverlay.position = Vector2(
+          gameSize.x / 2,
+          gameSize.y - GameLayout.logoOverlayBottomMargin,
+        );
       },
       logo: () {
         _componentFactory.logoComponent.position = gameSize / 2;
         _componentFactory.shadowScene.logoPosition = gameSize / 2;
-        _componentFactory.logoOverlay.position = gameSize / 2;
+        _componentFactory.logoOverlay.position = Vector2(
+          gameSize.x / 2,
+          gameSize.y - GameLayout.logoOverlayBottomMargin,
+        );
       },
       orElse: () {},
     );
