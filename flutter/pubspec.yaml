@@ -42,6 +42,11 @@ dependencies:
   vector_math: ^2.2.0
   web: ^1.1.0
   flame_bloc: ^1.12.20
+  # M4 — feature flag visibility for the menu drawer (RAJ-39).
+  # Same package base_app uses; flag defaults must stay in sync until
+  # a shared TOML/JSON config supersedes both apps' init code.
+  my_feature_flags:
+    path: ../../flutter/my_feature_flags
 
 dependency_overrides:
   build_runner: ^2.10.3

@@ -109,6 +109,18 @@ class GameLayout {
   static const double menuMargin = 40.0;
   static const double menuSize = 50.0;
 
+  // --- Menu Drawer (M4) ---
+  static const double drawerWidthDesktop = 320.0;
+  static const double drawerEntryHeight = 72.0; // bumped from 64 to fit label+desc+padding without overflow
+  static const double drawerEntryGap = 8.0;
+  static const double drawerHorizontalPadding = 20.0;
+  static const double drawerVerticalPadding = 24.0;
+  static const double drawerHeaderHeight = 56.0;
+  static const double drawerMobileBreakpoint = 600.0;
+  static const Duration drawerEnterDuration = Duration(milliseconds: 240);
+  static const Duration drawerExitDuration = Duration(milliseconds: 180);
+  static const Duration drawerReducedMotionDuration = Duration(milliseconds: 100);
+
   // --- Orbital Arcs ---
   static const double orbitalArcWidthOuter = 100.0;
 

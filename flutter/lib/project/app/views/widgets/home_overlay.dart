@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_home_page/project/app/bloc/menu_drawer_cubit.dart';
 import 'package:flutter_home_page/project/app/bloc/scene_bloc.dart';
 import 'package:flutter_home_page/project/app/config/game_layout.dart';
 import 'package:flutter_home_page/project/app/config/game_styles.dart';
 
 import 'package:flutter_home_page/project/app/views/widgets/bouncing_arrow.dart';
+import 'package:flutter_home_page/project/app/views/widgets/menu_drawer.dart';
 
 class HomeOverlay extends StatelessWidget {
   final Animation<double> bounceAnimation;
@@ -17,23 +19,27 @@ class HomeOverlay extends StatelessWidget {
       builder: (context, state) {
         return state.maybeWhen(
           orElse: () => SizedBox.shrink(key: ValueKey("home_overlay")),
-          title: () => _buildOverlay(1.0, true),
+          title: () => _buildOverlay(context, 1.0, true),
           active: (uiOpacity, isArrowVisible) =>
-              _buildOverlay(uiOpacity, isArrowVisible),
+              _buildOverlay(context, uiOpacity, isArrowVisible),
         );
       },
     );
   }
 
-  Widget _buildOverlay(double opacity, bool isArrowVisible) {
+  Widget _buildOverlay(BuildContext context, double opacity, bool isArrowVisible) {
     return Stack(
       key: ValueKey("home_overlay_stack"),
       children: [
-        // Top Right: Menu
+        // Top Right: Menu (now tap-routed to open the drawer — RAJ-38)
         Positioned(
           top: GameLayout.menuMargin,
           right: GameLayout.menuMargin,
-          child: _buildMenuCircle(),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => context.read<MenuDrawerCubit>().open(),
+            child: _buildMenuCircle(),
+          ),
         ),
 
         // Bottom: Animated Silver Arrow
@@ -56,11 +62,18 @@ class HomeOverlay extends StatelessWidget {
             ],
           ),
         ),
+
+        // Drawer (renders on top of everything when open — RAJ-38, RAJ-39).
+        // Self-gates on MenuDrawerCubit state, so it's a no-op when closed.
+        const MenuDrawer(),
       ],
     );
   }
 
   Widget _buildMenuCircle() {
+    // Visual unchanged — transparent circle with thin white border. The
+    // tap target is the parent GestureDetector. Three small dots inside
+    // hint at interactivity (the circle was empty + decorative until M4).
     return Container(
       width: GameLayout.menuSize,
       height: GameLayout.menuSize,
@@ -70,7 +83,23 @@ class HomeOverlay extends StatelessWidget {
           color: Colors.white.withValues(alpha: GameStyles.menuBorderAlpha),
         ),
       ),
-      child: const SizedBox(),
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(
+            3,
+            (i) => Container(
+              width: 3,
+              height: 3,
+              margin: const EdgeInsets.symmetric(horizontal: 1.5),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: GameStyles.menuBorderAlpha),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

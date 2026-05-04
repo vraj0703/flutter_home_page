@@ -124,6 +124,16 @@ class GameStyles {
   static const Color arrowColor = Color(0xFFC0C0C0);
   static const double menuBorderAlpha = 0.3;
 
+  // --- Menu Drawer (M4) ---
+  static const double drawerBgAlpha = 0.85;
+  static const double drawerBorderAlpha = 0.3;
+  static const double scrimAlpha = 0.5;
+  static const double drawerBlurSigma = 12.0;
+  static const Color drawerPanelColor = Color(0xFF14171D); // dark slate
+  static const Color drawerAccentGold = Color(0xFFD4A455);
+  static const Color drawerTextPrimary = Color(0xFFF0ECE2);
+  static const Color drawerTextSoft = Color(0xFFB8B8B0);
+
   // --- Orbital Arcs Styles ---
   static const double orbitalArcAlphaOuter = 0.05;
   static const double orbitalArcAlphaMid = 0.08;
