@@ -47,6 +47,8 @@ dependencies:
   # a shared TOML/JSON config supersedes both apps' init code.
   my_feature_flags:
     path: ../../flutter/my_feature_flags
+  base_app:
+    path: ../../flutter/base_app
 
 dependency_overrides:
   build_runner: ^2.10.3
