@@ -15,5 +15,5 @@ class GameStrings {
 
   static const String loadingText = 'W E L C O M E';
   static const String enterText = 'ENTER';
-  static const String bullet = "TAP";
+  static const String bullet = "TAP TO ENTER";
 }
