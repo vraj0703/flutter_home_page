@@ -4,14 +4,6 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_linux
-  desktop_window
-  flutter_core
-  flutter_localization
-  flutter_ui_base
-  my_graphs
-  my_localizations
-  my_logger_metrics
-  my_theme_style
   url_launcher_linux
 )
 

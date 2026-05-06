@@ -42,13 +42,23 @@ dependencies:
   vector_math: ^2.2.0
   web: ^1.1.0
   flame_bloc: ^1.12.20
-  # M4 — feature flag visibility for the menu drawer (RAJ-39).
-  # Same package base_app uses; flag defaults must stay in sync until
-  # a shared TOML/JSON config supersedes both apps' init code.
+  # Sibling Dart package. Pinned to a git SHA so CI (which only checks out
+  # this repo) can resolve it — a `path:` dep would require a sibling
+  # checkout that the runner does not have. Local dev keeps fast iteration
+  # via pubspec_overrides.yaml (gitignored) which switches it back to
+  # `path:`. Bump the ref here whenever the sibling repo ships a change
+  # this repo needs.
+  #
+  # base_app is intentionally NOT a dep here yet: its own pubspec lists 7
+  # sibling `path:` dependencies (flutter_core, my_theme_style, …) that pub
+  # can't resolve when base_app is fetched via git, because their relative
+  # paths point outside the git repository. Re-adding base_app needs those
+  # transitive sibling deps converted first — tracked as a follow-up to
+  # RAJ-83.
   my_feature_flags:
-    path: ../../flutter/my_feature_flags
-  base_app:
-    path: ../../flutter/base_app
+    git:
+      url: https://github.com/vraj0703/my_feature_flags.git
+      ref: f70027e991ad3ee899c8417770ab753a7c9a86fc
 
 dependency_overrides:
   build_runner: ^2.10.3
