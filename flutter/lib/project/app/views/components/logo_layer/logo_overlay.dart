@@ -15,10 +15,9 @@ import 'package:flutter_home_page/project/app/interfaces/state_provider.dart';
 import 'package:flutter_home_page/project/app/utils/extension.dart';
 import 'package:flutter_home_page/project/app/views/components/logo_layer/bouncy_lines.dart';
 
-enum _LineOrientation { horizontal, vertical }
-
-/// A component that renders an interactive UI element with circles, text,
-/// and four lines that animate based on the cursor's position.
+/// A component that renders an interactive UI element with text and two
+/// horizontal lines that animate based on the cursor's position. Anchors
+/// to the bottom of the screen — see RAJ-82.
 class LogoOverlayComponent extends PositionComponent
     with PointerMoveCallbacks
     implements OpacityProvider {
@@ -29,10 +28,6 @@ class LogoOverlayComponent extends PositionComponent
   final double horizontalLineLength = GameLayout.logoOverlayHLineLength;
   final double horizontalLineGap = GameLayout.logoOverlayHLineGap;
   final double horizontalThreshold = GameLayout.logoOverlayHThreshold;
-
-  final double verticalLineLength = GameLayout.logoOverlayVLineLength;
-  final double verticalLineGap = GameLayout.logoOverlayVLineGap;
-  final double verticalThreshold = GameLayout.logoOverlayVThreshold;
 
   String fullText = GameStrings.bullet;
   final Color uiColor = GameStyles.logoOverlayUi;
@@ -46,8 +41,6 @@ class LogoOverlayComponent extends PositionComponent
 
   final BouncyLine _rightLine = BouncyLine();
   final BouncyLine _leftLine = BouncyLine();
-  final BouncyLine _topLine = BouncyLine();
-  final BouncyLine _bottomLine = BouncyLine();
 
   late final TextComponent _textComponent;
   late final flutter.TextStyle style;
@@ -56,8 +49,6 @@ class LogoOverlayComponent extends PositionComponent
 
   final Path _rightPath = Path();
   final Path _leftPath = Path();
-  final Path _topPath = Path();
-  final Path _bottomPath = Path();
 
   Vector2 cursorPosition = Vector2.zero();
   Vector2 gameSize = Vector2.zero();
@@ -109,7 +100,7 @@ class LogoOverlayComponent extends PositionComponent
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
-    position = size / 2;
+    position = Vector2(size.x / 2, size.y - GameLayout.logoOverlayBottomMargin);
     gameSize = size;
   }
 
@@ -177,30 +168,20 @@ class LogoOverlayComponent extends PositionComponent
     final charCount = (fullText.length * textProgress).floor();
     _textComponent.text = fullText.substring(0, charCount);
 
-    if (gameSize.x == 0 || gameSize.y == 0) return;
+    if (gameSize.x == 0) return;
 
     final maxDisplacementX = gameSize.x / 2;
-    final maxDisplacementY = gameSize.y / 2;
     final proportionX = (cursorPosition.x.abs() / maxDisplacementX).clamp(
       0.0,
       1.0,
     );
-    final proportionY = (cursorPosition.y.abs() / maxDisplacementY).clamp(
-      0.0,
-      1.0,
-    );
     final horizontalOffset = proportionX * horizontalThreshold;
-    final verticalOffset = proportionY * verticalThreshold;
 
     _rightLine.targetPosition = horizontalOffset;
     _leftLine.targetPosition = -horizontalOffset;
-    _bottomLine.targetPosition = verticalOffset;
-    _topLine.targetPosition = -verticalOffset;
 
     _rightLine.update(dt);
     _leftLine.update(dt);
-    _topLine.update(dt);
-    _bottomLine.update(dt);
   }
 
   void _updateRemovingStartState(double dt) {
@@ -229,13 +210,9 @@ class LogoOverlayComponent extends PositionComponent
 
     _rightLine.targetPosition = GamePhysics.bouncyLineMaxScale;
     _leftLine.targetPosition = GamePhysics.bouncyLineMaxScale;
-    _bottomLine.targetPosition = GamePhysics.bouncyLineMaxScale;
-    _topLine.targetPosition = GamePhysics.bouncyLineMaxScale;
 
     _rightLine.update(dt);
     _leftLine.update(dt);
-    _topLine.update(dt);
-    _bottomLine.update(dt);
   }
 
   void _renderBouncyLines(Canvas canvas) {
@@ -254,33 +231,13 @@ class LogoOverlayComponent extends PositionComponent
         canvas: canvas,
         line: _rightLine,
         path: _rightPath,
-        length: horizontalLineLength,
         gap: horizontalLineGap,
-        orientation: _LineOrientation.horizontal,
       );
       _renderBouncyLine(
         canvas: canvas,
         line: _leftLine,
         path: _leftPath,
-        length: horizontalLineLength,
         gap: -horizontalLineGap,
-        orientation: _LineOrientation.horizontal,
-      );
-      _renderBouncyLine(
-        canvas: canvas,
-        line: _bottomLine,
-        path: _bottomPath,
-        length: verticalLineLength,
-        gap: verticalLineGap,
-        orientation: _LineOrientation.vertical,
-      );
-      _renderBouncyLine(
-        canvas: canvas,
-        line: _topLine,
-        path: _topPath,
-        length: verticalLineLength,
-        gap: -verticalLineGap,
-        orientation: _LineOrientation.vertical,
       );
     }
   }
@@ -289,44 +246,25 @@ class LogoOverlayComponent extends PositionComponent
     required Canvas canvas,
     required BouncyLine line,
     required Path path,
-    required double length,
     required double gap,
-    required _LineOrientation orientation,
   }) {
     path.reset();
-    final scaledLength = length * line.scale;
-    final center = Vector2.zero();
+    final scaledLength = horizontalLineLength * line.scale;
+    final centerY = 0.0;
 
-    if (orientation == _LineOrientation.horizontal) {
-      final startX = line.currentPosition + gap;
-      final endX = startX + (gap > 0 ? scaledLength : -scaledLength);
-      path.moveTo(startX, center.y - startThickness / 2);
-      path.lineTo(endX, center.y - endThickness / 2);
-      path.lineTo(endX, center.y + endThickness / 2);
-      path.lineTo(startX, center.y + startThickness / 2);
-      path.close();
-      _materialPaint.shader = Gradient.linear(
-        Offset(startX, center.y - startThickness),
-        Offset(startX, center.y + startThickness),
-        glassyColors,
-        glassyStops,
-      );
-    } else {
-      // Vertical
-      final startY = line.currentPosition + gap;
-      final endY = startY + (gap > 0 ? scaledLength : -scaledLength);
-      path.moveTo(center.x - startThickness / 2, startY);
-      path.lineTo(center.x - endThickness / 2, endY);
-      path.lineTo(center.x + endThickness / 2, endY);
-      path.lineTo(center.x + startThickness / 2, startY);
-      path.close();
-      _materialPaint.shader = Gradient.linear(
-        Offset(center.x - startThickness, startY),
-        Offset(center.x + startThickness, startY),
-        glassyColors,
-        glassyStops,
-      );
-    }
+    final startX = line.currentPosition + gap;
+    final endX = startX + (gap > 0 ? scaledLength : -scaledLength);
+    path.moveTo(startX, centerY - startThickness / 2);
+    path.lineTo(endX, centerY - endThickness / 2);
+    path.lineTo(endX, centerY + endThickness / 2);
+    path.lineTo(startX, centerY + startThickness / 2);
+    path.close();
+    _materialPaint.shader = Gradient.linear(
+      Offset(startX, centerY - startThickness),
+      Offset(startX, centerY + startThickness),
+      glassyColors,
+      glassyStops,
+    );
 
     canvas.drawPath(path, _materialPaint);
   }

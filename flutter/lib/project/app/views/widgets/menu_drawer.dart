@@ -28,7 +28,16 @@ class MenuDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<MenuDrawerCubit, MenuDrawerState>(
       builder: (context, state) {
-        if (!state.isOpen) return const SizedBox.shrink();
+        // Must use Positioned.fill in both branches: this widget is a child of
+        // a Stack that also holds Positioned(menu) and Positioned(arrow). A
+        // non-positioned child of size zero (e.g. SizedBox.shrink) collapses
+        // the Stack to 0x0 with Clip.hardEdge, which clips the menu+arrow out
+        // of view (RAJ-83).
+        if (!state.isOpen) {
+          return Positioned.fill(
+            child: const IgnorePointer(child: SizedBox.shrink()),
+          );
+        }
         return _OpenDrawer(onClose: () => context.read<MenuDrawerCubit>().dismiss());
       },
     );

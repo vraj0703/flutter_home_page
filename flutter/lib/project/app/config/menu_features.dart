@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 /// time and filters by feature flag — entries whose flag is disabled don't
 /// render.
 ///
-/// Flag keys must stay in sync with base_app's `MindArticleFlags` (and any
-/// future feature flag classes) until a shared TOML/JSON config replaces
-/// both apps' init code. Tracked as a follow-up.
+/// Flag keys must stay in sync with base_app's `MindArticleFlags` until the
+/// follow-up to RAJ-83 properly imports them once base_app's transitive
+/// sibling `path:` deps stop blocking pub from resolving it via git.
 class MenuFeature {
   final String flagKey;
   final String label;

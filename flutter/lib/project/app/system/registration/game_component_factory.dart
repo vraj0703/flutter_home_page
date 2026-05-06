@@ -182,7 +182,10 @@ class GameComponentFactory {
       stateProvider: stateProvider,
       queuer: queuer,
     );
-    _logoOverlay.position = size / 2;
+    _logoOverlay.position = Vector2(
+      size.x / 2,
+      size.y - GameLayout.logoOverlayBottomMargin,
+    );
     _logoOverlay.priority = GameLayout.zLogoOverlay;
     _logoOverlay.gameSize = size;
 

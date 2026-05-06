@@ -38,12 +38,12 @@ class GameLayout {
   static const double logoOverlayHLineGap = 120.0;
   static const double logoOverlayHThreshold = 300.0;
 
-  static const double logoOverlayVLineLength = 70.0;
-  static const double logoOverlayVLineGap = 120.0;
-  static const double logoOverlayVThreshold = 150.0;
-
   static const double logoOverlayStartThickness = 3.0;
   static const double logoOverlayEndThickness = 0.5;
+
+  // Padding from the bottom edge of the screen to the TAP text + horizontal
+  // lines. Anchors the overlay below centre — see RAJ-82.
+  static const double logoOverlayBottomMargin = 100.0;
 
   static const double titleHeatDriftY = -20.0;
 

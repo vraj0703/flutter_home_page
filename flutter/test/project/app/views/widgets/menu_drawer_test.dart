@@ -73,6 +73,53 @@ void main() {
       cubit.close();
     });
 
+    testWidgets(
+      'closed-state does not collapse parent Stack with Positioned siblings (RAJ-83)',
+      (tester) async {
+        // Repro: HomeOverlay places `Positioned(menu)`, `Positioned(arrow)` and
+        // `MenuDrawer()` in the same Stack. If MenuDrawer returns a non-positioned
+        // SizedBox.shrink when closed, the Stack sizes itself to that 0x0 child
+        // (StackFit.loose) and Clip.hardEdge clips the Positioned children out
+        // of view. Regression test: verify a Positioned sibling is laid out at
+        // its declared offset — this only holds when the Stack is full-screen.
+        const siblingKey = ValueKey('positioned-sibling');
+        final cubit = MenuDrawerCubit();
+        await tester.pumpWidget(
+          MaterialApp(
+            home: BlocProvider.value(
+              value: cubit,
+              child: Scaffold(
+                body: Stack(
+                  children: const [
+                    Positioned(
+                      top: 40,
+                      right: 40,
+                      child: SizedBox(
+                        key: siblingKey,
+                        width: 50,
+                        height: 50,
+                      ),
+                    ),
+                    MenuDrawer(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+
+        final size = tester.getSize(find.byKey(siblingKey));
+        expect(size, const Size(50, 50),
+            reason: 'sibling should be its declared 50x50 — if it is 0x0 the '
+                'Stack collapsed and clipped it.');
+        final topLeft = tester.getTopLeft(find.byKey(siblingKey));
+        expect(topLeft.dy, 40.0,
+            reason: 'sibling should sit 40px from the top — if it is at 0 the '
+                'Stack collapsed and Positioned no longer has reference bounds.');
+        cubit.close();
+      },
+    );
+
     testWidgets('renders MENU header + a feature entry when open and flag enabled', (tester) async {
       // Ensure flag is enabled before pumping
       FeatureFlags().init({'feature.mind_article.enabled': true});
