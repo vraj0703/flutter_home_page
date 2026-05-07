@@ -1,6 +1,5 @@
 import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { type Project } from '../../../../config/projects'
 import { trackProjectClicked } from '../../../../analytics/posthog'
@@ -10,6 +9,7 @@ import { damp, tmpVec3, useFrameSize } from '../utils'
 import { type useMaterials } from '../materials'
 import { useProjectTexture } from '../textures'
 import { getScrollProgress, setClickTarget } from '../galleryStore'
+import { Placard } from './Placard'
 
 export function WallFrame({ project, position, side, projectIndex, mats }: {
   project: Project; position: [number, number, number]; side: 'left' | 'right'; projectIndex: number; mats: ReturnType<typeof useMaterials>
@@ -20,7 +20,7 @@ export function WallFrame({ project, position, side, projectIndex, mats }: {
   const glowRef = useRef<THREE.Mesh>(null)
   const entry = useRef({ t: -1, delay: projectIndex * 0.15 })
   const frame = useFrameSize(), rotY = side === 'left' ? Math.PI / 2 : -Math.PI / 2
-  const labelY = -(frame.h / 2 + FRAME_BORDER + 0.35), mw = 0.12
+  const mw = 0.12
   const glowMat = useMemo(() => new THREE.MeshStandardMaterial({
     color: '#C8A45C', emissive: '#C8A45C', emissiveIntensity: 0, transparent: true, opacity: 0,
     roughness: 0.2, metalness: 0.4, side: THREE.BackSide,
@@ -63,12 +63,11 @@ export function WallFrame({ project, position, side, projectIndex, mats }: {
         <mesh position={[0, 0, FRAME_DEPTH / 2 - 0.01]} material={mats.mat}><planeGeometry args={[frame.w + mw * 2, frame.h + mw * 2]} /></mesh>
         <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.001]} material={mats.artBg}><planeGeometry args={[frame.w, frame.h]} /></mesh>
         <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.005]} material={artMat}><planeGeometry args={[frame.w, frame.h]} /></mesh>
-        <group position={[0, labelY + 0.05, FRAME_DEPTH / 2]}>
-          <mesh position={[0, -0.08, 0]}><planeGeometry args={[1.2, 0.35]} /><meshStandardMaterial color="#C8A45C" roughness={0.3} metalness={0.6} /></mesh>
-          <Text position={[0, 0, 0.005]} fontSize={0.1} color="#2A2420" anchorX="center" anchorY="top" letterSpacing={-0.01}>{project.title}</Text>
-          <Text position={[0, -0.16, 0.005]} fontSize={0.055} color="#5C4A30" anchorX="center" anchorY="top" letterSpacing={0.04}>{project.description}</Text>
-        </group>
       </group>
+      {/* Museum placard mounted to the wall beside the frame at hip height.
+          Sits outside the popping group on purpose — the placard does not
+          pop on hover since it's "screwed to the wall", not part of the art. */}
+      <Placard project={project} side={side} />
     </group>
   )
 }
