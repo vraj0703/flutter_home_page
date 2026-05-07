@@ -9,7 +9,6 @@ import { damp, tmpVec3, useFrameSize } from '../utils'
 import { type useMaterials } from '../materials'
 import { useProjectTexture } from '../textures'
 import { getScrollProgress, setClickTarget } from '../galleryStore'
-import { Placard } from './Placard'
 
 export function WallFrame({ project, position, side, projectIndex, mats }: {
   project: Project; position: [number, number, number]; side: 'left' | 'right'; projectIndex: number; mats: ReturnType<typeof useMaterials>
@@ -64,10 +63,9 @@ export function WallFrame({ project, position, side, projectIndex, mats }: {
         <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.001]} material={mats.artBg}><planeGeometry args={[frame.w, frame.h]} /></mesh>
         <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.005]} material={artMat}><planeGeometry args={[frame.w, frame.h]} /></mesh>
       </group>
-      {/* Museum placard mounted to the wall beside the frame at hip height.
-          Sits outside the popping group on purpose — the placard does not
-          pop on hover since it's "screwed to the wall", not part of the art. */}
-      <Placard project={project} side={side} />
+      {/* No on-frame title plate or side-mounted placard — the lateral-view
+          HTML control panel (`<LateralControls />`) carries the project
+          title + counter. See RAJ-172 review (cancelled). */}
     </group>
   )
 }
