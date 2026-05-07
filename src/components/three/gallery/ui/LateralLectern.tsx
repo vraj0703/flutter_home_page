@@ -56,10 +56,11 @@ const STEM_H = 1.3
 const TOP_W = 0.85
 const TOP_D = 0.6
 const TOP_THICK = 0.04
-/** Reading angle. Negative because the surface needs to tilt FORWARD —
- *  front edge (toward viewer) drops, back edge raises. The first cut
- *  used the positive sign and rendered an inverted lectern. */
-const TOP_TILT = -Math.PI / 9
+/** Reading angle. Positive in this convention because the lectern's
+ *  "front" (the camera-facing side) is local +Z. Tilting around X by
+ *  +TOP_TILT lowers the +Z edge (toward viewer) and raises the -Z edge
+ *  (back of the surface). */
+const TOP_TILT = Math.PI / 9
 const TOP_Y = BASE_H + STEM_H
 
 /** How far in front of the wall the lectern parks. */
@@ -125,7 +126,12 @@ export function LateralLectern() {
         targetX.current = isLeft
           ? -WALL_X + PARK_DIST_FROM_WALL
           : WALL_X - PARK_DIST_FROM_WALL
-        targetRotY.current = isLeft ? -Math.PI / 2 : Math.PI / 2
+        // rotY here makes the lectern's +Z face point toward the camera.
+        // (rotation Y by +π/2 maps lectern-local +Z to world +X, which is
+        // where the camera sits for left-wall focus.) This convention has
+        // text reading direction map to camera-right correctly — the first
+        // cut used the inverse sign and rendered all text mirrored.
+        targetRotY.current = isLeft ? Math.PI / 2 : -Math.PI / 2
         targetY.current = RAISED_Y
         // First-time placement: snap to target so we don't roll across the
         // entire corridor on first focus.
@@ -285,14 +291,14 @@ export function LateralLectern() {
         </mesh>
 
         {/* Text + click planes live just above the top surface (local +Y).
-            The whole group is tilted forward, so:
-              local +Z = back edge (raised)  → top of camera view
-              local -Z = front edge (lowered) → bottom of camera view
+            With the +Z-front convention, after the surface tilt:
+              local -Z = back edge (raised)   → top of camera view
+              local +Z = front edge (lowered) → bottom of camera view
             Reading order top→bottom: title → counter → arrows → buttons. */}
 
-        {/* Title — large HDR neon at the BACK (top of view). */}
+        {/* Title — large HDR neon at the BACK (-Z, top of view). */}
         <Text
-          position={[0, TOP_THICK / 2 + 0.005, 0.18]}
+          position={[0, TOP_THICK / 2 + 0.005, -0.18]}
           rotation={[-Math.PI / 2, 0, 0]}
           fontSize={0.075}
           font="/fonts/modrnt_urban.otf"
@@ -307,7 +313,7 @@ export function LateralLectern() {
 
         {/* Counter "P3 / 7" just below title */}
         <Text
-          position={[0, TOP_THICK / 2 + 0.005, 0.10]}
+          position={[0, TOP_THICK / 2 + 0.005, -0.10]}
           rotation={[-Math.PI / 2, 0, 0]}
           fontSize={0.045}
           font="/fonts/inconsolata_nerd_mono_regular.ttf"
@@ -343,9 +349,9 @@ export function LateralLectern() {
           {'▶'}
         </Text>
 
-        {/* Action row at the FRONT (bottom of view, closest to viewer's hands) */}
+        {/* Action row at the FRONT (+Z, bottom of view, closest to viewer's hands) */}
         <Text
-          position={[-TOP_W / 2 + 0.16, TOP_THICK / 2 + 0.005, -0.18]}
+          position={[-TOP_W / 2 + 0.16, TOP_THICK / 2 + 0.005, 0.18]}
           rotation={[-Math.PI / 2, 0, 0]}
           fontSize={0.04}
           font="/fonts/inconsolata_nerd_mono_regular.ttf"
@@ -357,7 +363,7 @@ export function LateralLectern() {
           ✕ GALLERY
         </Text>
         <Text
-          position={[TOP_W / 2 - 0.16, TOP_THICK / 2 + 0.005, -0.18]}
+          position={[TOP_W / 2 - 0.16, TOP_THICK / 2 + 0.005, 0.18]}
           rotation={[-Math.PI / 2, 0, 0]}
           fontSize={0.04}
           font="/fonts/inconsolata_nerd_mono_regular.ttf"
@@ -393,7 +399,7 @@ export function LateralLectern() {
           <meshStandardMaterial transparent opacity={0} />
         </mesh>
         <mesh
-          position={[-TOP_W / 2 + 0.16, TOP_THICK / 2 + 0.001, -0.18]}
+          position={[-TOP_W / 2 + 0.16, TOP_THICK / 2 + 0.001, 0.18]}
           rotation={[-Math.PI / 2, 0, 0]}
           onClick={(e) => { e.stopPropagation(); goGallery() }}
           onPointerOver={() => { document.body.style.cursor = 'pointer' }}
@@ -403,7 +409,7 @@ export function LateralLectern() {
           <meshStandardMaterial transparent opacity={0} />
         </mesh>
         <mesh
-          position={[TOP_W / 2 - 0.16, TOP_THICK / 2 + 0.001, -0.18]}
+          position={[TOP_W / 2 - 0.16, TOP_THICK / 2 + 0.001, 0.18]}
           rotation={[-Math.PI / 2, 0, 0]}
           onClick={(e) => { e.stopPropagation(); onOpen() }}
           onPointerOver={() => { document.body.style.cursor = 'pointer' }}
