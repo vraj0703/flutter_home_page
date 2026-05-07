@@ -48,11 +48,18 @@ const BASE_H = 0.08
 const WHEEL_R = 0.05
 const WHEEL_W = 0.04
 const STEM_W = 0.07
-const STEM_H = 0.85
+/** Stem height brings the reading surface to viewer chest level. The
+ *  camera in lateral view sits at world y ≈ 0.5; the lectern's floor is
+ *  at FLOOR_Y = -1.5, so a stem of 1.3 puts the top at y ≈ 0.0, just
+ *  below the camera's gaze for a natural reading angle. */
+const STEM_H = 1.3
 const TOP_W = 0.85
 const TOP_D = 0.6
 const TOP_THICK = 0.04
-const TOP_TILT = Math.PI / 9 // ~20° — gentle reading angle
+/** Reading angle. Negative because the surface needs to tilt FORWARD —
+ *  front edge (toward viewer) drops, back edge raises. The first cut
+ *  used the positive sign and rendered an inverted lectern. */
+const TOP_TILT = -Math.PI / 9
 const TOP_Y = BASE_H + STEM_H
 
 /** How far in front of the wall the lectern parks. */
@@ -221,7 +228,7 @@ export function LateralLectern() {
 
   const woodMat = useMemo(
     () => new THREE.MeshStandardMaterial({
-      color: '#3A2418',
+      color: '#5A3A22',          // warm walnut, lighter so the body reads as wood
       roughness: 0.85,
       metalness: 0.0,
     }),
@@ -229,9 +236,11 @@ export function LateralLectern() {
   )
   const topMat = useMemo(
     () => new THREE.MeshStandardMaterial({
-      color: '#241408',
-      roughness: 0.7,
+      color: '#3A2410',          // darker top — contrast for the HDR text
+      roughness: 0.65,
       metalness: 0.0,
+      emissive: '#1A1008',
+      emissiveIntensity: 0.4,    // subtle lift so the surface isn't pure black
     }),
     [],
   )
@@ -276,26 +285,14 @@ export function LateralLectern() {
         </mesh>
 
         {/* Text + click planes live just above the top surface (local +Y).
-            The whole group is tilted, so they move with the surface.
-            anchorX/Y center the text, position[1] offset is just above
-            the wood face at TOP_THICK/2 + small epsilon. */}
-        {/* Counter row — top of surface */}
-        <Text
-          position={[0, TOP_THICK / 2 + 0.005, -0.16]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          fontSize={0.045}
-          font="/fonts/inconsolata_nerd_mono_regular.ttf"
-          letterSpacing={0.06}
-          anchorX="center"
-          anchorY="middle"
-        >
-          <meshBasicMaterial color={[1.6, 1.4, 1.0]} toneMapped={false} />
-          {counterText}
-        </Text>
+            The whole group is tilted forward, so:
+              local +Z = back edge (raised)  → top of camera view
+              local -Z = front edge (lowered) → bottom of camera view
+            Reading order top→bottom: title → counter → arrows → buttons. */}
 
-        {/* Title — large HDR neon, modrnt_urban (matches SkillsButton) */}
+        {/* Title — large HDR neon at the BACK (top of view). */}
         <Text
-          position={[0, TOP_THICK / 2 + 0.005, -0.07]}
+          position={[0, TOP_THICK / 2 + 0.005, 0.18]}
           rotation={[-Math.PI / 2, 0, 0]}
           fontSize={0.075}
           font="/fonts/modrnt_urban.otf"
@@ -308,7 +305,21 @@ export function LateralLectern() {
           {titleText}
         </Text>
 
-        {/* Prev arrow ◀ */}
+        {/* Counter "P3 / 7" just below title */}
+        <Text
+          position={[0, TOP_THICK / 2 + 0.005, 0.10]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          fontSize={0.045}
+          font="/fonts/inconsolata_nerd_mono_regular.ttf"
+          letterSpacing={0.06}
+          anchorX="center"
+          anchorY="middle"
+        >
+          <meshBasicMaterial color={[1.6, 1.4, 1.0]} toneMapped={false} />
+          {counterText}
+        </Text>
+
+        {/* Arrows ◀ ▶ in middle row, flanking the title-counter column */}
         <Text
           position={[-TOP_W / 2 + 0.09, TOP_THICK / 2 + 0.005, 0.0]}
           rotation={[-Math.PI / 2, 0, 0]}
@@ -320,7 +331,6 @@ export function LateralLectern() {
           <meshBasicMaterial color={[1.5, 1.3, 1.0]} toneMapped={false} />
           {'◀'}
         </Text>
-        {/* Next arrow ▶ */}
         <Text
           position={[TOP_W / 2 - 0.09, TOP_THICK / 2 + 0.005, 0.0]}
           rotation={[-Math.PI / 2, 0, 0]}
@@ -333,9 +343,9 @@ export function LateralLectern() {
           {'▶'}
         </Text>
 
-        {/* Bottom row: Gallery (left), Open (right) */}
+        {/* Action row at the FRONT (bottom of view, closest to viewer's hands) */}
         <Text
-          position={[-TOP_W / 2 + 0.16, TOP_THICK / 2 + 0.005, 0.18]}
+          position={[-TOP_W / 2 + 0.16, TOP_THICK / 2 + 0.005, -0.18]}
           rotation={[-Math.PI / 2, 0, 0]}
           fontSize={0.04}
           font="/fonts/inconsolata_nerd_mono_regular.ttf"
@@ -347,7 +357,7 @@ export function LateralLectern() {
           ✕ GALLERY
         </Text>
         <Text
-          position={[TOP_W / 2 - 0.16, TOP_THICK / 2 + 0.005, 0.18]}
+          position={[TOP_W / 2 - 0.16, TOP_THICK / 2 + 0.005, -0.18]}
           rotation={[-Math.PI / 2, 0, 0]}
           fontSize={0.04}
           font="/fonts/inconsolata_nerd_mono_regular.ttf"
@@ -361,7 +371,7 @@ export function LateralLectern() {
 
         {/* ── Click planes — invisible meshes laid flat on the top.
              rotation[-PI/2,0,0] makes a plane parallel to the local XZ
-             plane (the surface). */}
+             plane (the surface). Z values match the text rows above. */}
         <mesh
           position={[-TOP_W / 2 + 0.09, TOP_THICK / 2 + 0.001, 0.0]}
           rotation={[-Math.PI / 2, 0, 0]}
@@ -383,7 +393,7 @@ export function LateralLectern() {
           <meshStandardMaterial transparent opacity={0} />
         </mesh>
         <mesh
-          position={[-TOP_W / 2 + 0.16, TOP_THICK / 2 + 0.001, 0.18]}
+          position={[-TOP_W / 2 + 0.16, TOP_THICK / 2 + 0.001, -0.18]}
           rotation={[-Math.PI / 2, 0, 0]}
           onClick={(e) => { e.stopPropagation(); goGallery() }}
           onPointerOver={() => { document.body.style.cursor = 'pointer' }}
@@ -393,7 +403,7 @@ export function LateralLectern() {
           <meshStandardMaterial transparent opacity={0} />
         </mesh>
         <mesh
-          position={[TOP_W / 2 - 0.16, TOP_THICK / 2 + 0.001, 0.18]}
+          position={[TOP_W / 2 - 0.16, TOP_THICK / 2 + 0.001, -0.18]}
           rotation={[-Math.PI / 2, 0, 0]}
           onClick={(e) => { e.stopPropagation(); onOpen() }}
           onPointerOver={() => { document.body.style.cursor = 'pointer' }}
