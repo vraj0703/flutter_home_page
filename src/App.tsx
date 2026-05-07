@@ -9,7 +9,6 @@ import { useReducedMotion } from './hooks/useReducedMotion'
 import { AudioProvider, useAudio } from './audio/AudioProvider'
 import { preloadRadio, startRadioOnGalleryEnter, stopRadio } from './audio/RadioEngine'
 import { resetGalleryScroll, setGalleryFrameloopActive, setReducedMotion, subscribeProjectOpen } from './components/three/gallery/galleryStore'
-import { LateralControls } from './components/ui/LateralControls'
 import { initAnalytics, trackLandingViewed, trackGalleryEntered, trackContactViewed } from './analytics/posthog'
 import { flutterBridge } from './bridge/flutterBridge'
 
@@ -219,11 +218,10 @@ function AppInner() {
         </ErrorBoundary>
       </div>
       <SectionTransition active={transitioning} onMidpoint={handleMidpoint} onComplete={handleComplete} duration={1.6} direction={transitionDirection} />
-      {/* Lateral-view control panel — only meaningful in the gallery (react)
-          phase. The component subscribes to galleryStore focus state and
-          manages its own visibility. Hide entirely during phase transitions
-          to avoid it sitting over the wipe overlay. */}
-      <LateralControls enabled={phase === 'react' && !transitioning} />
+      {/* Lateral-view controls now live in-world as <LateralLectern /> inside
+          the GalleryCorridor — see RAJ-84 follow-up. The HTML overlay
+          (`./components/ui/LateralControls.tsx`) is retained in tree but
+          unmounted; can be brought back as an a11y fallback if needed. */}
       <Preloader progress={totalProgress} phase={preloaderPhase} onRevealComplete={handlePreloaderRevealComplete} />
     </div>
   )

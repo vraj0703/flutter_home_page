@@ -33,6 +33,7 @@ import { WallRadio } from './ui/WallRadio'
 import { LetsConnectFrame } from './ui/LetsConnectFrame'
 import { SkillsButton } from './ui/SkillsButton'
 import { KBBackButton } from './ui/KBBackButton'
+import { LateralLectern } from './ui/LateralLectern'
 
 // Keyboard
 import { FloatingKB } from './FloatingKB'
@@ -138,6 +139,10 @@ export function GalleryCorridor() {
 
       {/* Skills neon button — on back wall past last testimonial card */}
       <SkillsButton />
+
+      {/* Lateral-view docent's lectern — wheels into place when a project
+          frame is in lateral focus, hidden below floor otherwise. */}
+      <LateralLectern />
 
       {/* Left wall frames */}
       {LEFT_PROJECTS.map((proj, i) => {
