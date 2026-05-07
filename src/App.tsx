@@ -8,7 +8,8 @@ import { useAssetLoader } from './hooks/useAssetLoader'
 import { useReducedMotion } from './hooks/useReducedMotion'
 import { AudioProvider, useAudio } from './audio/AudioProvider'
 import { preloadRadio, startRadioOnGalleryEnter, stopRadio } from './audio/RadioEngine'
-import { resetGalleryScroll, setGalleryFrameloopActive, setReducedMotion } from './components/three/gallery/galleryStore'
+import { resetGalleryScroll, setGalleryFrameloopActive, setReducedMotion, subscribeProjectOpen } from './components/three/gallery/galleryStore'
+import { LateralControls } from './components/ui/LateralControls'
 import { initAnalytics, trackLandingViewed, trackGalleryEntered, trackContactViewed } from './analytics/posthog'
 import { flutterBridge } from './bridge/flutterBridge'
 
@@ -171,6 +172,17 @@ function AppInner() {
     }
   }, [])
 
+  // Per-project route handling for the lateral control panel's Open ↗ button.
+  // RAJ-84 only emits the event; per-project routes (RAJ-165..171) wire the
+  // actual destinations. For now, log + leave a TODO marker so each P-issue
+  // can plug its handling in.
+  useEffect(() => {
+    return subscribeProjectOpen((projectId) => {
+      // TODO(RAJ-165..171): per-project route / modal / external link.
+      console.info('[lateral-controls] open project:', projectId)
+    })
+  }, [])
+
   const handleComplete = useCallback(() => { pendingPhase.current = null; setTransitioning(false) }, [])
   const handleFlutterHandoff = useCallback(() => { transitionToPhase('react') }, [transitionToPhase])
   const handleNavigateToContact = useCallback(() => { transitionToPhase('contact') }, [transitionToPhase])
@@ -207,6 +219,11 @@ function AppInner() {
         </ErrorBoundary>
       </div>
       <SectionTransition active={transitioning} onMidpoint={handleMidpoint} onComplete={handleComplete} duration={1.6} direction={transitionDirection} />
+      {/* Lateral-view control panel — only meaningful in the gallery (react)
+          phase. The component subscribes to galleryStore focus state and
+          manages its own visibility. Hide entirely during phase transitions
+          to avoid it sitting over the wipe overlay. */}
+      <LateralControls enabled={phase === 'react' && !transitioning} />
       <Preloader progress={totalProgress} phase={preloaderPhase} onRevealComplete={handlePreloaderRevealComplete} />
     </div>
   )

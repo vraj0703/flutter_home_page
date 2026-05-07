@@ -24,9 +24,27 @@ export function consumeCameraReset() { _cameraResetRequested = false }
 
 let _focusProjectIndex = -1
 let _focusActive = false
+let _focusListeners: Array<(state: { index: number; active: boolean }) => void> = []
+
 export function getFocusState() { return { index: _focusProjectIndex, active: _focusActive } }
-export function setClickTarget(i: number) { _focusProjectIndex = i; _focusActive = true }
-export function clearFocus() { _focusActive = false; _focusProjectIndex = -1 }
+function _emitFocus() {
+  const state = { index: _focusProjectIndex, active: _focusActive }
+  _focusListeners.slice().forEach(fn => fn(state))
+}
+export function setClickTarget(i: number) {
+  _focusProjectIndex = i; _focusActive = true
+  _emitFocus()
+}
+export function clearFocus() {
+  _focusActive = false; _focusProjectIndex = -1
+  _emitFocus()
+}
+/** Subscribe to focus state changes. Fires immediately with current state, then on every setClickTarget / clearFocus. Returns unsubscribe. */
+export function subscribeFocusChange(fn: (state: { index: number; active: boolean }) => void) {
+  _focusListeners.push(fn)
+  fn({ index: _focusProjectIndex, active: _focusActive })
+  return () => { _focusListeners = _focusListeners.filter(f => f !== fn) }
+}
 
 /* ── Accessibility: prefers-reduced-motion ─────────
    Mirror of the OS media query, set from App.tsx via a useReducedMotion
@@ -135,6 +153,20 @@ export function subscribeKBBackClick(fn: () => void) {
   return () => { _kbBackClickListeners = _kbBackClickListeners.filter(f => f !== fn) }
 }
 export function fireKBBackClick() { _kbBackClickListeners.slice().forEach(fn => fn()) }
+
+/* ── Project-open event (lateral-controls "Open ↗" button) ─
+   The control panel renders the button and emits this event with the
+   project id; App.tsx subscribes and dispatches per-project route handling.
+   Per-project click behavior is owned by RAJ-165 to RAJ-171. */
+
+let _projectOpenListeners: Array<(projectId: string) => void> = []
+export function subscribeProjectOpen(fn: (projectId: string) => void) {
+  _projectOpenListeners.push(fn)
+  return () => { _projectOpenListeners = _projectOpenListeners.filter(f => f !== fn) }
+}
+export function fireProjectOpen(projectId: string) {
+  _projectOpenListeners.slice().forEach(fn => fn(projectId))
+}
 
 /* ── Compound actions ──────────────────────────────── */
 

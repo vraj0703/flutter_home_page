@@ -177,6 +177,31 @@ export class AudioEngine {
     osc.stop(now + 1.5)
   }
 
+  /** Soft glass tap — lateral-controls wrap (P1↔P7 carousel loop) */
+  playWrapChime() {
+    if (!this.ctx || !this.uiGain || this._muted) return
+    this.ensureRunning()
+    const now = this.ctx.currentTime
+    // Two detuned sines for a subtle chorus, fundamental at 220 Hz with a
+    // perfect fifth above for sweetness without being saccharine.
+    const make = (freq: number, detune: number, gain: number) => {
+      const osc = this.ctx!.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      osc.detune.value = detune
+      const g = this.ctx!.createGain()
+      g.gain.setValueAtTime(0, now)
+      g.gain.linearRampToValueAtTime(gain, now + 0.02)
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.4)
+      osc.connect(g).connect(this.uiGain!)
+      osc.start(now)
+      osc.stop(now + 0.42)
+    }
+    make(220, -6, 0.05)
+    make(220, +6, 0.05)
+    make(330, 0, 0.025) // fifth, quieter
+  }
+
   /** Soft click — button hover */
   playButtonClick() {
     if (!this.ctx || !this.uiGain || this._muted) return

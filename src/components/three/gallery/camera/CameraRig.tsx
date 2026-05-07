@@ -68,6 +68,12 @@ export function CameraRig() {
   const animPhase = useRef<'idle' | 'toKB' | 'toTestimonial'>('idle')
   const animStart = useRef(0)
 
+  // Side-flip swing — when arrow nav crosses the corridor (left↔right wall),
+  // bump the damp speed for a brief window so the camera reads as one swing
+  // instead of two tweens. Decays exponentially toward 0.
+  const swingTimer = useRef(0)
+  const lastFocusIndex = useRef(-1)
+
   // ── Subscribe to Skills click → animate to KB ──
   useEffect(() => {
     return subscribeSkillsClick(() => {
@@ -284,6 +290,17 @@ export function CameraRig() {
     // Re-read focus state after potential clearFocus() call
     const { active: fa, index: fpi } = getFocusState()
 
+    // Detect side-flip from arrow nav (cross-corridor swing). Trigger a
+    // ~250ms swing window with a faster damp speed so the swing reads as
+    // one continuous motion instead of two damps.
+    if (fa && fpi >= 0 && lastFocusIndex.current >= 0 && fpi !== lastFocusIndex.current) {
+      const wasLeft = lastFocusIndex.current < LEFT_PROJECTS.length
+      const isLeft = fpi < LEFT_PROJECTS.length
+      if (wasLeft !== isLeft) swingTimer.current = 0.25
+    }
+    lastFocusIndex.current = fa ? fpi : -1
+    if (swingTimer.current > 0) swingTimer.current = Math.max(0, swingTimer.current - dt)
+
     if (fa && fpi >= 0) {
       // Focus on a project frame (click-to-zoom)
       const isLeft = fpi < LEFT_PROJECTS.length
@@ -315,7 +332,7 @@ export function CameraRig() {
     const { active: faFinal } = getFocusState()
     let dampSpeed: number
     if (faFinal) {
-      dampSpeed = 12
+      dampSpeed = swingTimer.current > 0 ? 15 : 12
     } else if (p < 0.58) {
       dampSpeed = 6          // walk forward
     } else {
